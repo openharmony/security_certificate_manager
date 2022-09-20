@@ -1,0 +1,171 @@
+/*
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef CM_CONFIG_H
+#define CM_CONFIG_H
+
+#define CM_SUPPORT_POSIX
+
+#define CM_SUPPORT_THREAD
+
+#define CM_SUPPORT_API_ATTEST_KEY
+
+/* AES */
+#define CM_SUPPORT_AES_C
+#define CM_SUPPORT_AES_GENERATE_KEY
+#define CM_SUPPORT_AES_CBC_NOPADDING
+#define CM_SUPPORT_AES_CBC_PKCS7
+#define CM_SUPPORT_AES_GCM
+#define CM_SUPPORT_AES_CTR_NOPADDING
+#define CM_SUPPORT_AES_ECB_NOPADDING
+#define CM_SUPPORT_AES_ECB_PKCS7PADDING
+
+/* BN */
+#define CM_SUPPORT_BN_C
+
+/* ECC */
+#define CM_SUPPORT_ECC_C
+#define CM_SUPPORT_ECC_GENERATE_KEY
+#define CM_SUPPORT_ECC_GET_PUBLIC_KEY
+
+#define CM_SUPPORT_ECDH_C
+#define CM_SUPPORT_ECDH_AGREE_KEY
+
+#define CM_SUPPORT_ECDSA_C
+#define CM_SUPPORT_ECDSA_SIGN_VERIFY
+
+/* ED25519 */
+#define CM_SUPPORT_ED25519_C
+#define CM_SUPPORT_ED25519_GENERATE_KEY
+#define CM_SUPPORT_ED25519_SIGN_VERIFY
+#define CM_SUPPORT_ED2519_GET_PUBLIC_KEY
+
+/* HASH */
+#define CM_SUPPORT_HASH_C
+#define CM_SUPPORT_HASH_SHA1
+#define CM_SUPPORT_HASH_SHA224
+#define CM_SUPPORT_HASH_SHA256
+#define CM_SUPPORT_HASH_SHA384
+#define CM_SUPPORT_HASH_SHA512
+#define CM_SUPPORT_HASH_MD5
+
+/* HMAC */
+#define CM_SUPPORT_HMAC_C
+#define CM_SUPPORT_HMAC_GENERATE_KEY
+#define CM_SUPPORT_HMAC_SHA1
+#define CM_SUPPORT_HMAC_SHA224
+#define CM_SUPPORT_HMAC_SHA256
+#define CM_SUPPORT_HMAC_SHA384
+#define CM_SUPPORT_HMAC_SHA512
+
+/* KDF */
+#define CM_SUPPORT_KDF_C
+#define CM_SUPPORT_KDF_PBKDF2
+#define CM_SUPPORT_KDF_HKDF
+
+/* RSA */
+#define CM_SUPPORT_RSA_C
+#define CM_SUPPORT_RSA_GENERATE_KEY
+#define CM_SUPPORT_RSA_CRYPT
+#define CM_SUPPORT_RSA_SIGN_VERIFY
+#define CM_SUPPORT_RSA_GET_PUBLIC_KEY
+#define CM_SUPPORT_RSA_ECB_NOPADDING
+#define CM_SUPPORT_RSA_ECB_PKCS1PADDING
+#define CM_SUPPORT_RSA_ECB_OAEPPADDING_SHA1MGF1
+#define CM_SUPPORT_RSA_ECB_OAEPPADDING_SHA224MGF1
+#define CM_SUPPORT_RSA_ECB_OAEPPADDING_SHA256MGF1
+#define CM_SUPPORT_RSA_ECB_OAEPPADDING_SHA384MGF1
+#define CM_SUPPORT_RSA_ECB_OAEPPADDING_SHA512MGF1
+#define CM_SUPPORT_RSA_ECB_OEAPPADDING
+#define CM_SUPPORT_RSA_PSS
+
+/* DH */
+#define CM_SUPPORT_DH_C
+#define CM_SUPPORT_DH_GENERATE_KEY
+#define CM_SUPPORT_DH_AGREE_KEY
+#define CM_SUPPORT_DH_GET_PUBLIC_KEY
+
+/* DSA */
+#define CM_SUPPORT_DSA_C
+#define CM_SUPPORT_DSA_GENERATE_KEY
+#define CM_SUPPORT_DSA_SIGN_VERIFY
+#define CM_SUPPORT_DSA_GET_PUBLIC_KEY
+
+/* X25519 */
+#define CM_SUPPORT_X25519_C
+#define CM_SUPPORT_X25519_GENERATE_KEY
+#define CM_SUPPORT_X25519_AGREE_KEY
+#define CM_SUPPORT_X25519_GET_PUBLIC_KEY
+
+#define CM_SUPPORT_ED25519_TO_X25519
+
+#if defined(CM_SUPPORT_AES_GENERATE_KEY) || defined(CM_SUPPORT_DH_GENERATE_KEY) ||       \
+    defined(CM_SUPPORT_DSA_GENERATE_KEY) || defined(CM_SUPPORT_ECC_GENERATE_KEY) ||      \
+    defined(CM_SUPPORT_ED25519_GENERATE_KEY) || defined(CM_SUPPORT_HMAC_GENERATE_KEY) || \
+    defined(CM_SUPPORT_RSA_GENERATE_KEY) || defined(CM_SUPPORT_X25519_GENERATE_KEY)
+#define CM_SUPPORT_API_GENERATE_KEY
+#define CM_SUPPORT_API_DELETE_KEY
+#define CM_SUPPORT_API_GET_KEY_PARAM_SET
+#define CM_SUPPORT_API_KEY_EXIST
+#endif
+
+#if defined(CM_SUPPORT_ECC_C) || defined(CM_SUPPORT_RSA_C) || defined(CM_SUPPORT_ED25519_C) || \
+    defined(CM_SUPPORT_X25519_C) || defined(CM_SUPPORT_AES_C) || defined(CM_SUPPORT_DSA_C) ||  \
+    defined(CM_SUPPORT_DH_C)
+#define CM_SUPPORT_API_IMPORT
+#endif
+
+#if defined(CM_SUPPORT_ECC_C) || defined(CM_SUPPORT_RSA_C) || defined(CM_SUPPORT_ED25519_C) || \
+    defined(CM_SUPPORT_X25519_C) || defined(CM_SUPPORT_AES_C) || defined(CM_SUPPORT_DSA_C) ||  \
+    defined(CM_SUPPORT_DH_C)
+#define CM_SUPPORT_API_EXPORT
+#endif
+
+#define CM_SUPPORT_API_GENERATE_RANDOM
+
+#if defined(CM_SUPPORT_ECDSA_SIGN_VERIFY) || defined(CM_SUPPORT_ED25519_SIGN_VERIFY) || \
+    defined(CM_SUPPORT_RSA_SIGN_VERIFY) || defined(CM_SUPPORT_DSA_SIGN_VERIFY)
+#define CM_SUPPORT_API_SIGN_VERIFY
+#endif
+
+#if defined(CM_SUPPORT_AES_C) || defined(CM_SUPPORT_RSA_CRYPT)
+#define CM_SUPPORT_API_CIPHER
+#endif
+
+#if defined(CM_SUPPORT_X25519_AGREE_KEY) || defined(CM_SUPPORT_ECDH_AGREE_KEY) || defined(CM_SUPPORT_DH_AGREE_KEY)
+#define CM_SUPPORT_API_AGREE_KEY
+#endif
+
+#ifdef CM_SUPPORT_KDF_C
+#define CM_SUPPORT_API_DERIVE_KEY
+#endif
+
+#ifdef CM_SUPPORT_HMAC_C
+#define CM_SUPPORT_API_MAC
+#endif
+
+#ifdef CM_SUPPORT_HASH_C
+#define CM_SUPPORT_API_HASH
+#endif
+
+#ifdef CM_SUPPORT_BN_C
+#define CM_SUPPORT_API_BN_EXP_MOD
+#endif
+
+#ifndef CM_SUPPORT_LITE_HEAP
+#define CM_SUPPORT_API_GET_KEY_INFO_LIST
+#endif
+
+#endif /* CM_CONFIG_H */
