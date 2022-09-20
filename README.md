@@ -1,39 +1,37 @@
-# security_certificate_manager
+# 证书管理<a name="ZH-CN_TOPIC_0000001096592945"></a>
 
-#### 介绍
-{**以下是 Gitee 平台说明，您可以替换此简介**
-Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN）。专为开发者提供稳定、高效、安全的云端软件开发协作平台
-无论是个人、团队、或是企业，都能够用 Gitee 实现代码托管、项目管理、协作开发。企业项目请看 [https://gitee.com/enterprises](https://gitee.com/enterprises)}
+-   [简介](#section11660541593)
+-   [目录](#section161941989596)
+-   [相关仓](#section1371113476307)
 
-#### 软件架构
-软件架构说明
+## 简介<a name="section11660541593"></a>
 
+证书管理主要提供系统级的证书管理能力，实现证书全生命周期（生成，存储，使用，销毁）的管理和安全使用 ，满足生态应用和上层业务的诉求。 
 
-#### 安装教程
+证书管理模块可以分为如下三大部分：
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+- SDK层：提供证书管理 API，供应用调用。
+- Service层：实现证书全生命周期管理。
+- Engine层：证书管理核心模块，负责证书的生成、存储、授权、使用、销毁等工作。其中密钥相关操作依赖于当前设备中的HUKS能力，证书管理通过HUKS组件提供对业务证书以及其关联密钥的生成，导入，存储，读取和删除等能力。 
 
-#### 使用说明
+## 目录<a name="section161941989596"></a>
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+```
+base/security/certificate_manager/
+├── build                             # 编译配置文件
+├── config                            # 系统根证书文件
+├── frameworks                        # 框架代码, 作为基础功能目录, 被interfaces和services使用.
+├── interfaces                        # 接口API代码
+│   └── innerkits
+│   └── kits
+├── services
+│   └── cert_manager_standard         # 证书管理核心功能代码
+├── test                              # 测试资源存放目录
+```
 
-#### 参与贡献
+## 相关仓<a name="section1371113476307"></a>
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
+**安全子系统**
 
+**security_huks**
 
-#### 特技
-
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)

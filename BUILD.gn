@@ -1,0 +1,214 @@
+# Copyright (C) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+group("cert_manager_sdk_test") {
+  testonly = true
+  if (os_level == "standard") {
+    deps = [ "//base/security/certificate_manager/test:unittest" ]
+  } else {
+  }
+}
+
+group("cert_manager_napi") {
+  if (os_level == "standard") {
+    if (support_jsapi) {
+      deps = [
+        "//base/security/certificate_manager/interfaces/kits/napi:certmanager",
+      ]
+    }
+  }
+}
+
+group("cipher_napi") {
+  if (os_level == "standard") {
+    if (support_jsapi) {
+      deps = []
+      #          [ "//base/security/huks/frameworks/crypto_lite/js/napi:cipher_napi" ]
+    }
+  }
+}
+
+group("cert_manager_type_base") {
+  if (os_level == "standard") {
+    deps = [
+      "//base/security/certificate_manager:cert_manager_napi",
+      "//base/security/certificate_manager/config:trusted_system_certificate0",
+      "//base/security/certificate_manager/config:trusted_system_certificate1",
+      "//base/security/certificate_manager/config:trusted_system_certificate10",
+      "//base/security/certificate_manager/config:trusted_system_certificate100",
+      "//base/security/certificate_manager/config:trusted_system_certificate101",
+      "//base/security/certificate_manager/config:trusted_system_certificate102",
+      "//base/security/certificate_manager/config:trusted_system_certificate103",
+      "//base/security/certificate_manager/config:trusted_system_certificate104",
+      "//base/security/certificate_manager/config:trusted_system_certificate105",
+      "//base/security/certificate_manager/config:trusted_system_certificate106",
+      "//base/security/certificate_manager/config:trusted_system_certificate107",
+      "//base/security/certificate_manager/config:trusted_system_certificate108",
+      "//base/security/certificate_manager/config:trusted_system_certificate109",
+      "//base/security/certificate_manager/config:trusted_system_certificate11",
+      "//base/security/certificate_manager/config:trusted_system_certificate110",
+      "//base/security/certificate_manager/config:trusted_system_certificate111",
+      "//base/security/certificate_manager/config:trusted_system_certificate112",
+      "//base/security/certificate_manager/config:trusted_system_certificate113",
+      "//base/security/certificate_manager/config:trusted_system_certificate114",
+      "//base/security/certificate_manager/config:trusted_system_certificate115",
+      "//base/security/certificate_manager/config:trusted_system_certificate116",
+      "//base/security/certificate_manager/config:trusted_system_certificate117",
+      "//base/security/certificate_manager/config:trusted_system_certificate118",
+      "//base/security/certificate_manager/config:trusted_system_certificate119",
+      "//base/security/certificate_manager/config:trusted_system_certificate12",
+      "//base/security/certificate_manager/config:trusted_system_certificate120",
+      "//base/security/certificate_manager/config:trusted_system_certificate121",
+      "//base/security/certificate_manager/config:trusted_system_certificate122",
+      "//base/security/certificate_manager/config:trusted_system_certificate123",
+      "//base/security/certificate_manager/config:trusted_system_certificate124",
+      "//base/security/certificate_manager/config:trusted_system_certificate125",
+      "//base/security/certificate_manager/config:trusted_system_certificate126",
+      "//base/security/certificate_manager/config:trusted_system_certificate127",
+      "//base/security/certificate_manager/config:trusted_system_certificate128",
+      "//base/security/certificate_manager/config:trusted_system_certificate13",
+      "//base/security/certificate_manager/config:trusted_system_certificate14",
+      "//base/security/certificate_manager/config:trusted_system_certificate15",
+      "//base/security/certificate_manager/config:trusted_system_certificate16",
+      "//base/security/certificate_manager/config:trusted_system_certificate17",
+      "//base/security/certificate_manager/config:trusted_system_certificate18",
+      "//base/security/certificate_manager/config:trusted_system_certificate19",
+      "//base/security/certificate_manager/config:trusted_system_certificate2",
+      "//base/security/certificate_manager/config:trusted_system_certificate20",
+      "//base/security/certificate_manager/config:trusted_system_certificate21",
+      "//base/security/certificate_manager/config:trusted_system_certificate22",
+      "//base/security/certificate_manager/config:trusted_system_certificate23",
+      "//base/security/certificate_manager/config:trusted_system_certificate24",
+      "//base/security/certificate_manager/config:trusted_system_certificate25",
+      "//base/security/certificate_manager/config:trusted_system_certificate26",
+      "//base/security/certificate_manager/config:trusted_system_certificate27",
+      "//base/security/certificate_manager/config:trusted_system_certificate28",
+      "//base/security/certificate_manager/config:trusted_system_certificate29",
+      "//base/security/certificate_manager/config:trusted_system_certificate3",
+      "//base/security/certificate_manager/config:trusted_system_certificate30",
+      "//base/security/certificate_manager/config:trusted_system_certificate31",
+      "//base/security/certificate_manager/config:trusted_system_certificate32",
+      "//base/security/certificate_manager/config:trusted_system_certificate33",
+      "//base/security/certificate_manager/config:trusted_system_certificate34",
+      "//base/security/certificate_manager/config:trusted_system_certificate35",
+      "//base/security/certificate_manager/config:trusted_system_certificate36",
+      "//base/security/certificate_manager/config:trusted_system_certificate37",
+      "//base/security/certificate_manager/config:trusted_system_certificate38",
+      "//base/security/certificate_manager/config:trusted_system_certificate39",
+      "//base/security/certificate_manager/config:trusted_system_certificate4",
+      "//base/security/certificate_manager/config:trusted_system_certificate40",
+      "//base/security/certificate_manager/config:trusted_system_certificate41",
+      "//base/security/certificate_manager/config:trusted_system_certificate42",
+      "//base/security/certificate_manager/config:trusted_system_certificate43",
+      "//base/security/certificate_manager/config:trusted_system_certificate44",
+      "//base/security/certificate_manager/config:trusted_system_certificate45",
+      "//base/security/certificate_manager/config:trusted_system_certificate46",
+      "//base/security/certificate_manager/config:trusted_system_certificate47",
+      "//base/security/certificate_manager/config:trusted_system_certificate48",
+      "//base/security/certificate_manager/config:trusted_system_certificate49",
+      "//base/security/certificate_manager/config:trusted_system_certificate5",
+      "//base/security/certificate_manager/config:trusted_system_certificate50",
+      "//base/security/certificate_manager/config:trusted_system_certificate51",
+      "//base/security/certificate_manager/config:trusted_system_certificate52",
+      "//base/security/certificate_manager/config:trusted_system_certificate53",
+      "//base/security/certificate_manager/config:trusted_system_certificate54",
+      "//base/security/certificate_manager/config:trusted_system_certificate55",
+      "//base/security/certificate_manager/config:trusted_system_certificate56",
+      "//base/security/certificate_manager/config:trusted_system_certificate57",
+      "//base/security/certificate_manager/config:trusted_system_certificate58",
+      "//base/security/certificate_manager/config:trusted_system_certificate59",
+      "//base/security/certificate_manager/config:trusted_system_certificate6",
+      "//base/security/certificate_manager/config:trusted_system_certificate60",
+      "//base/security/certificate_manager/config:trusted_system_certificate61",
+      "//base/security/certificate_manager/config:trusted_system_certificate62",
+      "//base/security/certificate_manager/config:trusted_system_certificate63",
+      "//base/security/certificate_manager/config:trusted_system_certificate64",
+      "//base/security/certificate_manager/config:trusted_system_certificate65",
+      "//base/security/certificate_manager/config:trusted_system_certificate66",
+      "//base/security/certificate_manager/config:trusted_system_certificate67",
+      "//base/security/certificate_manager/config:trusted_system_certificate68",
+      "//base/security/certificate_manager/config:trusted_system_certificate69",
+      "//base/security/certificate_manager/config:trusted_system_certificate7",
+      "//base/security/certificate_manager/config:trusted_system_certificate70",
+      "//base/security/certificate_manager/config:trusted_system_certificate71",
+      "//base/security/certificate_manager/config:trusted_system_certificate72",
+      "//base/security/certificate_manager/config:trusted_system_certificate73",
+      "//base/security/certificate_manager/config:trusted_system_certificate74",
+      "//base/security/certificate_manager/config:trusted_system_certificate75",
+      "//base/security/certificate_manager/config:trusted_system_certificate76",
+      "//base/security/certificate_manager/config:trusted_system_certificate77",
+      "//base/security/certificate_manager/config:trusted_system_certificate78",
+      "//base/security/certificate_manager/config:trusted_system_certificate79",
+      "//base/security/certificate_manager/config:trusted_system_certificate8",
+      "//base/security/certificate_manager/config:trusted_system_certificate80",
+      "//base/security/certificate_manager/config:trusted_system_certificate81",
+      "//base/security/certificate_manager/config:trusted_system_certificate82",
+      "//base/security/certificate_manager/config:trusted_system_certificate83",
+      "//base/security/certificate_manager/config:trusted_system_certificate84",
+      "//base/security/certificate_manager/config:trusted_system_certificate85",
+      "//base/security/certificate_manager/config:trusted_system_certificate86",
+      "//base/security/certificate_manager/config:trusted_system_certificate87",
+      "//base/security/certificate_manager/config:trusted_system_certificate88",
+      "//base/security/certificate_manager/config:trusted_system_certificate89",
+      "//base/security/certificate_manager/config:trusted_system_certificate9",
+      "//base/security/certificate_manager/config:trusted_system_certificate90",
+      "//base/security/certificate_manager/config:trusted_system_certificate91",
+      "//base/security/certificate_manager/config:trusted_system_certificate92",
+      "//base/security/certificate_manager/config:trusted_system_certificate93",
+      "//base/security/certificate_manager/config:trusted_system_certificate94",
+      "//base/security/certificate_manager/config:trusted_system_certificate95",
+      "//base/security/certificate_manager/config:trusted_system_certificate96",
+      "//base/security/certificate_manager/config:trusted_system_certificate97",
+      "//base/security/certificate_manager/config:trusted_system_certificate98",
+      "//base/security/certificate_manager/config:trusted_system_certificate99",
+    ]
+  } else if (os_level == "small") {
+    deps = []
+  } else {
+    deps = []
+  }
+}
+
+group("cert_manager_type_fwk") {
+  if (os_level == "standard") {
+    deps = [
+      "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk"
+    ]
+  } else if (os_level == "small") {
+    deps = []
+  } else {
+    deps = []
+  }
+}
+
+group("cert_manager_typer_services") {
+  if (os_level == "standard") {
+    deps = [
+      "//base/security/certificate_manager/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
+      "//base/security/certificate_manager/services/cert_manager_standard:cert_manager_service",
+      "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_engine/main/core:cert_manager_engine_core_standard",
+      "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_service/main/os_dependency/sa/sa_profile:cert_manager_sa_profile",
+    ]
+  } else if (os_level == "small") {
+    deps = []
+  } else {
+    deps = []
+  }
+}
+
+group("cert_manager_components") {
+  deps = [
+    "//base/security/certificate_manager:cert_manager_type_base",
+    "//base/security/certificate_manager:cert_manager_typer_services",
+  ]
+}

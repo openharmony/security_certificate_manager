@@ -1,0 +1,61 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+
+config("cert_manager_config") {
+  include_dirs = [
+    "include",
+    "cm_ipc/include",
+  ]
+}
+
+ohos_static_library("libcert_manager_os_dependency_standard_static") {
+  subsystem_name = "security"
+  part_name = "certificate_manager"
+  public_configs = [ ":cert_manager_config" ]
+  include_dirs = [
+    "log",
+    "//commonlibrary/c_utils/base/include",
+    "//utils/system/safwk/native/include",
+  ]
+  defines = [
+    "L2_STANDARD",
+    "_CM_LOG_ENABLE_",
+  ]
+  sources = [
+    "./cm_ipc/src/cm_ipc_check.c",
+    "./cm_ipc/src/cm_ipc_client.c",
+    "./cm_ipc/src/cm_ipc_serialization.c",
+    "./cm_ipc/src/cm_load_sa.cpp",
+    "./cm_ipc/src/cm_request.cpp",
+    "./log/cm_log.c",
+    "./posix/cm_mem.c",
+  ]
+  deps = [
+    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
+    "//third_party/openssl:libcrypto_shared",
+  ]
+  external_deps = [
+    "hiviewdfx_hilog_native:libhilog",
+    "ipc:ipc_core",
+    "samgr:samgr_proxy",
+  ]
+  cflags_cc = [
+    "-DHILOG_ENABLE",
+    "-Wall",
+    "-Werror",
+  ]
+  cflags = cflags_cc
+  complete_static_lib = true
+}

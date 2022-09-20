@@ -1,0 +1,69 @@
+{
+    "name": "@ohos/cert_manager",
+    "description": "The provider of certificate manangement capbility, which belongs to security subsystem",
+    "version": "3.1",
+    "license": "Apache License 2.0",
+    "publishAs": "code-segment",
+    "segment": {
+        "destPath": "base/security/certificate_manager"
+    },
+    "dirs":{},
+    "scripts": {
+      "install": "DEST_PATH=${DEP_BUNDLE_BASE}/base/security/certificate_manager && mkdir -p $DEST_PATH && cp -r ./* $DEST_PATH"
+    },
+    "author": {},
+    "repository": "",
+    "component": {
+      "name": "certificate_manager",
+      "subsystem": "security",
+      "syscap": [ "SystemCapability.Security.CertificateManager" ],
+      "features": [],
+      "adapted_system_type": [
+          "standard",
+          "small",
+          "mini"
+        ],
+      "rom": "5000KB",
+      "ram": "500kB",
+      "deps": {
+        "components": [
+          "libhilog",
+          "ipc_core",
+          "system_ability_fwk",
+          "samgr_proxy",
+          "c_utils"
+        ],
+        "third_party": [
+          "openssl",
+          "bounds_checking_function"
+        ]
+      },
+      "build": {
+        "group_type": {
+          "base_group": [
+            "//base/security/certificate_manager:cert_manager_type_base"
+          ],
+          "fwk_group": [
+              "//base/security/certificate_manager:cert_manager_type_fwk"
+          ],
+          "service_group": [
+              "//base/security/certificate_manager:cert_manager_typer_services"
+          ]
+      },
+        "inner_kits": [
+          {
+            "name": "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+            "header": {
+              "header_files": [
+                "cert_manager_api.h"
+              ],
+              "header_base": "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main/include"
+            }
+          }
+        ],
+        "test": [
+            "//base/security/certificate_manager/test:unittest"
+        ]
+      }
+    }
+  }

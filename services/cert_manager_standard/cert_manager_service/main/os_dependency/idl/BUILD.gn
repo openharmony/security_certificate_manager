@@ -1,0 +1,71 @@
+# Copyright (C) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+
+config("cert_manager_config") {
+  include_dirs = [
+    "cm_ipc",
+   ]
+}
+
+ohos_static_library("libcm_service_idl_standard_static") {
+  subsystem_name = "security"
+  part_name = "certificate_manager"
+  public_configs = [ ":cert_manager_config" ]
+  include_dirs = [
+    "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_service/main/os_dependency/idl/cm_passthrough",
+    "//third_party/json/include",
+    "//commonlibrary/c_utils/base/include",
+    "//base/security/huks/interfaces/innerkits/huks_standard/main/include",
+    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency/cm_ipc/include",
+    "//third_party/openssl/include"
+  ]
+  defines = [
+    "L2_STANDARD",
+    "_CM_LOG_ENABLE_",
+  ]
+  sources = [
+    "cm_ipc/cm_ipc_serialization.c",
+    "cm_ipc/cm_ipc_service.c",
+    "cm_ipc/cm_response.cpp",
+  ]
+  deps = [
+    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_os_dependency_standard_static",
+    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
+    "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_engine/main/core:cert_manager_engine_core_standard",
+    "//third_party/openssl:libcrypto_shared"
+  ]
+  external_deps = [
+    "ipc:ipc_core",
+    "os_account:os_account_innerkits",
+    "c_utils:utils"
+  ]
+
+  if (support_jsapi) {
+    external_deps += [
+      "access_token:libaccesstoken_sdk",
+      "os_account:os_account_innerkits"
+    ]
+    defines += [
+    ]
+  }
+
+  cflags_cc = [
+    "-DHILOG_ENABLE",
+    "-Wall",
+    "-Werror",
+  ]
+  cflags = cflags_cc
+  complete_static_lib = true
+}
