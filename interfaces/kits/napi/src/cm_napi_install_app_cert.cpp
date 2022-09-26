@@ -134,15 +134,17 @@ static napi_value InstallAppCertParseParams(
     return GetInt32(env, 0);
 }
 
-static void InitKeyUri(struct CmBlob *keyUri)
+static void InitKeyUri(struct CmBlob *&keyUri)
 {
-    if (keyUri == nullptr) {
+    keyUri = (uint8_t *)CmMalloc(sizeof(struct CmBlob));
+    if (keyUri == NULL) {
+        CM_LOG_E("malloc keyUri buffer failed");
         return;
     }
 
     keyUri->data = (uint8_t *)CmMalloc(MAX_LEN_URI);
     if (keyUri->data == NULL) {
-        CM_LOG_E("malloc file buffer failed");
+        CM_LOG_E("malloc keyUri->data buffer failed");
         return;
     }
 

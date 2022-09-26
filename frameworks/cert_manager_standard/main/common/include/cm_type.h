@@ -37,7 +37,7 @@ extern "C" {
 
 #define MAX_LEN_CERTIFICATE_CHAIN    (3 * MAX_LEN_CERTIFICATE)
 
-#define MAX_SUFFIX_LEN           8
+#define MAX_SUFFIX_LEN           16
 #define MAX_COUNT_CERTIFICATE    256
 #define MAX_LEN_URI              64
 #define MAX_LEN_CERT_ALIAS       64
