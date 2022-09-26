@@ -256,15 +256,22 @@ int32_t CmClientSetCertStatus(const struct CmContext *cmContext, const struct Cm
 static int32_t CmInstallAppCertUnpackFromService(const struct CmBlob *outData, struct CmBlob *keyUri)
 {
     uint32_t offset = 0;
+    struct CmBlob blob = { 0, NULL };
+
     if ((outData == NULL) || (keyUri == NULL) || (outData->data == NULL) ||
         (keyUri->data == NULL)) {
         return CMR_ERROR_NULL_POINTER;
     }
 
-    int32_t ret = CmGetBlobFromBuffer(keyUri, outData, &offset);
+    int32_t ret = CmGetBlobFromBuffer(&blob, outData, &offset);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get keyUri failed");
         return ret;
+    }
+
+    if ((blob.size > keyUri->size) || memcpy_s(keyUri->data, keyUri->size, blob.data, blob.size) != EOK) {
+        CM_LOG_E("copy keyUri failed");
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     return CM_SUCCESS;
@@ -568,6 +575,8 @@ static int32_t CmGetAppCertFromBuffer(struct Credential *certificateInfo,
 static int32_t CmAppCertInfoUnpackFromService(const struct CmBlob *outData, struct Credential *certificateInfo)
 {
     uint32_t offset = 0;
+    struct CmBlob blob = { 0, NULL };
+
     if ((outData == NULL) || (certificateInfo == NULL) || (outData->data == NULL) ||
         (certificateInfo->credData.data == NULL)) {
         return CMR_ERROR_NULL_POINTER;
@@ -597,10 +606,16 @@ static int32_t CmAppCertInfoUnpackFromService(const struct CmBlob *outData, stru
         return ret;
     }
 
-    ret = CmGetBlobFromBuffer(&certificateInfo->credData, outData, &offset);
+    ret = CmGetBlobFromBuffer(&blob, outData, &offset);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get certificateInfo->credData failed");
         return ret;
+    }
+
+    if ((blob.size > certificateInfo->credData.size) || memcpy_s(certificateInfo->credData.data,
+		certificateInfo->credData.size, blob.data, blob.size) != EOK) {
+        CM_LOG_E("copy credData failed");
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     return CM_SUCCESS;
