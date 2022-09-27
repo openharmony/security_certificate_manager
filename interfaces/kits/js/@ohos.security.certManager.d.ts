@@ -27,6 +27,7 @@ declare namespace certManager {
      * @since 9
      * @syscap SystemCapability.Security.CertManager
      * @param context Indicates the context of the calling interface application.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
     function getSystemTrustedCertificateList(context: CMContext, callback: AsyncCallback<CMResult>) : void;
     function getSystemTrustedCertificateList(context: CMContext) : Promise<CMResult>;
@@ -37,6 +38,7 @@ declare namespace certManager {
      * @syscap SystemCapability.Security.CertManager
      * @param context Indicates the context of the calling interface application.
      * @param certUri Indicates the certificate's name.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
     function getSystemTrustedCertificate(context: CMContext, certUri: string, callback: AsyncCallback<CMResult>) : void;
     function getSystemTrustedCertificate(context: CMContext, certUri: string) : Promise<CMResult>;
@@ -45,10 +47,12 @@ declare namespace certManager {
      * Set the status of root certificates.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
+     * @param context Indicates the context of the calling interface application.
      * @param certUri Indicates the certificate's name.
      * @param store Indicates the type of certificate.
-     * @param context Indicates the context of the calling interface application.
      * @param status Indicates the status of certificate to be set.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
+     * @systemapi Hide this for inner system use
      */
     function setCertificateStatus(context: CMContext, certUri: string, store: number, status: boolean, callback: AsyncCallback<CMResult>) : void;
     function setCertificateStatus(context: CMContext, certUri: string, store: number, status: boolean) : Promise<CMResult>;
@@ -57,255 +61,264 @@ declare namespace certManager {
      * Install the user root certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param certificate Indicates the certificate file.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
+     * @systemapi Hide this for inner system use
      */
-    function installUserTrustedCertificate(context: CMContext, certificate: CMBlob, callback: AsyncCallback<CMResult>) : void;
-    function installUserTrustedCertificate(context: CMContext, certificate: CMBlob,) : Promise<CMResult>;
+    function installUserTrustedCertificate(certificate: CertBlob, callback: AsyncCallback<CMResult>) : void;
+    function installUserTrustedCertificate(certificate: CertBlob,) : Promise<CMResult>;
 
     /**
      * Uninstall all user root certificates.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
+     * @systemapi Hide this for inner system use
      */
-    function uninstallAllUserTrustedCertificate(context: CMContext, callback: AsyncCallback<CMResult>) : void;
-    function uninstallAllUserTrustedCertificate(context: CMContext) : Promise<CMResult>;
+    function uninstallAllUserTrustedCertificate(callback: AsyncCallback<CMResult>) : void;
+    function uninstallAllUserTrustedCertificate() : Promise<CMResult>;
 
     /**
      * Uninstall the specified user root certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param certUri Indicates the certificate's name.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
+     * @systemapi Hide this for inner system use
      */
-    function uninstallUserTrustedCertificate(context: CMContext, certUri: string, callback: AsyncCallback<CMResult>) : void;
-    function uninstallUserTrustedCertificate(context: CMContext, certUri: string) : Promise<CMResult>;
+    function uninstallUserTrustedCertificate(certUri: string, callback: AsyncCallback<CMResult>) : void;
+    function uninstallUserTrustedCertificate(certUri: string) : Promise<CMResult>;
 
     /**
      * Get a list of user root certificates.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function getUserTrustedCertificateList(context: CMContext, callback: AsyncCallback<CMResult>) : void;
-    function getUserTrustedCertificateList(context: CMContext) : Promise<CMResult>;
+    function getUserTrustedCertificateList(callback: AsyncCallback<CMResult>) : void;
+    function getUserTrustedCertificateList() : Promise<CMResult>;
 
     /**
      * Get the detail of user root certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param certUri Indicates the certificate's name.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function getUserTrustedCertificate(context: CMContext, certUri: string, callback: AsyncCallback<CMResult>) : void;
-    function getUserTrustedCertificate(context: CMContext, certUri: string) : Promise<CMResult>;
+    function getUserTrustedCertificate(certUri: string, callback: AsyncCallback<CMResult>) : void;
+    function getUserTrustedCertificate(certUri: string) : Promise<CMResult>;
 
     /**
      * Install normal application certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param keystore Indicates the keystore file with key pair and certificate.
      * @param keystorePwd Indicates the password of keystore file.
      * @param certAlias Indicates the certificate name inputted by the user.
-     * @param keyProperties Indicates the properties of keys in keystore file.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
+     * @systemapi Hide this for inner system use
      */
-    function installAppCertificate(context: CMContext, keystore: CMBlob, keystorePwd: string, certAlias: string, keyProperties: CMKeyProperties, callback: AsyncCallback<CMResult>) : void;
-    function installAppCertificate(context: CMContext, keystore: CMBlob, keystorePwd: string, certAlias: string, keyProperties: CMKeyProperties) : Promise<CMResult>;
+    function installAppCertificate(keystore: Uint8Array, keystorePwd: string, certAlias: string, callback: AsyncCallback<CMResult>) : void;
+    function installAppCertificate(keystore: Uint8Array, keystorePwd: string, certAlias: string) : Promise<CMResult>;
 
     /**
      * Install private application certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param keystore Indicates the keystore file with key pair and certificate.
      * @param keystorePwd Indicates the password of keystore file.
      * @param certAlias Indicates the certificate name inputted by the user.
-     * @param keyProperties Indicates the properties of keys in keystore file.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function installPrivateCertificate(context: CMContext, keystore: CMBlob, keystorePwd: string, certAlias: string, keyProperties: CMKeyProperties, callback: AsyncCallback<CMResult>) : void;
-    function installPrivateCertificate(context: CMContext, keystore: CMBlob, keystorePwd: string, certAlias: string, keyProperties: CMKeyProperties) : Promise<CMResult>;
+    function installPrivateCertificate(keystore: Uint8Array, keystorePwd: string, certAlias: string, callback: AsyncCallback<CMResult>) : void;
+    function installPrivateCertificate(keystore: Uint8Array, keystorePwd: string, certAlias: string) : Promise<CMResult>;
 
     /**
      * Generate private application certificate locally.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param keyAlias Indicates the key alias inputted by the user.
      * @param keyProperties Indicates the properties of keys in keystore file.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function generatePrivateCertificate(context: CMContext, keyAlias: string, keyProperties: CMKeyProperties, callback: AsyncCallback<CMResult>) : void;
-    function generatePrivateCertificate(context: CMContext, keyAlias: string, keyProperties: CMKeyProperties) : Promise<CMResult>;
+    function generatePrivateCertificate(keyAlias: string, keyProperties: CMKeyProperties, callback: AsyncCallback<CMResult>) : void;
+    function generatePrivateCertificate(keyAlias: string, keyProperties: CMKeyProperties) : Promise<CMResult>;
 
     /**
      * Update private application certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param type Indicates the type of the certificate used.
      * @param keyUri Indicates key's name.
      * @param certificate Indicates the certificate file.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function updatePrivateCertificate(context: CMContext, type: string, keyUri: string, certificate: CMBlob, callback: AsyncCallback<CMResult>) : void;
-    function updatePrivateCertificate(context: CMContext, type: string, keyUri: string, certificate: CMBlob) : Promise<CMResult>;
+    function updatePrivateCertificate(type: string, keyUri: string, certificate: CertBlob, callback: AsyncCallback<CMResult>) : void;
+    function updatePrivateCertificate(type: string, keyUri: string, certificate: CertBlob) : Promise<CMResult>;
 
     /**
      * Uninstall all application certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
+     * @systemapi Hide this for inner system use
      */
-    function uninstallAllAppCertificate(context: CMContext, callback: AsyncCallback<CMResult>) : void;
-    function uninstallAllAppCertificate(context: CMContext) : Promise<CMResult>;
+    function uninstallAllAppCertificate(callback: AsyncCallback<CMResult>) : void;
+    function uninstallAllAppCertificate() : Promise<CMResult>;
 
     /**
      * Uninstall the specified normal application certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param keyUri Indicates key's name.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
+     * @systemapi Hide this for inner system use
      */
-    function uninstallAppCertificate(context: CMContext, keyUri: string, callback: AsyncCallback<CMResult>) : void;
-    function uninstallAppCertificate(context: CMContext, keyUri: string) : Promise<CMResult>;
+    function uninstallAppCertificate(keyUri: string, callback: AsyncCallback<CMResult>) : void;
+    function uninstallAppCertificate(keyUri: string) : Promise<CMResult>;
 
     /**
      * Uninstall the specified normal application certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param keyUri Indicates key's name.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function uninstallPrivateCertificate(context: CMContext, keyUri: string, callback: AsyncCallback<CMResult>) : void;
-    function uninstallPrivateCertificate(context: CMContext, keyUri: string) : Promise<CMResult>;
+    function uninstallPrivateCertificate(keyUri: string, callback: AsyncCallback<CMResult>) : void;
+    function uninstallPrivateCertificate(keyUri: string) : Promise<CMResult>;
 
     /**
      * Get a list of normal application certificates.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
+     * @systemapi Hide this for inner system use
      */
-    function getAppCertificateList(context: CMContext, callback: AsyncCallback<CMResult>) : void;
-    function getAppCertificateList(context: CMContext) : Promise<CMResult>;
+    function getAppCertificateList(callback: AsyncCallback<CMResult>) : void;
+    function getAppCertificateList() : Promise<CMResult>;
 
     /**
      * Get a list of private application certificates.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
+     * @systemapi Hide this for inner system use
      */
-    function getPrivateCertificateList(context: CMContext, callback: AsyncCallback<CMResult>) : void;
-    function getPrivateCertificateList(context: CMContext) : Promise<CMResult>;
+    function getPrivateCertificateList(callback: AsyncCallback<CMResult>) : void;
+    function getPrivateCertificateList() : Promise<CMResult>;
 
     /**
      * Get the detail of normal application certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param keyUri Indicates key's name.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function getAppCertificate(context: CMContext, keyUri: string, callback: AsyncCallback<CMResult>) : void;
-    function getAppCertificate(context: CMContext, keyUri: string, ) : Promise<CMResult>;
+    function getAppCertificate(keyUri: string, callback: AsyncCallback<CMResult>) : void;
+    function getAppCertificate(keyUri: string, ) : Promise<CMResult>;
 
     /**
      * Get the detail of private application certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param keyUri Indicates key's name.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function getPrivateCertificate(context: CMContext, keyUri: string, callback: AsyncCallback<CMResult>) : void;
-    function getPrivateCertificate(context: CMContext, keyUri: string) : Promise<CMResult>;
+    function getPrivateCertificate(keyUri: string, callback: AsyncCallback<CMResult>) : void;
+    function getPrivateCertificate(keyUri: string) : Promise<CMResult>;
 
     /**
      * Authorize the specified application certificate for the specified application.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param keyUri Indicates key's name.
-     * @param clientApp Indicates the context of the authorized application.
+     * @param clientAppUid Indicates the uid of the authorized application.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
+     * @systemapi Hide this for inner system use
      */
-    function grantAppCertificate(context: CMContext, keyUri: string, clientApp: CMContext, callback: AsyncCallback<CMResult>) : void;
-    function grantAppCertificate(context: CMContext, keyUri: string, clientApp: CMContext) : Promise<CMResult>;
+    function grantAppCertificate(keyUri: string, clientAppUid: string, callback: AsyncCallback<CMResult>) : void;
+    function grantAppCertificate(keyUri: string, clientAppUid: string) : Promise<CMResult>;
 
     /**
      * Whether the current application is authorized by the specified application certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param keyUri Indicates key's name.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function isAuthorizedApp(context: CMContext, keyUri: string, callback: AsyncCallback<CMResult>) : void;
-    function isAuthorizedApp(context: CMContext, keyUri: string) : Promise<CMResult>;
+    function isAuthorizedApp(keyUri: string, callback: AsyncCallback<CMResult>) : void;
+    function isAuthorizedApp(keyUri: string) : Promise<CMResult>;
 
     /**
      * Get the list of applications authorized by the specified certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param keyUri Indicates key's name.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
+     * @systemapi Hide this for inner system use
      */
-    function getAuthorizedAppList(context: CMContext, keyUri: string, callback: AsyncCallback<CMResult>) : void;
-    function getAuthorizedAppList(context: CMContext, keyUri: string) : Promise<CMResult>;
+    function getAuthorizedAppList(keyUri: string, callback: AsyncCallback<CMResult>) : void;
+    function getAuthorizedAppList(keyUri: string) : Promise<CMResult>;
 
     /**
      * Deauthorize the specified application from the specified application certificate.
      * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param keyUri Indicates key's name.
-     * @param clientApp Indicates the context of the deauthorized application.
+     * @param clientAppUid Indicates the uid of the deauthorized application.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
+     * @systemapi Hide this for inner system use
      */
-    function removeGrantAppCertificate(context: CMContext, keyUri: string, clientApp: CMContext, callback: AsyncCallback<CMResult>) : void;
-    function removeGrantAppCertificate(context: CMContext, keyUri: string, clientApp: CMContext) : Promise<CMResult>;
+    function removeGrantedAppCertificate(keyUri: string, clientAppUid: string, callback: AsyncCallback<CMResult>) : void;
+    function removeGrantedAppCertificate(keyUri: string, clientAppUid: string) : Promise<CMResult>;
 
     /**
-     * Init Operation.
-     * @since 8
+     * Init operation for signing and verifying etc.
+     * @since 9
      * @syscap SystemCapability.Security.CertManager
-     * @param context Indicates the context of the calling interface application.
      * @param authUri Indicates the authorization relationship between application and application certificate.
      * @param spec Indicates the properties of the signature and verification..
      * @return The handle of the init Operation.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function init(context: CMContext, authUri: string, spec: CMSignatureSpec, callback: AsyncCallback<CMHandle>) : void; 
-    function init(context: CMContext, authUri: string, spec: CMSignatureSpec) : Promise<CMHandle>;
+    function init(authUri: string, spec: CMSignatureSpec, callback: AsyncCallback<CMHandle>) : void; 
+    function init(authUri: string, spec: CMSignatureSpec) : Promise<CMHandle>;
 
     /**
-     * Update Operation.
-     * @since 8
+     * Update operation for signing and verifying etc.
+     * @since 9
      * @syscap SystemCapability.Security.Huks
-     * @param context Indicates the context of the calling interface application.
      * @param handle Indicates the handle of the init operation.
      * @param data Indicates the input value.
      * @param token Indicates the value of token.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function update(context: CMContext, handle: number, data: Uint8Array, callback: AsyncCallback<CMResult>) : void;
-    function update(context: CMContext, handle: number, data: Uint8Array, token: Uint8Array, callback: AsyncCallback<CMResult>) : void;
-    function update(context: CMContext, handle: number, data: Uint8Array, token?: Uint8Array) : Promise<CMResult>;
+    function update(handle: number, data: Uint8Array, callback: AsyncCallback<CMResult>) : void;
+    function update(handle: number, data: Uint8Array, token: Uint8Array, callback: AsyncCallback<CMResult>) : void;
+    function update(handle: number, data: Uint8Array, token?: Uint8Array) : Promise<CMResult>;
 
 
     /**
-     * Finish Operation.
-     * @since 8
+     * Finish operation for signing and verifying etc.
+     * @since 9
      * @syscap SystemCapability.Security.Huks
-     * @param context Indicates the context of the calling interface application.
      * @param handle Indicates the handle of the init operation.
      * @param signature Indicates the sign data.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function finish(context: CMContext, handle: number, callback: AsyncCallback<CMResult>) : void;
-    function finish(context: CMContext, handle: number, signature: Uint8Array, callback: AsyncCallback<CMResult>) : void;
-    function finish(context: CMContext, handle: number, signature?: Uint8Array) : Promise<CMResult>;
+    function finish(handle: number, callback: AsyncCallback<CMResult>) : void;
+    function finish(handle: number, signature: Uint8Array, callback: AsyncCallback<CMResult>) : void;
+    function finish(handle: number, signature?: Uint8Array) : Promise<CMResult>;
 
     /**
-     * Abort Operation.
-     * @since 8
+     * Abort operation for signing and verifying etc.
+     * @since 9
      * @syscap SystemCapability.Security.Huks
-     * @param context Indicates the context of the calling interface application.
      * @param handle Indicates the handle of the init operation.
+     * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function abort(context: CMContext, handle: number, callback: AsyncCallback<CMResult>) : void;
-    function abort(context: CMContext, handle: number) : Promise<CMResult>;
+    function abort(handle: number, callback: AsyncCallback<CMResult>) : void;
+    function abort(handle: number) : Promise<CMResult>;
 
     export interface CMContext {
         userId: string;
@@ -322,7 +335,6 @@ declare namespace certManager {
         serial: string;
         notBefore: string;
         notAfter: string;
-        fingerprintSha1: string;
         fingerprintSha256: string;
         cert: Uint8Array;
     }
@@ -349,9 +361,9 @@ declare namespace certManager {
         keyUri: string;
     }
 
-    export interface CMBlob {
-        readonly inData?: Uint8Array;
-        readonly alias?: string;
+    export interface CertBlob {
+        inData: Uint8Array;
+        alias: string;
     }
 
     export interface CMResult {
@@ -360,7 +372,7 @@ declare namespace certManager {
         certInfo?: CertInfo;
         credentialList?: Array<CredentialAbstract>;
         credential?: Credential;
-        appList?: Array<CMContext>;
+        appUidList?: Array<string>;
         authUri?: string;
         outData?: Uint8Array;
         isAuth?: boolean;
@@ -392,45 +404,10 @@ declare namespace certManager {
 
     export enum CMErrorCode {
         CM_SUCCESS = 0,
-        CM_FAILURE = -1,
-        CM_ERROR_INSTALL_CERTIFICATE = -2,
-        CM_ERROR_SET_STATUS = -3,
-        CM_ERROR_INVALID_ARGUMENT = -3,
-        CM_ERROR_INVALID_STORE = -4,
-        CM_ERROR_NOT_SUPPORTED = -5,
-        CM_ERROR_UNINSTALL = -6,
-        CM_ERROR_NO_PERMISSION = -7,
-        CM_ERROR_INSUFFICIENT_DATA = -8,
-        CM_ERROR_GET_CERTIRICATE = -9,
-        CM_ERROR_STORAGE_FAILURE = -10,
-        CM_ERROR_HARDWARE_FAILURE = -11,
-        CM_ERROR_ALREADY_EXISTS = -12,
-        CM_ERROR_NOT_EXIST = -13,
-        CM_ERROR_NULL_POINTER = -14,
-        CM_ERROR_FILE_SIZE_FAIL = -15,
-        CM_ERROR_READ_FILE_FAIL = -16,
-        CM_ERROR_INVALID_PUBLIC_KEY = -17,
-        CM_ERROR_INVALID_PRIVATE_KEY = -18,
-        CM_ERROR_INVALID_KEY_INFO = -19,
-        CM_ERROR_REMOVE_CERTIFICATE_FAIL = -20,
-        CM_ERROR_OPEN_FILE_FAIL = -21,
-        CM_ERROR_INVALID_KEY_FILE = -22,
-        CM_ERROR_IPC_MSG_FAIL = -23,
-        CM_ERROR_REQUEST_OVERFLOWS = -24,
-        CM_ERROR_PARAM_NOT_EXIST = -25,
-        CM_ERROR_CRYPTO_ENGINE_ERROR = -26,
-        CM_ERROR_COMMUNICATION_TIMEOUT = -27,
-        CM_ERROR_IPC_INIT_FAIL = -28,
-        CM_ERROR_IPC_DLOPEN_FAIL = -29,
-        CM_ERROR_EFUSE_READ_FAIL = -30,
-
-        CM_ERROR_CHECK_GET_ALG_FAIL = -100,
-        CM_ERROR_CHECK_GET_KEY_SIZE_FAIL = -101,
-        CM_ERROR_CHECK_GET_PADDING_FAIL = -102,
-        CM_ERROR_INVALID_DIGEST =  -117,
-
-        CM_ERROR_INTERNAL_ERROR = -999,
-        CM_ERROR_UNKNOWN_ERROR = -1000,
+        CM_ERROR_INNER_ERROR = 17500001,
+        CM_ERROR_NO_PERMISSION = 17500002,
+        CM_ERROR_NO_FOUND = 17500003,
+        CM_ERROR_X509_FORMATE = 17500004,
     }
 }
 
