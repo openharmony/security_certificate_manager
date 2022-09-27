@@ -113,13 +113,13 @@ int32_t GetFilePath(const struct CmContext *context, uint32_t store, char *pathP
 {
     int32_t ret, retVal;
     if (suffix == NULL || suffixLen == NULL) {
-        CM_LOG_E("NULL pointer failure.\n");
+        CM_LOG_E("NULL pointer failure");
         return CMR_ERROR_NULL_POINTER;
     }
 
     switch (store) {
         if (context == NULL) {
-            CM_LOG_E("Null pointer failture.\n");
+            CM_LOG_E("Null pointer failture");
             return CMR_ERROR_NULL_POINTER;
         }
         case CM_CREDENTIAL_STORE:
@@ -135,6 +135,7 @@ int32_t GetFilePath(const struct CmContext *context, uint32_t store, char *pathP
 
             retVal = sprintf_s(suffix, MAX_SUFFIX_LEN, "%u", context->uid);
             if (ret < 0 || retVal < 0) {
+                CM_LOG_E("Construct file Path failed ret:%d, retVal:%d", ret, retVal);
                 return CMR_ERROR;
             }
             break;
