@@ -27,7 +27,7 @@
 
 #include "securec.h"
 
-#define MAX_UINT32_LEN 11
+#define MAX_UINT32_LEN 16
 #define MAC_SHA256_LEN 32
 
 #define NUMBER_9_IN_DECIMAL 9
@@ -101,6 +101,7 @@ static int32_t GetAndCheckUriObj(struct CMUri *uriObj, const struct CmBlob *uri)
         (uriObj->app == NULL) ||
         (uriObj->type != CM_URI_TYPE_APP_KEY)) {
         CM_LOG_E("uri format invalid");
+        (void)CertManagerFreeUri(uriObj);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -123,7 +124,7 @@ static int32_t CheckCallerIsProducer(const struct CmContext *context, const stru
 static int32_t UintToString(uint32_t input, char *out, uint32_t outLen)
 {
     if (snprintf_s(out, outLen, outLen - 1, "%u", input) < 0) {
-        return CMR_ERROR_BAD_STATE;
+        return CMR_ERROR_INVALID_OPERATION;
     }
     return CM_SUCCESS;
 }
@@ -139,13 +140,13 @@ static int32_t ConstructUri(const struct CMUri *uriObj, struct CmBlob *outUri)
 
     if ((outLen == 0) || (outLen > MAX_OUT_BLOB_SIZE)) {
         CM_LOG_E("invalid outLen[%u]", outLen);
-        return CMR_ERROR_BAD_STATE;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     char *data = (char *)CMMalloc(outLen);
     if (data == NULL) {
         CM_LOG_E("malloc uri buf failed");
-        return CMR_ERROR_BAD_STATE;
+        return CMR_ERROR_INVALID_OPERATION;
     }
     (void)memset_s(data, outLen, 0, outLen);
     outUri->size = outLen; /* include 1 byte: the terminator('\0')  */
@@ -346,7 +347,7 @@ static int32_t GenerateAuthUri(const struct CMUri *uriObj, uint32_t clientUid, s
         }
         if (memcpy_s(authUri->data, authUri->size, tempAuthUri.data, tempAuthUri.size) != EOK) {
             CM_LOG_E("copy auth uri failed");
-            ret = CMR_ERROR_BAD_STATE;
+            ret = CMR_ERROR_INVALID_OPERATION;
             break;
         }
         authUri->size = tempAuthUri.size;
@@ -437,7 +438,7 @@ int32_t CmAuthGetAuthorizedAppList(const struct CmContext *context, const struct
             }
             if (memcpy_s(appUidList->appUid, appUidList->appUidCount * sizeof(uint32_t),
                 tempAppUidList.appUid, tempAppUidList.appUidCount * sizeof(uint32_t)) != EOK) {
-                ret = CMR_ERROR_BAD_STATE;
+                ret = CMR_ERROR_INVALID_OPERATION;
                 break;
             }
         }
@@ -592,7 +593,7 @@ static int32_t DeleteAuthInfo(uint32_t userId, const struct CmBlob *uri, const s
     return ret;
 }
 
-/* 删除凭据时调用 */
+/* clear auth info when delete public credential */
 int32_t CmAuthDeleteAuthInfo(const struct CmContext *context, const struct CmBlob *uri)
 {
     struct CmAppUidList appUidList = { 0, NULL };
@@ -625,7 +626,7 @@ int32_t CmAuthDeleteAuthInfo(const struct CmContext *context, const struct CmBlo
     return ret;
 }
 
-/* 用户删除时调用 */
+/* clear auth info when delete user */
 int32_t CmAuthDeleteAuthInfoByUserId(uint32_t userId, const struct CmBlob *uri)
 {
     struct CmAppUidList appUidList = { 0, NULL };
@@ -654,7 +655,7 @@ int32_t CmAuthDeleteAuthInfoByUserId(uint32_t userId, const struct CmBlob *uri)
     return ret;
 }
 
-/* 应用卸载时调用 */
+/* clear auth info when delete application */
 int32_t CmAuthDeleteAuthInfoByUid(uint32_t userId, uint32_t targetUid, const struct CmBlob *uri)
 {
     bool isInAuthList = false;
@@ -731,3 +732,4 @@ int32_t CmCheckAndGetCommonUri(const struct CmContext *context, const struct CmB
     (void)CertManagerFreeUri(&uriObj);
     return ret;
 }
+

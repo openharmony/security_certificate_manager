@@ -16,7 +16,10 @@
 #include "cm_type.h"
 #include "cm_log.h"
 #include "cert_manager_status.h"
+
 #include <dirent.h>
+#include <sys/stat.h>
+
 #include "hks_type.h"
 #include "hks_api.h"
 #include "hks_param.h"
@@ -24,6 +27,26 @@
 #include "securec.h"
 #include "cert_manager.h"
 #include "cm_event_process.h"
+
+#include "cert_manager_auth_mgr.h"
+#include "cert_manager_session_mgr.h"
+
+static void DeleteAuth(const struct CmContext *context, const char *fileName, bool isDeleteByUid)
+{
+    CM_LOG_I("fileName is:%s, isDeleteByUid:%d", fileName, isDeleteByUid);
+    struct CmBlob keyUri = { strlen(fileName) + 1, (uint8_t *)fileName };
+
+    int32_t ret;
+    if (isDeleteByUid) {
+        ret = CmAuthDeleteAuthInfoByUid(context->userId, context->uid, &keyUri);
+    } else {
+        ret = CmAuthDeleteAuthInfoByUserId(context->userId, &keyUri);
+    }
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("delete auth info failed ret: %d", ret); /* only record logs */
+    }
+    return;
+}
 
 int32_t CmTraversalDirActionCredential(const char *filePath, const char *fileName)
 {
@@ -75,6 +98,7 @@ int32_t CmTraversalDirAction(struct CmContext *context, const char *filePath,
 
     switch (store) {
         case CM_CREDENTIAL_STORE :
+            DeleteAuth(context, fileName, false); /* fall-through */
         case CM_PRI_CREDENTIAL_STORE :
             ret = CmTraversalDirActionCredential(filePath, fileName);
             break;
@@ -91,7 +115,71 @@ int32_t CmTraversalDirAction(struct CmContext *context, const char *filePath,
     return CM_SUCCESS;
 }
 
-int32_t CmTraversalUidLayerDir(struct CmContext *context, const char *path, const uint32_t store)
+static int32_t GetNextLayerPath(const char *path, const char *name, char *outPath, uint32_t outPathLen)
+{
+    if (strncpy_s(outPath, outPathLen, path, strlen(path)) != EOK) {
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+    if (outPath[outPathLen - 1] != '/') {
+        if (strncat_s(outPath, outPathLen, "/", strlen("/")) != EOK) {
+            return CMR_ERROR_INVALID_OPERATION;
+        }
+    }
+    if (strncat_s(outPath, outPathLen, name, strlen(name)) != EOK) {
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+    return CM_SUCCESS;
+}
+
+static int32_t RemoveDir(const char *dirPath)
+{
+    struct stat fileStat;
+    int32_t ret = stat(dirPath, &fileStat);
+    if (ret != 0) {
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+
+    if (!S_ISDIR(fileStat.st_mode)) {
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+
+    DIR *dir = opendir(dirPath);
+    if (dir  == NULL) {
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+
+    struct dirent *dire = readdir(dir);
+    while (dire != NULL) {
+        if (dire->d_type == DT_REG) { /* only care about files. */
+            ret = CmFileRemove(dirPath, dire->d_name);
+            if (ret != HKS_SUCCESS) { /* Continue to delete remaining files */
+                CM_LOG_E("remove file failed when remove authlist files, ret = %d.", ret);
+            }
+        }
+        dire = readdir(dir);
+    }
+    closedir(dir);
+    remove(dirPath);
+    return CM_SUCCESS;
+}
+
+static void RemoveAuthListDir(const char *path, const uint32_t store, bool isSameUid)
+{
+    if (!isSameUid || (store != CM_CREDENTIAL_STORE)) {
+        return;
+    }
+
+    char authListPath[CM_MAX_FILE_NAME_LEN] = {0};
+    char name[] = "authlist";
+    int32_t ret = GetNextLayerPath(path, name, authListPath, sizeof(authListPath));
+    if (ret != CM_SUCCESS) {
+        return;
+    }
+
+    RemoveDir(authListPath);
+}
+
+int32_t CmTraversalUidLayerDir(struct CmContext *context, const char *path, const uint32_t store, bool isSameUid)
 {
     int32_t ret = CM_SUCCESS;
     char uidPath[CM_MAX_FILE_NAME_LEN] = {0};
@@ -124,16 +212,25 @@ int32_t CmTraversalUidLayerDir(struct CmContext *context, const char *path, cons
             return CMR_ERROR_INVALID_OPERATION;
         }
 
-        if ((strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0)) {
-            ret = CmTraversalDirAction(context, uidPath, dire->d_name, store);
-            if (ret != CM_SUCCESS) {
-                return ret;
+        if ((strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0) && (dire->d_type == DT_REG)) {
+            if (!isSameUid) {
+                if (store == CM_CREDENTIAL_STORE) { /* remove deleted uid from authlist */
+                    DeleteAuth(context, dire->d_name, true);
+                }
+            } else {
+                (void)CmTraversalDirAction(context, uidPath, dire->d_name, store);
             }
         }
         dire = readdir(dir);
     }
     closedir(dir);
-    ret = remove(path);
+
+    /* remove authList Path */
+    RemoveAuthListDir(path, store, isSameUid);
+
+    if (isSameUid) {
+        ret = remove(path);
+    }
     return ret;
 }
 
@@ -175,13 +272,17 @@ int32_t CmTraversalUserIdLayerDir(struct CmContext *context, const char *path, c
         if (dire->d_type == DT_DIR && (strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0)) {
             uid = (uint32_t)atoi(dire->d_name);
             CM_LOG_I("CmTraversalUserIdLayerDir userId:%u, uid:%u", context->userId, uid);
-            /* user delete event */
-            if (isUserDeleteEvent) {
+            if (isUserDeleteEvent) { /* user delete event */
                 context->uid = uid;
-                ret = CmTraversalUidLayerDir(context, userIdPath, store);
-            /* package delete event */
-            } else if (uid == context->uid) {
-                ret = CmTraversalUidLayerDir(context, userIdPath, store);
+                ret = CmTraversalUidLayerDir(context, userIdPath, store, true);
+            } else { /* package delete event */
+                if (uid == context->uid) {
+                    ret = CmTraversalUidLayerDir(context, userIdPath, store, true);
+                } else if (store == CM_CREDENTIAL_STORE) {
+                    ret = CmTraversalUidLayerDir(context, userIdPath, store, false);
+                } else {
+                    /* do nothing */
+                }
             }
         } else if (dire->d_type != DT_DIR) {
             (void)remove(userIdPath);
@@ -243,11 +344,27 @@ int32_t CmTraversalDir(struct CmContext *context, const char *path, const uint32
     return ret;
 }
 
+static void RemoveSessionInfo(const struct CmContext *context)
+{
+    bool isUserDeleteEvent = (context->uid == INVALID_VALUE);
+
+    if (isUserDeleteEvent) {
+        /* remove session node by user id */
+        struct CmSessionNodeInfo info = { context->userId, 0, { 0, NULL } };
+        CmDeleteSessionByNodeInfo(DELETE_SESSION_BY_USERID, &info);
+    } else {
+        /* remove session node by uid */
+        struct CmSessionNodeInfo info = { context->userId, context->uid, { 0, NULL } };
+        CmDeleteSessionByNodeInfo(DELETE_SESSION_BY_UID, &info);
+    }
+}
+
 int32_t CmDeleteProcessInfo(struct CmContext *context)
 {
-    int32_t ret = CM_SUCCESS;
+    RemoveSessionInfo(context);
+
     /* Delete user ca */
-    ret = CmTraversalDir(context, USER_CA_STORE, CM_USER_TRUSTED_STORE);
+    int32_t ret = CmTraversalDir(context, USER_CA_STORE, CM_USER_TRUSTED_STORE);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmDeleteUserCa faild");
     }

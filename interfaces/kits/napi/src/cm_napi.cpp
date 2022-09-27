@@ -26,7 +26,8 @@
 #include "cm_napi_uninstall_all_app_cert.h"
 #include "cm_napi_get_app_cert_list.h"
 #include "cm_napi_get_app_cert_info.h"
-
+#include "cm_napi_grant.h"
+#include "cm_napi_sign_verify.h"
 
 namespace CMNapi {
     inline void AddInt32Property(napi_env env, napi_value object, const char *name, int32_t value)
@@ -71,6 +72,17 @@ namespace CMNapi {
 
         return errorCode;
     }
+
+    static napi_value CreateCMKeyPurpose(napi_env env)
+    {
+        napi_value keyPurpose = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &keyPurpose));
+
+        AddInt32Property(env, keyPurpose, "CM_KEY_PURPOSE_SIGN", CM_KEY_PURPOSE_SIGN);
+        AddInt32Property(env, keyPurpose, "CM_KEY_PURPOSE_VERIFY", CM_KEY_PURPOSE_VERIFY);
+
+        return keyPurpose;
+    }
 }  // namespace CertManagerNapi
 
 using namespace CMNapi;
@@ -80,6 +92,7 @@ extern "C" {
     {
         napi_property_descriptor desc[] = {
             DECLARE_NAPI_PROPERTY("CMErrorCode", CreateCMErrorCode(env)),
+            DECLARE_NAPI_PROPERTY("CmKeyPurpose", CreateCMKeyPurpose(env)),
 
             DECLARE_NAPI_FUNCTION("getSystemTrustedCertificateList", CMNapiGetSystemCertList),
             DECLARE_NAPI_FUNCTION("getSystemTrustedCertificate", CMNapiGetSystemCertInfo),
@@ -89,6 +102,14 @@ extern "C" {
             DECLARE_NAPI_FUNCTION("uninstallAppCertificate", CMNapiUninstallAppCert),
             DECLARE_NAPI_FUNCTION("getAppCertificateList", CMNapiGetAppCertList),
             DECLARE_NAPI_FUNCTION("getAppCertificate", CMNapiGetAppCertInfo),
+            DECLARE_NAPI_FUNCTION("grantAppCertificate", CMNapiGrantAppCertificate),
+            DECLARE_NAPI_FUNCTION("isAuthorizedApp", CMNapiIsAuthorizedApp),
+            DECLARE_NAPI_FUNCTION("getAuthorizedAppList", CMNapiGetAuthorizedAppList),
+            DECLARE_NAPI_FUNCTION("removeGrantedAppCertificate", CMNapiRemoveGrantedApp),
+            DECLARE_NAPI_FUNCTION("init", CMNapiInit),
+            DECLARE_NAPI_FUNCTION("update", CMNapiUpdate),
+            DECLARE_NAPI_FUNCTION("finish", CMNapiFinish),
+            DECLARE_NAPI_FUNCTION("abort", CMNapiAbort),
         };
         NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
         return exports;

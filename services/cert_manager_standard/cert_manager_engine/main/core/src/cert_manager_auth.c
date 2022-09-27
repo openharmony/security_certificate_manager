@@ -143,7 +143,7 @@ int32_t CertManagerImportKeyPair(
     TRY_FUNC(CertManagerBuildKeySpec(&params, properties), rc);
     TRY_FUNC(BuildObjUri(&objUri, name, type, caller), rc);
 
-    struct HksBlob alias = { .size = strlen(objUri), .data = (uint8_t *) objUri };
+    struct HksBlob alias = { .size = strlen(objUri) + 1, .data = (uint8_t *) objUri };
     TRY_CM_CALL(HksImportKey(&alias, params, &HKS_BLOB(keyPair)), rc);
 
 finally:

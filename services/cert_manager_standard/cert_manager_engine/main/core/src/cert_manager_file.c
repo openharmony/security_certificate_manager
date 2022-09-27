@@ -134,7 +134,7 @@ int32_t CertManagerGetFilenames(struct CmMutableBlob *fileNames, const char *pat
 
     struct CmFileDirentInfo dire = {0};
     while (CmGetDirFile(d, &dire) == CMR_OK) {
-        fNames[i].size = strlen(dire.fileName);
+        fNames[i].size = strlen(dire.fileName) + 1; /* include '\0' at end */
         fNames[i].data = (uint8_t *) strdup(dire.fileName);
 
         uri[i].size = MAX_LEN_URI;

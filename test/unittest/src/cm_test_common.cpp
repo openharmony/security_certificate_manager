@@ -20,10 +20,14 @@
 #include <unistd.h>
 
 #include <gtest/gtest.h>
+
+#include "cert_manager_api.h"
+
 #include "cm_mem.h"
 #include "cm_test_common.h"
 #include "cm_test_log.h"
 
+#include "cm_cert_data.h"
 
 #define EOK  (0)
 
@@ -240,4 +244,24 @@ uint32_t FileSize(const char *fileName)
 
     return fileStat.st_size;
 }
+
+int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t store)
+{
+    struct CmBlob appCert = { 0, NULL };
+    if (alg == CERT_KEY_ALG_RSA) {
+        appCert.size = sizeof(g_rsaP12Certinfo);
+        appCert.data = (uint8_t *)g_rsaP12Certinfo;
+    } else if (alg == CERT_KEY_ALG_ECC) {
+        appCert.size = sizeof(g_eccP12Certinfo);
+        appCert.data = (uint8_t *)g_eccP12Certinfo;
+    } else {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    struct CmBlob appCertPwd = { sizeof(g_certPwd), (uint8_t *)g_certPwd };
+    uint8_t uriData[100] = {0};
+    struct CmBlob keyUri = { sizeof(uriData), uriData };
+    return CmInstallAppCert(&appCert, &appCertPwd, alias, store, &keyUri);
 }
+}
+

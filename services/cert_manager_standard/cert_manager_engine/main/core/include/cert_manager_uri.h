@@ -73,6 +73,8 @@ int32_t CertManagerFreeUri(struct CMUri *uri);
 
 int32_t CertManagerUriDecode(struct CMUri *uri, const char *encoded);
 
+int32_t CertManagerGetUidFromUri(const struct CmBlob *uri, uint32_t *uid);
+
 #ifdef __cplusplus
 }
 #endif

@@ -48,6 +48,30 @@ void CmIpcServiceGetAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob
 void CmIpcServiceGetAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context);
 
+void CmIpcServiceGrantAppCertificate(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceGetAuthorizedAppList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceIsAuthorizedApp(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceRemoveGrantedApp(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceInit(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceUpdate(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceFinish(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceAbort(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
 #ifdef __cplusplus
 }
 #endif

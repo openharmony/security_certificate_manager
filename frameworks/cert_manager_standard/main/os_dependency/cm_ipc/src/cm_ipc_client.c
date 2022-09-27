@@ -613,7 +613,7 @@ static int32_t CmAppCertInfoUnpackFromService(const struct CmBlob *outData, stru
     }
 
     if ((blob.size > certificateInfo->credData.size) || memcpy_s(certificateInfo->credData.data,
-		certificateInfo->credData.size, blob.data, blob.size) != EOK) {
+        certificateInfo->credData.size, blob.data, blob.size) != EOK) {
         CM_LOG_E("copy credData failed");
         return CMR_ERROR_INVALID_OPERATION;
     }
@@ -673,3 +673,232 @@ int32_t CmClientGetAppCert(const struct CmBlob *keyUri, const uint32_t store, st
 {
     return GetAppCert(CM_MSG_GET_APP_CERTIFICATE, keyUri, store, certificate);
 }
+
+static int32_t ClientSerializationAndSend(enum CmMessage message, struct CmParam *params,
+    uint32_t paramCount, struct CmBlob *outBlob)
+{
+    struct CmParamSet *sendParamSet = NULL;
+    int32_t ret = CmParamsToParamSet(params, paramCount, &sendParamSet);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("pack params failed, ret = %d", ret);
+        return ret;
+    }
+
+    struct CmBlob parcelBlob = { sendParamSet->paramSetSize, (uint8_t *)sendParamSet };
+    ret = SendRequest(message, &parcelBlob, outBlob);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("send request failed, ret = %d", ret);
+    }
+    CmFreeParamSet(&sendParamSet);
+
+    return ret;
+}
+
+static int32_t FormatAppUidList(const struct CmBlob *replyBlob, struct CmAppUidList *appUidList)
+{
+    if (replyBlob->size < sizeof(uint32_t)) { /* app uid count: 4 bytes */
+        CM_LOG_E("invalid reply size[%u]", replyBlob->size);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    /* get app uid count */
+    uint32_t count = 0;
+    (void)memcpy_s(&count, sizeof(uint32_t), replyBlob->data, sizeof(uint32_t));
+    uint32_t offset = sizeof(uint32_t);
+
+    /* check reply total len */
+    if ((count > MAX_OUT_BLOB_SIZE) || (replyBlob->size < (sizeof(uint32_t) + count * sizeof(uint32_t)))) {
+        CM_LOG_E("invalid reply size[%u]", replyBlob->size);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (appUidList->appUidCount < count) {
+        CM_LOG_E("input app list count[%u] too small", appUidList->appUidCount);
+        return CMR_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    if (count != 0) {
+        if (appUidList->appUid == NULL) {
+            CM_LOG_E("input appUid NULL");
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        uint32_t uidListSize = count * sizeof(uint32_t);
+        (void)memcpy_s(appUidList->appUid, uidListSize, replyBlob->data + offset, uidListSize);
+    }
+    appUidList->appUidCount = count;
+    return CM_SUCCESS;
+}
+
+int32_t CmClientGrantAppCertificate(const struct CmBlob *keyUri, uint32_t appUid, struct CmBlob *authUri)
+{
+    if (CmCheckBlob(keyUri) != CM_SUCCESS || CmCheckBlob(authUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid keyUri or authUri");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *keyUri },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = appUid },
+    };
+
+    int32_t ret = ClientSerializationAndSend(CM_MSG_GRANT_APP_CERT, params, CM_ARRAY_SIZE(params), authUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("grant app serialization and send failed, ret = %d", ret);
+    }
+    return ret;
+}
+
+int32_t CmClientGetAuthorizedAppList(const struct CmBlob *keyUri, struct CmAppUidList *appUidList)
+{
+    if (CmCheckBlob(keyUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid keyUri");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (appUidList->appUidCount > MAX_OUT_BLOB_SIZE) { /* ensure not out of bounds */
+        CM_LOG_E("invalid app uid list count[%u]", appUidList->appUidCount);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    uint32_t outLen = sizeof(uint32_t) + appUidList->appUidCount * sizeof(uint32_t);
+    uint8_t *outData = CmMalloc(outLen);
+    if (outData == NULL) {
+        CM_LOG_E("malloc out data failed");
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    (void)memset_s(outData, outLen, 0, outLen);
+    struct CmBlob outBlob = { outLen, outData };
+
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *keyUri },
+    };
+
+    int32_t ret = ClientSerializationAndSend(CM_MSG_GET_AUTHED_LIST, params, CM_ARRAY_SIZE(params), &outBlob);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get authed list serialization and send failed, ret = %d", ret);
+        CmFree(outData);
+        return ret;
+    }
+
+    ret = FormatAppUidList(&outBlob, appUidList);
+    CmFree(outData);
+    return ret;
+}
+
+int32_t CmClientIsAuthorizedApp(const struct CmBlob *authUri)
+{
+    if (CmCheckBlob(authUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid authUri");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *authUri },
+    };
+
+    struct CmBlob outBlob = { 0, NULL };
+    int32_t ret = ClientSerializationAndSend(CM_MSG_CHECK_IS_AUTHED_APP, params, CM_ARRAY_SIZE(params), &outBlob);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("check is authed serialization and send failed, ret = %d", ret);
+    }
+    return ret;
+}
+
+int32_t CmClientRemoveGrantedApp(const struct CmBlob *keyUri, uint32_t appUid)
+{
+    if (CmCheckBlob(keyUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid keyUri");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *keyUri },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = appUid },
+    };
+
+    struct CmBlob outBlob = { 0, NULL };
+    int32_t ret = ClientSerializationAndSend(CM_MSG_REMOVE_GRANT_APP, params, CM_ARRAY_SIZE(params), &outBlob);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("remove granted app serialization and send failed, ret = %d", ret);
+    }
+    return ret;
+}
+
+int32_t CmClientInit(const struct CmBlob *authUri, const struct CmSignatureSpec *spec, struct CmBlob *handle)
+{
+    if (CmCheckBlob(authUri) != CM_SUCCESS || CmCheckBlob(handle) != CM_SUCCESS) {
+        CM_LOG_E("invalid handle or inData");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    struct CmBlob signSpec = { sizeof(struct CmSignatureSpec), (uint8_t *)spec };
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *authUri },
+        { .tag = CM_TAG_PARAM1_BUFFER, .blob = signSpec },
+    };
+
+    int32_t ret = ClientSerializationAndSend(CM_MSG_INIT, params, CM_ARRAY_SIZE(params), handle);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("update serialization and send failed, ret = %d", ret);
+    }
+    return ret;
+}
+
+int32_t CmClientUpdate(const struct CmBlob *handle, const struct CmBlob *inData)
+{
+    if (CmCheckBlob(handle) != CM_SUCCESS || CmCheckBlob(inData) != CM_SUCCESS) {
+        CM_LOG_E("invalid handle or inData");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *handle },
+        { .tag = CM_TAG_PARAM1_BUFFER, .blob = *inData },
+    };
+
+    struct CmBlob outBlob = { 0, NULL };
+    int32_t ret = ClientSerializationAndSend(CM_MSG_UPDATE, params, CM_ARRAY_SIZE(params), &outBlob);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("update serialization and send failed, ret = %d", ret);
+    }
+    return ret;
+}
+
+int32_t CmClientFinish(const struct CmBlob *handle, const struct CmBlob *inData, struct CmBlob *outData)
+{
+    if (CmCheckBlob(handle) != CM_SUCCESS) { /* finish: inData and outData can be {0, NULL} */
+        CM_LOG_E("invalid handle");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *handle },
+        { .tag = CM_TAG_PARAM1_BUFFER, .blob = *inData },
+    };
+
+    int32_t ret = ClientSerializationAndSend(CM_MSG_FINISH, params, CM_ARRAY_SIZE(params), outData);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("finish serialization and send failed, ret = %d", ret);
+    }
+    return ret;
+}
+
+int32_t CmClientAbort(const struct CmBlob *handle)
+{
+    if (CmCheckBlob(handle) != CM_SUCCESS) {
+        CM_LOG_E("invalid handle");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *handle },
+    };
+
+    struct CmBlob outBlob = { 0, NULL };
+    int32_t ret = ClientSerializationAndSend(CM_MSG_ABORT, params, CM_ARRAY_SIZE(params), &outBlob);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("abort serialization and send failed, ret = %d", ret);
+    }
+    return ret;
+}
+

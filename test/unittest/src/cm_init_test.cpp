@@ -59,17 +59,17 @@ void CmInitTest::SetUp()
     struct CmBlob aliasRsa = { sizeof(aliasRsaData), aliasRsaData };
     struct CmBlob aliasEcc = { sizeof(aliasEccData), aliasEccData };
 
-    int32_t ret = TestGenerateAppCert(&aliasRsa, CERT_KEY_ALG_RSA, CERT_MANAGER_CREDENTIAL_STORE);
+    int32_t ret = TestGenerateAppCert(&aliasRsa, CERT_KEY_ALG_RSA, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert rsa failed, retcode:" << ret;
-    ret = TestGenerateAppCert(&aliasEcc, CERT_KEY_ALG_ECC, CERT_MANAGER_CREDENTIAL_STORE);
+    ret = TestGenerateAppCert(&aliasEcc, CERT_KEY_ALG_ECC, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert ecc failed, retcode:" << ret;
 }
 
 void CmInitTest::TearDown()
 {
-    int32_t ret = CmUninstallAppCert(&g_rsaKeyUri, CERT_MANAGER_CREDENTIAL_STORE);
+    int32_t ret = CmUninstallAppCert(&g_rsaKeyUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert rsa failed, retcode:" << ret;
-    ret = CmUninstallAppCert(&g_eccKeyUri, CERT_MANAGER_CREDENTIAL_STORE);
+    ret = CmUninstallAppCert(&g_eccKeyUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert ecc failed, retcode:" << ret;
 }
 
@@ -318,7 +318,7 @@ HWTEST_F(CmInitTest, CmInitTest014, TestSize.Level0)
  */
 HWTEST_F(CmInitTest, CmInitTest015, TestSize.Level0)
 {
-    uint8_t uriData[] = "oh:t=ak;o=keyA;u=0;a=0";
+    uint8_t uriData[] = "oh:t=ak;o=NotExist64897;u=0;a=0";
     struct CmBlob authUri = { sizeof(uriData), uriData };
     struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
     uint64_t handleValue = 0;

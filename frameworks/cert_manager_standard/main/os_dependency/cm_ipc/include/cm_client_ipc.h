@@ -44,6 +44,22 @@ int32_t CmClientGetAppCertList(const uint32_t store, struct CredentialList *cert
 
 int32_t CmClientGetAppCert(const struct CmBlob *keyUri, const uint32_t store, struct Credential *certificate);
 
+int32_t CmClientGrantAppCertificate(const struct CmBlob *keyUri, uint32_t appUid, struct CmBlob *authUri);
+
+int32_t CmClientGetAuthorizedAppList(const struct CmBlob *keyUri, struct CmAppUidList *appUidList);
+
+int32_t CmClientIsAuthorizedApp(const struct CmBlob *authUri);
+
+int32_t CmClientRemoveGrantedApp(const struct CmBlob *keyUri, uint32_t appUid);
+
+int32_t CmClientInit(const struct CmBlob *authUri, const struct CmSignatureSpec *spec, struct CmBlob *handle);
+
+int32_t CmClientUpdate(const struct CmBlob *handle, const struct CmBlob *inData);
+
+int32_t CmClientFinish(const struct CmBlob *handle, const struct CmBlob *inData, struct CmBlob *outData);
+
+int32_t CmClientAbort(const struct CmBlob *handle);
+
 #ifdef __cplusplus
 }
 #endif

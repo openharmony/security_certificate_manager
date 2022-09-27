@@ -60,7 +60,7 @@ static void TestRemoveGrant(uint32_t removeAppUid, uint32_t removeCount)
 {
     uint8_t aliasData[] = "TestRemoveGrant";
     struct CmBlob alias = { sizeof(aliasData), aliasData };
-    int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_RSA, CERT_MANAGER_CREDENTIAL_STORE);
+    int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_RSA, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert failed, retcode:" << ret;
 
     uint8_t uriData[] = "oh:t=ak;o=TestRemoveGrant;u=0;a=0";
@@ -77,7 +77,7 @@ static void TestRemoveGrant(uint32_t removeAppUid, uint32_t removeCount)
         EXPECT_EQ(ret, CM_SUCCESS) << "CmRemoveGrantedApp failed, index:" << i << ", retcode:" << ret;
     }
 
-    ret = CmUninstallAppCert(&keyUri, CERT_MANAGER_CREDENTIAL_STORE);
+    ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert failed, retcode:" << ret;
 }
 

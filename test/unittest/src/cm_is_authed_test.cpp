@@ -49,7 +49,7 @@ void CmIsAuthedTest::SetUp()
     uint8_t aliasData[] = "TestNormalGrant";
     struct CmBlob alias = { sizeof(aliasData), aliasData };
 
-    int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_RSA, CERT_MANAGER_CREDENTIAL_STORE);
+    int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_RSA, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert failed, retcode:" << ret;
 }
 
@@ -58,7 +58,7 @@ void CmIsAuthedTest::TearDown()
     uint8_t uriData[] = "oh:t=ak;o=TestNormalGrant;u=0;a=0";
     struct CmBlob keyUri = { sizeof(uriData), uriData };
 
-    int32_t ret = CmUninstallAppCert(&keyUri, CERT_MANAGER_CREDENTIAL_STORE);
+    int32_t ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert failed, retcode:" << ret;
 }
 
