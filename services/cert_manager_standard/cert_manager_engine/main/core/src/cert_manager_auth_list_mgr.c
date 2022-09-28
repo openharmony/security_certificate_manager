@@ -18,6 +18,7 @@
 #include "cert_manager.h"
 #include "cert_manager_file_operator.h"
 #include "cert_manager_mem.h"
+#include "cert_manager_storage.h"
 #include "cert_manager_uri.h"
 
 #include "cm_log.h"
@@ -29,161 +30,24 @@
 #define MAX_AUTH_COUNT                      256
 #define AUTH_LIST_VERSON                    0
 
-static int32_t GetUidFromUri(const struct CmBlob *uri, uint32_t *uid)
-{
-    struct CMUri uriObj;
-    (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
-    int32_t ret = CertManagerUriDecode(&uriObj, (char *)uri->data);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("uri decode failed, ret = %d", ret);
-        return ret;
-    }
-
-    if (uriObj.app == NULL) {
-        CM_LOG_E("uri app invalid");
-        (void)CertManagerFreeUri(&uriObj);
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-
-    *uid = atoi(uriObj.app);
-    (void)CertManagerFreeUri(&uriObj);
-    return CM_SUCCESS;
-}
-
-static int32_t GetRootPath(uint32_t store, char *rootPath, uint32_t pathLen)
-{
-    errno_t ret;
-
-    /* keep \0 at end */
-    switch (store) {
-        case CERT_MANAGER_CREDENTIAL_STORE:
-            ret = memcpy_s(rootPath, pathLen - 1, CREDNTIAL_STORE, strlen(CREDNTIAL_STORE));
-            break;
-        default:
-            return CMR_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (ret != EOK) {
-        CM_LOG_E("copy path failed, store = %u", store);
-        return CMR_ERROR_BAD_STATE;
-    }
-
-    return CM_SUCCESS;
-}
-
-static int32_t ConstructUserIdPath(const struct CmContext *context, uint32_t store,
-    char *userIdPath, uint32_t pathLen)
-{
-    char rootPath[MAX_PATH_LEN] = { 0 };
-    int32_t ret = GetRootPath(store, rootPath, MAX_PATH_LEN);
-    if (ret != CM_SUCCESS) {
-        return ret;
-    }
-
-    if (snprintf_s(userIdPath, pathLen, pathLen - 1, "%s/%u", rootPath, context->userId) < 0) {
-        CM_LOG_E("construct user id path failed");
-        return CMR_ERROR_BAD_STATE;
-    }
-
-    ret = CmMakeDir(userIdPath);
-    if (ret == CMR_ERROR_MAKE_DIR_FAIL) {
-        CM_LOG_E("mkdir userId path failed");
-        return ret;
-    } /* ret may be CMR_ERROR_ALREADY_EXISTS */
-
-    return CM_SUCCESS;
-}
-
-static int32_t ConstructUidPath(const struct CmContext *context, uint32_t store,
-    char *uidPath, uint32_t pathLen)
-{
-    char userIdPath[MAX_PATH_LEN] = { 0 };
-    int32_t ret = ConstructUserIdPath(context, store, userIdPath, MAX_PATH_LEN);
-    if (ret != CM_SUCCESS) {
-        return ret;
-    }
-
-    if (snprintf_s(uidPath, pathLen, pathLen - 1, "%s/%u", userIdPath, context->uid) < 0) {
-        CM_LOG_E("construct uid path failed");
-        return CMR_ERROR_BAD_STATE;
-    }
-
-    ret = CmMakeDir(uidPath);
-    if (ret == CMR_ERROR_MAKE_DIR_FAIL) {
-        CM_LOG_E("mkdir uid path failed");
-        return ret;
-    } /* ret may be CMR_ERROR_ALREADY_EXISTS */
-
-    return CM_SUCCESS;
-}
-
-static int32_t ConstructAuthListPath(const struct CmContext *context, uint32_t store,
-    char *authListPath, uint32_t pathLen)
-{
-    char uidPath[MAX_PATH_LEN] = { 0 };
-    int32_t ret = ConstructUidPath(context, store, uidPath, MAX_PATH_LEN);
-    if (ret != CM_SUCCESS) {
-        return ret;
-    }
-
-    if (snprintf_s(authListPath, pathLen, pathLen - 1, "%s/%s", uidPath, "authlist") < 0) {
-        CM_LOG_E("construct authlist failed");
-        return CMR_ERROR_BAD_STATE;
-    }
-
-    ret = CmMakeDir(authListPath);
-    if (ret == CMR_ERROR_MAKE_DIR_FAIL) {
-        CM_LOG_E("mkdir auth list path failed");
-        return ret;
-    } /* ret may be CMR_ERROR_ALREADY_EXISTS */
-
-    return CM_SUCCESS;
-}
-
-static int32_t GetAuthListBuf(const char *path, const char *fileName, struct CmBlob *authList)
-{
-    uint32_t fileSize = CmFileSize(path, fileName);
-    if (fileSize == 0 || fileSize > MAX_OUT_BLOB_SIZE) {
-        CM_LOG_E("file size[%u] invalid", fileSize);
-        return CMR_ERROR_BAD_STATE;
-    }
-
-    uint8_t *data = (uint8_t *)CMMalloc(fileSize);
-    if (data == NULL) {
-        CM_LOG_E("malloc file buffer failed");
-        return CMR_ERROR_MALLOC_FAIL;
-    }
-
-    uint32_t readSize = CmFileRead(path, fileName, 0, data, fileSize);
-    if (readSize == 0) {
-        CM_LOG_E("read file size 0 invalid");
-        CMFree(data);
-        return CMR_ERROR_BAD_STATE;
-    }
-
-    authList->data = data;
-    authList->size = fileSize;
-    return CM_SUCCESS;
-}
-
 static int32_t CheckAuthListFileSizeValid(const struct CmBlob *originList, uint32_t *authCount)
 {
     if (originList->size < (sizeof(uint32_t) + sizeof(uint32_t))) { /* version and count size */
         CM_LOG_E("invalid authlist size[%u]", originList->size);
-        return CMR_ERROR_BAD_STATE;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     uint32_t count = 0;
     (void)memcpy_s(&count, sizeof(count), originList->data + sizeof(uint32_t), sizeof(count));
     if (count > MAX_OUT_BLOB_SIZE) {
         CM_LOG_E("invalid auth count[%u]", count);
-        return CMR_ERROR_BAD_STATE;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     uint32_t size = sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) * count;
     if (originList->size != size) {
         CM_LOG_E("invalid auth list file size[%u], count[%u]", originList->size, count);
-        return CMR_ERROR_BAD_STATE;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     *authCount = count;
@@ -236,7 +100,7 @@ static int32_t InsertUid(const struct CmBlob *originList, uint32_t uid, struct C
     }
 
     if (count >= MAX_AUTH_COUNT) {
-        return CMR_ERROR_INSUFFICIENT_MEMORY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     uint32_t size = originList->size + sizeof(uint32_t); /* add one uid */
@@ -246,7 +110,7 @@ static int32_t InsertUid(const struct CmBlob *originList, uint32_t uid, struct C
     }
 
     do {
-        ret = CMR_ERROR_BAD_STATE;
+        ret = CMR_ERROR_INVALID_OPERATION;
         if (memcpy_s(data, size, originList->data, originList->size) != EOK) {
             CM_LOG_E("copy origin list failed");
             break;
@@ -296,8 +160,8 @@ static int32_t RemoveUid(const struct CmBlob *originList, uint32_t uid, struct C
     }
 
     do {
-        ret = CMR_ERROR_BAD_STATE;
-        uint32_t beforeSize = position - sizeof(uint32_t); /* positon > 12 */
+        ret = CMR_ERROR_INVALID_OPERATION;
+        uint32_t beforeSize = position - sizeof(uint32_t); /* positon >= 12 */
         if (memcpy_s(data, size, originList->data, beforeSize) != EOK) {
             CM_LOG_E("copy origin list before uid failed");
             break;
@@ -334,7 +198,7 @@ static int32_t RefreshAuthListBuf(const char *path, const char *fileName, uint32
     struct CmBlob *authList)
 {
     struct CmBlob list = { 0, NULL };
-    int32_t ret = GetAuthListBuf(path, fileName, &list);
+    int32_t ret = CmStorageGetBuf(path, fileName, &list);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -370,21 +234,21 @@ static int32_t InitAuthListBuf(uint32_t uid, struct CmBlob *authList)
     do {
         if (memcpy_s(data + offset, size - offset, &version, sizeof(version)) != EOK) {
             CM_LOG_E("copy count failed");
-            ret = CMR_ERROR_BAD_STATE;
+            ret = CMR_ERROR_INVALID_OPERATION;
             break;
         }
         offset += sizeof(version);
 
         if (memcpy_s(data + offset, size - offset, &count, sizeof(count)) != EOK) {
             CM_LOG_E("copy count failed");
-            ret = CMR_ERROR_BAD_STATE;
+            ret = CMR_ERROR_INVALID_OPERATION;
             break;
         }
         offset += sizeof(count);
 
         if (memcpy_s(data  + offset, size - offset, &uid, sizeof(uid)) != EOK) {
             CM_LOG_E("copy uid failed");
-            ret = CMR_ERROR_BAD_STATE;
+            ret = CMR_ERROR_INVALID_OPERATION;
             break;
         }
     } while (0);
@@ -439,8 +303,8 @@ static int32_t FormatAppUidList(const struct CmBlob *list, struct CmAppUidList *
 
     if (count == 0) {
         appUidList->appUidCount = 0;
-        ret = CM_SUCCESS;
-        return ret; /* has no auth uid */
+        CM_LOG_I("auth list has no auth uid");
+        return CM_SUCCESS; /* has no auth uid */
     }
 
     uint8_t *data = (uint8_t *)CMMalloc(count * sizeof(uint32_t));
@@ -470,7 +334,7 @@ int32_t CmAddAuthUid(const struct CmContext *context, const struct CmBlob *uri, 
     }
 
     char authListPath[MAX_PATH_LEN] = { 0 };
-    ret = ConstructAuthListPath(context, CERT_MANAGER_CREDENTIAL_STORE, authListPath, MAX_PATH_LEN);
+    ret = ConstructAuthListPath(context, CM_CREDENTIAL_STORE, authListPath, MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -485,7 +349,7 @@ int32_t CmAddAuthUid(const struct CmContext *context, const struct CmBlob *uri, 
 int32_t CmRemoveAuthUid(const struct CmContext *context, const struct CmBlob *uri, uint32_t uid)
 {
     char authListPath[MAX_PATH_LEN] = { 0 };
-    int32_t ret = ConstructAuthListPath(context, CERT_MANAGER_CREDENTIAL_STORE, authListPath, MAX_PATH_LEN);
+    int32_t ret = ConstructAuthListPath(context, CM_CREDENTIAL_STORE, authListPath, MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -500,7 +364,7 @@ int32_t CmRemoveAuthUid(const struct CmContext *context, const struct CmBlob *ur
 int32_t CmGetAuthList(const struct CmContext *context, const struct CmBlob *uri, struct CmAppUidList *appUidList)
 {
     char authListPath[MAX_PATH_LEN] = { 0 };
-    int32_t ret = ConstructAuthListPath(context, CERT_MANAGER_CREDENTIAL_STORE, authListPath, MAX_PATH_LEN);
+    int32_t ret = ConstructAuthListPath(context, CM_CREDENTIAL_STORE, authListPath, MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -508,12 +372,13 @@ int32_t CmGetAuthList(const struct CmContext *context, const struct CmBlob *uri,
     /* auth list file not exist */
     ret = CmIsFileExist(authListPath, (char *)uri->data);
     if (ret != CM_SUCCESS) {
+        CM_LOG_I("auth list file not exist.");
         appUidList->appUidCount = 0;
         return CM_SUCCESS;
     }
 
     struct CmBlob list = { 0, NULL };
-    ret = GetAuthListBuf(authListPath, (char *)uri->data, &list);
+    ret = CmStorageGetBuf(authListPath, (char *)uri->data, &list);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -526,7 +391,7 @@ int32_t CmGetAuthList(const struct CmContext *context, const struct CmBlob *uri,
 int32_t CmDeleteAuthListFile(const struct CmContext *context, const struct CmBlob *uri)
 {
     char authListPath[MAX_PATH_LEN] = { 0 };
-    int32_t ret = ConstructAuthListPath(context, CERT_MANAGER_CREDENTIAL_STORE, authListPath, MAX_PATH_LEN);
+    int32_t ret = ConstructAuthListPath(context, CM_CREDENTIAL_STORE, authListPath, MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -549,7 +414,7 @@ int32_t CmCheckIsAuthUidExist(const struct CmContext *context, const struct CmBl
     *isInAuthList = false;
 
     char authListPath[MAX_PATH_LEN] = { 0 };
-    int32_t ret = ConstructAuthListPath(context, CERT_MANAGER_CREDENTIAL_STORE, authListPath, MAX_PATH_LEN);
+    int32_t ret = ConstructAuthListPath(context, CM_CREDENTIAL_STORE, authListPath, MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -560,7 +425,7 @@ int32_t CmCheckIsAuthUidExist(const struct CmContext *context, const struct CmBl
     }
 
     struct CmBlob list = { 0, NULL };
-    ret = GetAuthListBuf(authListPath, (char *)uri->data, &list);
+    ret = CmStorageGetBuf(authListPath, (char *)uri->data, &list);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -582,7 +447,7 @@ int32_t CmCheckIsAuthUidExist(const struct CmContext *context, const struct CmBl
 int32_t CmRemoveAuthUidByUserId(uint32_t userId, uint32_t targetUid, const struct CmBlob *uri)
 {
     uint32_t uid = 0;
-    int32_t ret = GetUidFromUri(uri, &uid);
+    int32_t ret = CertManagerGetUidFromUri(uri, &uid);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -594,7 +459,7 @@ int32_t CmRemoveAuthUidByUserId(uint32_t userId, uint32_t targetUid, const struc
 int32_t CmGetAuthListByUserId(uint32_t userId, const struct CmBlob *uri, struct CmAppUidList *appUidList)
 {
     uint32_t uid = 0;
-    int32_t ret = GetUidFromUri(uri, &uid);
+    int32_t ret = CertManagerGetUidFromUri(uri, &uid);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -606,7 +471,7 @@ int32_t CmGetAuthListByUserId(uint32_t userId, const struct CmBlob *uri, struct 
 int32_t CmDeleteAuthListFileByUserId(uint32_t userId, const struct CmBlob *uri)
 {
     uint32_t uid = 0;
-    int32_t ret = GetUidFromUri(uri, &uid);
+    int32_t ret = CertManagerGetUidFromUri(uri, &uid);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -619,7 +484,7 @@ int32_t CmCheckIsAuthUidExistByUserId(uint32_t userId, uint32_t targetUid,
     const struct CmBlob *uri, bool *isInAuthList)
 {
     uint32_t uid = 0;
-    int32_t ret = GetUidFromUri(uri, &uid);
+    int32_t ret = CertManagerGetUidFromUri(uri, &uid);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -631,7 +496,7 @@ int32_t CmCheckIsAuthUidExistByUserId(uint32_t userId, uint32_t targetUid,
 int32_t CmCheckCredentialExist(const struct CmContext *context, const struct CmBlob *uri)
 {
     char uidPath[MAX_PATH_LEN] = { 0 };
-    int32_t ret = ConstructUidPath(context, CERT_MANAGER_CREDENTIAL_STORE, uidPath, MAX_PATH_LEN);
+    int32_t ret = ConstructUidPath(context, CM_CREDENTIAL_STORE, uidPath, MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         return ret;
     }

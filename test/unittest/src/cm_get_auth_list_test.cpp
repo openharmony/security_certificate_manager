@@ -57,7 +57,7 @@ void CmGetAuthListTest::SetUp()
     uint8_t aliasData[] = "GetAuthList";
     struct CmBlob alias = { sizeof(aliasData), aliasData };
 
-    int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_RSA, CERT_MANAGER_CREDENTIAL_STORE);
+    int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_RSA, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert failed, retcode:" << ret;
 
     uint32_t appId = DEFAULT_BASE_APP_ID;
@@ -70,7 +70,7 @@ void CmGetAuthListTest::SetUp()
 
 void CmGetAuthListTest::TearDown()
 {
-    int32_t ret = CmUninstallAppCert(&g_keyUri, CERT_MANAGER_CREDENTIAL_STORE);
+    int32_t ret = CmUninstallAppCert(&g_keyUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert failed, retcode:" << ret;
 
     uint32_t appUid[DEFAULT_APP_UID_COUNT] = {0};

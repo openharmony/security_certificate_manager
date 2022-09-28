@@ -41,6 +41,8 @@
 #include "cm_openssl_rsa.h"
 #include "cm_openssl_curve25519.h"
 
+#include "cert_manager_service.h"
+
 #define MAX_PACKAGENAME_LEN     32
 #define MAX_LEN_CERTIFICATE     8196
 #define MAX_LEN_PRIVATE_KEY     1024
@@ -1069,51 +1071,6 @@ static int32_t CmAppCertificateInfoPack(struct CmBlob *certificateInfo,
     return ret;
 }
 
-static int32_t CmServiceGetAppCert(const struct CmContext *context, uint32_t store,
-    struct CmBlob *keyUri, struct CmBlob *certBlob)
-{
-    uint32_t certSize, fileCount = 0;
-    struct CmBlob fileNames[MAX_COUNT_CERTIFICATE];
-
-    char uriBuf[MAX_LEN_URI] = {0};
-    struct CmBlob uriBlob = { sizeof(uriBuf), (uint8_t*)uriBuf };
-    uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
-    (void)memset_s(fileNames, len, 0, len);
-    if (CmServiceGetAppCertList(context, store, fileNames, MAX_COUNT_CERTIFICATE, &fileCount) != CM_SUCCESS) {
-        CM_LOG_E("Get App cert list fail");
-        CmFreeFileNames(fileNames, MAX_COUNT_CERTIFICATE);
-        return CM_FAILURE;
-    }
-
-    for (uint32_t i = 0; i < fileCount; i++) {
-        if (CmGetUri((char *)fileNames[i].data, &uriBlob) != CM_SUCCESS) {
-            CM_LOG_E("Get uri failed");
-            continue;
-        }
-
-        if (memcmp(uriBlob.data, keyUri->data, keyUri->size) == 0) {
-            certSize = CmFileSize(NULL, (char *)fileNames[i].data);
-            certBlob->data = (uint8_t *)CmMalloc(certSize);
-            if (certBlob->data == NULL) {
-                CM_LOG_E("Malloc memory faild file:%s", (char *)fileNames[i].data);
-                continue;
-            }
-            certBlob->size = certSize;
-
-            if (CmFileRead(NULL, (char *)fileNames[i].data, 0, certBlob->data, certSize) != certSize) {
-                CM_LOG_E("Read file faild");
-                CM_FREE_BLOB(*certBlob);
-                continue;
-            }
-            CmFreeFileNames(fileNames, MAX_COUNT_CERTIFICATE);
-            return CM_SUCCESS;
-        }
-    }
-    CmFreeFileNames(fileNames, MAX_COUNT_CERTIFICATE);
-    CM_FREE_BLOB(*certBlob);
-    return CM_FAILURE;
-}
-
 void CmIpcServiceGetAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context)
 {
@@ -1169,3 +1126,317 @@ void CmIpcServiceGetAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *ou
     CM_FREE_BLOB(certificateInfo);
     CM_LOG_I("CmIpcServiceGetAppCert end:%d", ret);
 }
+
+static int32_t GetInputParams(const struct CmBlob *paramSetBlob, struct CmParamSet **paramSet,
+    struct CmContext *cmContext, struct CmParamOut *params, uint32_t paramsCount)
+{
+    int32_t ret = CmGetProcessInfoForIPC(cmContext);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get ipc info failed, ret = %d", ret);
+        return ret;
+    }
+
+    /* The paramSet blob pointer needs to be refreshed across processes. */
+    ret = CmGetParamSet((struct CmParamSet *)paramSetBlob->data, paramSetBlob->size, paramSet);
+    if (ret != HKS_SUCCESS) {
+        CM_LOG_E("get paramSet failed, ret = %d", ret);
+        return ret;
+    }
+
+    ret = CmParamSetToParams(*paramSet, params, paramsCount);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get params from paramSet failed, ret = %d", ret);
+        CmFreeParamSet(paramSet); /* if success no need free paramSet */
+    }
+
+    return ret;
+}
+
+static int32_t GetAuthedList(const struct CmContext *context, const struct CmBlob *keyUri, struct CmBlob *outData)
+{
+    if (outData->size < sizeof(uint32_t)) { /* appUidCount size */
+        CM_LOG_E("invalid outData size[%u]", outData->size);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    uint32_t count = (outData->size - sizeof(uint32_t)) / sizeof(uint32_t);
+    struct CmAppUidList appUidList = { count, NULL };
+    if (count != 0) {
+        appUidList.appUid = (uint32_t *)(outData->data + sizeof(uint32_t));
+    }
+
+    int32_t ret = CmServiceGetAuthorizedAppList(context, keyUri, &appUidList);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("service get authed list failed, ret = %d", ret);
+        return ret;
+    }
+
+    /* refresh outData:  1.refresh appUidCount; 2.appUidCount is no bigger than count */
+    (void)memcpy_s(outData->data, sizeof(uint32_t), &appUidList.appUidCount, sizeof(uint32_t));
+    outData->size = sizeof(uint32_t) + sizeof(uint32_t) * appUidList.appUidCount;
+
+    return CM_SUCCESS;
+}
+
+void CmIpcServiceGrantAppCertificate(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    struct CmContext cmContext = { 0, 0, {0} };
+    struct CmParamSet *paramSet = NULL;
+
+    int32_t ret;
+    do {
+        struct CmBlob keyUri = { 0, NULL };
+        uint32_t appUid = 0;
+        struct CmParamOut params[] = {
+            { .tag = CM_TAG_PARAM0_BUFFER, .blob = &keyUri },
+            { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &appUid },
+        };
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmServiceGrantAppCertificate(&cmContext, &keyUri, appUid, outData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("service grant app failed, ret = %d", ret);
+            break;
+        }
+    } while (0);
+
+    CM_LOG_I("CmIpcServiceGrantAppCertificate end:%d", ret);
+    CmSendResponse(context, ret, outData);
+    CmFreeParamSet(&paramSet);
+}
+
+void CmIpcServiceGetAuthorizedAppList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    struct CmContext cmContext = { 0, 0, {0} };
+    struct CmParamSet *paramSet = NULL;
+
+    int32_t ret;
+    do {
+        struct CmBlob keyUri = { 0, NULL };
+        struct CmParamOut params[] = {
+            { .tag = CM_TAG_PARAM0_BUFFER, .blob = &keyUri },
+        };
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = GetAuthedList(&cmContext, &keyUri, outData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get authed app list failed, ret = %d", ret);
+            break;
+        }
+    } while (0);
+
+    CM_LOG_I("CmIpcServiceGetAuthorizedAppList end:%d", ret);
+    CmSendResponse(context, ret, outData);
+    CmFreeParamSet(&paramSet);
+}
+
+void CmIpcServiceIsAuthorizedApp(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    (void)outData;
+    struct CmContext cmContext = { 0, 0, {0} };
+    struct CmParamSet *paramSet = NULL;
+
+    int32_t ret;
+    do {
+        struct CmBlob authUri = { 0, NULL };
+        struct CmParamOut params[] = {
+            { .tag = CM_TAG_PARAM0_BUFFER, .blob = &authUri },
+        };
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmServiceIsAuthorizedApp(&cmContext, &authUri);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("service check is authed app failed, ret = %d", ret);
+            break;
+        }
+    } while (0);
+
+    CM_LOG_I("CmIpcServiceIsAuthorizedApp end:%d", ret);
+    CmSendResponse(context, ret, NULL);
+    CmFreeParamSet(&paramSet);
+}
+
+void CmIpcServiceRemoveGrantedApp(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    struct CmContext cmContext = { 0, 0, {0} };
+    struct CmParamSet *paramSet = NULL;
+    (void)outData;
+
+    int32_t ret;
+    do {
+        uint32_t appUid = 0;
+        struct CmBlob keyUri = { 0, NULL };
+        struct CmParamOut params[] = {
+            { .tag = CM_TAG_PARAM0_BUFFER, .blob = &keyUri },
+            { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &appUid },
+        };
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmServiceRemoveGrantedApp(&cmContext, &keyUri, appUid);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("service remove grant app failed, ret = %d", ret);
+            break;
+        }
+    } while (0);
+
+    CM_LOG_I("CmIpcServiceRemoveGrantedApp end:%d", ret);
+    CmSendResponse(context, ret, NULL);
+    CmFreeParamSet(&paramSet);
+}
+
+void CmIpcServiceInit(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    struct CmContext cmContext = { 0, 0, {0} };
+    struct CmParamSet *paramSet = NULL;
+
+    int32_t ret;
+    do {
+        struct CmBlob authUri = { 0, NULL };
+        struct CmBlob specBlob = { 0, NULL };
+        struct CmParamOut params[] = {
+            { .tag = CM_TAG_PARAM0_BUFFER, .blob = &authUri },
+            { .tag = CM_TAG_PARAM1_BUFFER, .blob = &specBlob },
+        };
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get input params failed, ret = %d", ret);
+            break;
+        }
+
+        struct CmSignatureSpec spec = { 0 };
+        if (specBlob.size < sizeof(struct CmSignatureSpec)) {
+            CM_LOG_E("invalid input spec size");
+            ret = CMR_ERROR_INVALID_ARGUMENT;
+            break;
+        }
+        (void)memcpy_s(&spec, sizeof(struct CmSignatureSpec), specBlob.data, sizeof(struct CmSignatureSpec));
+
+        ret = CmServiceInit(&cmContext, &authUri, &spec, outData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("service init failed, ret = %d", ret);
+            break;
+        }
+    } while (0);
+
+    CM_LOG_I("CmIpcServiceInit end:%d", ret);
+    CmSendResponse(context, ret, outData);
+    CmFreeParamSet(&paramSet);
+}
+
+void CmIpcServiceUpdate(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    (void)outData;
+    struct CmContext cmContext = { 0, 0, {0} };
+    struct CmParamSet *paramSet = NULL;
+
+    int32_t ret;
+    do {
+        struct CmBlob handleUpdate = { 0, NULL };
+        struct CmBlob inDataUpdate = { 0, NULL };
+        struct CmParamOut params[] = {
+            { .tag = CM_TAG_PARAM0_BUFFER, .blob = &handleUpdate },
+            { .tag = CM_TAG_PARAM1_BUFFER, .blob = &inDataUpdate },
+        };
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmServiceUpdate(&cmContext, &handleUpdate, &inDataUpdate);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("service update failed, ret = %d", ret);
+            break;
+        }
+    } while (0);
+
+    CM_LOG_I("CmIpcServiceUpdate end:%d", ret);
+    CmSendResponse(context, ret, NULL);
+    CmFreeParamSet(&paramSet);
+}
+
+void CmIpcServiceFinish(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    struct CmContext cmContext = { 0, 0, {0} };
+    struct CmParamSet *paramSet = NULL;
+
+    int32_t ret;
+    do {
+        struct CmBlob handleFinish = { 0, NULL };
+        struct CmBlob inDataFinish = { 0, NULL };
+        struct CmParamOut params[] = {
+            { .tag = CM_TAG_PARAM0_BUFFER, .blob = &handleFinish },
+            { .tag = CM_TAG_PARAM1_BUFFER, .blob = &inDataFinish },
+        };
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmServiceFinish(&cmContext, &handleFinish, &inDataFinish, outData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("service finish failed, ret = %d", ret);
+            break;
+        }
+    } while (0);
+
+    CM_LOG_I("CmIpcServiceFinish end:%d", ret);
+    CmSendResponse(context, ret, outData);
+    CmFreeParamSet(&paramSet);
+}
+
+void CmIpcServiceAbort(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    (void)outData;
+    struct CmContext cmContext = { 0, 0, {0} };
+    struct CmParamSet *paramSet = NULL;
+
+    int32_t ret;
+    do {
+        struct CmBlob handle = { 0, NULL };
+        struct CmParamOut params[] = {
+            { .tag = CM_TAG_PARAM0_BUFFER, .blob = &handle },
+        };
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmServiceAbort(&cmContext, &handle);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("service abort failed, ret = %d", ret);
+            break;
+        }
+    } while (0);
+
+    CM_LOG_I("CmIpcServiceAbort end:%d", ret);
+    CmSendResponse(context, ret, NULL);
+    CmFreeParamSet(&paramSet);
+}
+

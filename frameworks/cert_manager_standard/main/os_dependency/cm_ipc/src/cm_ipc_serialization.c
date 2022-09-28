@@ -295,22 +295,7 @@ int32_t CmCertificateStatusPack(struct CmBlob *inData, const struct CmContext *c
     return ret;
 }
 
-static int32_t AddParams(struct CmParam *params, uint32_t cnt, struct CmParamSet *paramSet)
-{
-    uint8_t tmpData = 0;
-    struct CmBlob tmpBlob = { sizeof(tmpData), &tmpData };
-
-    for (uint32_t i = 0; i < cnt; ++i) {
-        if ((GetTagType(params[i].tag) == CM_TAG_TYPE_BYTES) &&
-            (params[i].blob.size == 0 || params[i].blob.data == NULL)) {
-            params[i].tag += CM_PARAM_BUFFER_NULL_INTERVAL;
-            params[i].blob = tmpBlob;
-        }
-    }
-    return CmAddParams(paramSet, params, cnt);
-}
-
-int32_t CmParamsToParamSet(const struct CmParam *params, uint32_t cnt, struct CmParamSet **outParamSet)
+int32_t CmParamsToParamSet(struct CmParam *params, uint32_t cnt, struct CmParamSet **outParamSet)
 {
     struct CmParamSet *newParamSet = NULL;
 
@@ -321,7 +306,17 @@ int32_t CmParamsToParamSet(const struct CmParam *params, uint32_t cnt, struct Cm
     }
 
     do {
-        ret = AddParams((struct CmParam *)params, cnt, newParamSet);
+        uint8_t tmpData = 0;
+        struct CmBlob tmpBlob = { sizeof(tmpData), &tmpData };
+        for (uint32_t i = 0; i < cnt; ++i) {
+            if ((GetTagType(params[i].tag) == CM_TAG_TYPE_BYTES) &&
+                (params[i].blob.size == 0 || params[i].blob.data == NULL)) {
+                params[i].tag += CM_PARAM_BUFFER_NULL_INTERVAL;
+                params[i].blob = tmpBlob;
+            }
+        }
+
+        ret = CmAddParams(newParamSet, params, cnt);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("add in params failed");
             break;

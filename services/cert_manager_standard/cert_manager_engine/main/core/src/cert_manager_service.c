@@ -15,12 +15,17 @@
 
 #include "cert_manager_service.h"
 
+#include "securec.h"
+
 #include "cert_manager_auth_mgr.h"
 #include "cert_manager_key_operation.h"
 #include "cert_manager_mem.h"
 #include "cert_manager_permission_check.h"
+#include "cert_manager_storage.h"
 #include "cm_log.h"
 #include "cm_type.h"
+
+#include "cm_event_process.h"
 
 static int32_t CheckUri(const struct CmBlob *keyUri)
 {
@@ -35,6 +40,35 @@ static int32_t CheckUri(const struct CmBlob *keyUri)
         }
     }
     return CMR_ERROR_INVALID_ARGUMENT;
+}
+
+int32_t CmServiceGetAppCert(const struct CmContext *context, uint32_t store,
+    struct CmBlob *keyUri, struct CmBlob *certBlob)
+{
+    if (CheckUri(keyUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (!CmHasCommonPermission()) {
+        CM_LOG_E("permission check failed");
+        return CMR_ERROR_PERMISSION_DENIED;
+    }
+
+    struct CmBlob commonUri = { 0, NULL };
+    int32_t ret = CmCheckAndGetCommonUri(context, keyUri, &commonUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("check and get common uri when get app cert failed, ret = %d", ret);
+        return ret;
+    }
+
+    ret = CmStorageGetAppCert(context, store, &commonUri, certBlob);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get app cert from storage failed, ret = %d", ret);
+    }
+
+    CM_FREE_PTR(commonUri.data);
+    return ret;
 }
 
 int32_t CmServiceGrantAppCertificate(const struct CmContext *context, const struct CmBlob *keyUri,
@@ -115,7 +149,7 @@ int32_t CmServiceInit(const struct CmContext *context, const struct CmBlob *auth
     struct CmBlob commonUri = { 0, NULL };
     int32_t ret = CmCheckAndGetCommonUri(context, authUri, &commonUri);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("check and get common uri failed, ret = %d");
+        CM_LOG_E("check and get common uri failed, ret = %d", ret);
         return ret;
     }
 

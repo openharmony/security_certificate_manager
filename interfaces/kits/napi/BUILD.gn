@@ -29,11 +29,14 @@ ohos_shared_library("certmanager") {
   sources = [
     "src/cm_napi.cpp",
     "src/cm_napi_common.cpp",
-    "src/cm_napi_get_system_cert_list.cpp",
+    "src/cm_napi_get_app_cert_info.cpp",
+    "src/cm_napi_get_app_cert_list.cpp",
     "src/cm_napi_get_system_cert_info.cpp",
-    "src/cm_napi_set_cert_status.cpp",
+    "src/cm_napi_get_system_cert_list.cpp",
+    "src/cm_napi_grant.cpp",
     "src/cm_napi_install_app_cert.cpp",
-    "src/cm_napi_uninstall_app_cert.cpp",
+    "src/cm_napi_set_cert_status.cpp",
+    "src/cm_napi_sign_verify.cpp",
     "src/cm_napi_uninstall_all_app_cert.cpp",
     "src/cm_napi_get_app_cert_list.cpp",
     "src/cm_napi_get_app_cert_info.cpp",
@@ -41,12 +44,13 @@ ohos_shared_library("certmanager") {
     "src/cm_napi_get_app_cert_info_common.cpp",
     "src/cm_napi_install_app_cert_common.cpp",
     "src/cm_napi_uninstall_app_cert_common.cpp",
+    "src/cm_napi_uninstall_app_cert.cpp",
   ]
 
   external_deps = [
+    "c_utils:utils",
     "certificate_manager:cert_manager_sdk",
     "napi:ace_napi",
-    "c_utils:utils",
   ]
   cflags_cc = [
     "-Wall",

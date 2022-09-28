@@ -55,6 +55,16 @@ enum CmMessage {
     CM_MSG_UNINSTALL_ALL_APP_CERTIFICATE,
     CM_MSG_GET_APP_CERTIFICATE_LIST,
     CM_MSG_GET_APP_CERTIFICATE,
+
+    CM_MSG_GRANT_APP_CERT,
+    CM_MSG_GET_AUTHED_LIST,
+    CM_MSG_CHECK_IS_AUTHED_APP,
+    CM_MSG_REMOVE_GRANT_APP,
+    CM_MSG_INIT,
+    CM_MSG_UPDATE,
+    CM_MSG_FINISH,
+    CM_MSG_ABORT,
+
     /* new cmd type must be added before HKS_MSG_MAX */
     CM_MSG_MAX,
 };
@@ -75,6 +85,15 @@ static struct CmIpcPoint g_cmIpcHandler[] = {
     { CM_MSG_UNINSTALL_ALL_APP_CERTIFICATE, CmIpcServiceUninstallAllAppCert },
     { CM_MSG_GET_APP_CERTIFICATE_LIST, CmIpcServiceGetAppCertList },
     { CM_MSG_GET_APP_CERTIFICATE, CmIpcServiceGetAppCert },
+
+    { CM_MSG_GRANT_APP_CERT, CmIpcServiceGrantAppCertificate },
+    { CM_MSG_GET_AUTHED_LIST, CmIpcServiceGetAuthorizedAppList },
+    { CM_MSG_CHECK_IS_AUTHED_APP, CmIpcServiceIsAuthorizedApp },
+    { CM_MSG_REMOVE_GRANT_APP, CmIpcServiceRemoveGrantedApp },
+    { CM_MSG_INIT, CmIpcServiceInit },
+    { CM_MSG_UPDATE, CmIpcServiceUpdate },
+    { CM_MSG_FINISH, CmIpcServiceFinish },
+    { CM_MSG_ABORT, CmIpcServiceAbort },
 };
 
 static struct CmIpcEntryPoint g_cmIpcMessageHandler[] = {

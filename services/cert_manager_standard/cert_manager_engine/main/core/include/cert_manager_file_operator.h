@@ -59,6 +59,8 @@ int32_t CmFileRemove(const char *path, const char *fileName);
 
 uint32_t CmFileSize(const char *path, const char *fileName);
 
+int32_t CmIsFileExist(const char *path, const char *fileName);
+
 int32_t CmMakeDir(const char *path);
 
 void *CmOpenDir(const char *path);
