@@ -22,6 +22,9 @@
 extern "C" {
 #endif
 
+int32_t CmServiceGetAppCert(const struct CmContext *context, uint32_t store,
+    struct CmBlob *keyUri, struct CmBlob *certBlob);
+
 int32_t CmServiceGrantAppCertificate(const struct CmContext *context, const struct CmBlob *keyUri,
     uint32_t appUid, struct CmBlob *authUri);
 

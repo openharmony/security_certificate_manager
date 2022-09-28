@@ -42,6 +42,22 @@ CM_API_EXPORT int32_t CmGetAppCertList(const uint32_t store, struct CredentialLi
 
 CM_API_EXPORT int32_t CmGetAppCert(const struct CmBlob *keyUri, const uint32_t store, struct Credential *certificate);
 
+CM_API_EXPORT int32_t CmGrantAppCertificate(const struct CmBlob *keyUri, uint32_t appUid, struct CmBlob *authUri);
+
+CM_API_EXPORT int32_t CmGetAuthorizedAppList(const struct CmBlob *keyUri, struct CmAppUidList *appUidList);
+
+CM_API_EXPORT int32_t CmIsAuthorizedApp(const struct CmBlob *authUri);
+
+CM_API_EXPORT int32_t CmRemoveGrantedApp(const struct CmBlob *keyUri, uint32_t appUid);
+
+CM_API_EXPORT int32_t CmInit(const struct CmBlob *authUri, const struct CmSignatureSpec *spec, struct CmBlob *handle);
+
+CM_API_EXPORT int32_t CmUpdate(const struct CmBlob *handle, const struct CmBlob *inData);
+
+CM_API_EXPORT int32_t CmFinish(const struct CmBlob *handle, const struct CmBlob *inData, struct CmBlob *outData);
+
+CM_API_EXPORT int32_t CmAbort(const struct CmBlob *handle);
+
 #ifdef __cplusplus
 }
 #endif

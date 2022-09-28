@@ -40,7 +40,7 @@ int32_t CmCertificateInfoUnpackFromService(const struct CmBlob *outData, const s
 int32_t CmCertificateStatusPack(struct CmBlob *inData, const struct CmContext *cmContext, const struct CmBlob *certUri,
     const uint32_t store, const uint32_t status);
 
-int32_t CmParamsToParamSet(const struct CmParam *params, uint32_t cnt, struct CmParamSet **outParamSet);
+int32_t CmParamsToParamSet(struct CmParam *params, uint32_t cnt, struct CmParamSet **outParamSet);
 
 #ifdef __cplusplus
 }

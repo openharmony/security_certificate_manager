@@ -31,6 +31,8 @@
 #include "hks_api.h"
 #include "hks_param.h"
 
+#include "cert_manager_auth_mgr.h"
+
 #define MAX_FILES_IN_DIR                    1000
 #define CERT_MANAGER_MD5_SIZE               32
 #define CERT_MANAGER_MAX_CERT_SIZE          4096
@@ -977,6 +979,14 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
 {
     ASSERT_ARGS(context && keyUri && keyUri->data && keyUri->size);
     int32_t ret;
+
+    if (store == CM_CREDENTIAL_STORE) {
+        ret = CmAuthDeleteAuthInfo(context, keyUri);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("delete auth info failed when remove app certificate."); /* ignore ret code, only record log */
+        }
+    }
+
     char pathBuf[CERT_MAX_PATH_LEN] = {0};
     struct CmMutableBlob path = { sizeof(pathBuf), (uint8_t*) pathBuf };
 
@@ -998,6 +1008,18 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
     }
 
     return CMR_OK;
+}
+
+static void ClearAuthInfo(const struct CmContext *context, const struct CmBlob *keyUri, const uint32_t store)
+{
+    if (store != CM_CREDENTIAL_STORE) {
+        return;
+    }
+
+    int32_t ret = CmAuthDeleteAuthInfo(context, keyUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("delete auth info failed."); /* ignore ret code, only record log */
+    }
 }
 
 static int32_t CmAppCertGetFilePath(const struct CmContext *context, const uint32_t store, struct CmBlob *path)
@@ -1042,7 +1064,7 @@ int32_t CmGetUri(const char *filePath, struct CmBlob *uriBlob)
         return CM_FAILURE;
     }
 
-    uint32_t filePathLen = strlen(filePath);
+    uint32_t filePathLen = strlen(filePath) + 1; /* include '\0' at end */
     if (filePathLen == 0) {
         return CM_FAILURE;
     }
@@ -1091,7 +1113,7 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
 
         for (uint32_t i = 0; i < fileCount; i++) {
             if (CertManagerFileRemove(NULL, (char *)fileNames[i].data) != CM_SUCCESS) {
-                CM_LOG_E("App cert %u remove faild, ret: %d", i, ret);
+                CM_LOG_E("App cert %u remove faild", i);
                 continue;
             }
 
@@ -1106,8 +1128,9 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
             /* ignore the return of HksDeleteKey */
             retCode = HksDeleteKey(&HKS_BLOB(&uriBlob), NULL);
             if (retCode != HKS_SUCCESS && retCode != HKS_ERROR_NOT_EXIST) {
-                CM_LOG_I("App key %u remove failed ret: %d", i, ret);
+                CM_LOG_I("App key %u remove failed ret: %d", i, retCode);
             }
+            ClearAuthInfo(context, &uriBlob, store);
         }
     } while (0);
 

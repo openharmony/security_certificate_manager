@@ -34,7 +34,7 @@ static bool HasPermission(const std::string &permissionName)
 
 bool CmHasPrivilegedPermission(void)
 {
-    return HasPermission("ohos.permission.ACCESS_CERT_MANAGER_PRIVILEGED");
+    return HasPermission("ohos.permission.ACCESS_CERT_MANAGER_INTERNAL");
 }
 
 bool CmHasCommonPermission(void)

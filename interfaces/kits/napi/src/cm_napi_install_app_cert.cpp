@@ -136,7 +136,7 @@ static napi_value InstallAppCertParseParams(
 
 static void InitKeyUri(struct CmBlob *&keyUri)
 {
-    keyUri = (uint8_t *)CmMalloc(sizeof(struct CmBlob));
+    keyUri = (struct CmBlob *)CmMalloc(sizeof(struct CmBlob));
     if (keyUri == NULL) {
         CM_LOG_E("malloc keyUri buffer failed");
         return;

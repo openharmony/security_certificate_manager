@@ -127,6 +127,10 @@ enum CmErrorCode {
     CMR_ERROR_BUFFER_TOO_SMALL = -19,
     CMR_ERROR_INVALID_CERT_FORMAT = -20,
     CMR_ERROR_PARAM_NOT_EXIST = -21,
+    CMR_ERROR_SESSION_REACHED_LIMIT = -22,
+    CMR_ERROR_PERMISSION_DENIED = -23,
+    CMR_ERROR_AUTH_CHECK_FAILED = -24,
+    CMR_ERROR_KEY_OPERATION_FAILED = -25,
 };
 
 enum CmTagType {
@@ -332,6 +336,15 @@ struct CmStoreKeyInfo {
 struct Cm25519KeyPair {
     uint32_t publicBufferSize;
     uint32_t privateBufferSize;
+};
+
+struct CmAppUidList {
+    uint32_t appUidCount;
+    uint32_t *appUid;
+};
+
+struct CmSignatureSpec {
+    uint32_t purpose;
 };
 
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)

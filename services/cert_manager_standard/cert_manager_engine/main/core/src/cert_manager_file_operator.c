@@ -341,7 +341,7 @@ static int32_t CmUidLayerGetFileNames(const char *filePath, struct CmBlob *fileN
         /* fileNames memory free in top layer function */
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
-    fileNames[count].size = filePathLen;
+    fileNames[count].size = filePathLen + 1; /* include '\0' at end */
     return CM_SUCCESS;
 }
 
@@ -443,5 +443,24 @@ int32_t CmUserIdLayerGetFileCountAndNames(const char *path, struct CmBlob *fileN
     }
     closedir(dir);
     return CM_SUCCESS;
+}
+
+int32_t CmIsFileExist(const char *path, const char *fileName)
+{
+    if (fileName == NULL) {
+        CM_LOG_E("fileName is NULL");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    char *fullFileName = NULL;
+    int32_t ret = GetFullFileName(path, fileName, &fullFileName);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("GetFullFileName failed");
+        return ret;
+    }
+
+    ret = IsFileExist(fullFileName);
+    CM_FREE_PTR(fullFileName);
+    return ret;
 }
 

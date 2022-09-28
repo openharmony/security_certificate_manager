@@ -60,7 +60,7 @@ static void TestNormalGrant(uint32_t count, bool isSameUid)
 {
     uint8_t aliasData[] = "TestNormalGrant";
     struct CmBlob alias = { sizeof(aliasData), aliasData };
-    int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_RSA, CERT_MANAGER_CREDENTIAL_STORE);
+    int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_RSA, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert failed, retcode:" << ret;
 
     uint8_t uriData[] = "oh:t=ak;o=TestNormalGrant;u=0;a=0";
@@ -78,7 +78,7 @@ static void TestNormalGrant(uint32_t count, bool isSameUid)
         EXPECT_EQ(ret, CM_SUCCESS) << "CmGrantAppCertificate failed, retcode:" << ret;
     }
 
-    ret = CmUninstallAppCert(&keyUri, CERT_MANAGER_CREDENTIAL_STORE);
+    ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert failed, retcode:" << ret;
 }
 
@@ -342,7 +342,7 @@ HWTEST_F(CmGrantTest, CmGrantTest015, TestSize.Level0)
 {
     uint8_t aliasData[] = "CmGrantTest014";
     struct CmBlob alias = { sizeof(aliasData), aliasData };
-    int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_RSA, CERT_MANAGER_CREDENTIAL_STORE);
+    int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_RSA, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert failed, retcode:" << ret;
 
     uint8_t uriData[] = "oh:t=ak;o=CmGrantTest014;u=0;a=0";
@@ -354,7 +354,7 @@ HWTEST_F(CmGrantTest, CmGrantTest015, TestSize.Level0)
     ret = CmGrantAppCertificate(&keyUri, appId, &authUri);
     EXPECT_EQ(ret, CMR_ERROR_BUFFER_TOO_SMALL) << "CmGrantAppCertificate failed, retcode:" << ret;
 
-    ret = CmUninstallAppCert(&keyUri, CERT_MANAGER_CREDENTIAL_STORE);
+    ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert failed, retcode:" << ret;
 }
 

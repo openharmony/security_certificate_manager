@@ -18,7 +18,11 @@
 
 #include "cm_type.h"
 #include "securec.h"
+
 #include  <string>
+
+#define CERT_KEY_ALG_RSA 1
+#define CERT_KEY_ALG_ECC 2
 
 #define DELIMITER "$$$"
 #define ENDOF  "\n"
@@ -37,6 +41,8 @@ bool CompareCertInfo(const struct CertInfo *firstCert, const struct CertInfo *se
 bool CompareCredential(const struct Credential *firstCredential, const struct Credential *secondCredential);
 
 bool CompareCredentialList(const struct CredentialAbstract *firstCert, const struct CredentialAbstract *secondCert);
+
+int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t store);
 
 std::string DumpCertAbstractInfo(const struct CertAbstract *certAbstract);
 std::string DumpCertInfo(const struct CertInfo* certInfo);

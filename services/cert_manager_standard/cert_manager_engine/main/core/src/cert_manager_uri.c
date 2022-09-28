@@ -437,6 +437,27 @@ int32_t CertManagerUriDecode(struct CMUri *uri, const char *encoded)
     return CMR_OK;
 }
 
+int32_t CertManagerGetUidFromUri(const struct CmBlob *uri, uint32_t *uid)
+{
+    struct CMUri uriObj;
+    (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
+    int32_t ret = CertManagerUriDecode(&uriObj, (char *)uri->data);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("uri decode failed, ret = %d", ret);
+        return ret;
+    }
+
+    if (uriObj.app == NULL) {
+        CM_LOG_E("uri app invalid");
+        (void)CertManagerFreeUri(&uriObj);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    *uid = atoi(uriObj.app);
+    (void)CertManagerFreeUri(&uriObj);
+    return CM_SUCCESS;
+}
+
 #ifdef __cplusplus
 }
 #endif

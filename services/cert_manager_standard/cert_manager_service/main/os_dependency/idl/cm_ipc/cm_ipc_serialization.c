@@ -152,7 +152,7 @@ static int32_t GetNormalParam(const struct CmParam *param, struct CmParamOut *ou
 static int32_t GetNullBlobParam(const struct CmParamSet *paramSet, struct CmParamOut *outParams)
 {
     if (GetTagType(outParams->tag) != CM_TAG_TYPE_BYTES) {
-        CM_LOG_E("get param tag[0x%x] from ipc buffer failed", outParams->tag);
+        CM_LOG_E("param tag[0x%x] is not bytes", outParams->tag);
         return CMR_ERROR_PARAM_NOT_EXIST;
     }
 

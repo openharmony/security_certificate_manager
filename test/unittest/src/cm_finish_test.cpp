@@ -66,13 +66,13 @@ static void TestInstallAppCert(uint32_t alg)
     uint8_t aliasData[] = "TestFinishSignVerify";
     struct CmBlob alias = { sizeof(aliasData), aliasData };
 
-    int32_t ret = TestGenerateAppCert(&alias, alg, CERT_MANAGER_CREDENTIAL_STORE);
+    int32_t ret = TestGenerateAppCert(&alias, alg, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert failed, retcode:" << ret;
 }
 
 static void TestUninstallAppCert(void)
 {
-    int32_t ret = CmUninstallAppCert(&g_keyUri, CERT_MANAGER_CREDENTIAL_STORE);
+    int32_t ret = CmUninstallAppCert(&g_keyUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert failed, retcode:" << ret;
 }
 
