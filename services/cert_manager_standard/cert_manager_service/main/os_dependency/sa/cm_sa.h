@@ -38,7 +38,7 @@ constexpr int SA_ID_KEYSTORE_SERVICE = 3512;
 
 class ICertManagerService : public IRemoteBroker {
 public:
-    DECLARE_INTERFACE_DESCRIPTOR(u"ohos.security.CertManager.service");
+    DECLARE_INTERFACE_DESCRIPTOR(u"ohos.security.cm.service");
 };
 
 class CertManagerService : public SystemAbility, public IRemoteStub<ICertManagerService> {

@@ -89,6 +89,11 @@ extern "C" {
             DECLARE_NAPI_FUNCTION("uninstallAppCertificate", CMNapiUninstallAppCert),
             DECLARE_NAPI_FUNCTION("getAppCertificateList", CMNapiGetAppCertList),
             DECLARE_NAPI_FUNCTION("getAppCertificate", CMNapiGetAppCertInfo),
+
+            DECLARE_NAPI_FUNCTION("installPrivateCertificate", CMNapiInstallPrivateAppCert),
+            DECLARE_NAPI_FUNCTION("uninstallPrivateCertificate", CMNapiUninstallPrivateAppCert),
+            DECLARE_NAPI_FUNCTION("getPrivateCertificateList", CMNapiGetPrivateAppCertList),
+            DECLARE_NAPI_FUNCTION("getPrivateCertificate", CMNapiGetPrivateAppCertInfo),
         };
         NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
         return exports;
