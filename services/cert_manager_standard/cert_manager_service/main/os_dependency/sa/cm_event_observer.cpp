@@ -36,7 +36,7 @@ SystemEventSubscriber::SystemEventSubscriber(const OHOS::EventFwk::CommonEventSu
 
 void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData &data)
 {
-    int uid;
+    int userId;
     struct CmContext context;
     context.userId = INVALID_VALUE;
     auto want = data.GetWant();
@@ -44,13 +44,13 @@ void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData
     if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED ||
         action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
         context.uid = (uint32_t)want.GetIntParam(AppExecFwk::Constants::UID, -1);
-        OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(context.uid, uid);
-        context.userId = (uint32_t)uid;
+        OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(context.uid, userId);
+        context.userId = (uint32_t)userId;
         CM_LOG_I("CmService package removed: uid is %u userId is %u", context.uid, context.userId);
         CmDeleteProcessInfo(&context);
     } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
-        int userId = data.GetCode();
-        CM_LOG_I("CmService user removed: userId is %d", userId);
+        context.userId = data.GetCode();
+        CM_LOG_I("CmService user removed: userId is %d", context.userId);
         CmDeleteProcessInfo(&context);
     }
 }

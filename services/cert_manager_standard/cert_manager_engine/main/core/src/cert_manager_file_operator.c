@@ -331,6 +331,11 @@ static int32_t CmUidLayerGetFileNames(const char *filePath, struct CmBlob *fileN
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
     uint32_t filePathLen = strlen(filePath);
+    if (filePathLen >= CM_MAX_FILE_NAME_LEN) {
+		CM_LOG_E("CmUidLayerGetFileNames filePathLen:%u", filePathLen);
+        return CMR_ERROR_BUFFER_TOO_SMALL;
+    }
+
     fileNames[count].data = (uint8_t *)CMMalloc(filePathLen + 1);
     if (fileNames[count].data == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
