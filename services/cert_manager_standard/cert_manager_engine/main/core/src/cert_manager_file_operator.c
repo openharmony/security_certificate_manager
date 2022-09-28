@@ -464,3 +464,71 @@ int32_t CmIsFileExist(const char *path, const char *fileName)
     return ret;
 }
 
+int32_t CmGetSubDir(void *dirp, struct CmFileDirentInfo *direntInfo)
+{
+    DIR *dir = (DIR *)dirp;
+    struct dirent *dire = readdir(dir);
+
+    while (dire != NULL) {
+        if ((dire->d_type != DT_DIR) || (strcmp(dire->d_name, ".") == 0) ||
+            (strcmp(dire->d_name, "..") == 0)) {
+            dire = readdir(dir);
+            continue;
+        }
+
+        uint32_t dirLen = strlen(dire->d_name);
+        if (memcpy_s(direntInfo->fileName, sizeof(direntInfo->fileName) - 1, dire->d_name, dirLen) != EOK) {
+            return CMR_ERROR_INVALID_OPERATION;
+        }
+        direntInfo->fileName[dirLen] = '\0';
+        return CMR_OK;
+    }
+
+    return CMR_ERROR_NOT_EXIST;
+}
+
+static int32_t DirRemove(const char *path)
+{
+    if (access(path, F_OK) != 0) {
+        return CMR_ERROR_NOT_EXIST;
+    }
+
+    struct stat tmp;
+    if (stat(path, &tmp) != 0) {
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+
+    DIR *dirp;
+    struct dirent *dire;
+    if (S_ISDIR(tmp.st_mode)) {
+        uint32_t i = 0;
+        dirp = opendir(path);
+        while ((dire = readdir(dirp)) != NULL) {
+            if ((strcmp(dire->d_name, ".") == 0) || (strcmp(dire->d_name, "..") == 0)) {
+                continue;
+            }
+            i++;
+        }
+        closedir(dirp);
+
+        if (i != 0) {
+            CM_LOG_E("Dir is not empty");
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        rmdir(path);
+        return CMR_OK;
+    }
+    return CMR_ERROR_INVALID_ARGUMENT;
+}
+
+
+int32_t CmDirRemove(const char *path)
+{
+    if (path == NULL) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    return DirRemove(path);
+}
+
+

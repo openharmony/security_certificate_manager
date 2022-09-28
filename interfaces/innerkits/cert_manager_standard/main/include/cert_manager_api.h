@@ -58,6 +58,21 @@ CM_API_EXPORT int32_t CmFinish(const struct CmBlob *handle, const struct CmBlob 
 
 CM_API_EXPORT int32_t CmAbort(const struct CmBlob *handle);
 
+CM_API_EXPORT int32_t CmGetUserCertList(uint32_t store, struct CertList *certificateList);
+
+CM_API_EXPORT int32_t CmGetUserCertInfo(const struct CmBlob *certUri, uint32_t store,
+    struct CertInfo *certificateInfo);
+
+CM_API_EXPORT int32_t CmSetUserCertStatus(const struct CmBlob *certUri, uint32_t store,
+    const bool status);
+
+CM_API_EXPORT int32_t CmInstallUserTrustedCert(const struct CmBlob *userCert,
+    const struct CmBlob *certAlias, struct CmBlob *certUri);
+
+CM_API_EXPORT int32_t CmUninstallUserTrustedCert(const struct CmBlob *certUri);
+
+CM_API_EXPORT int32_t CmUninstallAllUserTrustedCert(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -74,6 +74,10 @@ int32_t CmIsDirExist(const char *path);
 int32_t CmUserIdLayerGetFileCountAndNames(const char *path, struct CmBlob *fileNames,
     const uint32_t arraySize, uint32_t *fileCount);
 
+int32_t CmGetSubDir(void *dirp, struct CmFileDirentInfo *direntInfo);
+
+int32_t CmDirRemove(const char *path);
+
 #ifdef __cplusplus
 }
 #endif

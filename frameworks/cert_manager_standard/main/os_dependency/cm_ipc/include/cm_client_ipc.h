@@ -60,6 +60,21 @@ int32_t CmClientFinish(const struct CmBlob *handle, const struct CmBlob *inData,
 
 int32_t CmClientAbort(const struct CmBlob *handle);
 
+int32_t CmClientGetUserCertList(const uint32_t store, struct CertList *certificateList);
+
+int32_t CmClientGetUserCertInfo(const struct CmBlob *certUri, const uint32_t store,
+    struct CertInfo *certificateInfo);
+
+int32_t CmClientSetUserCertStatus(const struct CmBlob *certUri, const uint32_t store,
+    const uint32_t status);
+
+int32_t CmClientInstallUserTrustedCert(const struct CmBlob *userCert, const struct CmBlob *certAlias,
+    struct CmBlob *certUri);
+
+int32_t CmClientUninstallUserTrustedCert(const struct CmBlob *certUri);
+
+int32_t CmClientUninstallAllUserTrustedCert(void);
+
 #ifdef __cplusplus
 }
 #endif

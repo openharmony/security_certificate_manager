@@ -43,6 +43,9 @@
 
 #include "cert_manager_service.h"
 
+#include "cert_manager_query.h"
+#include "cert_manager_permission_check.h"
+
 #define MAX_PACKAGENAME_LEN     32
 #define MAX_LEN_CERTIFICATE     8196
 #define MAX_LEN_PRIVATE_KEY     1024
@@ -1438,5 +1441,252 @@ void CmIpcServiceAbort(const struct CmBlob *paramSetBlob, struct CmBlob *outData
     CM_LOG_I("CmIpcServiceAbort end:%d", ret);
     CmSendResponse(context, ret, NULL);
     CmFreeParamSet(&paramSet);
+}
+
+static int32_t CmCheckCallerPermission(const struct CmContext *ipcInfo)
+{
+    (void)ipcInfo;
+
+    return CM_SUCCESS;
+}
+
+void CmIpcServiceGetUserCertList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    CM_LOG_I("enter CmIpcServiceGetUserCertList");
+    int32_t ret = CM_SUCCESS;
+    uint32_t store;
+    struct CmContext cmContext = {0};
+    struct CmParamSet *paramSet = NULL;
+    struct CmMutableBlob certFileList = { 0, NULL };
+    struct CmParamOut params[] = {
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store },
+    };
+
+    do {
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetUserCertList get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmCheckCallerPermission(&cmContext);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("caller no permission");
+            break;
+        }
+
+        ret = CmServiceGetCertList(&cmContext, store, &certFileList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetCertList failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmServiceGetCertListPack(&cmContext, store, &certFileList, outData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmServiceGetCertListPack pack fail, ret = %d", ret);
+            break;
+        }
+
+        CmSendResponse(context, ret, outData);
+    } while (0);
+    if (ret != CM_SUCCESS) {
+        CmSendResponse(context, ret, NULL);
+    }
+    if (certFileList.data != NULL) {
+        CmFreeCertFiles(&certFileList);
+    }
+    CmFreeParamSet(&paramSet);
+}
+
+void CmIpcServiceGetUserCertInfo(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    int32_t ret = CM_SUCCESS;
+    uint32_t store;
+    uint32_t status = 0;
+    struct CmBlob certUri = { 0, NULL };
+    struct CmBlob certificateData = { 0, NULL };
+    struct CmContext cmContext = {0};
+    struct CmParamSet *paramSet = NULL;
+    struct CmParamOut params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = &certUri},
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store},
+    };
+
+    do {
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetUserCertInfo get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmCheckCallerPermission(&cmContext);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("caller no permission");
+            break;
+        }
+
+        ret = CmGetServiceCertInfo(&cmContext, &certUri, store, &certificateData, &status);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetCertInfo failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmServiceGetCertInfoPack(&certificateData, status, outData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmServiceGetCertInfoPack pack failed, ret = %d", ret);
+            break;
+        }
+        CmSendResponse(context, ret, outData);
+    } while (0);
+    if (ret != CM_SUCCESS) {
+        CmSendResponse(context, ret, NULL);
+    }
+    CM_FREE_BLOB(certificateData);
+    CmFreeParamSet(&paramSet);
+}
+
+void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    int32_t ret = CM_SUCCESS;
+    uint32_t store;
+    uint32_t status;
+    struct CmBlob certUri = { 0, NULL };
+    struct CmContext cmContext = {0};
+    struct CmParamSet *paramSet = NULL;
+    struct CmParamOut params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = &certUri},
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store},
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &status},
+    };
+
+    do {
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("SetUserCertStatus get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmCheckCallerPermission(&cmContext);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("caller no permission");
+            break;
+        }
+
+        ret = CertManagerSetCertificatesStatus(&cmContext, &certUri, store, status);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("set cert status failed, ret = %d", ret);
+            break;
+        }
+    } while (0);
+    CmSendResponse(context, ret, NULL);
+    CmFreeParamSet(&paramSet);
+}
+
+void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    int32_t ret = CM_SUCCESS;
+    struct CmBlob userCert = { 0, NULL };
+    struct CmBlob certAlias = { 0, NULL };
+    struct CmContext cmContext = {0};
+        struct CmParamSet *paramSet = NULL;
+    struct CmParamOut params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = &userCert },
+        { .tag = CM_TAG_PARAM1_BUFFER, .blob = &certAlias },
+    };
+
+    do {
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("InstallUserCert get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmCheckCallerPermission(&cmContext);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("caller no permission");
+            break;
+        }
+
+        ret = CmInstallUserCert(&cmContext, &userCert, &certAlias, outData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CertManagerInstallUserCert fail, ret = %d", ret);
+        }
+
+        CmSendResponse(context, ret, outData);
+    } while (0);
+    if (ret != CM_SUCCESS) {
+        CmSendResponse(context, ret, NULL);
+    }
+    CmFreeParamSet(&paramSet);
+}
+
+void CmIpcServiceUninstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    (void)outData;
+    int32_t ret = CM_SUCCESS;
+    struct CmBlob certUri = { 0, NULL };
+    struct CmContext cmContext = {0};
+    struct CmParamSet *paramSet = NULL;
+    struct CmParamOut params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = &certUri },
+    };
+
+    do {
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("UninstallUserCert get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmCheckCallerPermission(&cmContext);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("caller no permission");
+            break;
+        }
+
+        ret = CmUninstallUserCert(&cmContext, &certUri);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CertManagerUninstallUserCert fail, ret = %d", ret);
+            break;
+        }
+    } while (0);
+    CmSendResponse(context, ret, NULL);
+    CmFreeParamSet(&paramSet);
+}
+
+void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    (void)outData;
+    int32_t ret = CM_SUCCESS;
+    struct CmContext cmContext = {0};
+
+    do {
+        ret = CmGetProcessInfoForIPC(&cmContext);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmGetProcessInfoForIPC fail, ret = %d", ret);
+            break;
+        }
+
+        ret = CmCheckCallerPermission(&cmContext);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("caller no permission");
+            break;
+        }
+
+        ret = CmUninstallAllUserCert(&cmContext);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CertManagerUninstallAllUserCert fail, ret = %d", ret);
+            break;
+        }
+    } while (0);
+
+    CmSendResponse(context, ret, NULL);
+
 }
 

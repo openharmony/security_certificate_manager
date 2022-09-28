@@ -146,6 +146,16 @@ void CmFreeFileNames(struct CmBlob *fileNames, const uint32_t fileSize);
 
 int32_t CmGetUri(const char *filePath, struct CmBlob *uriBlob);
 
+int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *pathBlob,
+    const struct CmBlob *userCert, const struct CmBlob *certAlias, struct CmBlob *certUri);
+
+int32_t NameHashFromUri(const char *fName, struct CmMutableBlob *nameDigest);
+
+int32_t CmRemoveUserCert(struct CmMutableBlob *pathBlob, const struct CmBlob *certUri);
+
+int32_t CmRemoveAllUserCert(const struct CmContext *context, uint32_t store, const struct CmMutableBlob *certPathList);
+
+int32_t BuildUserUri(char **userUri, const char *aliasName, uint32_t type, const struct CmContext *context);
 #ifdef __cplusplus
 }
 #endif

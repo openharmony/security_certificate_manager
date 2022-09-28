@@ -156,6 +156,22 @@ finally:
     return rc;
 }
 
+int32_t BuildUserUri(char **userUri, const char *aliasName, uint32_t type, const struct CmContext *context)
+{
+    int32_t rc = CM_SUCCESS;
+    struct CMUri uri = {0};
+    uri.object = strdup(aliasName);
+    uri.type = type;
+
+    TRY_FUNC(UriSetIdStr(&uri.user, context->userId), rc);
+    TRY_FUNC(UriSetIdStr(&uri.app, context->uid), rc);
+    TRY_FUNC(EncodeUri(userUri, &uri), rc);
+
+finally:
+    CertManagerFreeUri(&uri);
+    return rc;
+}
+
 #ifdef __cplusplus
 }
 #endif
