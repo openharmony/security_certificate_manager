@@ -538,8 +538,31 @@ static bool AppCertCheckBlobValid(const struct CmBlob *data)
     return validChar;
 }
 
+static bool CmCheckMaxInstalledCertCount(const uint32_t store, const struct CmContext *cmContext)
+{
+    bool isValid = true;
+    uint32_t fileCount;
+    struct CmBlob fileNames[MAX_COUNT_CERTIFICATE];
+    uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
+    (void)memset_s(fileNames, len, 0, len);
+
+    if (CmServiceGetAppCertList(cmContext, store, fileNames,
+        MAX_COUNT_CERTIFICATE, &fileCount) != CM_SUCCESS) {
+        isValid = false;
+        CM_LOG_E("Get App cert list fail");
+    }
+
+    if (fileCount >= MAX_COUNT_CERTIFICATE) {
+        isValid = false;
+        CM_LOG_E("The app cert installed has reached max count:%u", fileCount);
+    }
+
+    CmFreeFileNames(fileNames, fileCount);
+    return isValid;
+}
+
 static int32_t CmInstallAppCertCheck(const struct CmBlob *appCert, const struct CmBlob *appCertPwd,
-    const struct CmBlob *certAlias, uint32_t store)
+    const struct CmBlob *certAlias, uint32_t store, const struct CmContext *cmContext)
 {
     if (appCert->data == NULL || appCertPwd->data == NULL || certAlias->data == NULL) {
         CM_LOG_E("CmInstallAppCertCheck paramSet check fail");
@@ -563,6 +586,12 @@ static int32_t CmInstallAppCertCheck(const struct CmBlob *appCert, const struct 
         CM_LOG_E("CmInstallAppCertCheck blob data check fail");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
+
+    if (CmCheckMaxInstalledCertCount(store, cmContext) == false) {
+        CM_LOG_E("CmCheckMaxInstalledCertCount check fail");
+        return CM_FAILURE;
+    }
+
     return CM_SUCCESS;
 }
 
@@ -612,6 +641,7 @@ static int32_t CmInstallAppCertGetParam(const struct CmBlob *paramSetBlob, struc
 {
     uint8_t *aliasBuff = certParam->aliasBuff;
     uint8_t *passWdBuff = certParam->passWdBuff;
+    struct CmContext *cmContext = certParam->cmContext;
     int32_t ret = CmGetParamSet((struct CmParamSet *)paramSetBlob->data, paramSetBlob->size, paramSet);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("InstallAppCert CmGetParamSet fail, ret = %d", ret);
@@ -631,7 +661,7 @@ static int32_t CmInstallAppCertGetParam(const struct CmBlob *paramSetBlob, struc
 
     struct CmBlob *appCert = params[0].blob, *appCertPwd = params[1].blob, *certAlias = params[2].blob;
     uint32_t store = *(params[3].uint32Param);
-    ret = CmInstallAppCertCheck(appCert, appCertPwd, certAlias, store);
+    ret = CmInstallAppCertCheck(appCert, appCertPwd, certAlias, store, cmContext);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmInstallAppCertCheck fail, ret = %d", ret);
         return CM_FAILURE;
@@ -666,9 +696,9 @@ void CmIpcServiceInstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob
     int32_t ret;
     uint32_t store;
     (void)outData;
-    uint8_t aliasBuff[MAX_LEN_CERT_ALIAS] = {0}, passWdBuff[MAX_LEN_APP_CERT_PASSWD] = {0};
-    struct CertParam certParam = { aliasBuff, passWdBuff };
     struct CmContext cmContext = {0};
+    uint8_t aliasBuff[MAX_LEN_CERT_ALIAS] = {0}, passWdBuff[MAX_LEN_APP_CERT_PASSWD] = {0};
+    struct CertParam certParam = { aliasBuff, passWdBuff, &cmContext};
     struct CmBlob appCert = { 0, NULL }, appCertPwd = { 0, NULL };
     struct CmBlob certAlias = { 0, NULL }, keyUri = { 0, NULL };
     struct CmParamSet *paramSet = NULL;
@@ -685,15 +715,15 @@ void CmIpcServiceInstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob
     };
 
     do {
-        ret = CmInstallAppCertGetParam(paramSetBlob, &paramSet, params, CM_ARRAY_SIZE(params), &certParam);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmInstallAppCertGetParam fail, ret = %d", ret);
-            break;
-        }
-
         ret = CmGetProcessInfoForIPC(&cmContext);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmGetProcessInfoForIPC fail, ret = %d", ret);
+            break;
+        }
+
+        ret = CmInstallAppCertGetParam(paramSetBlob, &paramSet, params, CM_ARRAY_SIZE(params), &certParam);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmInstallAppCertGetParam fail, ret = %d", ret);
             break;
         }
 
