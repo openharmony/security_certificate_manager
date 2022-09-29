@@ -193,6 +193,12 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     // this is the temporary version which comments the descriptor check
     std::u16string descriptor = CertManagerService::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
+    if (descriptor != remoteDescriptor) {
+        CM_LOG_E("descriptor is diff");
+        return HW_SYSTEM_ERROR;
+    }
+
+    CM_LOG_I("OnRemoteRequest code:%u", code);
 
     uint32_t outSize = (uint32_t)data.ReadUint32();
     struct CmBlob srcData = { 0, nullptr };

@@ -71,6 +71,7 @@ static const std::string CM_HANDLE_PROPERTY_HANDLE = "handle";
 static const int32_t CERT_MANAGER_SYS_CAP = 17500000;
 static const int32_t RESULT_NUMBER = 2;
 static const uint32_t APPLICATION_CERTIFICATE_STORE = 0;
+static const uint32_t APPLICATION_PRIVATE_CERTIFICATE_STORE = 3;
 static const uint32_t SYSTEM_CERTIFICATE_STORE = 1;
 static const std::string PARAM_TYPE_ERROR_NUMBER = "401";
 

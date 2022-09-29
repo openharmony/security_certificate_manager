@@ -38,6 +38,12 @@ ohos_shared_library("certmanager") {
     "src/cm_napi_set_cert_status.cpp",
     "src/cm_napi_sign_verify.cpp",
     "src/cm_napi_uninstall_all_app_cert.cpp",
+    "src/cm_napi_get_app_cert_list.cpp",
+    "src/cm_napi_get_app_cert_info.cpp",
+    "src/cm_napi_get_app_cert_list_common.cpp",
+    "src/cm_napi_get_app_cert_info_common.cpp",
+    "src/cm_napi_install_app_cert_common.cpp",
+    "src/cm_napi_uninstall_app_cert_common.cpp",
     "src/cm_napi_uninstall_app_cert.cpp",
   ]
 

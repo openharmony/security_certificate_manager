@@ -546,7 +546,7 @@ static int32_t CmInstallAppCertCheck(const struct CmBlob *appCert, const struct 
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (appCert->size == 0 || appCert->size == 0 ||appCert->size == 0 ||
+    if (appCert->size == 0 || appCertPwd->size == 0 || certAlias->size == 0 ||
         appCert->size > MAX_LEN_APP_CERT || appCertPwd->size > MAX_LEN_APP_CERT_PASSWD ||
         certAlias->size > MAX_LEN_CERT_ALIAS) {
         CM_LOG_E("CmInstallAppCertCheck paramSet check fail, appCert:%u, appCertPwd:%u, certAlias:%u",
