@@ -28,6 +28,7 @@
 #include "cm_napi_get_app_cert_info.h"
 #include "cm_napi_grant.h"
 #include "cm_napi_sign_verify.h"
+#include "cm_napi_user_trusted_cert.h"
 
 namespace CMNapi {
     inline void AddInt32Property(napi_env env, napi_value object, const char *name, int32_t value)
@@ -102,6 +103,12 @@ extern "C" {
             DECLARE_NAPI_FUNCTION("uninstallAppCertificate", CMNapiUninstallAppCert),
             DECLARE_NAPI_FUNCTION("getAppCertificateList", CMNapiGetAppCertList),
             DECLARE_NAPI_FUNCTION("getAppCertificate", CMNapiGetAppCertInfo),
+
+            DECLARE_NAPI_FUNCTION("installUserTrustedCertificate", CMNapiInstallUserTrustedCert),
+            DECLARE_NAPI_FUNCTION("uninstallAllUserTrustedCertificate", CMNapiUninstallAllUserTrustedCert),
+            DECLARE_NAPI_FUNCTION("uninstallUserTrustedCertificate", CMNapiUninstallUserTrustedCert),
+            DECLARE_NAPI_FUNCTION("getUserTrustedCertificateList", CMNapiGetUserTrustedCertList),
+            DECLARE_NAPI_FUNCTION("getUserTrustedCertificate", CMNapiGetUserTrustedCertInfo),
             DECLARE_NAPI_FUNCTION("installPrivateCertificate", CMNapiInstallPrivateAppCert),
             DECLARE_NAPI_FUNCTION("uninstallPrivateCertificate", CMNapiUninstallPrivateAppCert),
             DECLARE_NAPI_FUNCTION("getPrivateCertificateList", CMNapiGetPrivateAppCertList),

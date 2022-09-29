@@ -27,6 +27,8 @@ namespace CMNapi {
 namespace {
 constexpr int CM_NAPI_GET_SYSTEM_CERT_LIST_MIN_ARGS = 1;
 constexpr int CM_NAPI_GET_SYSTEM_CERT_LIST_MAX_ARGS = 2;
+constexpr int CM_NAPI_GET_USER_CERT_LIST_MIN_ARGS = 0;
+constexpr int CM_NAPI_GET_USER_CERT_LIST_MAX_ARGS = 1;
 }  // namespace
 
 struct GetCertListAsyncContextT {
@@ -97,7 +99,35 @@ static napi_value GetCertListParseParams(
         context->callback = GetCallback(env, argv[index]);
     }
 
-    context->store = SYSTEM_CERTIFICATE_STORE;   /* 1 is store type,  indicate system trusted certificate */
+    context->store = CM_SYSTEM_TRUSTED_STORE;
+    return GetInt32(env, 0);
+}
+
+static napi_value GetUserTrustedCertListParseParams(
+    napi_env env, napi_callback_info info, GetCertListAsyncContext context)
+{
+    size_t argc = CM_NAPI_GET_USER_CERT_LIST_MAX_ARGS;
+    napi_value argv[CM_NAPI_GET_USER_CERT_LIST_MAX_ARGS] = {0};
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+
+    if ((argc != CM_NAPI_GET_USER_CERT_LIST_MIN_ARGS) &&
+        (argc != CM_NAPI_GET_USER_CERT_LIST_MAX_ARGS)) {
+        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "get user trust list arguments count invalid");
+        CM_LOG_E("get user trust list arguments count is not expected");
+        return nullptr;
+    }
+
+    size_t index = 0;
+    if (index < argc) {
+        context->callback = GetCallback(env, argv[index]);
+        if (context->callback == nullptr) {
+            napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
+            CM_LOG_E("get user trust list get callback function failed");
+            return nullptr;
+        }
+    }
+
+    context->store = CM_USER_TRUSTED_STORE;
     return GetInt32(env, 0);
 }
 
@@ -115,6 +145,48 @@ static napi_value GetCertListWriteResult(napi_env env, GetCertListAsyncContext c
     return result;
 }
 
+static void GetCertListExecute(napi_env env, void *data)
+{
+    GetCertListAsyncContext context = static_cast<GetCertListAsyncContext>(data);
+
+    context->certificateList = (struct CertList *)CmMalloc(sizeof(struct CertList));
+    if (context->certificateList != nullptr) {
+        context->certificateList->certAbstract = nullptr;
+        context->certificateList->certsCount = 0;
+    }
+    if (context->store == CM_SYSTEM_TRUSTED_STORE) {
+        context->result = CmGetCertList(context->cmContext, context->store, context->certificateList);
+    } else {
+        uint32_t buffSize = MAX_COUNT_CERTIFICATE * sizeof(struct CertAbstract);
+        context->certificateList->certAbstract = (struct CertAbstract *)CmMalloc(buffSize);
+        if (context->certificateList->certAbstract != nullptr) {
+            (void)memset_s(context->certificateList->certAbstract, buffSize, 0, buffSize);
+            context->certificateList->certsCount = MAX_COUNT_CERTIFICATE;
+        }
+        context->result = CmGetUserCertList(context->store, context->certificateList);
+    }
+}
+
+static void GetCertListComplete(napi_env env, napi_status status, void *data)
+{
+    GetCertListAsyncContext context = static_cast<GetCertListAsyncContext>(data);
+    napi_value result[RESULT_NUMBER] = {0};
+    if (context->result == CM_SUCCESS) {
+        NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
+        result[1] = GetCertListWriteResult(env, context);
+    } else {
+        const char *errorMessage = "get system cert list error";
+        result[0] = GenerateBusinessError(env, context->result, errorMessage);
+        NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
+    }
+    if (context->deferred != nullptr) {
+        GeneratePromise(env, context->deferred, context->result, result, sizeof(result));
+    } else {
+        GenerateCallback(env, context->callback, result, sizeof(result));
+    }
+    DeleteGetCertListAsyncContext(env, context);
+}
+
 static napi_value GetCertListAsyncWork(napi_env env, GetCertListAsyncContext context)
 {
     napi_value promise = nullptr;
@@ -127,34 +199,8 @@ static napi_value GetCertListAsyncWork(napi_env env, GetCertListAsyncContext con
         env,
         nullptr,
         resourceName,
-        [](napi_env env, void *data) {
-            GetCertListAsyncContext context = static_cast<GetCertListAsyncContext>(data);
-
-            context->certificateList = (struct CertList *)CmMalloc(sizeof(struct CertList));
-            if (context->certificateList != nullptr) {
-                context->certificateList->certAbstract = nullptr;
-                context->certificateList->certsCount = 0;
-            }
-            context->result = CmGetCertList(context->cmContext, context->store, context->certificateList);
-        },
-        [](napi_env env, napi_status status, void *data) {
-            GetCertListAsyncContext context = static_cast<GetCertListAsyncContext>(data);
-            napi_value result[RESULT_NUMBER] = {0};
-            if (context->result == CM_SUCCESS) {
-                NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
-                result[1] = GetCertListWriteResult(env, context);
-            } else {
-                const char *errorMessage = "get system cert list error";
-                result[0] = GenerateBusinessError(env, context->result, errorMessage);
-                NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
-            }
-            if (context->deferred != nullptr) {
-                GeneratePromise(env, context->deferred, context->result, result, sizeof(result));
-            } else {
-                GenerateCallback(env, context->callback, result, sizeof(result));
-            }
-            DeleteGetCertListAsyncContext(env, context);
-        },
+        GetCertListExecute,
+        GetCertListComplete,
         (void *)context,
         &context->asyncWork));
 
@@ -184,6 +230,30 @@ napi_value CMNapiGetSystemCertList(napi_env env, napi_callback_info info)
     result = GetCertListAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        DeleteGetCertListAsyncContext(env, context);
+        return nullptr;
+    }
+    return result;
+}
+
+napi_value CMNapiGetUserTrustedCertList(napi_env env, napi_callback_info info)
+{
+    GetCertListAsyncContext context = CreateGetCertListAsyncContext();
+    if (context == nullptr) {
+        CM_LOG_E("create context failed");
+        return nullptr;
+    }
+
+    napi_value result = GetUserTrustedCertListParseParams(env, info, context);
+    if (result == nullptr) {
+        CM_LOG_E("could not parse user trusted cert list params");
+        DeleteGetCertListAsyncContext(env, context);
+        return nullptr;
+    }
+
+    result = GetCertListAsyncWork(env, context);
+    if (result == nullptr) {
+        CM_LOG_E("get user trusted cert list async work failed");
         DeleteGetCertListAsyncContext(env, context);
         return nullptr;
     }
