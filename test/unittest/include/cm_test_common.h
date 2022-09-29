@@ -47,5 +47,10 @@ int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t s
 std::string DumpCertAbstractInfo(const struct CertAbstract *certAbstract);
 std::string DumpCertInfo(const struct CertInfo* certInfo);
 std::string DumpCertList(struct CertList *certList);
+
+uint32_t InitUserCertList(struct CertList **cList);
+
+uint32_t InitUserCertInfo(struct CertInfo **cInfo);
+
 }
 #endif /* CM_TEST_COMMON_H */

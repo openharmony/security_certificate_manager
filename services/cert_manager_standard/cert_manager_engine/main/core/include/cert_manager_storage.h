@@ -46,6 +46,8 @@ int32_t CmStorageGetBuf(const char *path, const char *fileName, struct CmBlob *s
 int32_t CmStorageGetAppCert(const struct CmContext *context, uint32_t store,
     struct CmBlob *keyUri, struct CmBlob *certBlob);
 
+int32_t CmGetCertFilePath(const struct CmContext *context, uint32_t store, struct CmMutableBlob *pathBlob);
+
 #ifdef __cplusplus
 }
 #endif

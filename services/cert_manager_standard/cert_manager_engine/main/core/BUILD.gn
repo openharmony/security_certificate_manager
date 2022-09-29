@@ -58,6 +58,7 @@ ohos_shared_library("cert_manager_engine_core_standard") {
     "src/cm_openssl_ecc.c",
     "src/cm_openssl_rsa.c",
     "src/rbtree.c",
+    "src/cert_manager_query.c",
   ]
 
   deps = [

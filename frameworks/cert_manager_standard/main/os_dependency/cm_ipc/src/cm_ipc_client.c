@@ -24,6 +24,22 @@
 
 #include "cm_request.h"
 
+static int32_t CmSendParcelInit(struct CmParam *params, uint32_t paramCount,
+    struct CmBlob *parcelBlob, struct CmParamSet **sendParamSet)
+{
+    int32_t ret = CM_SUCCESS;
+
+    ret = CmParamsToParamSet(params, paramCount, sendParamSet);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CmParamSetPack fail");
+        return ret;
+    }
+
+    parcelBlob->size = (*sendParamSet)->paramSetSize;
+    parcelBlob->data = (uint8_t *)*sendParamSet;
+    return ret;
+}
+
 static int32_t CertificateInfoInitBlob(struct CmBlob *inBlob, struct CmBlob *outBlob,
     const struct CmContext *cmContext, struct CertInfo *CertificateInfo)
 {
@@ -900,5 +916,248 @@ int32_t CmClientAbort(const struct CmBlob *handle)
         CM_LOG_E("abort serialization and send failed, ret = %d", ret);
     }
     return ret;
+}
+
+static int32_t GetCertListInitOutData(struct CmBlob *outListBlob)
+{
+    uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
+        sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) +  MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE;
+
+    outListBlob->data = (uint8_t *)CmMalloc(buffSize);
+    if (outListBlob->data == NULL) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    outListBlob->size = buffSize;
+
+    return CM_SUCCESS;
+}
+
+static int32_t GetUserCertList(enum CmMessage type, const uint32_t store,
+    struct CertList *certificateList)
+{
+    int32_t ret = CM_SUCCESS;
+    struct CmBlob outBlob = {0, NULL};
+    struct CmBlob parcelBlob = {0, NULL};
+    const struct CmContext context = {0};
+    struct CmParamSet *sendParamSet = NULL;
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = store },
+    };
+
+    do {
+        ret = CmSendParcelInit(params, CM_ARRAY_SIZE(params), &parcelBlob, &sendParamSet);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get cert list sendParcel failed");
+            break;
+        }
+
+        ret = GetCertListInitOutData(&outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("malloc getcertlist outdata failed");
+            break;
+        }
+
+        ret = SendRequest(type, &parcelBlob, &outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetCertList request failed, ret: %u", ret);
+            break;
+        }
+
+        ret = CmCertificateListUnpackFromService(&outBlob, false, &context, certificateList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("getcertlist unpack from service failed");
+            break;
+        }
+    } while (0);
+
+    CmFreeParamSet(&sendParamSet);
+    CM_FREE_BLOB(outBlob);
+    return ret;
+}
+
+int32_t CmClientGetUserCertList(const uint32_t store, struct CertList *certificateList)
+{
+    return GetUserCertList(CM_MSG_GET_USER_CERTIFICATE_LIST, store, certificateList);
+}
+
+static int32_t GetCertInfoInitOutData(struct CmBlob *outInfoBlob)
+{
+    uint32_t buffSize = sizeof(uint32_t) + MAX_LEN_CERTIFICATE + sizeof(uint32_t);
+
+    outInfoBlob->data = (uint8_t *)CmMalloc(buffSize);
+    if (outInfoBlob->data == NULL) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    outInfoBlob->size = buffSize;
+
+    return CM_SUCCESS;
+}
+
+static int32_t GetUserCertInfo(enum CmMessage type, const struct CmBlob *certUri,
+    const uint32_t store, struct CertInfo *certificateInfo)
+{
+    int32_t ret = CM_SUCCESS;
+    struct CmBlob outBlob = {0, NULL};
+    struct CmBlob parcelBlob = {0, NULL};
+    const struct CmContext context = {0};
+    struct CmParamSet *sendParamSet = NULL;
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *certUri },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = store },
+    };
+
+    do {
+        ret = CmSendParcelInit(params, CM_ARRAY_SIZE(params), &parcelBlob, &sendParamSet);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get cert info sendParcel failed");
+            break;
+        }
+
+        ret = GetCertInfoInitOutData(&outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("malloc getcertinfo outdata failed");
+            break;
+        }
+
+        ret = SendRequest(type, &parcelBlob, &outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetCertInfo request failed, ret: %u", ret);
+            break;
+        }
+
+        ret = CmCertificateInfoUnpackFromService(&outBlob, &context, certificateInfo, certUri);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("getcertinfo unpack from service failed");
+            break;
+        }
+    } while (0);
+    CmFreeParamSet(&sendParamSet);
+    CM_FREE_BLOB(outBlob);
+    return ret;
+}
+
+int32_t CmClientGetUserCertInfo(const struct CmBlob *certUri, const uint32_t store,
+    struct CertInfo *certificateInfo)
+{
+    return GetUserCertInfo(CM_MSG_GET_USER_CERTIFICATE_INFO, certUri, store, certificateInfo);
+}
+
+static int32_t SetUserCertStatus(enum CmMessage type, const struct CmBlob *certUri,
+    const uint32_t store, const uint32_t status)
+{
+    int32_t ret = CM_SUCCESS;
+    struct CmBlob parcelBlob = {0, NULL};
+    struct CmParamSet *sendParamSet = NULL;
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *certUri },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = store },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = status },
+    };
+
+    do {
+        ret = CmSendParcelInit(params, CM_ARRAY_SIZE(params), &parcelBlob, &sendParamSet);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("set cert status sendParcel failed");
+            break;
+        }
+
+        ret = SendRequest(type, &parcelBlob, NULL);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("SetCertStatus request failed, ret: %u", ret);
+            break;
+        }
+    } while (0);
+    CmFreeParamSet(&sendParamSet);
+    return ret;
+}
+
+int32_t CmClientSetUserCertStatus(const struct CmBlob *certUri, const uint32_t store,
+    const uint32_t status)
+{
+    return SetUserCertStatus(CM_MSG_SET_USER_CERTIFICATE_STATUS, certUri, store, status);
+}
+
+static int32_t InstallUserCert(enum CmMessage type, const struct CmBlob *userCert, const struct CmBlob *certAlias,
+    struct CmBlob *certUri)
+{
+    int32_t ret = CM_SUCCESS;
+    struct CmBlob parcelBlob = {0, NULL};
+    struct CmParamSet *sendParamSet = NULL;
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *userCert },
+        { .tag = CM_TAG_PARAM1_BUFFER, .blob = *certAlias },
+    };
+
+    do {
+        ret = CmSendParcelInit(params, CM_ARRAY_SIZE(params), &parcelBlob, &sendParamSet);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("install user cert sendParcel failed");
+            break;
+        }
+
+        ret = SendRequest(type, &parcelBlob, certUri);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("InstallUserCert request failed, ret: %u", ret);
+            break;
+        }
+
+    } while (0);
+    CmFreeParamSet(&sendParamSet);
+    return ret;
+}
+
+int32_t CmClientInstallUserTrustedCert(const struct CmBlob *userCert, const struct CmBlob *certAlias,
+    struct CmBlob *certUri)
+{
+    return InstallUserCert(CM_MSG_INSTALL_USER_CERTIFICATE, userCert, certAlias, certUri);
+}
+
+static int32_t UninstallUserCert(enum CmMessage type, const struct CmBlob *certUri)
+{
+    int32_t ret = CM_SUCCESS;
+    struct CmBlob parcelBlob = {0, NULL};
+    struct CmParamSet *sendParamSet = NULL;
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *certUri },
+    };
+
+    do {
+        ret = CmSendParcelInit(params, CM_ARRAY_SIZE(params), &parcelBlob, &sendParamSet);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("uninstall user cert sendParcel failed");
+            break;
+        }
+
+        ret = SendRequest(type, &parcelBlob, NULL);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("UninstallUserCert request failed, ret: %u", ret);
+            break;
+        }
+    } while (0);
+    CmFreeParamSet(&sendParamSet);
+    return ret;
+}
+
+int32_t CmClientUninstallUserTrustedCert(const struct CmBlob *certUri)
+{
+    return UninstallUserCert(CM_MSG_UNINSTALL_USER_CERTIFICATE, certUri);
+}
+
+static int32_t UninstallAllUserCert(enum CmMessage type)
+{
+    int ret = CM_SUCCESS;
+    uint8_t temp[4] = {0}; /* only use to construct parcelBlob */
+    struct CmBlob parcelBlob = { sizeof(temp), temp };
+
+    ret = SendRequest(type, &parcelBlob, NULL);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("UninstallAllUserCert request failed, ret: %u", ret);
+    }
+    return ret;
+}
+
+int32_t CmClientUninstallAllUserTrustedCert(void)
+{
+    return UninstallAllUserCert(CM_MSG_UNINSTALL_ALL_USER_CERTIFICATE);
 }
 
