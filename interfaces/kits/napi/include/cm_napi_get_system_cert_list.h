@@ -21,6 +21,8 @@
 
 namespace CMNapi {
 napi_value CMNapiGetSystemCertList(napi_env env, napi_callback_info info);
+
+napi_value CMNapiGetUserTrustedCertList(napi_env env, napi_callback_info info);
 }  // namespace CertManagerNapi
 
 #endif  // CM_NAPI_GET_CERTIFICATE_LIST_H

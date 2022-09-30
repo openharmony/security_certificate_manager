@@ -87,7 +87,15 @@ static napi_value SetCertStatusParseParams(
     }
 
     size_t index = 0;
-    napi_value result = ParseString(env, argv[index], context->certUri);
+    napi_value result = ParseCmContext(env, argv[index], context->cmContext);
+    if (result == nullptr) {
+        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
+        CM_LOG_E("could not get cert manager context");
+        return nullptr;
+    }
+
+    index++;
+    result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
         napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
         CM_LOG_E("CertStatus could not get cert uri");
@@ -99,14 +107,6 @@ static napi_value SetCertStatusParseParams(
     if (result == nullptr) {
         napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
         CM_LOG_E("could not get store");
-        return nullptr;
-    }
-
-    index++;
-    result = ParseCmContext(env, argv[index], context->cmContext);
-    if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("could not get cert manager context");
         return nullptr;
     }
 
@@ -125,6 +125,39 @@ static napi_value SetCertStatusParseParams(
     return GetInt32(env, 0);
 }
 
+static void SetCertStatusExecute(napi_env env, void *data)
+{
+    SetCertStatusAsyncContext context = static_cast<SetCertStatusAsyncContext>(data);
+    if (context->store == CM_SYSTEM_TRUSTED_STORE) {
+        context->result = CmSetCertStatus(context->cmContext, context->certUri, context->store,
+            context->status);
+    } else if (context->store == CM_USER_TRUSTED_STORE) {
+        context->result = CmSetUserCertStatus(context->certUri, context->store, context->status);
+    } else {
+        context->result = CMR_ERROR_INVALID_ARGUMENT;
+    }
+}
+
+static void SetCertStatusComplete(napi_env env, napi_status status, void *data)
+{
+    SetCertStatusAsyncContext context = static_cast<SetCertStatusAsyncContext>(data);
+    napi_value result[RESULT_NUMBER] = {0};
+    if (context->result == CM_SUCCESS) {
+        NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
+        NAPI_CALL_RETURN_VOID(env, napi_get_boolean(env, true, &result[1]));
+    } else {
+        const char *errorMessage = "set cert status error";
+        result[0] = GenerateBusinessError(env, context->result, errorMessage);
+        NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
+    }
+    if (context->deferred != nullptr) {
+        GeneratePromise(env, context->deferred, context->result, result, sizeof(result));
+    } else {
+        GenerateCallback(env, context->callback, result, sizeof(result));
+    }
+    DeleteSetCertStatusAsyncContext(env, context);
+}
+
 static napi_value SetCertStatusAsyncWork(napi_env env, SetCertStatusAsyncContext context)
 {
     napi_value promise = nullptr;
@@ -137,29 +170,8 @@ static napi_value SetCertStatusAsyncWork(napi_env env, SetCertStatusAsyncContext
         env,
         nullptr,
         resourceName,
-        [](napi_env env, void *data) {
-            SetCertStatusAsyncContext context = static_cast<SetCertStatusAsyncContext>(data);
-
-            context->result = CmSetCertStatus(context->cmContext, context->certUri, context->store, context->status);
-        },
-        [](napi_env env, napi_status status, void *data) {
-            SetCertStatusAsyncContext context = static_cast<SetCertStatusAsyncContext>(data);
-            napi_value result[RESULT_NUMBER] = {0};
-            if (context->result == CM_SUCCESS) {
-                NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
-                NAPI_CALL_RETURN_VOID(env, napi_get_boolean(env, true, &result[1]));
-            } else {
-                const char *errorMessage = "set cert status error";
-                result[0] = GenerateBusinessError(env, context->result, errorMessage);
-                NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
-            }
-            if (context->deferred != nullptr) {
-                GeneratePromise(env, context->deferred, context->result, result, sizeof(result));
-            } else {
-                GenerateCallback(env, context->callback, result, sizeof(result));
-            }
-            DeleteSetCertStatusAsyncContext(env, context);
-        },
+        SetCertStatusExecute,
+        SetCertStatusComplete,
         (void *)context,
         &context->asyncWork));
 
