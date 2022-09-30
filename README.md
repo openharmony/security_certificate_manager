@@ -16,7 +16,11 @@
 - 证书安装。使用者可以通过安装接口，传入证书文件或密钥库文件，实现证书的安装。
 - 证书存储。证书管理模块将用户传入的证书、或设备端生成的证书，存储在/data/service/el1/public/cert_manager_service/certificates目录下，并使用UserID和UID对证书进行隔离。对应的密钥会存储在HUKS模块中。
 - 证书使用。通过查询对应的证书，使用者可获取到证书文件进行业务相关操作。
-- 证书销毁。删除接口允许使用者，批量或单张销毁存储在证书管理中的证书，相对应的密钥也会在HUKS模块中被删除
+- 证书销毁。删除接口允许使用者，批量或单张销毁存储在证书管理中的证书，相对应的密钥也会在HUKS模块中被删除。
+
+通过使用方式，可以将证书分为如下两类：
+- CA证书。只含有公钥，适用于验签或认证对端身份。
+- 业务证书。含有公钥、私钥，适用于业务场景的签名和验签。
 
 ## 目录<a name="section161941989596"></a>
 
@@ -24,7 +28,7 @@
 base/security/certificate_manager/
 ├── config                            # 系统根证书文件
 ├── frameworks                        # 框架代码, 作为基础功能目录, 被interfaces和services使用
-├── interfaces                        # 接口API代码
+├── interfaces                        # 接口代码
 │   └── innerkits                     # c接口代码
 │   └── kits                          # napi代码
 ├── services                          # 服务层代码
