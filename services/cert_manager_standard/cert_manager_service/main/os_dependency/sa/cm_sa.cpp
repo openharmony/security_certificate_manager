@@ -14,18 +14,18 @@
  */
 
 #include "cm_sa.h"
-
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "string_ex.h"
 #include "system_ability_definition.h"
-
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_ipc_service.h"
-
 #include "cert_manager.h"
 #include "cert_manager_type.h"
+#include <pthread.h>
+#include <unistd.h>
+#include "cm_event_observer.h"
 
 static bool g_certManagerStatusInit = false;
 
@@ -37,6 +37,8 @@ REGISTER_SYSTEM_ABILITY_BY_ID(CertManagerService, SA_ID_KEYSTORE_SERVICE, true);
 std::mutex CertManagerService::instanceLock;
 sptr<CertManagerService> CertManagerService::instance;
 const uint32_t MAX_MALLOC_LEN = 1 * 1024 * 1024; /* max malloc size 1 MB */
+const uint32_t MAX_DELAY_TIMES = 100;
+const uint32_t DELAY_INTERVAL = 200000; /* delay 200ms waiting for system event */
 
 using CmIpcHandlerFuncProc = void (*)(const struct CmBlob *msg, const CmContext *context);
 
@@ -101,6 +103,32 @@ static struct CmIpcEntryPoint g_cmIpcMessageHandler[] = {
     { CM_MSG_GET_CERTIFICATE_INFO, CmIpcServiceGetCertificateInfo },
     { CM_MSG_SET_CERTIFICATE_STATUS, CmIpcServiceSetCertStatus },
 };
+
+static void SubscribEvent()
+{
+    for (uint32_t i = 0; i < MAX_DELAY_TIMES; ++i) {
+        if (SystemEventObserver::SubscribeSystemEvent()) {
+            CM_LOG_I("subscribe system event success, i = %u", i);
+            return;
+        } else {
+            CM_LOG_E("subscribe system event failed %u times", i);
+            usleep(DELAY_INTERVAL);
+        }
+    }
+    CM_LOG_E("subscribe system event failed");
+    return;
+}
+
+static void CmSubscribeSystemEvent()
+{
+    pthread_t subscribeThread;
+    if ((pthread_create(&subscribeThread, nullptr, (void *(*)(void *))SubscribEvent, nullptr)) == -1) {
+        CM_LOG_E("create thread failed");
+        return;
+    }
+
+    CM_LOG_I("create thread success");
+}
 
 static inline bool IsInvalidLength(uint32_t length)
 {
@@ -256,8 +284,21 @@ void CertManagerService::OnStart()
         }
     }
 
+    (void)AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
+
     runningState_ = STATE_RUNNING;
     CM_LOG_I("CertManagerService start success.");
+}
+
+void CertManagerService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
+{
+    CM_LOG_I("systemAbilityId is %d!", systemAbilityId);
+    CmSubscribeSystemEvent();
+}
+
+void CertManagerService::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+{
+    CM_LOG_I("systemAbilityId is %d!", systemAbilityId);
 }
 
 void CertManagerService::OnStop()

@@ -26,7 +26,7 @@
 
 namespace OHOS {
 namespace Security {
-namespace Cm {
+namespace CertManager {
 std::shared_ptr<SystemEventSubscriber> SystemEventObserver::systemEventSubscriber_ = nullptr;
 
 SystemEventSubscriber::SystemEventSubscriber(const OHOS::EventFwk::CommonEventSubscribeInfo &subscriberInfo)
@@ -36,9 +36,10 @@ SystemEventSubscriber::SystemEventSubscriber(const OHOS::EventFwk::CommonEventSu
 
 void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData &data)
 {
+    CM_LOG_I("SystemEventSubscriber::OnReceiveEvent");
     int userId;
     struct CmContext context;
-    context.userId = INVALID_VALUE;
+    context.uid = INVALID_VALUE;
     auto want = data.GetWant();
     std::string action = want.GetAction();
     if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED ||

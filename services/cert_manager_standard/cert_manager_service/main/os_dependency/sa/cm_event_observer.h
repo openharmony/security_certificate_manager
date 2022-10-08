@@ -22,12 +22,12 @@
 
 namespace OHOS {
 namespace Security {
-namespace Cm {
+namespace CertManager {
 class SystemEventSubscriber : public OHOS::EventFwk::CommonEventSubscriber {
 public:
     explicit SystemEventSubscriber(const OHOS::EventFwk::CommonEventSubscribeInfo &subscriberInfo);
     ~SystemEventSubscriber() = default;
-    virtual void OnReceiveEvent(const OHOS::EventFwk::CommonEventData &data);
+    void OnReceiveEvent(const OHOS::EventFwk::CommonEventData &data) override;
 };
 
 class SystemEventObserver {
