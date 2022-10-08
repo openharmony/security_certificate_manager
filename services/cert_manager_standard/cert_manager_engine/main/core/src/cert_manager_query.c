@@ -214,6 +214,10 @@ static int32_t CreateCertFile(struct CertFilePath *certFilePath, const char *pat
     int32_t ret = CM_SUCCESS;
     uint32_t i = *certCount;
     uint32_t fileNums = GetCertCount(path);
+    if (fileNums == 0) {
+        CM_LOG_I("no cert file in path");
+        return CM_SUCCESS;
+    }
 
     void *d = CmOpenDir(path);
     if (d == NULL) {
@@ -258,6 +262,11 @@ static int32_t CreateCertFile(struct CertFilePath *certFilePath, const char *pat
 
 int32_t CreateCertFileList(const struct CmMutableBlob *certPathList, struct CmMutableBlob *certFileList)
 {
+    if (certPathList->size == 0) {
+        CM_LOG_I("dir is empty");
+        return CM_SUCCESS;
+    }
+
     struct CertFilePath *certFilePath = (struct CertFilePath *)CMMalloc(sizeof(struct CertFilePath) *
         MAX_COUNT_CERTIFICATE);
     if (certFilePath == NULL) {
@@ -423,6 +432,11 @@ void CmFreeCertBlob(struct CertBlob *certBlob)
 
 int32_t CmGetMatchedCertIndex(const struct CmMutableBlob *certFileList, const struct CmBlob *certUri)
 {
+    if (certFileList->size == 0) {
+        CM_LOG_I("no cert file  exist");
+        return MAX_COUNT_CERTIFICATE;
+    }
+
     struct CertFilePath *certFilePath = (struct CertFilePath *)certFileList->data;
     uint32_t matchIndex = certFileList->size;
 
