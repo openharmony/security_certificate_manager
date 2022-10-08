@@ -25,6 +25,7 @@ extern "C" {
 struct CertParam {
     uint8_t *aliasBuff;
     uint8_t *passWdBuff;
+    struct CmContext *cmContext;
 };
 
 void CmIpcServiceGetCertificateList(const struct CmBlob *srcData, const struct CmContext *context);

@@ -38,7 +38,8 @@ base/security/certificate_manager/
 ## 说明<a name="section1312121216216"></a>
 
 ### 接口说明<a name="section1551164914237"></a>
-证书管理相关接口将在后续API版本中体现，具体参见证书管理使用指南。
+证书管理相关JS接口将在后续API版本中体现，具体参见证书管理使用指南。
+
 ## 相关仓<a name="section1371113476307"></a>
 
 **安全子系统**

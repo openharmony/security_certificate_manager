@@ -87,7 +87,7 @@ static napi_value GetSystemCertInfoParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc < CM_NAPI_GET_SYSTEM_CERT_INFO_MIN_ARGS) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Missing parameter");
+        ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
@@ -102,7 +102,7 @@ static napi_value GetSystemCertInfoParseParams(
     index++;
     result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
+        ThrowParamsError(env, PARAM_ERROR, "certUri type error");
         CM_LOG_E("could not get cert uri");
         return nullptr;
     }
@@ -124,16 +124,16 @@ static napi_value GetUserCertInfoParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_GET_USER_CERT_INFO_MAX_ARGS) && (argc != CM_NAPI_GET_USER_CERT_INFO_MIN_ARGS)) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "get user trust info arguments count invalid");
-        CM_LOG_E("get user trust info arguments count invalid");
+        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid when getting user trusted certificate info");
+        CM_LOG_E("arguments count invalid when getting user trusted certificate info");
         return nullptr;
     }
 
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("get user trust info get cert uri failed");
+        ThrowParamsError(env, PARAM_ERROR, "certUri type error");
+        CM_LOG_E("get cert uri failed when getting user trusted certificate info");
         return nullptr;
     }
 
@@ -141,8 +141,8 @@ static napi_value GetUserCertInfoParseParams(
     if (index < argc) {
         context->callback = GetCallback(env, argv[index]);
         if (context->callback == nullptr) {
-            napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-            CM_LOG_E("get user trust info get callback function failed");
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+            CM_LOG_E("get callback function failed when getting user trusted certificate info");
             return nullptr;
         }
     }

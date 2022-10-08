@@ -82,7 +82,7 @@ static napi_value GetCertListParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc < CM_NAPI_GET_SYSTEM_CERT_LIST_MIN_ARGS) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Missing parameter");
+        ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
@@ -112,8 +112,8 @@ static napi_value GetUserTrustedCertListParseParams(
 
     if ((argc != CM_NAPI_GET_USER_CERT_LIST_MIN_ARGS) &&
         (argc != CM_NAPI_GET_USER_CERT_LIST_MAX_ARGS)) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "get user trust list arguments count invalid");
-        CM_LOG_E("get user trust list arguments count is not expected");
+        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid when getting user trusted certificate list");
+        CM_LOG_E("arguments count is not expected when getting user trusted certificate list");
         return nullptr;
     }
 
@@ -121,8 +121,8 @@ static napi_value GetUserTrustedCertListParseParams(
     if (index < argc) {
         context->callback = GetCallback(env, argv[index]);
         if (context->callback == nullptr) {
-            napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-            CM_LOG_E("get user trust list get callback function failed");
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+            CM_LOG_E("get callback function failed when getting user trusted certificate list");
             return nullptr;
         }
     }

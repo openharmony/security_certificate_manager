@@ -81,7 +81,7 @@ static napi_value SetCertStatusParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc < CM_NAPI_SET_CERT_STATUS_MIN_ARGS) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Missing parameter");
+        ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
         CM_LOG_E("CertStatus Missing parameter");
         return nullptr;
     }
@@ -89,7 +89,7 @@ static napi_value SetCertStatusParseParams(
     size_t index = 0;
     napi_value result = ParseCmContext(env, argv[index], context->cmContext);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
+        ThrowParamsError(env, PARAM_ERROR, "get context type error");
         CM_LOG_E("could not get cert manager context");
         return nullptr;
     }
@@ -97,15 +97,15 @@ static napi_value SetCertStatusParseParams(
     index++;
     result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("CertStatus could not get cert uri");
+        ThrowParamsError(env, PARAM_ERROR, "get certUri type error");
+        CM_LOG_E("could not get cert uri when set cert status");
         return nullptr;
     }
 
     index++;
     result = ParseUint32(env, argv[index], context->store);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
+        ThrowParamsError(env, PARAM_ERROR, "get store type error");
         CM_LOG_E("could not get store");
         return nullptr;
     }
@@ -113,7 +113,7 @@ static napi_value SetCertStatusParseParams(
     index++;
     result = ParseBoolean(env, argv[index], context->status);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
+        ThrowParamsError(env, PARAM_ERROR, "get status type error");
         CM_LOG_E("could not get status");
         return nullptr;
     }
