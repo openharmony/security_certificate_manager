@@ -169,15 +169,23 @@ static void GetCertInfoExecute(napi_env env, void *data)
     GetCertInfoAsyncContext context = static_cast<GetCertInfoAsyncContext>(data);
 
     context->certificate = (struct CertInfo *)CmMalloc(sizeof(struct CertInfo));
-    if (context->certificate != nullptr) {
-        (void)memset_s(context->certificate, sizeof(struct CertInfo), 0, sizeof(struct CertInfo));
+    if (context->certificate == nullptr) {
+        CM_LOG_E("malloc certificate fail");
+        context->result = CMR_ERROR_MALLOC_FAIL;
+        return;
     }
+    (void)memset_s(context->certificate, sizeof(struct CertInfo), 0, sizeof(struct CertInfo));
 
     if (context->store == CM_SYSTEM_TRUSTED_STORE) {
         context->result = CmGetCertInfo(context->cmContext, context->certUri, context->store,
             context->certificate);
     } else {
         context->certificate->certInfo.data = (uint8_t *)CmMalloc(MAX_LEN_CERTIFICATE);
+        if (context->certificate->certInfo.data == nullptr) {
+            CM_LOG_E("malloc certificate certInfo data fail");
+            context->result = CMR_ERROR_MALLOC_FAIL;
+            return;
+        }
         context->certificate->certInfo.size = MAX_LEN_CERTIFICATE;
         context->result = CmGetUserCertInfo(context->certUri, context->store, context->certificate);
     }

@@ -34,6 +34,7 @@
 #include "cert_manager_auth_mgr.h"
 #include "cert_manager_uri.h"
 #include "cert_manager_storage.h"
+#include <unistd.h>
 
 #define MAX_FILES_IN_DIR                    1000
 #define CERT_MANAGER_MD5_SIZE               32
@@ -1191,6 +1192,32 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
     return CM_SUCCESS;
 }
 
+static int32_t CherkCertCountBeyondMax(const char *path, const char *fileName)
+{
+    int32_t ret = CM_FAILURE;
+
+    do {
+        uint32_t tempCount = GetCertCount(path);
+        if (tempCount < MAX_COUNT_CERTIFICATE) {
+            ret = CM_SUCCESS;
+            break;
+        }
+
+        char fullFileName[CM_MAX_FILE_NAME_LEN] = {0};
+        if (snprintf_s(fullFileName, CM_MAX_FILE_NAME_LEN, CM_MAX_FILE_NAME_LEN - 1, "%s/%s", path, fileName) < 0) {
+            CM_LOG_E("mkdir full name failed");
+            ret = CM_FAILURE;
+            break;
+        }
+
+        if (access(fullFileName, F_OK) == 0) {
+            ret = CM_SUCCESS;
+            break;
+        }
+    } while (0);
+    return ret;
+}
+
 int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *pathBlob,
     const struct CmBlob *userCert, const struct CmBlob *certAlias, struct CmBlob *certUri)
 {
@@ -1201,6 +1228,13 @@ int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *p
         ret = BuildUserUri(&userUri, (char *)certAlias->data, CM_URI_TYPE_CERTIFICATE, context);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("BuildUserUri failed");
+            break;
+        }
+
+        ret = CherkCertCountBeyondMax((char*)pathBlob->data, userUri);
+        if(ret != CM_SUCCESS) {
+            CM_LOG_E("cert count beyond maxcount, can't install");
+            ret = CMR_ERROR_INVALID_ARGUMENT;
             break;
         }
 

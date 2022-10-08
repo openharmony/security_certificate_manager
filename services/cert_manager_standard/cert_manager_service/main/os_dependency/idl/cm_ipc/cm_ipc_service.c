@@ -1473,13 +1473,6 @@ void CmIpcServiceAbort(const struct CmBlob *paramSetBlob, struct CmBlob *outData
     CmFreeParamSet(&paramSet);
 }
 
-static int32_t CmCheckCallerPermission(const struct CmContext *ipcInfo)
-{
-    (void)ipcInfo;
-
-    return CM_SUCCESS;
-}
-
 void CmIpcServiceGetUserCertList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context)
 {
@@ -1494,15 +1487,15 @@ void CmIpcServiceGetUserCertList(const struct CmBlob *paramSetBlob, struct CmBlo
     };
 
     do {
-        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("GetUserCertList get input params failed, ret = %d", ret);
+        if (!CmHasCommonPermission()) {
+            CM_LOG_E("caller no permission");
+            ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
 
-        ret = CmCheckCallerPermission(&cmContext);
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("caller no permission");
+            CM_LOG_E("GetUserCertList get input params failed, ret = %d", ret);
             break;
         }
 
@@ -1523,9 +1516,7 @@ void CmIpcServiceGetUserCertList(const struct CmBlob *paramSetBlob, struct CmBlo
     if (ret != CM_SUCCESS) {
         CmSendResponse(context, ret, NULL);
     }
-    if (certFileList.data != NULL) {
-        CmFreeCertFiles(&certFileList);
-    }
+    CmFreeCertFiles(&certFileList);
     CmFreeParamSet(&paramSet);
 }
 
@@ -1545,15 +1536,15 @@ void CmIpcServiceGetUserCertInfo(const struct CmBlob *paramSetBlob, struct CmBlo
     };
 
     do {
-        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("GetUserCertInfo get input params failed, ret = %d", ret);
+        if (!CmHasCommonPermission()) {
+            CM_LOG_E("caller no permission");
+            ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
 
-        ret = CmCheckCallerPermission(&cmContext);
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("caller no permission");
+            CM_LOG_E("GetUserCertInfo get input params failed, ret = %d", ret);
             break;
         }
 
@@ -1593,15 +1584,15 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
     };
 
     do {
-        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("SetUserCertStatus get input params failed, ret = %d", ret);
+        if (!CmHasCommonPermission() || !CmHasPrivilegedPermission()) {
+            CM_LOG_E("caller no permission");
+            ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
 
-        ret = CmCheckCallerPermission(&cmContext);
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("caller no permission");
+            CM_LOG_E("SetUserCertStatus get input params failed, ret = %d", ret);
             break;
         }
 
@@ -1629,15 +1620,15 @@ void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlo
     };
 
     do {
-        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("InstallUserCert get input params failed, ret = %d", ret);
+        if (!CmHasCommonPermission() || !CmHasPrivilegedPermission()) {
+            CM_LOG_E("caller no permission");
+            ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
 
-        ret = CmCheckCallerPermission(&cmContext);
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("caller no permission");
+            CM_LOG_E("InstallUserCert get input params failed, ret = %d", ret);
             break;
         }
 
@@ -1667,15 +1658,15 @@ void CmIpcServiceUninstallUserCert(const struct CmBlob *paramSetBlob, struct CmB
     };
 
     do {
-        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("UninstallUserCert get input params failed, ret = %d", ret);
+        if (!CmHasCommonPermission() || !CmHasPrivilegedPermission()) {
+            CM_LOG_E("caller no permission");
+            ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
 
-        ret = CmCheckCallerPermission(&cmContext);
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("caller no permission");
+            CM_LOG_E("UninstallUserCert get input params failed, ret = %d", ret);
             break;
         }
 
@@ -1697,15 +1688,15 @@ void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct 
     struct CmContext cmContext = {0};
 
     do {
-        ret = CmGetProcessInfoForIPC(&cmContext);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmGetProcessInfoForIPC fail, ret = %d", ret);
+        if (!CmHasCommonPermission() || !CmHasPrivilegedPermission()) {
+            CM_LOG_E("caller no permission");
+            ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
 
-        ret = CmCheckCallerPermission(&cmContext);
+        ret = CmGetProcessInfoForIPC(&cmContext);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("caller no permission");
+            CM_LOG_E("CmGetProcessInfoForIPC fail, ret = %d", ret);
             break;
         }
 

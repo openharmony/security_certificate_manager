@@ -237,20 +237,10 @@ int32_t CmServiceGetCertList(const struct CmContext *context, uint32_t store, st
     return ret;
 }
 
-int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store,
-    const struct CmMutableBlob *certFileList, struct CmBlob *certificateList)
+static int32_t CmGetCertListPack(const struct CertBlob *certBlob, uint32_t *status, uint32_t certCount,
+    struct CmBlob *certificateList)
 {
     uint32_t offset = 0;
-    uint32_t status[MAX_COUNT_CERTIFICATE] = {0};
-    struct CertBlob certBlob; /* uri[certCount] + subjectName[certCount] + certAlias[certCount] */
-    (void)memset_s(&certBlob, sizeof(struct CertBlob), 0, sizeof(struct CertBlob));
-
-    int32_t ret = CmGetCertListInfo(context, store, certFileList, &certBlob, status);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("CmGetCertListInfo fail");
-        return ret;
-    }
-
     uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
         sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) + MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE;
     if (certificateList->size < buffSize) {
@@ -258,14 +248,15 @@ int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
     certificateList->size = buffSize;
-    ret = CopyUint32ToBuffer(certFileList->size, certificateList, &offset);
+
+    int32_t ret = CopyUint32ToBuffer(certCount, certificateList, &offset);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Copy cert count failed");
         return ret;
     }
 
-    for (uint32_t i = 0; i < certFileList->size; i++) {
-        ret = CopyBlobToBuffer(&(certBlob.subjectName[i]), certificateList, &offset);
+    for (uint32_t i = 0; i < certCount; i++) {
+        ret = CopyBlobToBuffer(&(certBlob->subjectName[i]), certificateList, &offset);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Copy certificate subject failed");
             return ret;
@@ -275,17 +266,45 @@ int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store
             CM_LOG_E("Copy certificate status failed");
             return ret;
         }
-        ret = CopyBlobToBuffer(&(certBlob.uri[i]), certificateList, &offset);
+        ret = CopyBlobToBuffer(&(certBlob->uri[i]), certificateList, &offset);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Copy certificate uri failed");
             return ret;
         }
-        ret = CopyBlobToBuffer(&(certBlob.certAlias[i]), certificateList, &offset);
+        ret = CopyBlobToBuffer(&(certBlob->certAlias[i]), certificateList, &offset);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Copy certificate certAlias failed");
             return ret;
         }
     }
+    return ret;
+}
+
+int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store,
+    const struct CmMutableBlob *certFileList, struct CmBlob *certificateList)
+{
+    if (certFileList->size == 0) {
+        CM_LOG_I("no cert file exist");
+        return CM_SUCCESS;
+    }
+
+    uint32_t status[MAX_COUNT_CERTIFICATE] = {0};
+    struct CertBlob certBlob;
+    (void)memset_s(&certBlob, sizeof(struct CertBlob), 0, sizeof(struct CertBlob));
+    int32_t ret = CmGetCertListInfo(context, store, certFileList, &certBlob, status);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CmGetCertListInfo fail");
+        CmFreeCertBlob(&certBlob);
+        return ret;
+    }
+
+    ret = CmGetCertListPack(&certBlob, status, certFileList->size, certificateList);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CmGetCertListPack fail");
+        CmFreeCertBlob(&certBlob);
+        return ret;
+    }
+
     CmFreeCertBlob(&certBlob);
     return ret;
 }
@@ -300,7 +319,6 @@ int32_t CmGetServiceCertInfo(const struct CmContext *context, const struct CmBlo
 
     int32_t ret = CM_SUCCESS;
     struct CmMutableBlob certFileList = { 0, NULL };
-    uint32_t matchIndex = 0;
     do {
         ret = CmServiceGetCertList(context, store, &certFileList);
         if (ret != CM_SUCCESS) {
@@ -308,10 +326,10 @@ int32_t CmGetServiceCertInfo(const struct CmContext *context, const struct CmBlo
             break;
         }
 
-        matchIndex = CmGetMatchedCertIndex(&certFileList, certUri);
-        if (matchIndex == certFileList.size) {
-            CM_LOG_E("certFile of certUri don't matched");
-            ret = CM_FAILURE;
+        uint32_t matchIndex = CmGetMatchedCertIndex(&certFileList, certUri);
+        if ((matchIndex == MAX_COUNT_CERTIFICATE) || (matchIndex == certFileList.size)) {
+            CM_LOG_I("certFile of certUri don't matched");
+            ret = CM_SUCCESS;
             break;
         }
 
@@ -340,6 +358,11 @@ int32_t CmGetServiceCertInfo(const struct CmContext *context, const struct CmBlo
 int32_t CmServiceGetCertInfoPack(const struct CmBlob *certificateData, uint32_t status,
     struct CmBlob *certificateInfo)
 {
+    if (certificateInfo->size == 0) {
+        CM_LOG_I("cert file is not exist");
+        return CM_SUCCESS;
+    }
+
     int32_t ret = CM_SUCCESS;
     uint32_t offset = 0;
     uint32_t buffSize = sizeof(uint32_t) + MAX_LEN_CERTIFICATE + sizeof(uint32_t);

@@ -20,6 +20,30 @@
 #include "cm_log.h"
 #include "cm_mem.h"
 
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
+
+void SetUserPermission(void)
+{
+    const char **perms = new const char *[2]; // 2 permissions
+    perms[0] = "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL"; // system_basic
+    perms[1] = "ohos.permission.ACCESS_CERT_MANAGER"; // normal
+    NativeTokenInfoParams infoInstanceTmp = {
+        .dcapsNum = 0,
+        .permsNum = 2,
+        .dcaps = nullptr,
+        .perms = perms,
+        .acls = nullptr,
+        .processName = "TestCertManager",
+        .aplStr = "system_basic",
+    };
+
+    auto tokenId = GetAccessTokenId(&infoInstanceTmp);
+    SetSelfTokenID(tokenId);
+    OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+}
+
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
@@ -433,6 +457,7 @@ public:
 
 void CmUserCertTest::SetUpTestCase(void)
 {
+    SetUserPermission();
 }
 
 void CmUserCertTest::TearDownTestCase(void)
@@ -1093,8 +1118,53 @@ HWTEST_F(CmUserCertTest, UserCertTest025, TestSize.Level0)
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall All test failed, recode:" << ret;
 }
 
+/**
+ * @tc.name: UserCertTest026
+ * @tc.desc: Test CertManager install max count user cert interface base function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MJ8 /SR000H09N7
+ */
+HWTEST_F(CmUserCertTest, UserCertTest026, TestSize.Level0)
+{
+    int32_t ret;
+    struct CmBlob userCertTest = { sizeof(g_certData01), (uint8_t *)g_certData01 };
+
+    for (uint32_t i = 0; i < MAX_COUNT_CERTIFICATE; i++) {
+        char alias[] = "alias";
+        char certAliasBuf[10];
+        snprintf_s(certAliasBuf, 10, 9, "%s%u", alias, i);
+        struct CmBlob certAliasTest = { sizeof(certAliasBuf), (uint8_t *)certAliasBuf };
+
+        uint8_t certUriBuf[MAX_URI_LEN] = {0};
+        struct CmBlob certUriTest = { sizeof(certUriBuf), certUriBuf };
+
+        ret = CmInstallUserTrustedCert(&userCertTest, &certAliasTest, &certUriTest);
+        EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Install test failed, recode:" << ret;
+    }
+
+    uint8_t certAliasBuf257[] = "40dc992e"; /* install */
+    uint8_t certUriBuf257[MAX_URI_LEN] = {0};
+    struct CmBlob certAlias257 = { sizeof(certAliasBuf257), certAliasBuf257 };
+    struct CmBlob certUri257 = { sizeof(certUriBuf257), certUriBuf257 };
+
+    ret = CmInstallUserTrustedCert(&userCertTest, &certAlias257, &certUri257);
+    EXPECT_EQ(ret, CM_FAILURE) << "Normal user cert Install test failed, recode:" << ret;
+
+
+    uint8_t certAliasBuf000[] = "alias0"; /* update */
+    uint8_t certUriBuf000[MAX_URI_LEN] = {0};
+    struct CmBlob certAlias000 = { sizeof(certAliasBuf000), certAliasBuf000 };
+    struct CmBlob certUri000 = { sizeof(certUriBuf000), certUriBuf000 };
+
+    ret = CmInstallUserTrustedCert(&userCertTest, &certAlias000, &certUri000);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Install test failed, recode:" << ret;
+
+    ret = CmUninstallAllUserTrustedCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall All test failed, recode:" << ret;
+}
 
 }
+
 
 
 
