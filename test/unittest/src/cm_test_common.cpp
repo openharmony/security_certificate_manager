@@ -129,6 +129,7 @@ bool CompareCert(const struct CertAbstract *firstCert, const struct CertAbstract
 {
     if (firstCert == nullptr || secondCert == nullptr) {
         CM_TEST_LOG_E("cert invalid parameter");
+        return false;
     }
     return ((strcmp(firstCert->uri, secondCert->uri) == 0) &&
         (strcmp(firstCert->certAlias, secondCert->certAlias) == 0) &&
@@ -140,6 +141,7 @@ bool CompareCredentialList(const struct CredentialAbstract *firstCert, const str
 {
     if (firstCert == nullptr || secondCert == nullptr) {
         CM_TEST_LOG_E("cert invalid parameter");
+        return false;
     }
     return ((strcmp(firstCert->type, secondCert->type) == 0) &&
         (strcmp(firstCert->alias, secondCert->alias) == 0) &&

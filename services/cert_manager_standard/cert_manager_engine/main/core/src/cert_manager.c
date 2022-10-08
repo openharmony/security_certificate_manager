@@ -238,7 +238,6 @@ void CmCertificateListFree(struct CmMutableBlob *certListData, uint32_t certList
     }
 
     CMFree(certListData);
-    certListData = NULL;
 }
 
 static int32_t CmCreateCertificateList(struct CmBlob *certList,
@@ -249,10 +248,13 @@ static int32_t CmCreateCertificateList(struct CmBlob *certList,
     uint32_t certBuffSize = 0;
     int32_t ret;
     struct CmMutableBlob *certDataList = NULL;
+    if ((certList == NULL) || (fileNames == NULL) || (path == NULL)) {
+        CM_LOG_E("Bad parameters: param is null");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
 
-    if ((certList == NULL) || (fileNames == NULL) || (path == NULL) ||
-        (fileNames->data == NULL) || (fileNames->size > MAX_FILES_IN_DIR)) {
-        CM_LOG_E("Bad parameters: path = %s, ileNames->size = %u", path, fileNames->size);
+    if ((fileNames->data == NULL) || (fileNames->size > MAX_FILES_IN_DIR)) {
+        CM_LOG_E("Bad parameters: path = %s, fileNames->size = %u", path, fileNames->size);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -698,117 +700,6 @@ cleanup:
     return retVal;
 }
 
-static int32_t CmGetMatchedFileSubjectNameIndex(const struct CmMutableBlob *nameDigest,
-    const struct CmMutableBlob *fileNames, const struct CmAsn1Obj *subjectName, struct CmMathedIndexPara indexPara)
-{
-    uint32_t i;
-    struct CmAsn1Obj subjectFromList;
-    uint8_t certBuff[CERT_MANAGER_MAX_CERT_SIZE];
-    struct CmBlob certificate = {sizeof(certBuff), certBuff};
-    char *path = indexPara.path;
-    uint8_t *indexes = indexPara.indexes;
-    uint32_t *count = indexPara.count;
-    struct CmMutableBlob *fname = (struct CmMutableBlob *)fileNames->data;
-
-    (void)memset_s(&subjectFromList, sizeof(struct CmAsn1Obj), 0, sizeof(struct CmAsn1Obj));
-    for (i = 0; i < fileNames->size; i++) {
-        if (memcmp(fname[i].data, nameDigest->data, nameDigest->size) == 0) {
-            if (CmFileRead(path, (char *)fname[i].data, 0, certBuff, sizeof(certBuff)) == 0) {
-                CM_LOG_E("Failed to read file: %s/%s", path, fname[i].data);
-                return CMR_ERROR_READ_FILE_ERROR;
-            }
-
-            if (CmGetSubjectNameAsn1(&certificate, &subjectFromList) != CMR_OK) {
-                CM_LOG_E("Failed to obtain subjectName");
-                return CMR_ERROR_NOT_FOUND;
-            }
-            if ((subjectName->value.size == subjectFromList.value.size) ||
-                (memcmp(subjectName->value.data, subjectFromList.value.data, subjectName->value.size))) {
-                indexes[*count] = i;
-                count++;
-            }
-        }
-    }
-    return  CMR_OK;
-}
-
-static int32_t CmListCertificatesBySubjectNameAsn1(const struct CmContext *context,
-    struct CmBlob *certificateList, uint32_t store, const struct CmAsn1Obj *subjectName)
-{
-    int32_t retVal = 0;
-    uint32_t count = 0;
-    uint8_t *indexes = NULL;
-    uint32_t *status = NULL;
-    struct CmMutableBlob fileNames = {0, NULL}, matchingFiles = {0, NULL};
-    char path[CERT_MAX_PATH_LEN];
-    uint8_t buff[MAX_NAME_DIGEST_LEN];
-    struct CmMutableBlob nameDigest = {sizeof(buff), buff}, pathBlob = {sizeof(path), (uint8_t *)path};
-
-    retVal = NameHashFromAsn1(subjectName, &nameDigest);
-    if (retVal != CMR_OK) {
-        return retVal;
-    }
-
-    if (CmGetFilenames(context, &pathBlob, store, &fileNames, path) != CMR_OK) {
-        return CMR_ERROR_STORAGE;
-    }
-
-    if (CmInitFileNameIndexArray(&indexes, fileNames) != CMR_OK) {
-        retVal = CMR_ERROR_MALLOC_FAIL;
-        goto cleanup;
-    }
-
-    struct CmMathedIndexPara indexPara = {path, store, status, &count, indexes};
-    if (CmGetMatchedFileSubjectNameIndex(&nameDigest, &fileNames, subjectName, indexPara) != CMR_OK) {
-        CM_LOG_E("Failed to get matched file name indexes");
-        retVal = CMR_ERROR;
-        goto cleanup;
-    }
-
-    matchingFiles.size = count;
-    matchingFiles.data = malloc(sizeof(struct CmMutableBlob) * count);
-    if (matchingFiles.data == NULL) {
-        CM_LOG_E("Failed to allocate memory for files");
-        retVal = CMR_ERROR_MALLOC_FAIL;
-        goto cleanup;
-    }
-
-    struct CmMutableBlob *fname = (struct CmMutableBlob *)fileNames.data;
-    struct CmMutableBlob *matchName = (struct CmMutableBlob *)matchingFiles.data;
-
-    if (CmGetMatchedFileNames(matchName, fname, count, indexes) != CMR_OK) {
-        CM_LOG_E("Failed to get matched file Name indexes");
-        retVal = CMR_ERROR;
-        goto cleanup;
-    }
-
-    if (CmCreateCertificateList(certificateList, &matchingFiles, path) < 0) {
-        CM_LOG_E("Failed to create certificates: %s", path);
-        retVal = CMR_ERROR_STORAGE;
-        goto cleanup;
-    }
-
-cleanup:
-    CmFreeCertificatesInfo(&fileNames, &matchingFiles, indexes, certificateList, retVal);
-    return retVal;
-}
-
-int32_t CertManagerListCertificatesBySubjectName(const struct CmContext *context,
-    struct CmBlob *certificateList, uint32_t store, const struct CmBlob *subjectName)
-{
-    struct CmAsn1Obj subjectAsn1;
-    struct CmBlob skip = {0, NULL};
-    errno_t ret;
-
-    (void)memset_s(&subjectAsn1, sizeof(struct CmAsn1Obj), 0, sizeof(struct CmAsn1Obj));
-    ret = CmAsn1ExtractTag(&skip, &subjectAsn1, &CM_BLOB(subjectName), ASN_1_TAG_TYPE_SEQ);
-    if (ret != CMR_OK) {
-        CM_LOG_E("Subject name in bad format");
-        return CMR_ERROR_NOT_FOUND;
-    }
-    return CmListCertificatesBySubjectNameAsn1(context, certificateList, store, &subjectAsn1);
-}
-
 /* This function constructes md5 hash part of filename for storing certificate.
  * All cetificates are stored in files namePrefix.count. where namePrefix = md5(subjectName)
  * and count is = 0, 1.... needed fpr potential hash collisions.
@@ -1048,6 +939,7 @@ void CmFreeFileNames(struct CmBlob *fileNames, const uint32_t fileSize)
 {
     if (fileNames == NULL) {
         CM_LOG_E("CmFreeFileNames fileNames is null");
+        return;
     }
 
     for (uint32_t i = 0; i < fileSize; i++) {
