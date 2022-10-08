@@ -96,24 +96,24 @@ static napi_value ParseGrantUidParams(napi_env env, napi_callback_info info, Gra
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_GRANT_ARGS_CNT) && (argc != (CM_NAPI_GRANT_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "grant or remove uid arguments count invalid");
-        CM_LOG_E("grant or remove uid arguments count is not expected");
+        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid when grant or remove uid");
+        CM_LOG_E("arguments count is not expected when grant or remove uid");
         return nullptr;
     }
 
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("grant or remove uid get uri failed");
+        ThrowParamsError(env, PARAM_ERROR, "keyUri type error");
+        CM_LOG_E("get uri failed when grant or remove uid");
         return nullptr;
     }
 
     index++;
     result = ParseString2Uint32(env, argv[index], context->appUid);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("grant or remove uid get app uid failed");
+        ThrowParamsError(env, PARAM_ERROR, "appUid type error");
+        CM_LOG_E("get app uid failed when grant or remove uid ");
         return nullptr;
     }
 
@@ -121,8 +121,8 @@ static napi_value ParseGrantUidParams(napi_env env, napi_callback_info info, Gra
     if (index < argc) {
         context->callback = GetCallback(env, argv[index]);
         if (context->callback == nullptr) {
-            napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-            CM_LOG_E("grant or remove uid get callback function failed");
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+            CM_LOG_E("get callback function failed when grant or remove uid");
             return nullptr;
         }
     }
@@ -142,16 +142,16 @@ static napi_value ParseIsAuthedParams(napi_env env, napi_callback_info info, Gra
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_IS_AUTHED_ARGS_CNT) && (argc != (CM_NAPI_IS_AUTHED_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "is authed uid arguments count invalid");
-        CM_LOG_E("is authed uid arguments count is not expected");
+        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid when using isAuthed");
+        CM_LOG_E("arguments count is not expected when using isAuthed");
         return nullptr;
     }
 
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("is authed uid get uri failed");
+        ThrowParamsError(env, PARAM_ERROR, "keyUri type error");
+        CM_LOG_E("get uri failed when using isAuthed");
         return nullptr;
     }
 
@@ -159,8 +159,8 @@ static napi_value ParseIsAuthedParams(napi_env env, napi_callback_info info, Gra
     if (index < argc) {
         context->callback = GetCallback(env, argv[index]);
         if (context->callback == nullptr) {
-            napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-            CM_LOG_E("is authed uid get callback function failed");
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+            CM_LOG_E("get callback function failed when using isAuthed");
             return nullptr;
         }
     }
@@ -349,8 +349,8 @@ static napi_value GrantUidAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("queue grant uid async work failed");
+        ThrowParamsError(env, PARAM_ERROR, "queue asyncWork error");
+        CM_LOG_E("get async work failed when granting uid");
         return nullptr;
     }
     return promise;
@@ -373,8 +373,8 @@ static napi_value RemoveUidAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("queue remove uid async work failed");
+        ThrowParamsError(env, PARAM_ERROR, "queue asyncWork error");
+        CM_LOG_E("queue async work failed when removing uid");
         return nullptr;
     }
     return promise;
@@ -397,8 +397,8 @@ static napi_value IsAuthedAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("queue is authed app async work failed");
+        ThrowParamsError(env, PARAM_ERROR, "queue asyncWork error");
+        CM_LOG_E("queue async work failed when using isAuthed");
         return nullptr;
     }
     return promise;
@@ -421,8 +421,8 @@ static napi_value GetUidListAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("queue get authed uid list async work failed");
+        ThrowParamsError(env, PARAM_ERROR, "queue asyncWork error");
+        CM_LOG_E("queue async work failed when getting authed uid list");
         return nullptr;
     }
     return promise;

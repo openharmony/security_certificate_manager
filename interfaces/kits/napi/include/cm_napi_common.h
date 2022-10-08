@@ -73,7 +73,6 @@ static const int32_t RESULT_NUMBER = 2;
 static const uint32_t APPLICATION_CERTIFICATE_STORE = 0;
 static const uint32_t APPLICATION_PRIVATE_CERTIFICATE_STORE = 3;
 static const uint32_t SYSTEM_CERTIFICATE_STORE = 1;
-static const std::string PARAM_TYPE_ERROR_NUMBER = "401";
 
 
 napi_value ParseCmContext(napi_env env, napi_value object, CmContext *&cmContext);
@@ -92,6 +91,7 @@ napi_value GenerateCredentialAbstractArray(napi_env env,
 
 napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo);
 napi_value GenerateAppCertInfo(napi_env env, const struct Credential *credential);
+void ThrowParamsError(napi_env env, int32_t errorCode, std::string errMsg);
 napi_value GenerateBusinessError(napi_env env, int32_t errorCode, const char *errorMessage);
 
 void DeleteNapiContext(napi_env env, napi_async_work &asyncWork, napi_ref &callback);
@@ -160,45 +160,14 @@ void FreeCredentialList(CredentialList *&credentialList);
 void FreeCertInfo(CertInfo *&certInfo);
 void FreeCredential(Credential *&credential);
 
-enum CmErrorCode {
-    CM_SUCCESS = 0,
-    CM_FAILURE = 17500001,
+enum ErrorCode {
+    SUCCESS = 0,
+    PARAM_ERROR = 401,
+    INNER_FAILURE = 17500001,
+    NO_PERMISSION = 17500002,
+    NOT_FOUND = 17500003,
+    INVALID_CERT_FORMAT = 17500004,
 
-    CMR_NOT_PERMITTED = 17500002,
-    CMR_NOT_SUPPORTED = 17500003,
-    CMR_INVALID_ARGUMENT = 17500004,
-    CMR_BUFFER_TOO_SMALL = 17500006,
-    CMR_MEM_ERROR = 17500007,
-    CMR_STORAGE_ERROR = 17500008,
-    CMR_NOT_FOUND = 17500009,
-    CMR_FILE_READ_ERROR = 17500010,
-    CMR_FILE_WRITE_ERROR = 17500011,
-    CMR_NULL_POINTER_ERROR = 17500012,
-    CMR_INSUFFICIENT_DATA = 17500013,
-    CMR_ERROR_MAKE_DIR_FAIL = 17500014,
-    CMR_ERROR_INTERNAL_ERROR = 17500015,
-    CMR_ERROR_REMOVE_FILE_FAIL = 17500016,
-    CMR_ERROR_INVALID_ARGUMENT = 17500017,
-    CMR_ERROR_WRITE_FILE_FAIL = 17500018,
-    CMR_ERROR_OPEN_FILE_FAIL = 17500019,
-    CMR_ERROR_CLOSE_FILE_FAIL = 17500020,
-    CMR_ERROR_BAD_STATE = 17500021,
-    CMR_ERROR_INVALID_KEY_FILE = 17500022,
-    CMR_ERROR_MALLOC_FAIL = 17500023,
-    CMR_ERROR_NOT_EXIST   = 17500024,
-    CMR_ERROR_NULL_POINTER = 17500025,
-    CMR_ERROR_ALREADY_EXISTS = 17500026,
-
-    CMR_ERROR_NOT_SUPPORTED = 17500027,
-    CMR_ERROR_INSUFFICIENT_DATA = 17500028,
-    CMR_ERROR_BUFFER_TOO_SMALL = 17500029,
-    CMR_ERROR_INSUFFICIENT_MEMORY = 17500030,
-    CMR_ERROR_INVALID_CERT_FORMAT = 17500031,
-    CMR_ERROR_NOT_FOUND = 17500032,
-
-    CMR_ERROR_KEY_ERROR = 17500033,
-    CMR_ERROR_PARAM_NOT_EXIST = 17500034,
-    CMR_ERROR_INVALID_OPERATION = 17500035,
 };
 }  // namespace CertManagerNapi
 
