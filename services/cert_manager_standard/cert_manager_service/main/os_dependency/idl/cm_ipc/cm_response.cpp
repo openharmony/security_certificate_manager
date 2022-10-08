@@ -46,28 +46,6 @@ void CmSendResponse(const struct CmContext *context, int32_t result, const struc
     }
 }
 
-int32_t CmGetProcessNameForIPC(const struct CmContext *context, struct CmBlob *processName)
-{
-    if ((context == nullptr) || (processName == nullptr)) {
-        CM_LOG_D("CmGetProcessNameForIPC don't need get process name in hosp.");
-        return CM_SUCCESS;
-    }
-
-    auto callingUid = IPCSkeleton::GetCallingUid();
-    uint8_t *name = (uint8_t *)CmMalloc(sizeof(callingUid));
-    if (name == nullptr) {
-        CM_LOG_E("CmGetProcessNameForIPC malloc failed.");
-        return CMR_ERROR_MALLOC_FAIL;
-    }
-
-    if (memcpy_s(name, sizeof(callingUid), &callingUid, sizeof(callingUid)) != EOK) {
-        return CM_FAILURE;
-    }
-    processName->size = sizeof(callingUid);
-    processName->data = name;
-    return CM_SUCCESS;
-}
-
 int32_t CmGetProcessInfoForIPC(struct CmContext *cmContext)
 {
     if (cmContext == nullptr) {

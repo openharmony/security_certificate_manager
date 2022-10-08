@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef CM_RESPONSE_H
-#define CM_RESPONSE_H
+#ifndef CM_CLIENT_SERVICE_ADAPTER_H
+#define CM_CLIENT_SERVICE_ADAPTER_H
 
 #include "cm_type_inner.h"
 
@@ -22,9 +22,14 @@
 extern "C" {
 #endif
 
-void CmSendResponse(const struct CmContext *context, int32_t result, const struct CmBlob *response);
+struct EventValues {
+    uint32_t userId;
+    uint32_t uid;
+    const char *certName;
+    int32_t errorCode;
+};
 
-int32_t CmGetProcessInfoForIPC(struct CmContext *cmContext);
+int WriteEvent(const char *functionName, const struct EventValues *eventValues);
 
 #ifdef __cplusplus
 }

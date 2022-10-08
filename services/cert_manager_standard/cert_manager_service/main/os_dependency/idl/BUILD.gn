@@ -29,7 +29,8 @@ ohos_static_library("libcm_service_idl_standard_static") {
     "//commonlibrary/c_utils/base/include",
     "//base/security/huks/interfaces/innerkits/huks_standard/main/include",
     "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency/cm_ipc/include",
-    "//third_party/openssl/include"
+    "//third_party/openssl/include",
+    "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_service/main/hisysevent_wrapper/include"
   ]
   defines = [
     "L2_STANDARD",
@@ -44,7 +45,8 @@ ohos_static_library("libcm_service_idl_standard_static") {
     "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_os_dependency_standard_static",
     "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
     "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_engine/main/core:cert_manager_engine_core_standard",
-    "//third_party/openssl:libcrypto_shared"
+    "//third_party/openssl:libcrypto_shared",
+    "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_service/main/hisysevent_wrapper:libcert_manager_hisysevent_wrapper_static"
   ]
   external_deps = [
     "ipc:ipc_core",

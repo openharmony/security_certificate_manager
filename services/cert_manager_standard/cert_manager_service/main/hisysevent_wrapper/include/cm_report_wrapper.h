@@ -13,18 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef CM_RESPONSE_H
-#define CM_RESPONSE_H
+#ifndef CM_REPORT_WRAPPER_H
+#define CM_REPORT_WRAPPER_H
 
-#include "cm_type_inner.h"
+#include <stdint.h>
+#include "hisysevent_wrapper.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void CmSendResponse(const struct CmContext *context, int32_t result, const struct CmBlob *response);
+int32_t ReportFaultEvent(const char *funcName, const struct CmContext *cmContext, const char *certName, int32_t errorCode);
 
-int32_t CmGetProcessInfoForIPC(struct CmContext *cmContext);
+void CmReport(const char *funcName, const struct CmContext *cmContext, const char *certName, int32_t errorCode);
 
 #ifdef __cplusplus
 }

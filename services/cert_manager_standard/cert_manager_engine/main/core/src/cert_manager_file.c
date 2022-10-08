@@ -48,7 +48,7 @@ inline int32_t CertManagerFileRemove(const char *path, const char *fileName)
     return CM_ERROR(CmFileRemove(path, fileName));
 }
 
-static uint32_t GetNumberOfFiles(const char *path)
+static int32_t GetNumberOfFiles(const char *path)
 {
     void *dir = CmOpenDir(path);
     if (dir == NULL) {
@@ -56,7 +56,7 @@ static uint32_t GetNumberOfFiles(const char *path)
         return -1;
     }
 
-    uint32_t count = 0;
+    int32_t count = 0;
     struct CmFileDirentInfo dire = {{0}};
     while (CmGetDirFile(dir, &dire) == CMR_OK) {
         count++;
@@ -69,7 +69,7 @@ static int32_t MallocFileNames(struct CmMutableBlob *fileNames, const char *path
     uint32_t *fileCount)
 {
     struct CmMutableBlob *tmp = NULL;
-    uint32_t fileNums = GetNumberOfFiles(path);
+    int32_t fileNums = GetNumberOfFiles(path);
     if (fileNums < 0) {
         CM_LOG_E("Failed to obtain number of files from: path = %s", path);
         return -1;
@@ -108,7 +108,6 @@ static void FreeFileNames(struct CmMutableBlob *fNames, uint32_t endIndex)
         }
     }
     CMFree(fNames);
-    fNames = NULL;
 }
 
 int32_t CertManagerGetFilenames(struct CmMutableBlob *fileNames, const char *path, struct CmBlob *uri)
