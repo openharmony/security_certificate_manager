@@ -1527,7 +1527,7 @@ void CmIpcServiceGetUserCertList(const struct CmBlob *paramSetBlob, struct CmBlo
         CmSendResponse(context, ret, outData);
     } while (0);
 
-    CmReport(__func__, &cmContext, "certName", ret);
+    CmReport(__func__, &cmContext, "NULL", ret);
 
     if (ret != CM_SUCCESS) {
         CmSendResponse(context, ret, NULL);
