@@ -55,7 +55,7 @@ int32_t CmGetServiceCertInfo(const struct CmContext *context, const struct CmBlo
     uint32_t store, struct CmBlob *certificateData, uint32_t *status);
 
 int32_t CmServiceGetCertInfoPack(const struct CmBlob *certificateData, uint32_t status,
-    struct CmBlob *certificateInfo);
+    const struct CmBlob *certUri, struct CmBlob *certificateInfo);
 
 int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *userCert,
     const struct CmBlob *certAlias, struct CmBlob *certUri);

@@ -356,7 +356,7 @@ int32_t CmGetServiceCertInfo(const struct CmContext *context, const struct CmBlo
 }
 
 int32_t CmServiceGetCertInfoPack(const struct CmBlob *certificateData, uint32_t status,
-    struct CmBlob *certificateInfo)
+    const struct CmBlob *certUri, struct CmBlob *certificateInfo)
 {
     if (certificateInfo->size == 0) {
         CM_LOG_I("cert file is not exist");
@@ -365,7 +365,8 @@ int32_t CmServiceGetCertInfoPack(const struct CmBlob *certificateData, uint32_t 
 
     int32_t ret = CM_SUCCESS;
     uint32_t offset = 0;
-    uint32_t buffSize = sizeof(uint32_t) + MAX_LEN_CERTIFICATE + sizeof(uint32_t);
+    uint32_t buffSize = sizeof(uint32_t) + MAX_LEN_CERTIFICATE + sizeof(uint32_t) +
+        MAX_LEN_CERT_ALIAS + sizeof(uint32_t);
     if (certificateInfo->size < buffSize) {
         CM_LOG_E("outdata size too small");
         return CMR_ERROR_MALLOC_FAIL;
@@ -383,6 +384,27 @@ int32_t CmServiceGetCertInfoPack(const struct CmBlob *certificateData, uint32_t 
         CM_LOG_E("copy cert status failed");
         return ret;
     }
+
+    struct CmBlob certAlias;
+    certAlias.size = MAX_LEN_CERT_ALIAS;
+    certAlias.data = (uint8_t *)CMMalloc(MAX_LEN_CERT_ALIAS);
+    if (certAlias.data == NULL) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    (void)memset_s(certAlias.data, MAX_LEN_CERT_ALIAS, 0, MAX_LEN_CERT_ALIAS);
+    ret = CmGetCertAlias((char *)certUri->data, &(certAlias));
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to get cert certAlias");
+        CM_FREE_BLOB(certAlias);
+        return CM_FAILURE;
+    }
+    ret = CopyBlobToBuffer(&certAlias, certificateInfo, &offset);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("copy cert data failed");
+        CM_FREE_BLOB(certAlias);
+        return ret;
+    }
+    CM_FREE_BLOB(certAlias);
     return ret;
 }
 
