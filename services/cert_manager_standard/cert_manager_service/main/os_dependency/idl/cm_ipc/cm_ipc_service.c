@@ -1588,7 +1588,7 @@ void CmIpcServiceGetUserCertInfo(const struct CmBlob *paramSetBlob, struct CmBlo
             break;
         }
 
-        ret = CmServiceGetCertInfoPack(&certificateData, status, outData);
+        ret = CmServiceGetCertInfoPack(&certificateData, status, &certUri, outData);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmServiceGetCertInfoPack pack failed, ret = %d", ret);
             break;

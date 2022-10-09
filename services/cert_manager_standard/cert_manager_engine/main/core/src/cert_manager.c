@@ -1103,7 +1103,7 @@ static int32_t CherkCertCountBeyondMax(const char *path, const char *fileName)
     int32_t ret = CM_FAILURE;
 
     do {
-        uint32_t tempCount = GetCertCount(path);
+        int32_t tempCount = GetCertCount(path);
         if (tempCount < MAX_COUNT_CERTIFICATE) {
             ret = CM_SUCCESS;
             break;

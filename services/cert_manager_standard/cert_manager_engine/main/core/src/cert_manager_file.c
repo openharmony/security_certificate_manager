@@ -184,7 +184,7 @@ uint32_t GetNumberOfDirs(const char * userIdPath)
     return fileCount;
 }
 
-uint32_t GetCertCount(const char *path)
+int32_t GetCertCount(const char *path)
 {
     return GetNumberOfFiles(path);
 }
