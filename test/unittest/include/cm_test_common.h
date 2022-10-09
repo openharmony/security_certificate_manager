@@ -28,8 +28,13 @@
 #define ENDOF  "\n"
 
 namespace CertmanagerTest {
+
+void SetATPermission(void);
+
 void FreeCMBlobData(struct CmBlob *blob);
+
 uint32_t InitCertList(struct CertList **certlist);
+
 void FreeCertList(struct CertList *certList);
 
 uint32_t InitUserContext(struct CmContext* userCtx, const uint32_t userid, const uint32_t uid, const char *pktname);
@@ -47,5 +52,6 @@ int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t s
 std::string DumpCertAbstractInfo(const struct CertAbstract *certAbstract);
 std::string DumpCertInfo(const struct CertInfo* certInfo);
 std::string DumpCertList(struct CertList *certList);
+
 }
 #endif /* CM_TEST_COMMON_H */

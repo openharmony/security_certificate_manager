@@ -40,8 +40,8 @@
 #include "cm_openssl_ecc.h"
 #include "cm_openssl_rsa.h"
 #include "cm_openssl_curve25519.h"
-
 #include "cert_manager_service.h"
+#include "cert_manager_permission_check.h"
 
 #define MAX_PACKAGENAME_LEN     32
 #define MAX_LEN_CERTIFICATE     8196
@@ -240,6 +240,12 @@ void CmIpcServiceGetCertificateInfo(const struct CmBlob *srcData, const struct C
             break;
         }
 
+        if (!CmHasCommonPermission()) {
+            CM_LOG_E("permission check failed");
+            ret = CMR_ERROR_PERMISSION_DENIED;
+            break;
+        }
+
         ret = CmGetCertificatesByUri(context, &certificateList, store, &uriBlob, &status);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmGetCertificatesByUri fail, ret = %d", ret);
@@ -274,6 +280,12 @@ void CmIpcServiceSetCertStatus(const struct CmBlob *srcData, const struct CmCont
         ret = CmCertificateStatusUnpack(srcData, &cmContext, &uriBlob, &store, &status);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmIpcServiceSetCertStatus Ipc fail");
+            break;
+        }
+
+        if (!CmHasPrivilegedPermission() || !CmHasCommonPermission()) {
+            CM_LOG_E("permission check failed");
+            ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
 
@@ -541,7 +553,7 @@ static bool AppCertCheckBlobValid(const struct CmBlob *data)
 static bool CmCheckMaxInstalledCertCount(const uint32_t store, const struct CmContext *cmContext)
 {
     bool isValid = true;
-    uint32_t fileCount;
+    uint32_t fileCount = 0;
     struct CmBlob fileNames[MAX_COUNT_CERTIFICATE];
     uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
     (void)memset_s(fileNames, len, 0, len);
@@ -556,6 +568,8 @@ static bool CmCheckMaxInstalledCertCount(const uint32_t store, const struct CmCo
         isValid = false;
         CM_LOG_E("The app cert installed has reached max count:%u", fileCount);
     }
+
+    CM_LOG_I("app cert installed count:%u", fileCount);
 
     CmFreeFileNames(fileNames, fileCount);
     return isValid;
@@ -590,6 +604,11 @@ static int32_t CmInstallAppCertCheck(const struct CmBlob *appCert, const struct 
     if (CmCheckMaxInstalledCertCount(store, cmContext) == false) {
         CM_LOG_E("CmCheckMaxInstalledCertCount check fail");
         return CM_FAILURE;
+    }
+
+    if (!CmPermissionCheck(store)) {
+        CM_LOG_E("CmPermissionCheck check failed");
+        return CMR_ERROR_PERMISSION_DENIED;
     }
 
     return CM_SUCCESS;
@@ -980,6 +999,12 @@ void CmIpcServiceGetAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob
         ret = CmGetProcessInfoForIPC(&cmContext);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmGetProcessInfoForIPC fail, ret = %d", ret);
+            break;
+        }
+
+        if (!CmHasPrivilegedPermission() || !CmHasCommonPermission()) {
+            CM_LOG_E("permission check failed");
+            ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
 

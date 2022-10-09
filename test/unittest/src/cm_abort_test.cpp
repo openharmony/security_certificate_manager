@@ -19,30 +19,6 @@
 
 #include "cert_manager_api.h"
 
-#include "accesstoken_kit.h"
-#include "nativetoken_kit.h"
-#include "token_setproc.h"
-
-void SetATPermission(void)
-{
-    const char **perms = new const char *[2]; // 2 permissions
-    perms[0] = "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL"; // system_basic
-    perms[1] = "ohos.permission.ACCESS_CERT_MANAGER"; // normal
-    NativeTokenInfoParams infoInstance = {
-        .dcapsNum = 0,
-        .permsNum = 2,
-        .dcaps = nullptr,
-        .perms = perms,
-        .acls = nullptr,
-        .processName = "TestCertManager",
-        .aplStr = "system_basic",
-    };
-
-    auto tokenId = GetAccessTokenId(&infoInstance);
-    SetSelfTokenID(tokenId);
-    OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
-}
-
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
