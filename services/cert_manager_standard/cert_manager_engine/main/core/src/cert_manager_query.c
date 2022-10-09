@@ -324,7 +324,7 @@ static int32_t CmMallocCertBlob(struct CertBlob *certBlob, uint32_t certCount)
 
 }
 
-static int32_t CmGetCertAlias(const char *uri, struct CmBlob *certAlias)
+int32_t CmGetCertAlias(const char *uri, struct CmBlob *certAlias)
 {
     int32_t ret = CM_SUCCESS;
     struct CMUri certUri;
@@ -355,7 +355,7 @@ static int32_t CmGetCertSubjectName(const char *fName, const char *path, struct 
         return CM_FAILURE;
     }
 
-    uint32_t subjectNameLen = 0;
+    int32_t subjectNameLen = 0;
     X509 *cert = InitCertContext(certData.data, certData.size);
     if (cert == NULL) {
         CM_LOG_E("cert data can't convert x509 format");
