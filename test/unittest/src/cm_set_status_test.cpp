@@ -61,6 +61,7 @@ class CmSetCertStatusTest : public testing::Test {
 
 void CmSetCertStatusTest::SetUpTestCase(void)
 {
+    SetATPermission();
 }
 
 void CmSetCertStatusTest::TearDownTestCase(void)

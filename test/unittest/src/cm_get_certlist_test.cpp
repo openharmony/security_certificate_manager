@@ -96,6 +96,7 @@ public:
 
 void CmGetCertListTest::SetUpTestCase(void)
 {
+    SetATPermission();
 }
 
 void CmGetCertListTest::TearDownTestCase(void)

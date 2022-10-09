@@ -20,9 +20,13 @@
 extern "C" {
 #endif
 
+#include "cm_type.h"
+
 bool CmHasPrivilegedPermission(void);
 
 bool CmHasCommonPermission(void);
+
+bool CmPermissionCheck(const uint32_t store);
 
 #ifdef __cplusplus
 }
