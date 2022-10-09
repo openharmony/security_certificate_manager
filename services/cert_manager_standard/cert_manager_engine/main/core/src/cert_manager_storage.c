@@ -167,3 +167,27 @@ int32_t CmStorageGetAppCert(const struct CmContext *context, uint32_t store,
     return CmStorageGetBuf(uidPath, (const char *)keyUri->data, certBlob);
 }
 
+int32_t CmGetCertFilePath(const struct CmContext *context, uint32_t store, struct CmMutableBlob *pathBlob)
+{
+    char pathPtr[CERT_MAX_PATH_LEN] = {0};
+
+    if ((pathBlob == NULL) || (pathBlob->data == NULL)) {
+        CM_LOG_E("Null pointer failure");
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    int32_t ret = ConstructUidPath(context, store, pathPtr, CERT_MAX_PATH_LEN);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get file path faild");
+        return CM_FAILURE;
+    }
+
+    char *path = (char *)pathBlob->data;
+    if (sprintf_s(path, CERT_MAX_PATH_LEN, "%s", pathPtr) < 0) {
+            return CM_FAILURE;
+    }
+    pathBlob->size = strlen(path) + 1;
+
+    return CM_SUCCESS;
+}
+

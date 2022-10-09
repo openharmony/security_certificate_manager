@@ -34,6 +34,8 @@
 #define APPLICATION_TRUSTED_STORE      2
 #define ENCODED_INT_COUNT              3
 
+#define MAX_NAME_DIGEST_LEN            9
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -454,6 +456,23 @@ inline static RbTreeKey GetRbTreeKeyFromName(char *name)
     return DECODE_UINT32(name) & 0x7fffffff;
 }
 
+static RbTreeKey GetRbTreeKey(uint32_t store, char *fn)
+{
+    uint8_t buff[MAX_NAME_DIGEST_LEN];
+    RbTreeKey key;
+    struct CmMutableBlob nameDigest = { sizeof(buff), buff };
+    if (store == CM_SYSTEM_TRUSTED_STORE) {
+        key = GetRbTreeKeyFromName(fn);
+    } else {
+        int32_t ret = NameHashFromUri(fn, &nameDigest);
+        if (ret!= CMR_OK) {
+            return ret;
+        }
+        key = GetRbTreeKeyFromName((char *)nameDigest.data);
+    }
+    return key;
+}
+
 static uint32_t GetCertStatusNode(const struct RbTreeNode *node)
 {
     if (node == NULL) {
@@ -509,6 +528,51 @@ static int32_t SetCertStatusNode(const struct CmContext *ctx, struct RbTree *tre
         return rc;
     }
 }
+
+static int32_t SetUserCertStatusNode(const struct CertStatus *valInfo, struct RbTree *tree,
+    struct RbTreeNode *node, char *name, uint32_t store)
+{
+    uint32_t status = valInfo->status;
+
+    if (node != NULL) {
+        /* found a matching node */
+        struct CertStatus *cStatus = node->value;
+        if (cStatus == NULL) {
+            CM_LOG_E("No status attached to tree node !!\n");
+            return CMR_ERROR;
+        }
+
+        if (status == CERT_STATUS_ENABLED) {
+            /* the default status is ENABLED. hence, we just delete it from the tree */
+            FreeStatus(cStatus);
+            node->value = NULL;
+            return RbTreeDelete(tree, node);
+        }
+
+        /* for other status values, just overwrite */
+        cStatus->status = status;
+        return CMR_OK;
+    } else {
+        /* no match was found, insert a new node */
+        struct CertStatus *cStatus = CMMalloc(sizeof(struct CertStatus));
+        if (cStatus == NULL) {
+            CM_LOG_E("Unable to allocate memory!!\n");
+            return CMR_ERROR_MALLOC_FAIL;
+        }
+        cStatus->userId = valInfo->userId;
+        cStatus->uid = valInfo->uid;
+        cStatus->fileName = strdup(name);
+        cStatus->status = status;
+        int rc = RbTreeInsert(tree, GetRbTreeKey(store, name), cStatus);
+        if (rc != CMR_OK) {
+            CM_LOG_E("Failed to insert new node: %d\n", rc);
+            CMFree(cStatus->fileName);
+            CMFree(cStatus);
+        }
+        return rc;
+    }
+}
+
 
 /* return true if the status matches the filename and the caller */
 static bool StatusMatch(const struct CmContext *context, const struct CertStatus *cs,
@@ -583,7 +647,7 @@ static int32_t CertManagerStatus(const struct CmContext *context, struct RbTree 
     bool getter = certStatus.getter;
     uint32_t status = certStatus.status;
     uint32_t *oldStatus = certStatus.oldStatus;
-    RbTreeKey key = GetRbTreeKeyFromName(fn);
+    RbTreeKey key = GetRbTreeKey(store, fn);
 
     rc = RbTreeFindNode(&node, key, tree);
     if (rc != CMR_OK && rc != CMR_ERROR_NOT_FOUND) {
@@ -607,9 +671,13 @@ static int32_t CertManagerStatus(const struct CmContext *context, struct RbTree 
     *oldStatus = GetCertStatusNode(node);
     if (!getter && *oldStatus != status) {
         CM_LOG_I("start setting status");
-        ASSERT_FUNC(SetCertStatusNode(context, tree, node, fn, status));
+        if (store == CM_SYSTEM_TRUSTED_STORE) {
+            ASSERT_FUNC(SetCertStatusNode(context, tree, node, fn, status));
+        } else {
+            struct CertStatus valueInfo = { context->userId, context->uid, status, NULL };
+            ASSERT_FUNC(SetUserCertStatusNode(&valueInfo, tree, node, fn, store));
+        }
     }
-
     return rc;
 }
 
@@ -731,6 +799,10 @@ int32_t SetcertStatus(const struct CmContext *context, const struct CmBlob *cert
 int32_t CertManagerSetCertificatesStatus(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, uint32_t status)
 {
+    if (CmCheckBlob(certUri) != CM_SUCCESS) {
+        CM_LOG_E("input params invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     return SetcertStatus(context, certUri, store, status, NULL);
 }
 
@@ -740,6 +812,25 @@ int32_t CertManagerGetCertificatesStatus(const struct CmContext *context, const 
     return CertStatus(context, certificate, store, CERT_STATUS_INVALID, status);
 }
 
+int32_t CmSetStatusEnable(const struct CmContext *context, struct CmMutableBlob *pathBlob,
+    const struct CmBlob *certUri, uint32_t store)
+{
+    struct CertFile certFile = { 0, 0 };
+    certFile.path = &(CM_BLOB(pathBlob));
+    certFile.fileName = &(CM_BLOB(certUri));
+
+    return CertManagerStatusFile(context, certFile, store, CERT_STATUS_ENANLED, NULL);
+}
+
+int32_t CmGetCertStatus(const struct CmContext *context, struct CertFilePath *certFilePath,
+    uint32_t store, uint32_t *status)
+{
+    struct CertFile certFile = { 0, 0 };
+    certFile.path = &(certFilePath->path);
+    certFile.fileName = &(certFilePath->fileName);
+
+    return CertManagerStatusFile(context, certFile, store, CERT_STATUS_INVALID, status);
+}
 #ifdef __cplusplus
 }
 #endif

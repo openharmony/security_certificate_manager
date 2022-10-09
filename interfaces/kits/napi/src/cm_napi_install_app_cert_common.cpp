@@ -76,7 +76,7 @@ napi_value InstallAppCertParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc < CM_NAPI_INSTALL_APP_CERT_MIN_ARGS) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Missing parameter");
+        ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
@@ -91,7 +91,7 @@ napi_value InstallAppCertParseParams(
 
     napi_value result = GetUint8Array(env, argv[index], *context->keystore);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
+        ThrowParamsError(env, PARAM_ERROR, "get keystore type error");
         CM_LOG_E("could not get keystore");
         return nullptr;
     }
@@ -99,7 +99,7 @@ napi_value InstallAppCertParseParams(
     index++;
     result = ParseString(env, argv[index], context->keystorePwd);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
+        ThrowParamsError(env, PARAM_ERROR, "get keystore Pwd type error");
         CM_LOG_E("could not get keystore Pwd");
         return nullptr;
     }
@@ -107,7 +107,7 @@ napi_value InstallAppCertParseParams(
     index++;
     result = ParseString(env, argv[index], context->keyAlias);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
+        ThrowParamsError(env, PARAM_ERROR, "get keyAlias type error");
         CM_LOG_E("could not get uri");
         return nullptr;
     }
@@ -116,8 +116,8 @@ napi_value InstallAppCertParseParams(
     if (index < argc) {
         context->callback = GetCallback(env, argv[index]);
         if (context->callback == nullptr) {
-            napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-            CM_LOG_E(" InstallAppCert get callback function faild");
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+            CM_LOG_E("get callback function faild when install application cert");
             return nullptr;
         }
     }

@@ -230,6 +230,11 @@ struct CertFile {
     const struct CmBlob *path;
 };
 
+struct CertFilePath {
+    struct CmBlob fileName;
+    struct CmBlob path;
+};
+
 struct CMApp {
     uint32_t userId;
     uint32_t uid;

@@ -65,7 +65,7 @@ napi_value UninstallAppCertParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc < CM_NAPI_UNINSTALL_APP_CERT_MIN_ARGS) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Missing parameter");
+        ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
@@ -73,7 +73,7 @@ napi_value UninstallAppCertParseParams(
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
+        ThrowParamsError(env, PARAM_ERROR, "get keyUri type error");
         CM_LOG_E("could not get cert uri");
         return nullptr;
     }
@@ -82,8 +82,8 @@ napi_value UninstallAppCertParseParams(
     if (index < argc) {
         context->callback = GetCallback(env, argv[index]);
         if (context->callback == nullptr) {
-            napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-            CM_LOG_E("UninstallAppCert get callback function faild");
+            ThrowParamsError(env, PARAM_ERROR, "get callback type error");
+            CM_LOG_E("get callback function faild when uninstall applicaiton cert");
             return nullptr;
         }
     }
