@@ -213,7 +213,7 @@ static int32_t CreateCertFile(struct CertFilePath *certFilePath, const char *pat
     ASSERT_ARGS(path);
     int32_t ret = CM_SUCCESS;
     uint32_t i = *certCount;
-    uint32_t fileNums = GetCertCount(path);
+    int32_t fileNums = GetCertCount(path);
     if (fileNums == 0) {
         CM_LOG_I("no cert file in path");
         return CM_SUCCESS;
@@ -256,7 +256,7 @@ static int32_t CreateCertFile(struct CertFilePath *certFilePath, const char *pat
         return CM_FAILURE;
     }
     (void) CmCloseDir(d);
-    *certCount += fileNums;
+    *certCount += (uint32_t)fileNums;
     return ret;
 }
 
