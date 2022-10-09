@@ -67,6 +67,13 @@ enum CmMessage {
     CM_MSG_FINISH,
     CM_MSG_ABORT,
 
+    CM_MSG_GET_USER_CERTIFICATE_LIST,
+    CM_MSG_GET_USER_CERTIFICATE_INFO,
+    CM_MSG_SET_USER_CERTIFICATE_STATUS,
+    CM_MSG_INSTALL_USER_CERTIFICATE,
+    CM_MSG_UNINSTALL_USER_CERTIFICATE,
+    CM_MSG_UNINSTALL_ALL_USER_CERTIFICATE,
+
     /* new cmd type must be added before HKS_MSG_MAX */
     CM_MSG_MAX,
 };
@@ -96,6 +103,14 @@ static struct CmIpcPoint g_cmIpcHandler[] = {
     { CM_MSG_UPDATE, CmIpcServiceUpdate },
     { CM_MSG_FINISH, CmIpcServiceFinish },
     { CM_MSG_ABORT, CmIpcServiceAbort },
+
+    { CM_MSG_GET_USER_CERTIFICATE_LIST, CmIpcServiceGetUserCertList },
+    { CM_MSG_GET_USER_CERTIFICATE_INFO, CmIpcServiceGetUserCertInfo },
+    { CM_MSG_SET_USER_CERTIFICATE_STATUS, CmIpcServiceSetUserCertStatus },
+    { CM_MSG_INSTALL_USER_CERTIFICATE, CmIpcServiceInstallUserCert },
+    { CM_MSG_UNINSTALL_USER_CERTIFICATE, CmIpcServiceUninstallUserCert },
+    { CM_MSG_UNINSTALL_ALL_USER_CERTIFICATE, CmIpcServiceUninstallAllUserCert },
+
 };
 
 static struct CmIpcEntryPoint g_cmIpcMessageHandler[] = {

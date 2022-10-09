@@ -73,6 +73,41 @@ uint32_t InitCertList(struct CertList **certlist)
     return CM_SUCCESS;
 }
 
+uint32_t InitUserCertList(struct CertList **cList)
+{
+    *cList = (struct CertList *)CmMalloc(sizeof(struct CertList));
+    if (*cList == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+
+    uint32_t buffSize = MAX_COUNT_CERTIFICATE * sizeof(struct CertAbstract);
+    (*cList)->certAbstract = (struct CertAbstract *)CmMalloc(buffSize);
+    if ((*cList)->certAbstract == NULL) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    (void)memset_s((*cList)->certAbstract, buffSize, 0, buffSize);
+    (*cList)->certsCount = MAX_COUNT_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+
+uint32_t InitUserCertInfo(struct CertInfo **cInfo)
+{
+    *cInfo = (struct CertInfo *)CmMalloc(sizeof(struct CertInfo));
+    if (*cInfo == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    (void)memset_s(*cInfo, sizeof(struct CertInfo), 0, sizeof(struct CertInfo));
+
+    (*cInfo)->certInfo.data = (uint8_t *)CmMalloc(MAX_LEN_CERTIFICATE);
+    if ((*cInfo)->certInfo.data == NULL) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    (*cInfo)->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+
 uint32_t InitUserContext(struct CmContext* userCtx, const uint32_t userid, const uint32_t uid, const char *pktname)
 {
     if (pktname == nullptr || userCtx  == nullptr) {

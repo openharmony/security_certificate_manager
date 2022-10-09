@@ -237,3 +237,75 @@ CM_API_EXPORT int32_t CmAbort(const struct CmBlob *handle)
     return ret;
 }
 
+CM_API_EXPORT int32_t CmGetUserCertList(uint32_t store, struct CertList *certificateList)
+{
+    CM_LOG_I("enter get cert list");
+    if (certificateList == NULL) {
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    int32_t ret = CmClientGetUserCertList(store, certificateList);
+    CM_LOG_I("leave get cert list, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT int32_t CmGetUserCertInfo(const struct CmBlob *certUri, uint32_t store, struct CertInfo *certificateInfo)
+{
+    CM_LOG_I("enter get cert info");
+    if ((certUri == NULL) || (certificateInfo == NULL)) {
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    int32_t ret = CmClientGetUserCertInfo(certUri, store, certificateInfo);
+    CM_LOG_I("leave get cert info, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT int32_t CmSetUserCertStatus(const struct CmBlob *certUri, uint32_t store, const bool status)
+{
+    CM_LOG_I("enter set cert status");
+    if (certUri == NULL) {
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    uint32_t uStatus = status? 0: 1; // 0 indicates the certificate enabled status
+
+    int32_t ret = CmClientSetUserCertStatus(certUri, store, uStatus);
+    CM_LOG_I("leave set cert status, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT int32_t CmInstallUserTrustedCert(const struct CmBlob *userCert, const struct CmBlob *certAlias,
+    struct CmBlob *certUri)
+{
+    CM_LOG_I("enter install user trusted cert");
+    if ((userCert == NULL) || (certAlias == NULL) || (certUri == NULL)) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CmClientInstallUserTrustedCert(userCert, certAlias, certUri);
+    CM_LOG_I("leave install user trusted cert, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT int32_t CmUninstallUserTrustedCert(const struct CmBlob *certUri)
+{
+    CM_LOG_I("enter uninstall user trusted cert");
+    if (certUri == NULL) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CmClientUninstallUserTrustedCert(certUri);
+    CM_LOG_I("leave uninstall user trusted cert, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT int32_t CmUninstallAllUserTrustedCert(void)
+{
+    CM_LOG_I("enter uninstall all user trusted cert");
+
+    int32_t ret = CmClientUninstallAllUserTrustedCert();
+    CM_LOG_I("leave uninstall all user trusted cert, result = %d", ret);
+    return ret;
+}
+

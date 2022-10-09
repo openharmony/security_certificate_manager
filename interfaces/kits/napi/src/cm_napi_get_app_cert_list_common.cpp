@@ -64,7 +64,7 @@ napi_value GetAppCertListParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc < CM_NAPI_GET_APP_CERT_LIST_MIN_ARGS) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Missing parameter");
+        ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
@@ -73,8 +73,8 @@ napi_value GetAppCertListParseParams(
     if (index < argc) {
         context->callback = GetCallback(env, argv[index]);
         if (context->callback == nullptr) {
-            napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-            CM_LOG_E("GetAppCertLis get callback function faild");
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+            CM_LOG_E("get callback function faild when getting application certificate list");
             return nullptr;
         }
     }

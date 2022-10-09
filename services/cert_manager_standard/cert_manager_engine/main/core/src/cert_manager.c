@@ -32,6 +32,9 @@
 #include "hks_param.h"
 #include "cert_manager_permission_check.h"
 #include "cert_manager_auth_mgr.h"
+#include "cert_manager_uri.h"
+#include "cert_manager_storage.h"
+#include <unistd.h>
 
 #define MAX_FILES_IN_DIR                    1000
 #define CERT_MANAGER_MD5_SIZE               32
@@ -1201,6 +1204,152 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
     }
 
     return CM_SUCCESS;
+}
+
+static int32_t CherkCertCountBeyondMax(const char *path, const char *fileName)
+{
+    int32_t ret = CM_FAILURE;
+
+    do {
+        uint32_t tempCount = GetCertCount(path);
+        if (tempCount < MAX_COUNT_CERTIFICATE) {
+            ret = CM_SUCCESS;
+            break;
+        }
+
+        char fullFileName[CM_MAX_FILE_NAME_LEN] = {0};
+        if (snprintf_s(fullFileName, CM_MAX_FILE_NAME_LEN, CM_MAX_FILE_NAME_LEN - 1, "%s/%s", path, fileName) < 0) {
+            CM_LOG_E("mkdir full name failed");
+            ret = CM_FAILURE;
+            break;
+        }
+
+        if (access(fullFileName, F_OK) == 0) {
+            ret = CM_SUCCESS;
+            break;
+        }
+    } while (0);
+    return ret;
+}
+
+int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *pathBlob,
+    const struct CmBlob *userCert, const struct CmBlob *certAlias, struct CmBlob *certUri)
+{
+    int32_t ret = CM_SUCCESS;
+    char *userUri = NULL;
+
+    do {
+        ret = BuildUserUri(&userUri, (char *)certAlias->data, CM_URI_TYPE_CERTIFICATE, context);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("BuildUserUri failed");
+            break;
+        }
+
+        ret = CherkCertCountBeyondMax((char*)pathBlob->data, userUri);
+        if(ret != CM_SUCCESS) {
+            CM_LOG_E("cert count beyond maxcount, can't install");
+            ret = CMR_ERROR_INVALID_ARGUMENT;
+            break;
+        }
+
+        if (CmFileWrite((char*)pathBlob->data, userUri, 0, userCert->data, userCert->size) != CMR_OK) {
+            CM_LOG_E("Failed to write certificate: %s in to %s", certAlias->data, pathBlob->data);
+            ret = CMR_ERROR_WRITE_FILE_FAIL;
+            break;
+        }
+
+        uint32_t size = strlen(userUri) + 1; /* end \0 */
+        if (certUri->size < size) {
+            CM_LOG_E("certUri size %u too small", certUri->size);
+            ret = CMR_ERROR_BUFFER_TOO_SMALL;
+            break;
+        }
+
+        if (memcpy_s(certUri->data, certUri->size, (uint8_t *)userUri, size) != EOK) {
+            ret = CMR_ERROR;
+            break;
+        }
+        certUri->size = size;
+    } while (0);
+
+    if (userUri != NULL) {
+        CMFree(userUri);
+    }
+    return ret;
+}
+
+int32_t NameHashFromUri(const char *fName, struct CmMutableBlob *nameDigest)
+{
+    uint32_t buffSize = (uint32_t)strlen(fName) + 1;
+    struct HksBlob certName = { buffSize, (uint8_t *)fName };
+
+    return NameHash(&certName, nameDigest);
+}
+
+int32_t CmRemoveUserCert(struct CmMutableBlob *pathBlob, const struct CmBlob *certUri)
+{
+    return CertManagerFileRemove((char *)pathBlob->data, (char *)certUri->data);
+}
+
+static int32_t RemoveAllUserCert(const struct CmContext *context, uint32_t store, const char* path)
+{
+    ASSERT_ARGS(path);
+    int32_t ret = CM_SUCCESS;
+    struct CmMutableBlob fileNames = { 0, NULL };
+    struct CmMutableBlob *fNames = NULL;
+    struct CmBlob uri[MAX_COUNT_CERTIFICATE];
+    struct CmMutableBlob pathBlob = { sizeof(path), (uint8_t *)path };
+
+    uint32_t uriArraryLen = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
+    (void)memset_s(uri, uriArraryLen, 0, uriArraryLen);
+    if (CertManagerGetFilenames(&fileNames, path, uri) < 0) {
+        CM_LOG_E("Failed obtain filenames from path: %s", path);
+        (void)CmFreeCaFileNames(&fileNames);
+        return CM_FAILURE;
+    }
+
+    fNames = (struct CmMutableBlob *)fileNames.data;
+    for (uint32_t i = 0; i < fileNames.size; i++) {
+        ret = CertManagerFileRemove(path, (char *)fNames[i].data);
+        if (ret != CMR_OK) {
+            CM_LOG_E("User Cert %d remove failed, ret: %d", i, ret);
+            continue;
+        }
+        ret = CmSetStatusEnable(context, &pathBlob, &uri[i], store);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Update StatusFile %d fail, ret = %d", i, ret);
+            continue;
+        }
+    }
+    CmFreeFileNameUri(uri, MAX_COUNT_CERTIFICATE);
+    (void)CmFreeCaFileNames(&fileNames);
+    return ret;
+}
+
+static int32_t RemoveAllUidDir(const char* path)
+{
+    return CM_ERROR(CmDirRemove(path));
+}
+
+int32_t CmRemoveAllUserCert(const struct CmContext *context, uint32_t store, const struct CmMutableBlob *certPathList)
+{
+    ASSERT_ARGS(certPathList && certPathList->data && certPathList->size);
+    int32_t ret = CM_SUCCESS;
+    struct CmMutableBlob *path = (struct CmMutableBlob *)certPathList->data;
+
+    for (uint32_t i = 0; i < certPathList->size; i++) {
+        ret = RemoveAllUserCert(context, store, (char *)path[i].data);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed remove usercert of path %s", (char *)path[i].data);
+            continue;
+        }
+        ret = RemoveAllUidDir((char *)path[i].data);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Remove UidPath %s fail, ret = %d", (char *)path[i].data, ret);
+            continue;
+        }
+    }
+    return ret;
 }
 
 #ifdef __cplusplus

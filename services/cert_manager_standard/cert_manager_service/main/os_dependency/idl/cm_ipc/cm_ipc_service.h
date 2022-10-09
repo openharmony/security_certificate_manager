@@ -73,6 +73,25 @@ void CmIpcServiceFinish(const struct CmBlob *paramSetBlob, struct CmBlob *outDat
 void CmIpcServiceAbort(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context);
 
+void CmIpcServiceGetUserCertList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceGetUserCertInfo(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceUninstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+
 #ifdef __cplusplus
 }
 #endif

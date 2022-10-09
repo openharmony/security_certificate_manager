@@ -27,6 +27,8 @@ namespace CMNapi {
 namespace {
 constexpr int CM_NAPI_GET_SYSTEM_CERT_INFO_MIN_ARGS = 2;
 constexpr int CM_NAPI_GET_SYSTEM_CERT_INFO_MAX_ARGS = 3;
+constexpr int CM_NAPI_GET_USER_CERT_INFO_MIN_ARGS = 1;
+constexpr int CM_NAPI_GET_USER_CERT_INFO_MAX_ARGS = 2;
 }  // namespace
 
 struct GetCertInfoAsyncContextT {
@@ -85,7 +87,7 @@ static napi_value GetSystemCertInfoParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc < CM_NAPI_GET_SYSTEM_CERT_INFO_MIN_ARGS) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Missing parameter");
+        ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
@@ -100,7 +102,7 @@ static napi_value GetSystemCertInfoParseParams(
     index++;
     result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
+        ThrowParamsError(env, PARAM_ERROR, "certUri type error");
         CM_LOG_E("could not get cert uri");
         return nullptr;
     }
@@ -110,7 +112,42 @@ static napi_value GetSystemCertInfoParseParams(
         context->callback = GetCallback(env, argv[index]);
     }
 
-    context->store = SYSTEM_CERTIFICATE_STORE;   /* 1 is store type,  indicate system trusted certificate */
+    context->store = CM_SYSTEM_TRUSTED_STORE;
+    return GetInt32(env, 0);
+}
+
+static napi_value GetUserCertInfoParseParams(
+    napi_env env, napi_callback_info info, GetCertInfoAsyncContext context)
+{
+    size_t argc = CM_NAPI_GET_USER_CERT_INFO_MAX_ARGS;
+    napi_value argv[CM_NAPI_GET_USER_CERT_INFO_MAX_ARGS] = {0};
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+
+    if ((argc != CM_NAPI_GET_USER_CERT_INFO_MAX_ARGS) && (argc != CM_NAPI_GET_USER_CERT_INFO_MIN_ARGS)) {
+        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid when getting user trusted certificate info");
+        CM_LOG_E("arguments count invalid when getting user trusted certificate info");
+        return nullptr;
+    }
+
+    size_t index = 0;
+    napi_value result = ParseString(env, argv[index], context->certUri);
+    if (result == nullptr) {
+        ThrowParamsError(env, PARAM_ERROR, "certUri type error");
+        CM_LOG_E("get cert uri failed when getting user trusted certificate info");
+        return nullptr;
+    }
+
+    index++;
+    if (index < argc) {
+        context->callback = GetCallback(env, argv[index]);
+        if (context->callback == nullptr) {
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+            CM_LOG_E("get callback function failed when getting user trusted certificate info");
+            return nullptr;
+        }
+    }
+
+    context->store = CM_USER_TRUSTED_STORE;
     return GetInt32(env, 0);
 }
 
@@ -127,6 +164,54 @@ static napi_value GetCertInfoWriteResult(napi_env env, GetCertInfoAsyncContext c
     return result;
 }
 
+static void GetCertInfoExecute(napi_env env, void *data)
+{
+    GetCertInfoAsyncContext context = static_cast<GetCertInfoAsyncContext>(data);
+
+    context->certificate = (struct CertInfo *)CmMalloc(sizeof(struct CertInfo));
+    if (context->certificate == nullptr) {
+        CM_LOG_E("malloc certificate fail");
+        context->result = CMR_ERROR_MALLOC_FAIL;
+        return;
+    }
+    (void)memset_s(context->certificate, sizeof(struct CertInfo), 0, sizeof(struct CertInfo));
+
+    if (context->store == CM_SYSTEM_TRUSTED_STORE) {
+        context->result = CmGetCertInfo(context->cmContext, context->certUri, context->store,
+            context->certificate);
+    } else {
+        context->certificate->certInfo.data = (uint8_t *)CmMalloc(MAX_LEN_CERTIFICATE);
+        if (context->certificate->certInfo.data == nullptr) {
+            CM_LOG_E("malloc certificate certInfo data fail");
+            context->result = CMR_ERROR_MALLOC_FAIL;
+            return;
+        }
+        context->certificate->certInfo.size = MAX_LEN_CERTIFICATE;
+        context->result = CmGetUserCertInfo(context->certUri, context->store, context->certificate);
+    }
+}
+
+static void GetCertInfoComplete(napi_env env, napi_status status, void *data)
+{
+    GetCertInfoAsyncContext context = static_cast<GetCertInfoAsyncContext>(data);
+    napi_value result[RESULT_NUMBER] = {0};
+    if (context->result == CM_SUCCESS) {
+        NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
+        result[1] = GetCertInfoWriteResult(env, context);
+    } else {
+        const char *errorMessage = "get system cert info error";
+        result[0] = GenerateBusinessError(env, context->result, errorMessage);
+        NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
+    }
+    if (context->deferred != nullptr) {
+        GeneratePromise(env, context->deferred, context->result, result, sizeof(result));
+    } else {
+        GenerateCallback(env, context->callback, result, sizeof(result));
+    }
+    DeleteGetCertInfoAsyncContext(env, context);
+    CM_LOG_I("get system cert info end");
+}
+
 static napi_value GetCertInfoAsyncWork(napi_env env, GetCertInfoAsyncContext context)
 {
     napi_value promise = nullptr;
@@ -139,34 +224,8 @@ static napi_value GetCertInfoAsyncWork(napi_env env, GetCertInfoAsyncContext con
         env,
         nullptr,
         resourceName,
-        [](napi_env env, void *data) {
-            GetCertInfoAsyncContext context = static_cast<GetCertInfoAsyncContext>(data);
-
-            context->certificate = (struct CertInfo *)CmMalloc(sizeof(struct CertInfo));
-            if (context->certificate != nullptr) {
-                (void)memset_s(context->certificate, sizeof(struct CertInfo), 0, sizeof(struct CertInfo));
-            }
-            context->result = CmGetCertInfo(context->cmContext, context->certUri, context->store, context->certificate);
-        },
-        [](napi_env env, napi_status status, void *data) {
-            GetCertInfoAsyncContext context = static_cast<GetCertInfoAsyncContext>(data);
-            napi_value result[RESULT_NUMBER] = {0};
-            if (context->result == CM_SUCCESS) {
-                NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
-                result[1] = GetCertInfoWriteResult(env, context);
-            } else {
-                const char *errorMessage = "get system cert info error";
-                result[0] = GenerateBusinessError(env, context->result, errorMessage);
-                NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
-            }
-            if (context->deferred != nullptr) {
-                GeneratePromise(env, context->deferred, context->result, result, sizeof(result));
-            } else {
-                GenerateCallback(env, context->callback, result, sizeof(result));
-            }
-            DeleteGetCertInfoAsyncContext(env, context);
-            CM_LOG_I("get system cert info end");
-        },
+        GetCertInfoExecute,
+        GetCertInfoComplete,
         (void *)context,
         &context->asyncWork));
     napi_status status = napi_queue_async_work(env, context->asyncWork);
@@ -196,6 +255,29 @@ napi_value CMNapiGetSystemCertInfo(napi_env env, napi_callback_info info)
     result = GetCertInfoAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        DeleteGetCertInfoAsyncContext(env, context);
+        return nullptr;
+    }
+    return result;
+}
+
+napi_value CMNapiGetUserTrustedCertInfo(napi_env env, napi_callback_info info)
+{
+    GetCertInfoAsyncContext context = CreateGetCertInfoAsyncContext();
+    if (context == nullptr) {
+        CM_LOG_E("create cert info context failed");
+        return nullptr;
+    }
+
+    napi_value result = GetUserCertInfoParseParams(env, info, context);
+    if (result == nullptr) {
+        CM_LOG_E("parse get cert info params failed");
+        DeleteGetCertInfoAsyncContext(env, context);
+        return nullptr;
+    }
+    result = GetCertInfoAsyncWork(env, context);
+    if (result == nullptr) {
+        CM_LOG_E("get cert info params async work failed");
         DeleteGetCertInfoAsyncContext(env, context);
         return nullptr;
     }

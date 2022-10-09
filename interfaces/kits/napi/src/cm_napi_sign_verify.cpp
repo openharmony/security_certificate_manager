@@ -142,7 +142,7 @@ static napi_value ParseCMInitParams(napi_env env, napi_callback_info info, SignV
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_INIT_ARGS_CNT) && (argc != (CM_NAPI_INIT_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "init arguments count invalid");
+        ThrowParamsError(env, PARAM_ERROR, "init arguments count invalid");
         CM_LOG_E("init arguments count is not expected");
         return nullptr;
     }
@@ -150,16 +150,16 @@ static napi_value ParseCMInitParams(napi_env env, napi_callback_info info, SignV
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->authUri);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("init get uri failed");
+        ThrowParamsError(env, PARAM_ERROR, "get authUri type error");
+        CM_LOG_E("get uri failed when using init function");
         return nullptr;
     }
 
     index++;
     result = ParseSpec(env, argv[index], context->spec);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("init get sepc failed");
+        ThrowParamsError(env, PARAM_ERROR, "get spec type error");
+        CM_LOG_E("get sepc failed when using init function");
         return nullptr;
     }
 
@@ -167,8 +167,8 @@ static napi_value ParseCMInitParams(napi_env env, napi_callback_info info, SignV
     if (index < argc) {
         context->callback = GetCallback(env, argv[index]);
         if (context->callback == nullptr) {
-            napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-            CM_LOG_E("init get callback function failed");
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+            CM_LOG_E("get callback function failed when using init function");
             return nullptr;
         }
     }
@@ -183,7 +183,7 @@ static napi_value ParseCMUpdateParams(napi_env env, napi_callback_info info, Sig
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_UPDATE_ARGS_CNT) && (argc != (CM_NAPI_UPDATE_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "update arguments count invalid");
+        ThrowParamsError(env, PARAM_ERROR, "update arguments count invalid");
         CM_LOG_E("update arguments count is not expected");
         return nullptr;
     }
@@ -191,16 +191,16 @@ static napi_value ParseCMUpdateParams(napi_env env, napi_callback_info info, Sig
     size_t index = 0;
     napi_value result = GetBlob(env, argv[index], context->handle);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("update get handle failed");
+        ThrowParamsError(env, PARAM_ERROR, "get handle type error");
+        CM_LOG_E("get handle failed when using update function");
         return nullptr;
     }
 
     index++;
     result = GetBlob(env, argv[index], context->inData);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("update get inData failed");
+        ThrowParamsError(env, PARAM_ERROR, "get inData type error");
+        CM_LOG_E("get inData failed when using update function");
         return nullptr;
     }
 
@@ -208,8 +208,8 @@ static napi_value ParseCMUpdateParams(napi_env env, napi_callback_info info, Sig
     if (index < argc) {
         context->callback = GetCallback(env, argv[index]);
         if (context->callback == nullptr) {
-            napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-            CM_LOG_E("update get callback function failed");
+            ThrowParamsError(env, PARAM_ERROR, "get callback type error");
+            CM_LOG_E("get callback function failed when using update function");
             return nullptr;
         }
     }
@@ -222,7 +222,7 @@ static napi_value MallocFinishOutData(napi_env env, SignVerifyAsyncContext conte
     context->signature = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
     if (context->signature == nullptr) { /* signature will free after all process */
         CM_LOG_E("malloc outData failed when process sign finish");
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "malloc failed");
+        ThrowParamsError(env, PARAM_ERROR, "malloc failed");
         return nullptr;
     }
     (void)memset_s(context->signature, sizeof(CmBlob), 0, sizeof(CmBlob));
@@ -230,7 +230,7 @@ static napi_value MallocFinishOutData(napi_env env, SignVerifyAsyncContext conte
     uint8_t *data = static_cast<uint8_t *>(CmMalloc(OUT_SIGNATURE_SIZE));
     if (data == nullptr) {
         CM_LOG_E("malloc outData.data failed when process sign finish");
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "malloc failed");
+        ThrowParamsError(env, PARAM_ERROR, "malloc failed");
         return nullptr;
     }
     (void)memset_s(data, OUT_SIGNATURE_SIZE, 0, OUT_SIGNATURE_SIZE);
@@ -292,8 +292,8 @@ static napi_value ProcessFinishTwoParam(napi_env env, napi_value *argv, SignVeri
 
         context->callback = GetCallback(env, argv[curIndex]); /* return if arg 2 is callback */
         if (context->callback == nullptr) {
-            napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-            CM_LOG_E("finish get callback function failed");
+            ThrowParamsError(env, PARAM_ERROR, "get callback type error");
+            CM_LOG_E("get callback function failed when using finish function");
             return nullptr;
         }
         return GetInt32(env, 0);
@@ -303,8 +303,8 @@ static napi_value ProcessFinishTwoParam(napi_env env, napi_value *argv, SignVeri
     context->isSign = false;
     result = GetBlob(env, argv[curIndex], context->signature);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("finish get signature failed when process promise verify");
+        ThrowParamsError(env, PARAM_ERROR, "get signature type error");
+        CM_LOG_E("get signature failed when process promise verify");
         return nullptr;
     }
 
@@ -324,8 +324,8 @@ static napi_value ProcessFinishThreeParam(napi_env env, napi_value *argv, SignVe
 
     napi_value result = GetBlob(env, argv[curIndex], context->signature);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("finish get signature failed when process callback verify");
+        ThrowParamsError(env, PARAM_ERROR, "get signature type error");
+        CM_LOG_E("get signature failed when process callback verify");
         return nullptr;
     }
 
@@ -336,8 +336,8 @@ static napi_value ProcessFinishThreeParam(napi_env env, napi_value *argv, SignVe
 
     context->callback = GetCallback(env, argv[curIndex]);
     if (context->callback == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("finish get callback function failed");
+        ThrowParamsError(env, PARAM_ERROR, "get callback type error");
+        CM_LOG_E("get callback function failed when using finish function");
         return nullptr;
     }
 
@@ -352,7 +352,7 @@ static napi_value ParseCMFinishParams(napi_env env, napi_callback_info info, Sig
 
     if ((argc != CM_NAPI_FINISH_ARGS_CNT) && (argc != (CM_NAPI_FINISH_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT)) &&
         (argc != (CM_NAPI_FINISH_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT - CM_NAPI_SIGNATURE_ARG_CNT))) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "finish arguments count invalid");
+        ThrowParamsError(env, PARAM_ERROR, "finish arguments count invalid");
         CM_LOG_E("finish arguments count is not expected");
         return nullptr;
     }
@@ -360,8 +360,8 @@ static napi_value ParseCMFinishParams(napi_env env, napi_callback_info info, Sig
     size_t index = 0;
     napi_value result = GetBlob(env, argv[index], context->handle);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("finish get handle failed");
+        ThrowParamsError(env, PARAM_ERROR, "get handle type error");
+        CM_LOG_E("get handle failed when using finish function");
         return nullptr;
     }
 
@@ -382,7 +382,7 @@ static napi_value ParseCMAbortParams(napi_env env, napi_callback_info info, Sign
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_ABORT_ARGS_CNT) && (argc != (CM_NAPI_ABORT_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "abort arguments count invalid");
+        ThrowParamsError(env, PARAM_ERROR, "abort arguments count invalid");
         CM_LOG_E("abort arguments count is not expected");
         return nullptr;
     }
@@ -390,8 +390,8 @@ static napi_value ParseCMAbortParams(napi_env env, napi_callback_info info, Sign
     size_t index = 0;
     napi_value result = GetBlob(env, argv[index], context->handle);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("abort get handle failed");
+        ThrowParamsError(env, PARAM_ERROR, "get handle type error");
+        CM_LOG_E("get handle failed when using abort function");
         return nullptr;
     }
 
@@ -399,8 +399,8 @@ static napi_value ParseCMAbortParams(napi_env env, napi_callback_info info, Sign
     if (index < argc) {
         context->callback = GetCallback(env, argv[index]);
         if (context->callback == nullptr) {
-            napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-            CM_LOG_E("abort get callback function failed");
+            ThrowParamsError(env, PARAM_ERROR, "get callback type error");
+            CM_LOG_E("get callback function failed when using abort function");
             return nullptr;
         }
     }
@@ -597,8 +597,8 @@ static napi_value CMInitAsyncWork(napi_env env, SignVerifyAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("queue init async work failed");
+        ThrowParamsError(env, PARAM_ERROR, "queue async work error");
+        CM_LOG_E("queue async work failed when using init function");
         return nullptr;
     }
     return promise;
@@ -621,8 +621,8 @@ static napi_value CMUpdateAsyncWork(napi_env env, SignVerifyAsyncContext context
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("queue update async work failed");
+        ThrowParamsError(env, PARAM_ERROR, "queue async work error");
+        CM_LOG_E("queue async work failed when using update function");
         return nullptr;
     }
     return promise;
@@ -645,8 +645,8 @@ static napi_value CMFinishAsyncWork(napi_env env, SignVerifyAsyncContext context
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("queue finish async work failed");
+        ThrowParamsError(env, PARAM_ERROR, "queue async work error");
+        CM_LOG_E("queue async work failed when using finish function");
         return nullptr;
     }
     return promise;
@@ -669,8 +669,8 @@ static napi_value CMAbortAsyncWork(napi_env env, SignVerifyAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-        CM_LOG_E("queue abort async work failed");
+        ThrowParamsError(env, PARAM_ERROR, "queue async work error");
+        CM_LOG_E("queue async work failed when using abort function");
         return nullptr;
     }
     return promise;

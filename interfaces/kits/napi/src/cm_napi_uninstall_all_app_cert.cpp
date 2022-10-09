@@ -69,7 +69,7 @@ static napi_value UninstallAllAppCertParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc < CM_NAPI_UNINSTALL_ALL_APP_CERT_MIN_ARGS) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Missing parameter");
+        ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
         CM_LOG_E("Missing parameter");
         return nullptr;
     }

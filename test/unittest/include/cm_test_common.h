@@ -50,5 +50,9 @@ std::string DumpCertList(struct CertList *certList);
 
 void SetATPermission(void);
 
+uint32_t InitUserCertList(struct CertList **cList);
+
+uint32_t InitUserCertInfo(struct CertInfo **cInfo);
+
 }
 #endif /* CM_TEST_COMMON_H */

@@ -28,6 +28,7 @@
 #include "cm_napi_get_app_cert_info.h"
 #include "cm_napi_grant.h"
 #include "cm_napi_sign_verify.h"
+#include "cm_napi_user_trusted_cert.h"
 
 namespace CMNapi {
     inline void AddInt32Property(napi_env env, napi_value object, const char *name, int32_t value)
@@ -39,28 +40,12 @@ namespace CMNapi {
 
     static void AddCMErrorCodePart(napi_env env, napi_value errorCode)
     {
-        AddInt32Property(env, errorCode, "CM_SUCCESS", CM_SUCCESS);
-        AddInt32Property(env, errorCode, "CM_FAILURE", CM_FAILURE);
-        AddInt32Property(env, errorCode, "CMR_ERROR_NOT_PERMITTED", CMR_ERROR_NOT_PERMITTED);
-        AddInt32Property(env, errorCode, "CMR_ERROR_NOT_SUPPORTED", CMR_ERROR_NOT_SUPPORTED);
-        AddInt32Property(env, errorCode, "CMR_ERROR_STORAGE", CMR_ERROR_STORAGE);
-        AddInt32Property(env, errorCode, "CMR_ERROR_NOT_FOUND", CMR_ERROR_NOT_FOUND);
-        AddInt32Property(env, errorCode, "CMR_ERROR_NULL_POINTER", CMR_ERROR_NULL_POINTER);
-        AddInt32Property(env, errorCode, "CMR_ERROR_INVALID_ARGUMENT", CMR_ERROR_INVALID_ARGUMENT);
-        AddInt32Property(env, errorCode, "CMR_ERROR_MAKE_DIR_FAIL", CMR_ERROR_MAKE_DIR_FAIL);
-        AddInt32Property(env, errorCode, "CMR_ERROR_INVALID_OPERATION", CMR_ERROR_INVALID_OPERATION);
-        AddInt32Property(env, errorCode, "CMR_ERROR_OPEN_FILE_FAIL", CMR_ERROR_OPEN_FILE_FAIL);
-        AddInt32Property(env, errorCode, "CMR_ERROR_READ_FILE_ERROR", CMR_ERROR_READ_FILE_ERROR);
-        AddInt32Property(env, errorCode, "CMR_ERROR_WRITE_FILE_FAIL", CMR_ERROR_WRITE_FILE_FAIL);
-        AddInt32Property(env, errorCode, "CMR_ERROR_REMOVE_FILE_FAIL", CMR_ERROR_REMOVE_FILE_FAIL);
-        AddInt32Property(env, errorCode, "CMR_ERROR_CLOSE_FILE_FAIL", CMR_ERROR_CLOSE_FILE_FAIL);
-        AddInt32Property(env, errorCode, "CMR_ERROR_MALLOC_FAIL", CMR_ERROR_MALLOC_FAIL);
-        AddInt32Property(env, errorCode, "CMR_ERROR_NOT_EXIST", CMR_ERROR_NOT_EXIST);
-        AddInt32Property(env, errorCode, "CMR_ERROR_ALREADY_EXISTS", CMR_ERROR_ALREADY_EXISTS);
-        AddInt32Property(env, errorCode, "CMR_ERROR_INSUFFICIENT_DATA", CMR_ERROR_INSUFFICIENT_DATA);
-        AddInt32Property(env, errorCode, "CMR_ERROR_BUFFER_TOO_SMALL", CMR_ERROR_BUFFER_TOO_SMALL);
-        AddInt32Property(env, errorCode, "CMR_ERROR_INVALID_CERT_FORMAT", CMR_ERROR_INVALID_CERT_FORMAT);
-        AddInt32Property(env, errorCode, "CMR_ERROR_PARAM_NOT_EXIST", CMR_ERROR_PARAM_NOT_EXIST);
+        AddInt32Property(env, errorCode, "SUCCESS", SUCCESS);
+        AddInt32Property(env, errorCode, "PARAM_ERROR", PARAM_ERROR);
+        AddInt32Property(env, errorCode, "FAILURE", INNER_FAILURE);
+        AddInt32Property(env, errorCode, "NO_PERMISSION", NO_PERMISSION);
+        AddInt32Property(env, errorCode, "NOT_FOUND", NOT_FOUND);
+        AddInt32Property(env, errorCode, "INVALID_CERT_FORMAT", INVALID_CERT_FORMAT);
     }
 
     static napi_value CreateCMErrorCode(napi_env env)
@@ -102,6 +87,12 @@ extern "C" {
             DECLARE_NAPI_FUNCTION("uninstallAppCertificate", CMNapiUninstallAppCert),
             DECLARE_NAPI_FUNCTION("getAppCertificateList", CMNapiGetAppCertList),
             DECLARE_NAPI_FUNCTION("getAppCertificate", CMNapiGetAppCertInfo),
+
+            DECLARE_NAPI_FUNCTION("installUserTrustedCertificate", CMNapiInstallUserTrustedCert),
+            DECLARE_NAPI_FUNCTION("uninstallAllUserTrustedCertificate", CMNapiUninstallAllUserTrustedCert),
+            DECLARE_NAPI_FUNCTION("uninstallUserTrustedCertificate", CMNapiUninstallUserTrustedCert),
+            DECLARE_NAPI_FUNCTION("getUserTrustedCertificateList", CMNapiGetUserTrustedCertList),
+            DECLARE_NAPI_FUNCTION("getUserTrustedCertificate", CMNapiGetUserTrustedCertInfo),
             DECLARE_NAPI_FUNCTION("installPrivateCertificate", CMNapiInstallPrivateAppCert),
             DECLARE_NAPI_FUNCTION("uninstallPrivateCertificate", CMNapiUninstallPrivateAppCert),
             DECLARE_NAPI_FUNCTION("getPrivateCertificateList", CMNapiGetPrivateAppCertList),

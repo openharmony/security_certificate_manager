@@ -167,3 +167,25 @@ err:
 
     return -1;
 }
+
+uint32_t GetNumberOfDirs(const char * userIdPath)
+{
+    void *dir = CmOpenDir(userIdPath);
+    if (dir == NULL) {
+        CM_LOG_W("can't open directory");
+        return CM_FAILURE;
+    }
+
+    uint32_t fileCount = 0;
+    struct CmFileDirentInfo dire = {{0}};
+    while (CmGetSubDir(dir, &dire) == CMR_OK) {
+        fileCount++;
+    }
+    (void)CmCloseDir(dir);
+    return fileCount;
+}
+
+uint32_t GetCertCount(const char *path)
+{
+    return GetNumberOfFiles(path);
+}

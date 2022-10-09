@@ -387,18 +387,45 @@ napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo)
     return element;
 }
 
+int32_t TranformErrorCode(int32_t errorCode)
+{
+    if (errorCode == CMR_ERROR_INVALID_CERT_FORMAT || errorCode == CMR_ERROR_INSUFFICIENT_DATA) {
+        return INVALID_CERT_FORMAT;
+    }
+    if (errorCode == CMR_ERROR_NOT_FOUND || errorCode == CMR_ERROR_NOT_EXIST) {
+        return NOT_FOUND;
+    }
+    if (errorCode == CMR_ERROR_NOT_PERMITTED) {
+        return NO_PERMISSION;
+    }
+    return INNER_FAILURE;
+}
+
 napi_value GenerateBusinessError(napi_env env, int32_t errorCode, const char *errorMessage)
 {
     napi_value businessError = nullptr;
     NAPI_CALL(env, napi_create_object(env, &businessError));
 
     napi_value code = nullptr;
-    NAPI_CALL(env, napi_create_int32(env, CERT_MANAGER_SYS_CAP - errorCode, &code));
+    int32_t outCode = TranformErrorCode(errorCode);
+    NAPI_CALL(env, napi_create_int32(env, outCode, &code));
     NAPI_CALL(env, napi_set_named_property(env, businessError, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
     napi_value message = nullptr;
     NAPI_CALL(env, napi_create_string_utf8(env, errorMessage, NAPI_AUTO_LENGTH, &message));
     NAPI_CALL(env, napi_set_named_property(env, businessError, BUSINESS_ERROR_PROPERTY_MESSAGE.c_str(), message));
     return businessError;
+}
+
+void ThrowParamsError(napi_env env, int32_t errorCode, std::string errMsg)
+{
+    napi_value paramsError = nullptr;
+    napi_value code = nullptr;
+    napi_value message = nullptr;
+    NAPI_CALL_RETURN_VOID(env, napi_create_int32(env, errorCode, &code));
+    NAPI_CALL_RETURN_VOID(env, napi_create_string_utf8(env, errMsg.c_str(), NAPI_AUTO_LENGTH, &message));
+    NAPI_CALL_RETURN_VOID(env, napi_create_error(env, nullptr, message, &paramsError));
+    NAPI_CALL_RETURN_VOID(env, napi_set_named_property(env, paramsError, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
+    NAPI_CALL_RETURN_VOID(env, napi_throw(env, paramsError));
 }
 
 napi_value GenerateAppCertInfo(napi_env env, const struct Credential *credential)

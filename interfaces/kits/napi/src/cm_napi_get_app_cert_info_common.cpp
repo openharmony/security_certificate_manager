@@ -68,15 +68,15 @@ napi_value GetAppCertInfoParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc < CM_NAPI_GET_APP_CERT_INFO_MIN_ARGS) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Missing parameter");
-        CM_LOG_E("CertInfo Missing parameter");
+        ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
+        CM_LOG_E("Missing parameter when getting application cert info");
         return nullptr;
     }
 
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
+        ThrowParamsError(env, PARAM_ERROR, "get keyUri type error");
         CM_LOG_E("could not get key uri");
         return nullptr;
     }
@@ -85,8 +85,8 @@ napi_value GetAppCertInfoParseParams(
     if (index < argc) {
         context->callback = GetCallback(env, argv[index]);
         if (context->callback == nullptr) {
-            napi_throw_error(env, PARAM_TYPE_ERROR_NUMBER.c_str(), "Type error");
-            CM_LOG_E("GetAppCertInfo get callback function faild");
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+            CM_LOG_E("get callback function faild when getting application cert info");
             return nullptr;
         }
     }
