@@ -93,15 +93,6 @@ static void FreeStatus(struct CertStatus *cs)
     }
 }
 
-static void FreeTreeNodeValue(RbTreeKey key, RbTreeValue v, const void *context)
-{
-    (void) context;
-    (void) key;
-    if (v != NULL) {
-        FreeStatus((struct CertStatus *) v);
-    }
-}
-
 static int GetStoreIndex(uint32_t store)
 {
     switch (store) {
@@ -438,16 +429,6 @@ int32_t CertManagerStatusInit(void)
 finally:
     pthread_rwlock_unlock(&g_statusLock);
     return rc;
-}
-
-int32_t CertManagerStatusDestroy(void)
-{
-    pthread_rwlock_wrlock(&g_statusLock);
-    for (uint32_t i = 0; i < g_treeCount; i++) {
-        (void) RbTreeDestroyEx(&g_trees[i], FreeTreeNodeValue, NULL);
-    }
-    pthread_rwlock_unlock(&g_statusLock);
-    return CMR_OK;
 }
 
 inline static RbTreeKey GetRbTreeKeyFromName(char *name)

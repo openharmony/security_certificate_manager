@@ -275,7 +275,7 @@ static inline uint32_t IndexOf(char sep, const char *data, uint32_t start, uint3
 
 static char *DecodeValue(const char *s, uint32_t off, uint32_t len)
 {
-    if (s == NULL || len <= 0) {
+    if (s == NULL || len == 0) {
         return NULL;
     }
     char *buf = MALLOC(len + 1);

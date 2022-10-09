@@ -91,7 +91,6 @@ int32_t CertManagerGetCertificatesStatus(
     uint32_t *status);
 
 int32_t CertManagerStatusInit(void);
-int32_t CertManagerStatusDestroy(void);
 int32_t SetcertStatus(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, uint32_t status, uint32_t *stp);
 

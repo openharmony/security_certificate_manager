@@ -58,8 +58,6 @@ struct DataTime {
 
 X509 *InitCertContext(const uint8_t *certBuf, uint32_t size);
 
-int32_t GetX509Version(X509 *x509cert);
-
 int32_t GetX509SerialNumber(X509 *x509cert, char *outBuf, uint32_t outBufMaxSize);
 
 int32_t GetX509SubjectName(const X509 *x509cert, const char *subjectObjName, char* outBuf, uint32_t outBufMaxSize);

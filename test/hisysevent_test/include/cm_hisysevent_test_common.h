@@ -13,21 +13,34 @@
  * limitations under the License.
  */
 
-#ifndef CM_RESPONSE_H
-#define CM_RESPONSE_H
+#ifndef CM_HISYSEVENT_TEST_COMMON_H
+#define CM_HISYSEVENT_TEST_COMMON_H
 
-#include "cm_type_inner.h"
-
+#include <stdint.h>
+#include <string>
+#include "securec.h"
+#include "cm_type.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void CmSendResponse(const struct CmContext *context, int32_t result, const struct CmBlob *response);
+#define CM_HISYSEVENT_QUERY_SUCCESS 0
+#define CM_HISYSEVENT_QUERY_FAILED (-1)
 
-int32_t CmGetProcessInfoForIPC(struct CmContext *cmContext);
+void CmHiSysEventQueryStart(void);
+
+int32_t CmHiSysEventQueryResult(const std::string funStr);
+
+void FreeCMBlobData(struct CmBlob *blob);
+
+uint32_t InitUserCertList(struct CertList **cList);
+
+uint32_t InitUserCertInfo(struct CertInfo **cInfo);
+
+void FreeCertList(struct CertList *certList);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif // CM_HISYSEVENT_TEST_COMMON_H

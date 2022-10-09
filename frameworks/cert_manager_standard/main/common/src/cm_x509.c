@@ -50,14 +50,6 @@ X509 *InitCertContext(const uint8_t *certBuf, uint32_t size)
     return x509;
 }
 
-int32_t GetX509Version(X509 *x509cert)
-{
-    if (x509cert == NULL) {
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    return (int32_t)X509_get_version(x509cert) + 1;
-}
-
 int32_t GetX509SerialNumber(X509 *x509cert, char *outBuf, uint32_t outBufMaxSize)
 {
     if (outBuf == NULL || x509cert == NULL) {
