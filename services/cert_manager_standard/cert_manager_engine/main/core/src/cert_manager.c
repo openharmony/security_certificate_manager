@@ -30,7 +30,7 @@
 #include "hks_type.h"
 #include "hks_api.h"
 #include "hks_param.h"
-
+#include "cert_manager_permission_check.h"
 #include "cert_manager_auth_mgr.h"
 #include "cert_manager_uri.h"
 #include "cert_manager_storage.h"
@@ -360,12 +360,16 @@ static int32_t CertMangerGetCertificateList(const struct CmContext *context,
 int32_t CertManagerListTrustedCertificates(const struct CmContext *context, struct CmBlob *certificateList,
     uint32_t store, struct CertBlob *certBlob, uint32_t *status)
 {
-    int32_t ret = CMR_OK;
     struct CmMutableBlob fileNames;
     char path[CERT_MAX_PATH_LEN] = {0};
-
     struct CmMutableBlob pathBlob = { sizeof(path), (uint8_t *)path };
-    ret = CmGetFilePath(context, store, &pathBlob);
+
+    if (!CmHasCommonPermission()) {
+        CM_LOG_E("permission check failed");
+        return CMR_ERROR_PERMISSION_DENIED;
+    }
+
+    int32_t ret = CmGetFilePath(context, store, &pathBlob);
     if (ret != CMR_OK) {
         CM_LOG_E("Failed obtain path fot store %x", store);
         return CMR_ERROR;
@@ -874,6 +878,11 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
     ASSERT_ARGS(context && keyUri && keyUri->data && keyUri->size);
     int32_t ret;
 
+    if (!CmPermissionCheck(store)) {
+        CM_LOG_E("CmPermissionCheck check failed");
+        return CMR_ERROR_PERMISSION_DENIED;
+    }
+
     if (store == CM_CREDENTIAL_STORE) {
         ret = CmAuthDeleteAuthInfo(context, keyUri);
         if (ret != CM_SUCCESS) {
@@ -1035,6 +1044,11 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
 
 int32_t CmRemoveAllAppCert(const struct CmContext *context)
 {
+    if (!CmHasPrivilegedPermission() || !CmHasCommonPermission()) {
+        CM_LOG_E("permission check failed");
+        return CMR_ERROR_PERMISSION_DENIED;
+    }
+
     /* Only public and private credential removed can be returned */
     /* remove pubic credential app cert */
     int32_t ret = CmRemoveSpecifiedAppCert(context, CM_CREDENTIAL_STORE);

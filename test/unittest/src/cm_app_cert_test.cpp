@@ -374,6 +374,7 @@ public:
 
 void CmAppCertTest::SetUpTestCase(void)
 {
+    SetATPermission();
 }
 
 void CmAppCertTest::TearDownTestCase(void)

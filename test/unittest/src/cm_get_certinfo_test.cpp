@@ -106,9 +106,9 @@ struct CertInfoResult g_listCertInfoexpectResult[] = {
 
 class CmGetCertInfoTest : public testing::Test {
     public:
-        static void InfoSetUpTestCase(void);
+        static void SetUpTestCase(void);
 
-        static void InfoTearDownTestCase(void);
+        static void TearDownTestCase(void);
 
         void SetUp();
 
@@ -121,11 +121,12 @@ class CmGetCertInfoTest : public testing::Test {
     struct CertList *lstCert;
 };
 
-void CmGetCertInfoTest::InfoSetUpTestCase(void)
+void CmGetCertInfoTest::SetUpTestCase(void)
 {
+    SetATPermission();
 }
 
-void CmGetCertInfoTest::InfoTearDownTestCase(void)
+void CmGetCertInfoTest::TearDownTestCase(void)
 {
 }
 
