@@ -536,5 +536,3 @@ int32_t CmDirRemove(const char *path)
 
     return DirRemove(path);
 }
-
-
