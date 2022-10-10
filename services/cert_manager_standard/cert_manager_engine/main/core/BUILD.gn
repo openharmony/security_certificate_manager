@@ -17,6 +17,10 @@ config("cert_manager_config") {
   include_dirs = [ "include" ]
 }
 ohos_shared_library("cert_manager_engine_core_standard") {
+  sanitize = {
+    cfi = true
+    debug = false
+  }
   subsystem_name = "security"
   part_name = "certificate_manager"
   public_configs = [ ":cert_manager_config" ]
@@ -46,6 +50,7 @@ ohos_shared_library("cert_manager_engine_core_standard") {
     "src/cert_manager_key_operation.c",
     "src/cert_manager_mem.c",
     "src/cert_manager_permission_check.cpp",
+    "src/cert_manager_query.c",
     "src/cert_manager_service.c",
     "src/cert_manager_session_mgr.c",
     "src/cert_manager_status.c",
@@ -58,7 +63,6 @@ ohos_shared_library("cert_manager_engine_core_standard") {
     "src/cm_openssl_ecc.c",
     "src/cm_openssl_rsa.c",
     "src/rbtree.c",
-    "src/cert_manager_query.c",
   ]
 
   deps = [
