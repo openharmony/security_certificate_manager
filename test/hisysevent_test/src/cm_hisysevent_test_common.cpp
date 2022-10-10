@@ -108,14 +108,11 @@ int32_t CmHiSysEventQueryResult(const string funStr)
     // queryCallback
     auto queryCallBack = std::make_shared<CmHiSysEventCallBack>();
     if (HiSysEventManager::Query(args, queryRules, queryCallBack) == 0) {
-        CM_LOG_I("CmHiSysEventQueryResult01");
         if (g_queryResult) {
-            CM_LOG_I("CmHiSysEventQueryResult02");
             return CM_HISYSEVENT_QUERY_SUCCESS;
         }
         return CM_HISYSEVENT_QUERY_FAILED;
     }
-    CM_LOG_I("CmHiSysEventQueryResult03");
     
     return CM_HISYSEVENT_QUERY_FAILED;
 }

@@ -37,8 +37,6 @@ int WriteEvent(const char *functionName, const struct EventValues *eventValues)
         g_tagUID, eventValues->uid, 
         g_tagCertName, eventValues->certName,
         g_tagErrorCode, eventValues->errorCode);
-    CM_LOG_I("g_tagFunction:%s, g_tagUserId:%u, g_tagUID:%u, g_tagCertName:%s, g_tagErrorCode:%d",
-    functionName, eventValues->userId, eventValues->uid, eventValues->certName, eventValues->errorCode);
 
     if (ret != CM_SUCCESS) {
         CM_LOG_E("WriteEvent failed!");
