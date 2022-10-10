@@ -44,7 +44,7 @@ int32_t ConstructAuthListPath(const struct CmContext *context, uint32_t store,
 int32_t CmStorageGetBuf(const char *path, const char *fileName, struct CmBlob *storageBuf);
 
 int32_t CmStorageGetAppCert(const struct CmContext *context, uint32_t store,
-    struct CmBlob *keyUri, struct CmBlob *certBlob);
+    const struct CmBlob *keyUri, struct CmBlob *certBlob);
 
 int32_t CmGetCertFilePath(const struct CmContext *context, uint32_t store, struct CmMutableBlob *pathBlob);
 

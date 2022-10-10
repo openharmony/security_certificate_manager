@@ -149,7 +149,7 @@ int32_t CmStorageGetBuf(const char *path, const char *fileName, struct CmBlob *s
 }
 
 int32_t CmStorageGetAppCert(const struct CmContext *context, uint32_t store,
-    struct CmBlob *keyUri, struct CmBlob *certBlob)
+    const struct CmBlob *keyUri, struct CmBlob *certBlob)
 {
     uint32_t uid = 0;
     int32_t ret = CertManagerGetUidFromUri(keyUri, &uid);
@@ -159,7 +159,7 @@ int32_t CmStorageGetAppCert(const struct CmContext *context, uint32_t store,
 
     struct CmContext uriContext = { context->userId, uid, { 0 } };
     char uidPath[CERT_MAX_PATH_LEN] = { 0 };
-    ret = ConstructUidPath(&uriContext, CM_CREDENTIAL_STORE, uidPath, CERT_MAX_PATH_LEN);
+    ret = ConstructUidPath(&uriContext, store, uidPath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         return ret;
     }

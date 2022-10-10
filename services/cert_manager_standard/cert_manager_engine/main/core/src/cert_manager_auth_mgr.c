@@ -733,3 +733,18 @@ int32_t CmCheckAndGetCommonUri(const struct CmContext *context, const struct CmB
     return ret;
 }
 
+int32_t CmCheckCallerIsProducer(const struct CmContext *context, const struct CmBlob *uri)
+{
+    struct CMUri uriObj;
+    (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
+    int32_t ret = GetAndCheckUriObj(&uriObj, uri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("uri decode failed, ret = %d", ret);
+        return ret;
+    }
+
+    ret = CheckCallerIsProducer(context, &uriObj);
+    (void)CertManagerFreeUri(&uriObj);
+    return ret;
+}
+

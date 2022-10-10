@@ -48,6 +48,61 @@ static int32_t CheckUri(const struct CmBlob *keyUri)
     return CMR_ERROR_INVALID_ARGUMENT;
 }
 
+static int32_t GetPublicAppCert(const struct CmContext *context, uint32_t store,
+    struct CmBlob *keyUri, struct CmBlob *certBlob)
+{
+    struct CmBlob commonUri = { 0, NULL };
+    int32_t ret = CmCheckAndGetCommonUri(context, keyUri, &commonUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("check and get common uri when get app cert failed, ret = %d", ret);
+        return ret;
+    }
+
+    do {
+        ret = CmStorageGetAppCert(context, store, &commonUri, certBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get app cert from storage failed, ret = %d", ret);
+            break;
+        }
+
+        /* remove authinfo from uri */
+        if (keyUri->size < commonUri.size) {
+            CM_LOG_E("keyUri size[%u] smaller than commonUri size[%u]", keyUri->size, commonUri.size);
+            ret = CMR_ERROR_INVALID_ARGUMENT;
+            break;
+        }
+        if (memcpy_s(keyUri->data, keyUri->size, commonUri.data, commonUri.size) != EOK) {
+            CM_LOG_E("copy keyUri failed");
+            ret = CMR_ERROR_INVALID_OPERATION;
+            break;
+        }
+        keyUri->size = commonUri.size;
+    } while (0);
+
+    CM_FREE_PTR(commonUri.data);
+    return ret;
+}
+
+static int32_t GetPrivateAppCert(const struct CmContext *context, uint32_t store,
+    const struct CmBlob *keyUri, struct CmBlob *certBlob)
+{
+    int32_t ret = CmCheckCallerIsProducer(context, keyUri);
+    if (ret != CM_SUCCESS) {
+        /* caller is not producer, check wether has ACCESS_CERT_MANAGER_INTERNAL permission */
+        if (!CmHasPrivilegedPermission()) {
+            CM_LOG_E("not caller and FA, permission check failed");
+            return CMR_ERROR_PERMISSION_DENIED;
+        }
+    }
+
+    ret = CmStorageGetAppCert(context, store, keyUri, certBlob);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get app cert from storage failed, ret = %d", ret);
+    }
+
+    return ret;
+}
+
 int32_t CmServiceGetAppCert(const struct CmContext *context, uint32_t store,
     struct CmBlob *keyUri, struct CmBlob *certBlob)
 {
@@ -61,20 +116,12 @@ int32_t CmServiceGetAppCert(const struct CmContext *context, uint32_t store,
         return CMR_ERROR_PERMISSION_DENIED;
     }
 
-    struct CmBlob commonUri = { 0, NULL };
-    int32_t ret = CmCheckAndGetCommonUri(context, keyUri, &commonUri);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("check and get common uri when get app cert failed, ret = %d", ret);
-        return ret;
+    if (store == CM_CREDENTIAL_STORE) {
+        return GetPublicAppCert(context, store, keyUri, certBlob);
+    } else if (store == CM_PRI_CREDENTIAL_STORE) {
+        return GetPrivateAppCert(context, store, keyUri, certBlob);
     }
-
-    ret = CmStorageGetAppCert(context, store, &commonUri, certBlob);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("get app cert from storage failed, ret = %d", ret);
-    }
-
-    CM_FREE_PTR(commonUri.data);
-    return ret;
+    return CMR_ERROR_INVALID_ARGUMENT;
 }
 
 int32_t CmServiceGrantAppCertificate(const struct CmContext *context, const struct CmBlob *keyUri,

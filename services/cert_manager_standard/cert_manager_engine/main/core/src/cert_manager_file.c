@@ -83,7 +83,7 @@ static int32_t MallocFileNames(struct CmMutableBlob *fileNames, const char *path
         return -1;
     }
 
-    for (uint32_t i = 0; i < fileNums; i++) {
+    for (uint32_t i = 0; i < (uint32_t)fileNums; i++) {
         tmp[i].data = NULL;
         tmp[i].size = 0;
     }
