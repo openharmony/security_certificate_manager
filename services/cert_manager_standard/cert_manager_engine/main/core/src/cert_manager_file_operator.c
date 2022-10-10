@@ -386,7 +386,8 @@ static int32_t CmUidLayerGetFileCountAndNames(const char *path, struct CmBlob *f
             return CMR_ERROR_INVALID_OPERATION;
         }
 
-        if ((strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0)) {
+        if ((dire->d_type == DT_REG) && (strcmp("..", dire->d_name) != 0) &&
+            (strcmp(".", dire->d_name) != 0)) {
             if (CmUidLayerGetFileNames(uidPath, fileNames, arraySize, count) != CM_SUCCESS) {
                 closedir(dir);
                 return CM_FAILURE;
@@ -535,5 +536,3 @@ int32_t CmDirRemove(const char *path)
 
     return DirRemove(path);
 }
-
-
