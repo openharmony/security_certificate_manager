@@ -23,8 +23,6 @@
 #include "cm_type.h"
 #include "cm_napi_common.h"
 
-#define RESULT_NUMBER 2
-
 namespace CMNapi {
 namespace {
 constexpr int CM_NAPI_GRANT_ARGS_CNT = 3;
@@ -204,7 +202,7 @@ static napi_value ConvertResultAuthUri(napi_env env, const CmBlob *authUri)
 
     napi_value authUriNapi = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, (const char *)authUri->data, NAPI_AUTO_LENGTH, &authUriNapi));
-    NAPI_CALL(env, napi_set_named_property(env, result, "authUri", authUriNapi));
+    NAPI_CALL(env, napi_set_named_property(env, result, "uri", authUriNapi));
 
     return result;
 }
@@ -527,5 +525,5 @@ napi_value CMNapiRemoveGrantedApp(napi_env env, napi_callback_info info)
 
     return result;
 }
-}  // namespace HuksNapi
+}  // namespace CMNapi
 

@@ -48,7 +48,7 @@ static void DeleteAuth(const struct CmContext *context, const char *fileName, bo
     return;
 }
 
-int32_t CmTraversalDirActionCredential(const char *filePath, const char *fileName)
+static int32_t CmTraversalDirActionCredential(const char *filePath, const char *fileName)
 {
     CM_LOG_I("CmTraversalDirActionCredential: fileName is:%s", fileName);
     int32_t ret = remove(filePath);
@@ -68,7 +68,7 @@ int32_t CmTraversalDirActionCredential(const char *filePath, const char *fileNam
     return CM_SUCCESS;
 }
 
-int32_t CmTraversalDirActionUserCa(struct CmContext *context, const char *filePath, const char *fileName,
+static int32_t CmTraversalDirActionUserCa(const struct CmContext *context, const char *filePath, const char *fileName,
     const uint32_t store)
 {
     uint32_t status = CERT_STATUS_ENABLED;
@@ -91,7 +91,7 @@ int32_t CmTraversalDirActionUserCa(struct CmContext *context, const char *filePa
     return CM_SUCCESS;
 }
 
-int32_t CmTraversalDirAction(struct CmContext *context, const char *filePath,
+static int32_t CmTraversalDirAction(const struct CmContext *context, const char *filePath,
     const char *fileName, const uint32_t store)
 {
     int32_t ret = CM_SUCCESS;
@@ -158,8 +158,8 @@ static int32_t RemoveDir(const char *dirPath)
         }
         dire = readdir(dir);
     }
-    closedir(dir);
-    remove(dirPath);
+    (void)closedir(dir);
+    (void)remove(dirPath);
     return CM_SUCCESS;
 }
 
@@ -179,7 +179,20 @@ static void RemoveAuthListDir(const char *path, const uint32_t store, bool isSam
     RemoveDir(authListPath);
 }
 
-int32_t CmTraversalUidLayerDir(struct CmContext *context, const char *path, const uint32_t store, bool isSameUid)
+static void TraversalUidLayerDir(const struct CmContext *context, const char *uidPath, const char *direName,
+    const uint32_t store, bool isSameUid)
+{
+    if (!isSameUid) {
+        if (store == CM_CREDENTIAL_STORE) { /* remove deleted uid from authlist */
+            DeleteAuth(context, direName, true);
+        }
+    } else {
+        (void)CmTraversalDirAction(context, uidPath, direName, store);
+    }
+}
+
+static int32_t CmTraversalUidLayerDir(const struct CmContext *context, const char *path,
+    const uint32_t store, bool isSameUid)
 {
     int32_t ret = CM_SUCCESS;
     char uidPath[CM_MAX_FILE_NAME_LEN] = {0};
@@ -188,38 +201,22 @@ int32_t CmTraversalUidLayerDir(struct CmContext *context, const char *path, cons
         CM_LOG_I("Dir is not exist:%s", path);
         return CM_SUCCESS;
     }
+
     DIR *dir = opendir(path);
     if (dir  == NULL) {
         CM_LOG_E("open dir failed");
         return CMR_ERROR_OPEN_FILE_FAIL;
     }
+
     struct dirent *dire = readdir(dir);
     while (dire != NULL) {
-        if (strncpy_s(uidPath, sizeof(uidPath), path, strlen(path)) != EOK) {
-            closedir(dir);
-            return CMR_ERROR_INVALID_OPERATION;
-        }
-
-        if (uidPath[strlen(uidPath) - 1] != '/') {
-            if (strncat_s(uidPath, sizeof(uidPath), "/", strlen("/")) != EOK) {
-                closedir(dir);
-                return CMR_ERROR_INVALID_OPERATION;
-            }
-        }
-
-        if (strncat_s(uidPath, sizeof(uidPath), dire->d_name, strlen(dire->d_name)) != EOK) {
+        if (GetNextLayerPath(path, dire->d_name, uidPath, sizeof(uidPath)) != CM_SUCCESS) {
             closedir(dir);
             return CMR_ERROR_INVALID_OPERATION;
         }
 
         if ((strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0) && (dire->d_type == DT_REG)) {
-            if (!isSameUid) {
-                if (store == CM_CREDENTIAL_STORE) { /* remove deleted uid from authlist */
-                    DeleteAuth(context, dire->d_name, true);
-                }
-            } else {
-                (void)CmTraversalDirAction(context, uidPath, dire->d_name, store);
-            }
+            TraversalUidLayerDir(context, uidPath, dire->d_name, store, isSameUid);
         }
         dire = readdir(dir);
     }
@@ -234,62 +231,62 @@ int32_t CmTraversalUidLayerDir(struct CmContext *context, const char *path, cons
     return ret;
 }
 
-int32_t CmTraversalUserIdLayerDir(struct CmContext *context, const char *path, const uint32_t store)
+static int32_t TraversalUserIdLayerDir(struct CmContext *context, const char *userIdPath, const char *direName,
+    const uint32_t store, bool isUserDeleteEvent)
 {
-    uint32_t uid;
+    uint32_t uid = (uint32_t)atoi(direName);
+    CM_LOG_I("CmTraversalUserIdLayerDir userId:%u, uid:%u", context->userId, uid);
+
+    int32_t ret = CM_SUCCESS;
+    if (isUserDeleteEvent) { /* user delete event */
+        context->uid = uid;
+        ret = CmTraversalUidLayerDir(context, userIdPath, store, true);
+    } else { /* package delete event */
+        if (uid == context->uid) {
+            ret = CmTraversalUidLayerDir(context, userIdPath, store, true);
+        } else if (store == CM_CREDENTIAL_STORE) {
+            ret = CmTraversalUidLayerDir(context, userIdPath, store, false);
+        } else {
+            /* do nothing */
+        }
+    }
+    return ret;
+}
+
+static int32_t CmTraversalUserIdLayerDir(struct CmContext *context, const char *path, const uint32_t store)
+{
     bool isUserDeleteEvent = (context->uid == INVALID_VALUE);
     int32_t ret = CM_SUCCESS;
     char userIdPath[CM_MAX_FILE_NAME_LEN] = {0};
+
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
         CM_LOG_I("UserId dir is not exist:%s", path);
         return CM_SUCCESS;
     }
+
     DIR *dir = opendir(path);
     if (dir  == NULL) {
         CM_LOG_E("Open userId dir failed");
         return CMR_ERROR_OPEN_FILE_FAIL;
     }
+
     struct dirent *dire = readdir(dir);
     while (dire != NULL) {
-        if (strncpy_s(userIdPath, sizeof(userIdPath), path, strlen(path)) != EOK) {
-            closedir(dir);
-            return CMR_ERROR_INVALID_OPERATION;
-        }
-
-        if (userIdPath[strlen(userIdPath) - 1] != '/') {
-            if (strncat_s(userIdPath, sizeof(userIdPath), "/", strlen("/")) != EOK) {
-                closedir(dir);
-                return CMR_ERROR_INVALID_OPERATION;
-            }
-        }
-
-        if (strncat_s(userIdPath, sizeof(userIdPath), dire->d_name, strlen(dire->d_name)) != EOK) {
+        if (GetNextLayerPath(path, dire->d_name, userIdPath, sizeof(userIdPath)) != CM_SUCCESS) {
             closedir(dir);
             return CMR_ERROR_INVALID_OPERATION;
         }
 
         if (dire->d_type == DT_DIR && (strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0)) {
-            uid = (uint32_t)atoi(dire->d_name);
-            CM_LOG_I("CmTraversalUserIdLayerDir userId:%u, uid:%u", context->userId, uid);
-            if (isUserDeleteEvent) { /* user delete event */
-                context->uid = uid;
-                ret = CmTraversalUidLayerDir(context, userIdPath, store, true);
-            } else { /* package delete event */
-                if (uid == context->uid) {
-                    ret = CmTraversalUidLayerDir(context, userIdPath, store, true);
-                } else if (store == CM_CREDENTIAL_STORE) {
-                    ret = CmTraversalUidLayerDir(context, userIdPath, store, false);
-                } else {
-                    /* do nothing */
-                }
-            }
+            (void)TraversalUserIdLayerDir(context, userIdPath, dire->d_name, store, isUserDeleteEvent);
         } else if (dire->d_type != DT_DIR) {
             (void)remove(userIdPath);
         }
         dire = readdir(dir);
     }
     closedir(dir);
+
     /* delete userId directory only in user remove event */
     if (isUserDeleteEvent) {
         ret = remove(path);
@@ -298,35 +295,26 @@ int32_t CmTraversalUserIdLayerDir(struct CmContext *context, const char *path, c
     return ret;
 }
 
-int32_t CmTraversalDir(struct CmContext *context, const char *path, const uint32_t store)
+static int32_t CmTraversalDir(struct CmContext *context, const char *path, const uint32_t store)
 {
     int32_t ret = CM_SUCCESS;
     char deletePath[CM_MAX_FILE_NAME_LEN] = { 0 };
+
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
         CM_LOG_I("Root dir is not exist:%s", path);
         return CM_SUCCESS;
     }
+
     DIR *dir = opendir(path);
     if (dir  == NULL) {
         CM_LOG_E("open dir failed");
         return CMR_ERROR_OPEN_FILE_FAIL;
     }
+
     struct dirent *dire = readdir(dir);
     while (dire != NULL) {
-        if (strncpy_s(deletePath, sizeof(deletePath), path, strlen(path)) != EOK) {
-            closedir(dir);
-            return CMR_ERROR_INVALID_OPERATION;
-        }
-
-        if (deletePath[strlen(deletePath) - 1] != '/') {
-            if (strncat_s(deletePath, sizeof(deletePath), "/", strlen("/")) != EOK) {
-                closedir(dir);
-                return CMR_ERROR_INVALID_OPERATION;
-            }
-        }
-
-        if (strncat_s(deletePath, sizeof(deletePath), dire->d_name, strlen(dire->d_name)) != EOK) {
+        if (GetNextLayerPath(path, dire->d_name, deletePath, sizeof(deletePath)) != CM_SUCCESS) {
             closedir(dir);
             return CMR_ERROR_INVALID_OPERATION;
         }
