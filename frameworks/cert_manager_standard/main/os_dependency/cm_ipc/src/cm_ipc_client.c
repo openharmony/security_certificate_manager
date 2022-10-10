@@ -290,6 +290,7 @@ static int32_t CmInstallAppCertUnpackFromService(const struct CmBlob *outData, s
         return CMR_ERROR_INVALID_OPERATION;
     }
 
+    keyUri->size = blob.size;
     return CM_SUCCESS;
 }
 

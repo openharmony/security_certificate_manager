@@ -23,8 +23,6 @@
 #include "cm_type.h"
 #include "cm_napi_common.h"
 
-#define RESULT_NUMBER 2
-
 namespace CMNapi {
 namespace {
 constexpr int CM_NAPI_INIT_ARGS_CNT = 3;
@@ -775,5 +773,5 @@ napi_value CMNapiAbort(napi_env env, napi_callback_info info)
 
     return result;
 }
-}  // namespace HuksNapi
+}  // namespace CMNapi
 
