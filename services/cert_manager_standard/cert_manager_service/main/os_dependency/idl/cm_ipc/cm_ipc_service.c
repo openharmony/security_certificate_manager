@@ -848,6 +848,7 @@ static int32_t GetAppCertInfo(const struct CmBlob *keyUri, struct CmBlob *certTy
     int32_t ret;
     char uriBuf[MAX_LEN_URI] = {0};
     struct CMUri uri;
+    (void)memset_s(&uri, sizeof(uri), 0, sizeof(uri));
 
     do {
         if ((keyUri->size >= MAX_LEN_URI) || memcpy_s(uriBuf, MAX_LEN_URI, keyUri->data, keyUri->size) != EOK) {
