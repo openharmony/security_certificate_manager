@@ -634,7 +634,6 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest007, TestSize.Level0)
     ret = CmInstallUserTrustedCert(&userCertTest, &certAlias257, &certUri257);
     EXPECT_EQ(ret, CM_FAILURE) << "Normal user cert Install test failed, recode:" << ret;
 
-
     uint8_t certAliasBuf000[] = "alias0"; /* update */
     uint8_t certUriBuf000[MAX_URI_LEN] = {0};
     struct CmBlob certAlias000 = { sizeof(certAliasBuf000), certAliasBuf000 };
@@ -931,6 +930,21 @@ HWTEST_F(CmUserCertTest, GetUserCertListTest004, TestSize.Level0)
 }
 
 /**
+ * @tc.name: GetUserCertListTest005
+ * @tc.desc: Test CertManager Get user cert list interface Abnormal function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MJ8 /SR000H09N7
+ */
+HWTEST_F(CmUserCertTest, GetUserCertListTest005, TestSize.Level0)
+{
+    struct CertList *cList = nullptr;
+    InitUserCertList(&cList);
+    int32_t ret = CmGetUserCertList(CM_USER_TRUSTED_STORE, cList); /* empty dir */
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal get user cert list test failed, recode:" << ret;
+    FreeCertList(cList);
+}
+
+/**
  * @tc.name: GetUserCertInfoTest001
  * @tc.desc: Test CertManager Get user cert info interface base function
  * @tc.type: FUNC
@@ -948,7 +962,6 @@ HWTEST_F(CmUserCertTest, GetUserCertInfoTest001, TestSize.Level0)
 
     ret = CmInstallUserTrustedCert(&testUserCert, &testCertAlias, &testCertUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Install test failed, recode:" << ret;
-
 
     struct CertInfo *cInfo = nullptr;
     InitUserCertInfo(&cInfo);
@@ -1070,7 +1083,6 @@ HWTEST_F(CmUserCertTest, GetUserCertInfoTest006, TestSize.Level0)
     struct CmBlob UserCert05 = { sizeof(g_certData01), (uint8_t *)g_certData01 };
     struct CmBlob CertAlias05 = { sizeof(CertAliasBuf05), CertAliasBuf05 };
     struct CmBlob CertUri05 = { sizeof(CertUriBuf05), CertUriBuf05 };
-
 
     for (uint32_t time = 0; time < TIMES_PERFORMANCE; time++) {
         ret = CmInstallUserTrustedCert(&UserCert05, &CertAlias05, &CertUri05);
@@ -1318,7 +1330,4 @@ HWTEST_F(CmUserCertTest, SetUserCertStatusTest008, TestSize.Level0)
 }
 
 }
-
-
-
 
