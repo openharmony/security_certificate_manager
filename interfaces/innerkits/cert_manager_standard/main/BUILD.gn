@@ -19,6 +19,10 @@ config("cert_manager_config") {
 
 if (os_level == "standard") {
   ohos_shared_library("cert_manager_sdk") {
+    sanitize = {
+      cfi = true
+      debug = false
+    }
     subsystem_name = "security"
     part_name = "certificate_manager"
     public_configs = [ ":cert_manager_config" ]
