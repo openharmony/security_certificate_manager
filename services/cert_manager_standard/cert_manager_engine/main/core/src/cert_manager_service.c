@@ -283,11 +283,6 @@ static int32_t CmGetCertListPack(const struct CertBlob *certBlob, uint32_t *stat
 int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store,
     const struct CmMutableBlob *certFileList, struct CmBlob *certificateList)
 {
-    if (certFileList->size == 0) {
-        CM_LOG_I("no cert file exist");
-        return CM_SUCCESS;
-    }
-
     uint32_t status[MAX_COUNT_CERTIFICATE] = {0};
     struct CertBlob certBlob;
     (void)memset_s(&certBlob, sizeof(struct CertBlob), 0, sizeof(struct CertBlob));
@@ -565,5 +560,4 @@ int32_t CmUninstallAllUserCert(const struct CmContext *context)
     }
     return ret;
 }
-
 
