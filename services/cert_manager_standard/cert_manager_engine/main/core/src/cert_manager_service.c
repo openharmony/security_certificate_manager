@@ -354,7 +354,7 @@ int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store
 int32_t CmGetServiceCertInfo(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, struct CmBlob *certificateData, uint32_t *status)
 {
-    if (CmCheckBlob(certUri) != CM_SUCCESS) {
+    if (CmCheckBlob(certUri) != CM_SUCCESS || CheckUri(certUri) != CM_SUCCESS) {
         CM_LOG_E("input params invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -543,7 +543,7 @@ static int32_t CmComparisonCallerIdWithUri(const struct CmContext *context,
 
 int32_t CmUninstallUserCert(const struct CmContext *context, const struct CmBlob *certUri)
 {
-    if (CmCheckBlob(certUri) != CM_SUCCESS) {
+    if (CmCheckBlob(certUri) != CM_SUCCESS || CheckUri(certUri) != CM_SUCCESS) {
         CM_LOG_E("input params invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
