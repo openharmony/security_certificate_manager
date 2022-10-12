@@ -351,7 +351,7 @@ int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store
     return ret;
 }
 
-int32_t CmGetServiceCertInfo(const struct CmContext *context, const struct CmBlob *certUri,
+int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, struct CmBlob *certificateData, uint32_t *status)
 {
     if (CmCheckBlob(certUri) != CM_SUCCESS || CheckUri(certUri) != CM_SUCCESS) {
@@ -606,5 +606,15 @@ int32_t CmUninstallAllUserCert(const struct CmContext *context)
         CmFreeCertPaths(&certPathList);
     }
     return ret;
+}
+
+int32_t CmServiceSetCertStatus(const struct CmContext *context, const struct CmBlob *certUri,
+    uint32_t store, uint32_t status)
+{
+    if (CmCheckBlob(certUri) != CM_SUCCESS || CheckUri(certUri) != CM_SUCCESS) {
+        CM_LOG_E("input params invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    return SetcertStatus(context, certUri, store, status, NULL);
 }
 

@@ -51,7 +51,7 @@ int32_t CmServiceGetCertList(const struct CmContext *context, uint32_t store, st
 int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store,
     const struct CmMutableBlob *certFileList, struct CmBlob *certificateList);
 
-int32_t CmGetServiceCertInfo(const struct CmContext *context, const struct CmBlob *certUri,
+int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, struct CmBlob *certificateData, uint32_t *status);
 
 int32_t CmServiceGetCertInfoPack(const struct CmBlob *certificateData, uint32_t status,
@@ -63,6 +63,9 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
 int32_t CmUninstallUserCert(const struct CmContext *context, const struct CmBlob *certUri);
 
 int32_t CmUninstallAllUserCert(const struct CmContext *context);
+
+int32_t CmServiceSetCertStatus(const struct CmContext *context, const struct CmBlob *certUri,
+    uint32_t store, uint32_t status);
 
 #ifdef __cplusplus
 }

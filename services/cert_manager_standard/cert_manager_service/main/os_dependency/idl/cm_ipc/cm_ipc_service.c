@@ -1583,7 +1583,7 @@ void CmIpcServiceGetUserCertInfo(const struct CmBlob *paramSetBlob, struct CmBlo
             break;
         }
 
-        ret = CmGetServiceCertInfo(&cmContext, &certUri, store, &certificateData, &status);
+        ret = CmServiceGetCertInfo(&cmContext, &certUri, store, &certificateData, &status);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("GetCertInfo failed, ret = %d", ret);
             break;
@@ -1632,7 +1632,7 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
             break;
         }
 
-        ret = CertManagerSetCertificatesStatus(&cmContext, &certUri, store, status);
+        ret = CmServiceSetCertStatus(&cmContext, &certUri, store, status);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("set cert status failed, ret = %d", ret);
             break;
