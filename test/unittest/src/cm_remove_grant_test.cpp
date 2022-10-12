@@ -42,6 +42,7 @@ public:
 
 void CmRemoveGrantTest::SetUpTestCase(void)
 {
+    SetATPermission();
 }
 
 void CmRemoveGrantTest::TearDownTestCase(void)

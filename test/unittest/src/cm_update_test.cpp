@@ -17,7 +17,10 @@
 
 #include "cert_manager_api.h"
 
+#include "cm_test_common.h"
+
 using namespace testing::ext;
+using namespace CertmanagerTest;
 namespace {
 
 static constexpr uint32_t DEFAULT_INDATA_SIZE = 10;
@@ -36,6 +39,7 @@ public:
 
 void CmUpdateTest::SetUpTestCase(void)
 {
+    SetATPermission();
 }
 
 void CmUpdateTest::TearDownTestCase(void)

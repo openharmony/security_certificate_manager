@@ -41,6 +41,7 @@ public:
 
 void CmInitTest::SetUpTestCase(void)
 {
+    SetATPermission();
 }
 
 void CmInitTest::TearDownTestCase(void)
@@ -378,4 +379,26 @@ HWTEST_F(CmInitTest, CmInitTest018, TestSize.Level0)
         EXPECT_EQ(ret, CM_SUCCESS);
     }
 }
+
+/**
+ * @tc.name: CmInitTestPerformance019
+ * @tc.desc: 1000 times: caller is producer, init once ecc
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MIA /SR000H09NA
+ */
+HWTEST_F(CmInitTest, CmInitTestPerformance019, TestSize.Level1)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_VERIFY };
+    uint64_t handleValue = 0;
+    struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
+
+    int32_t ret;
+    for (uint32_t i = 0; i < PERFORMACE_COUNT; ++i) {
+        ret = CmInit(&g_eccKeyUri, &spec, &handle);
+        EXPECT_EQ(ret, CM_SUCCESS);
+        ret = CmAbort(&handle);
+        EXPECT_EQ(ret, CM_SUCCESS);
+    }
+}
 } // end of namespace
+

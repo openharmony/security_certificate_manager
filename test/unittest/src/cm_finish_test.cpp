@@ -42,6 +42,7 @@ public:
 
 void CmFinishTest::SetUpTestCase(void)
 {
+    SetATPermission();
 }
 
 void CmFinishTest::TearDownTestCase(void)
@@ -342,4 +343,31 @@ HWTEST_F(CmFinishTest, CmFinishTest011, TestSize.Level0)
     ProducerSessionMaxTest();
     TestUninstallAppCert();
 }
+
+/**
+* @tc.name: CmFinishTestPerformance012
+* @tc.desc: 1000 times normal case: caller is producer, ecc sign verify
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTestPerformance012, TestSize.Level1)
+{
+    for (uint32_t i = 0; i < PERFORMACE_COUNT; ++i) {
+        TestSignVerify(CERT_KEY_ALG_ECC, true);
+    }
+}
+
+/**
+* @tc.name: CmFinishTestPerformance013
+* @tc.desc: 1000 times normal case: caller is producer, rsa sign verify
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTestPerformance013, TestSize.Level1)
+{
+    for (uint32_t i = 0; i < PERFORMACE_COUNT; ++i) {
+        TestSignVerify(CERT_KEY_ALG_RSA, true);
+    }
+}
 } // end of namespace
+
