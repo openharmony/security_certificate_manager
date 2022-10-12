@@ -22,7 +22,7 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 
-void SetATPermission(void)
+static void SetATPermission(void)
 {
     const char **perms = new const char *[2]; // 2 permissions
     perms[0] = "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL"; // system_basic
@@ -232,16 +232,16 @@ HWTEST_F(CmHiSysEventTest, CmHiSysEventTest004, TestSize.Level0)
     CmHiSysEventQueryStart();
     int32_t ret;
     char *uri = g_certInfoExpectResult[0].certInfo.uri;
-    struct CmBlob certUri = { sizeof(uri), (uint8_t *)uri };
+    struct CmBlob certUri = { strlen(uri) + 1, (uint8_t *)uri };
 
     struct CertInfo *cInfo = nullptr;
     InitUserCertInfo(&cInfo);
-    (void)CmGetUserCertInfo(&certUri, 100, cInfo);  /* invalid store 100 */
+    (void)CmGetUserCertInfo(&certUri, 100, cInfo); /* invalid store 100 */
     FreeCMBlobData(&(cInfo->certInfo));
 
     ret = CmHiSysEventQueryResult("CmIpcServiceGetUserCertInfo");
     EXPECT_EQ(ret, CM_HISYSEVENT_QUERY_SUCCESS) << "query failed, ret = " << ret;
- }
+}
 
 /**
  * @tc.name: CmHiSysEventTest.CmHiSysEventTest005
@@ -255,7 +255,7 @@ HWTEST_F(CmHiSysEventTest, CmHiSysEventTest005, TestSize.Level0)
     CmHiSysEventQueryStart();
     int32_t ret;
 
-    uint8_t invalidUriBuf[MAX_URI_LEN] = "*****"; /*error uri*/
+    uint8_t invalidUriBuf[MAX_URI_LEN] = "*****"; /* error uri */
     struct CmBlob invalidUri = { sizeof(invalidUriBuf), invalidUriBuf };
     (void)CmUninstallUserTrustedCert(&invalidUri);
 
