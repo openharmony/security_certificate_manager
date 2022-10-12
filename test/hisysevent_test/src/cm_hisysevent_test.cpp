@@ -18,6 +18,30 @@
 #include "cm_hisysevent_test_common.h"
 #include "cert_manager_api.h"
 
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
+
+static void SetATPermission(void)
+{
+    const char **perms = new const char *[2]; // 2 permissions
+    perms[0] = "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL"; // system_basic
+    perms[1] = "ohos.permission.ACCESS_CERT_MANAGER"; // normal
+    NativeTokenInfoParams infoInstance = {
+        .dcapsNum = 0,
+        .permsNum = 2,
+        .dcaps = nullptr,
+        .perms = perms,
+        .acls = nullptr,
+        .processName = "TestCertManager",
+        .aplStr = "system_basic",
+    };
+
+    auto tokenId = GetAccessTokenId(&infoInstance);
+    SetSelfTokenID(tokenId);
+    OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+}
+
 using namespace testing::ext;
 namespace {
 #define MAX_URI_LEN            256
@@ -109,6 +133,7 @@ public:
 
 void CmHiSysEventTest::SetUpTestCase(void)
 {
+    (void)SetATPermission();
 }
 
 void CmHiSysEventTest::TearDownTestCase(void)
@@ -126,7 +151,7 @@ void CmHiSysEventTest::TearDown()
 /**
  * @tc.name: CmHiSysEventTest.CmHiSysEventTest001
  * @tc.desc: the abnormal test is for hisysevent;
-             the test interface is 'CmInstallAppCert'.
+             the test interface is 'CmIpcServiceInstallAppCert'.
  * @tc.type: FUNC
  * @tc.require: AR000HE22G /SR000HDQVV
  */
@@ -145,7 +170,7 @@ HWTEST_F(CmHiSysEventTest, CmHiSysEventTest001, TestSize.Level0)
     struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
 
     (void)CmInstallAppCert(&appCert, &appCertPwd, &certAlias, store, &keyUri);
-    ret = CmHiSysEventQueryResult("CmInstallAppCert");
+    ret = CmHiSysEventQueryResult("CmIpcServiceInstallAppCert");
     EXPECT_EQ(ret, CM_HISYSEVENT_QUERY_SUCCESS) << "query failed, ret = " << ret;
 
 }
@@ -207,16 +232,15 @@ HWTEST_F(CmHiSysEventTest, CmHiSysEventTest004, TestSize.Level0)
     CmHiSysEventQueryStart();
     int32_t ret;
     char *uri = g_certInfoExpectResult[0].certInfo.uri;
-    struct CmBlob certUri = { sizeof(uri), (uint8_t *)uri };
+    struct CmBlob certUri = { strlen(uri) + 1, (uint8_t *)uri };
 
     struct CertInfo *cInfo = nullptr;
     InitUserCertInfo(&cInfo);
-    (void)CmGetUserCertInfo(&certUri, 100, cInfo);  /* invalid store 100 */
+    (void)CmGetUserCertInfo(&certUri, 100, cInfo); /* invalid store 100 */
+    FreeCMBlobData(&(cInfo->certInfo));
 
     ret = CmHiSysEventQueryResult("CmIpcServiceGetUserCertInfo");
     EXPECT_EQ(ret, CM_HISYSEVENT_QUERY_SUCCESS) << "query failed, ret = " << ret;
- 
-    FreeCMBlobData(&(cInfo->certInfo));
 }
 
 /**
@@ -230,10 +254,11 @@ HWTEST_F(CmHiSysEventTest, CmHiSysEventTest005, TestSize.Level0)
 {
     CmHiSysEventQueryStart();
     int32_t ret;
-    uint8_t certUriBuf[MAX_URI_LEN] = {0};
-    struct CmBlob certUriTemp = { sizeof(certUriBuf), certUriBuf };
 
-    (void)CmUninstallUserTrustedCert(&certUriTemp);
+    uint8_t invalidUriBuf[MAX_URI_LEN] = "*****"; /* error uri */
+    struct CmBlob invalidUri = { sizeof(invalidUriBuf), invalidUriBuf };
+    (void)CmUninstallUserTrustedCert(&invalidUri);
+
     ret = CmHiSysEventQueryResult("CmIpcServiceUninstallUserCert");
     EXPECT_EQ(ret, CM_HISYSEVENT_QUERY_SUCCESS) << "query failed, ret = " << ret;
 }
