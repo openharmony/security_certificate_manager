@@ -16,11 +16,11 @@
 #ifndef CERT_MANAGER_PERMISSION_CHECK_H
 #define CERT_MANAGER_PERMISSION_CHECK_H
 
+#include "cm_type.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "cm_type.h"
 
 bool CmHasPrivilegedPermission(void);
 

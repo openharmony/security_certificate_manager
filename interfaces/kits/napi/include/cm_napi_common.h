@@ -167,7 +167,6 @@ enum ErrorCode {
     NO_PERMISSION = 17500002,
     NOT_FOUND = 17500003,
     INVALID_CERT_FORMAT = 17500004,
-
 };
 }  // namespace CertManagerNapi
 

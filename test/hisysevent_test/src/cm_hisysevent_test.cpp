@@ -108,8 +108,10 @@ struct UserCertInfoResult g_certInfoExpectResult[] = {
             "oh:t=c;o=40dc992e;u=0;a=0",
             "Hellenic Academic and Research Institutions Cert. Authority",
             true,
-            "CN=Hellenic Academic and Research Institutions RootCA 2011,OU=,O=Hellenic Academic and Research Institutions Cert. Authority",
-            "CN=Hellenic Academic and Research Institutions RootCA 2011,OU=,O=Hellenic Academic and Research Institutions Cert. Authority",
+            "CN=Hellenic Academic and Research Institutions RootCA 2011,OU=,"
+            "O=Hellenic Academic and Research Institutions Cert. Authority",
+            "CN=Hellenic Academic and Research Institutions RootCA 2011,OU=,"
+            "O=Hellenic Academic and Research Institutions Cert. Authority",
             "0",
             "2011-12-6",
             "2031-12-1",
@@ -196,7 +198,6 @@ HWTEST_F(CmHiSysEventTest, CmHiSysEventTest002, TestSize.Level0)
     (void)CmInstallUserTrustedCert(&userCertTemp, &certAliasTemp, &certUriTemp);
     ret = CmHiSysEventQueryResult("CmIpcServiceInstallUserCert");
     EXPECT_EQ(ret, CM_HISYSEVENT_QUERY_SUCCESS) << "query failed, ret = " << ret;
-
 }
 
 /**

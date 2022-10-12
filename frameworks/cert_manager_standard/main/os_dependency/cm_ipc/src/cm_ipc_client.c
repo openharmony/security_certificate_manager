@@ -1034,7 +1034,7 @@ static int32_t GetInfoFromX509cert(X509 *x509cert, struct CertInfo *userCertInfo
 
     int32_t fingerprintLen = 0;
     fingerprintLen = GetX509Fingerprint(x509cert, userCertInfo->fingerprintSha256, MAX_LEN_FINGER_PRINT_SHA256);
-    if(fingerprintLen == 0) {
+    if (fingerprintLen == 0) {
         CM_LOG_E("get cert fingerprintSha256 failed");
         return CM_FAILURE;
     }

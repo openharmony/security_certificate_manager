@@ -44,16 +44,12 @@ bool CmHasCommonPermission(void)
 
 bool CmPermissionCheck(const uint32_t store)
 {
-    bool InvalidPermission = false;
-    switch (store)
-    {
+    switch (store) {
         case CM_CREDENTIAL_STORE:
             return CmHasPrivilegedPermission() && CmHasCommonPermission();
         case CM_PRI_CREDENTIAL_STORE:
             return CmHasCommonPermission();
         default:
-            return InvalidPermission;
+            return false;
     }
 }
-
-
