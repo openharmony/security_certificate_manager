@@ -20,30 +20,6 @@
 #include "cm_log.h"
 #include "cm_mem.h"
 
-#include "accesstoken_kit.h"
-#include "nativetoken_kit.h"
-#include "token_setproc.h"
-
-void SetUserPermission(void)
-{
-    const char **perms = new const char *[2]; // 2 permissions
-    perms[0] = "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL"; // system_basic
-    perms[1] = "ohos.permission.ACCESS_CERT_MANAGER"; // normal
-    NativeTokenInfoParams infoInstanceTmp = {
-        .dcapsNum = 0,
-        .permsNum = 2,
-        .dcaps = nullptr,
-        .perms = perms,
-        .acls = nullptr,
-        .processName = "TestCertManager",
-        .aplStr = "system_basic",
-    };
-
-    auto tokenId = GetAccessTokenId(&infoInstanceTmp);
-    SetSelfTokenID(tokenId);
-    OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
-}
-
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
@@ -320,7 +296,8 @@ struct UserCertListResult g_certListExpectResult[] = {
             "oh:t=c;o=40dc992e;u=0;a=0",
             "40dc992e",
             true,
-            "CN=Hellenic Academic and Research Institutions RootCA 2011,OU=,O=Hellenic Academic and Research Institutions Cert. Authority"
+            "CN=Hellenic Academic and Research Institutions RootCA 2011,OU=,"
+            "O=Hellenic Academic and Research Institutions Cert. Authority"
         },
         true
     },
@@ -355,8 +332,10 @@ struct UserCertInfoResult g_certInfoExpectResult[] = {
             "oh:t=c;o=40dc992e;u=0;a=0",
             "40dc992e",
             true,
-            "CN=Hellenic Academic and Research Institutions RootCA 2011,OU=,O=Hellenic Academic and Research Institutions Cert. Authority",
-            "CN=Hellenic Academic and Research Institutions RootCA 2011,OU=,O=Hellenic Academic and Research Institutions Cert. Authority",
+            "CN=Hellenic Academic and Research Institutions RootCA 2011,OU=,"
+            "O=Hellenic Academic and Research Institutions Cert. Authority",
+            "CN=Hellenic Academic and Research Institutions RootCA 2011,OU=,"
+            "O=Hellenic Academic and Research Institutions Cert. Authority",
             "0",
             "2011-12-6",
             "2031-12-1",
@@ -457,7 +436,7 @@ public:
 
 void CmUserCertTest::SetUpTestCase(void)
 {
-    SetUserPermission();
+    SetATPermission();
 }
 
 void CmUserCertTest::TearDownTestCase(void)
@@ -466,7 +445,6 @@ void CmUserCertTest::TearDownTestCase(void)
 
 void CmUserCertTest::SetUp()
 {
-
 }
 
 void CmUserCertTest::TearDown()
@@ -573,7 +551,6 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest005, TestSize.Level0)
 
     ret = CmInstallUserTrustedCert(&userCertTemp, &certAliasTemp, &certUriTemp);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_CERT_FORMAT) << "Normal user cert Install test failed, recode:" << ret;
-
 }
 
 /**
@@ -708,7 +685,7 @@ HWTEST_F(CmUserCertTest, UninstallUserCertTest002, TestSize.Level0)
     ret = CmInstallUserTrustedCert(&userCertTemp, &certAliasTemp, &certUriTemp);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Install test failed, recode:" << ret;
 
-    ret = CmUninstallUserTrustedCert(nullptr); /* uri is nullptr*/
+    ret = CmUninstallUserTrustedCert(nullptr); /* uri is nullptr */
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "Normal user cert Uninstall test failed, recode:" << ret;
 
     ret = CmUninstallUserTrustedCert(&certUriTemp);
@@ -734,7 +711,7 @@ HWTEST_F(CmUserCertTest, UninstallUserCertTest003, TestSize.Level0)
     ret = CmInstallUserTrustedCert(&userCert01, &certAlias01, &certUri01);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Install test failed, recode:" << ret;
 
-    uint8_t invalidUriBuf[MAX_URI_LEN] = "*****"; /*error uri*/
+    uint8_t invalidUriBuf[MAX_URI_LEN] = "*****"; /* error uri */
     struct CmBlob invalidUri = { sizeof(invalidUriBuf), invalidUriBuf };
     ret = CmUninstallUserTrustedCert(&invalidUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "Normal user cert Uninstall test failed, recode:" << ret;
@@ -752,12 +729,11 @@ HWTEST_F(CmUserCertTest, UninstallUserCertTest003, TestSize.Level0)
 HWTEST_F(CmUserCertTest, UninstallUserCertTest004, TestSize.Level0)
 {
     int32_t ret;
-    char invalidUriBuf[] = "oh:t=c;o=NOEXIST;u=0;a=0"; /*cert of uri is not exist*/
+    char invalidUriBuf[] = "oh:t=c;o=NOEXIST;u=0;a=0"; /* cert of uri is not exist */
     struct CmBlob invalidUri = { strlen(invalidUriBuf) + 1, (uint8_t *)invalidUriBuf };
 
     ret = CmUninstallUserTrustedCert(&invalidUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall test failed, recode:" << ret;
-
 }
 
 /**

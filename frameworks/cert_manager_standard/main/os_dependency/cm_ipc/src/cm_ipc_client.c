@@ -995,7 +995,8 @@ static int32_t GetCertInfoInitOutData(struct CmBlob *outInfoBlob)
     return CM_SUCCESS;
 }
 
-static int32_t GetInfoFromX509cert(X509 *x509cert, struct CertInfo *userCertInfo) {
+static int32_t GetInfoFromX509cert(X509 *x509cert, struct CertInfo *userCertInfo)
+{
     int32_t subjectNameLen = 0;
     subjectNameLen = GetX509SubjectNameLongFormat(x509cert, userCertInfo->subjectName, MAX_LEN_SUBJECT_NAME);
     if (subjectNameLen == 0) {
@@ -1041,7 +1042,8 @@ static int32_t GetInfoFromX509cert(X509 *x509cert, struct CertInfo *userCertInfo
 }
 
 static int32_t CmUserCertInfoUnpackFromService(const struct CmBlob *outBuf,
-    const struct CmBlob *certUri, struct CertInfo *userCertInfo) {
+    const struct CmBlob *certUri, struct CertInfo *userCertInfo)
+{
     if ((outBuf == NULL) || (userCertInfo == NULL) || (outBuf->data == NULL) ||
         (userCertInfo->certInfo.data == NULL)) {
         return CMR_ERROR_NULL_POINTER;
@@ -1055,7 +1057,6 @@ static int32_t CmUserCertInfoUnpackFromService(const struct CmBlob *outBuf,
         return ret;
     }
     if (memcpy_s(userCertInfo->certInfo.data, MAX_LEN_CERTIFICATE, bufBlob.data, bufBlob.size) != EOK) {
-        CM_LOG_E("copy cert data failed");
         return CMR_ERROR_INVALID_OPERATION;
     }
     userCertInfo->certInfo.size = bufBlob.size;
@@ -1203,7 +1204,6 @@ static int32_t InstallUserCert(enum CmMessage type, const struct CmBlob *userCer
             CM_LOG_E("InstallUserCert request failed, ret: %u", ret);
             break;
         }
-
     } while (0);
     CmFreeParamSet(&sendParamSet);
     return ret;

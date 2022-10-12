@@ -167,7 +167,7 @@ err:
     return -1;
 }
 
-uint32_t GetNumberOfDirs(const char * userIdPath)
+uint32_t GetNumberOfDirs(const char *userIdPath)
 {
     void *dir = CmOpenDir(userIdPath);
     if (dir == NULL) {

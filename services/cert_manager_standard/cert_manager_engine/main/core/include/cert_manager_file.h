@@ -34,7 +34,7 @@ int32_t CertManagerFileWrite(const char *path, const char *fileName, uint32_t of
 
 int32_t CertManagerFileRemove(const char *path, const char *fileName);
 
-uint32_t GetNumberOfDirs(const char * userIdPath);
+uint32_t GetNumberOfDirs(const char *userIdPath);
 
 int32_t GetCertCount(const char *path);
 

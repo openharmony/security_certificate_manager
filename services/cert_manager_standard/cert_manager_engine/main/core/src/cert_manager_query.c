@@ -321,7 +321,6 @@ static int32_t CmMallocCertBlob(struct CertBlob *certBlob, uint32_t certCount)
         (void)memset_s(certBlob->certAlias[i].data, MAX_LEN_CERT_ALIAS, 0, MAX_LEN_CERT_ALIAS);
     }
     return CM_SUCCESS;
-
 }
 
 int32_t CmGetCertAlias(const char *uri, struct CmBlob *certAlias)
