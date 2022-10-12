@@ -1138,7 +1138,7 @@ int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *p
         }
 
         ret = CherkCertCountBeyondMax((char*)pathBlob->data, userUri);
-        if(ret != CM_SUCCESS) {
+        if (ret != CM_SUCCESS) {
             CM_LOG_E("cert count beyond maxcount, can't install");
             ret = CMR_ERROR_INVALID_ARGUMENT;
             break;

@@ -50,7 +50,6 @@ enum CmMessage {
     CM_MSG_UNINSTALL_USER_CERTIFICATE,
     CM_MSG_UNINSTALL_ALL_USER_CERTIFICATE,
 
-
     CM_MSG_MAX, /* new cmd type must be added before CM_MSG_MAX */
 };
 

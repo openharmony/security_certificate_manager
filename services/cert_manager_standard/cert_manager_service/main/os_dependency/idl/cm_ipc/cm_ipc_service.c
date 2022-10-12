@@ -1744,8 +1744,6 @@ void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct 
             break;
         }
     } while (0);
-
     CmSendResponse(context, ret, NULL);
-
 }
 

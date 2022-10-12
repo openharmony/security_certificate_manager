@@ -45,5 +45,3 @@ void CmFreeCertPaths(struct CmMutableBlob *certPaths);
 #endif
 
 #endif /* CERT_MANAGER_QUERY_H */
-
-
