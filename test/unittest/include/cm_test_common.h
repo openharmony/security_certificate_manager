@@ -24,6 +24,8 @@
 #define CERT_KEY_ALG_RSA 1
 #define CERT_KEY_ALG_ECC 2
 
+#define PERFORMACE_COUNT 1000
+
 #define DELIMITER "$$$"
 #define ENDOF  "\n"
 

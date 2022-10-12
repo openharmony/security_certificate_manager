@@ -38,6 +38,7 @@ public:
 
 void CmIsAuthedTest::SetUpTestCase(void)
 {
+    SetATPermission();
 }
 
 void CmIsAuthedTest::TearDownTestCase(void)
@@ -326,4 +327,24 @@ HWTEST_F(CmIsAuthedTest, CmIsAuthedTest016, TestSize.Level0)
     int32_t ret = CmIsAuthorizedApp(&authUriFail);
     EXPECT_EQ(ret, CMR_ERROR_KEY_OPERATION_FAILED);
 }
+
+/**
+ * @tc.name: CmIsAuthedTestPerformance017
+ * @tc.desc: 1000 times: Test CmIsAuthorizedApp normal test
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MIA /SR000H09NA
+ */
+HWTEST_F(CmIsAuthedTest, CmIsAuthedTestPerformance017, TestSize.Level1)
+{
+    uint8_t authUriData[DEFAULT_AUTH_URI_LEN] = {0};
+    struct CmBlob authUri = { DEFAULT_AUTH_URI_LEN, authUriData };
+    TestGrantApp(&authUri);
+
+    int32_t ret;
+    for (uint32_t i = 0; i < PERFORMACE_COUNT; ++i) {
+        ret = CmIsAuthorizedApp(&authUri);
+        EXPECT_EQ(ret, CM_SUCCESS);
+    }
+}
 } // end of namespace
+

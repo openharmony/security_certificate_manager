@@ -43,6 +43,7 @@ public:
 
 void CmGetAuthListTest::SetUpTestCase(void)
 {
+    SetATPermission();
 }
 
 void CmGetAuthListTest::TearDownTestCase(void)
@@ -384,4 +385,24 @@ HWTEST_F(CmGetAuthListTest, CmGetAuthListTest016, TestSize.Level0)
     TestGetAuthList(APP_UID_COUNT_MULTI, APP_UID_REMOVE_COUNT);
 }
 
+/**
+* @tc.name: CmGetAuthListTestPerformance017
+* @tc.desc: 1000 times: grant 1, get authlist
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmGetAuthListTest, CmGetAuthListTestPerformance017, TestSize.Level1)
+{
+    uint32_t tempUid = 0;
+    struct CmAppUidList appUidList = { APP_UID_COUNT_ONE, &tempUid };
+
+    int32_t ret;
+    for (uint32_t i = 0; i < PERFORMACE_COUNT; ++i) {
+        ret = CmGetAuthorizedAppList(&g_keyUri, &appUidList);
+        EXPECT_EQ(ret, CM_SUCCESS);
+        EXPECT_EQ(appUidList.appUidCount, APP_UID_COUNT_ONE);
+        EXPECT_EQ(*(appUidList.appUid), DEFAULT_BASE_APP_ID);
+    }
+}
 } // end of namespace
+

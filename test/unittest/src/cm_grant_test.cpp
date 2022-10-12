@@ -42,6 +42,7 @@ public:
 
 void CmGrantTest::SetUpTestCase(void)
 {
+    SetATPermission();
 }
 
 void CmGrantTest::TearDownTestCase(void)
@@ -358,4 +359,35 @@ HWTEST_F(CmGrantTest, CmGrantTest015, TestSize.Level0)
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert failed, retcode:" << ret;
 }
 
+/**
+ * @tc.name: CmGrantTestPerformance016
+ * @tc.desc: 1000 times: grant and remove grant
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MIA /SR000H09NA
+ */
+HWTEST_F(CmGrantTest, CmGrantTestPerformance016, TestSize.Level1)
+{
+    uint8_t aliasData[] = "TestGrantPer";
+    struct CmBlob alias = { sizeof(aliasData), aliasData };
+    int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_RSA, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert failed, retcode:" << ret;
+
+    uint8_t uriData[] = "oh:t=ak;o=TestGrantPer;u=0;a=0";
+    struct CmBlob keyUri = { sizeof(uriData), uriData };
+    uint8_t authUriData[DEFAULT_AUTH_URI_LEN] = {0};
+    struct CmBlob authUri = { DEFAULT_AUTH_URI_LEN, authUriData };
+    uint32_t appId = DEFAULT_APP_ID;
+
+    for (uint32_t i = 0; i < 1000; ++i) {
+        ret = CmGrantAppCertificate(&keyUri, appId, &authUri);
+        EXPECT_EQ(ret, CM_SUCCESS) << "CmGrantAppCertificate failed, retcode:" << ret;
+
+        ret = CmRemoveGrantedApp(&keyUri, appId);
+        EXPECT_EQ(ret, CM_SUCCESS) << "CmRemoveGrantedApp failed, retcode:" << ret;
+    }
+
+    ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert failed, retcode:" << ret;
+}
 } // end of namespace
+
