@@ -535,8 +535,6 @@ static int32_t CmInstallAppCert(const struct CmContext *context, const struct Cm
         }
     } while (0);
 
-   CmReport(__func__, context, (char *)certAlias->data, ret);
-
     EVP_PKEY_free(priKey);
     return ret;
 }
@@ -763,7 +761,7 @@ void CmIpcServiceInstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob
             CM_LOG_E("CmServiceInstallAppCertPack fail, ret = %d", ret);
         }
     } while (0);
-
+    CmReport(__func__, context, "NULL", ret);
     CmSendResponse(context, ret, &keyUri);
     CmFreeParamSet(&paramSet);
     CM_FREE_BLOB(keyUri);
