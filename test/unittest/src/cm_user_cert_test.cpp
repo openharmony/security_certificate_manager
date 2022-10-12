@@ -1001,7 +1001,7 @@ HWTEST_F(CmUserCertTest, GetUserCertInfoTest002, TestSize.Level0)
     for (uint32_t i = 0; i < cList->certsCount; ++i) {
         struct CertAbstract *ptr = &(cList->certAbstract[i]);
         ASSERT_TRUE(ptr != nullptr);
-        struct CmBlob uriBlob = {strlen(ptr->uri) + 1, (uint8_t *)(ptr->uri)};
+        struct CmBlob uriBlob = { strlen(ptr->uri) + 1, (uint8_t *)(ptr->uri) };
 
         struct CertInfo *cInfo = nullptr;
         InitUserCertInfo(&cInfo);
@@ -1151,7 +1151,7 @@ HWTEST_F(CmUserCertTest, SetUserCertStatusTest002, TestSize.Level0)
     uint32_t len = sizeof(g_certStatusExpectResult) / sizeof(g_certStatusExpectResult[0]);
     for (uint32_t i = 0; i < len; i++) {
         struct CmBlob certUri = { strlen(g_certStatusExpectResult[i].uri) + 1,
-            (uint8_t *)g_certStatusExpectResult[i].uri};
+            (uint8_t *)g_certStatusExpectResult[i].uri };
 
         ret = CmSetUserCertStatus(&certUri, CM_USER_TRUSTED_STORE, g_certStatusExpectResult[i].inparamStatus);
         EXPECT_EQ(ret, CM_SUCCESS) << "Normal set user cert status test failed, recode:" << ret;
@@ -1199,14 +1199,14 @@ HWTEST_F(CmUserCertTest, SetUserCertStatusTest003, TestSize.Level0)
 
     for (uint32_t i = 0; i < cList->certsCount; ++i) {
         struct CertAbstract *ptr = &(cList->certAbstract[i]);
-        struct CmBlob uri01 = { strlen(ptr->uri), (uint8_t *)(ptr->uri) };
+        struct CmBlob uri01 = { strlen(ptr->uri) + 1, (uint8_t *)(ptr->uri) };
         ret = CmSetUserCertStatus(&uri01, CM_USER_TRUSTED_STORE, false);
         EXPECT_EQ(ret, CM_SUCCESS) << "Normal set user cert status test failed, recode:" << ret;
     }
 
     for (uint32_t i = 0; i < cList->certsCount; ++i) {
         struct CertAbstract *ptr = &(cList->certAbstract[i]);
-        struct CmBlob uri02 = { strlen(ptr->uri), (uint8_t *)(ptr->uri) };
+        struct CmBlob uri02 = { strlen(ptr->uri) + 1, (uint8_t *)(ptr->uri) };
         ret = CmSetUserCertStatus(&uri02, CM_USER_TRUSTED_STORE, true);
         EXPECT_EQ(ret, CM_SUCCESS) << "Normal set user cert status test failed, recode:" << ret;
     }
@@ -1301,7 +1301,7 @@ HWTEST_F(CmUserCertTest, SetUserCertStatusTest007, TestSize.Level0)
 
 /**
  * @tc.name: SetUserCertStatusTest008
- * @tc.desc: Test CertManager set user cert status interface Abnormal function
+ * @tc.desc: Test CertManager set user cert status interface performance
  * @tc.type: FUNC
  * @tc.require: AR000H0MJ8 /SR000H09N7
  */

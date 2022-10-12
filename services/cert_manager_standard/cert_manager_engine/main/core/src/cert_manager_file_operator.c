@@ -139,6 +139,26 @@ static uint32_t FileSize(const char *fileName)
     return (uint32_t)fileStat.st_size;
 }
 
+static int32_t FileFlush(FILE *fp)
+{
+    if (fflush(fp) < 0) {
+        CM_LOG_E("fflush file fail");
+        return CMR_ERROR_WRITE_FILE_FAIL;
+    }
+
+    int fd = fileno(fp);
+    if (fd < 0) {
+        CM_LOG_E("fileno file fail");
+        return CMR_ERROR_WRITE_FILE_FAIL;
+    }
+
+    if (fsync(fd) < 0) {
+        CM_LOG_E("sync file fail");
+        return CMR_ERROR_WRITE_FILE_FAIL;
+    }
+    return CM_SUCCESS;
+}
+
 static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *buf, uint32_t len)
 {
     (void)offset;
@@ -168,6 +188,11 @@ static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *b
     uint32_t size = fwrite(buf, 1, len, fp);
     if (size != len) {
         CM_LOG_E("write file size fail.");
+        fclose(fp);
+        return CMR_ERROR_WRITE_FILE_FAIL;
+    }
+
+    if (FileFlush(fp) != CM_SUCCESS) {
         fclose(fp);
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
