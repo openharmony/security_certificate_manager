@@ -753,7 +753,7 @@ HWTEST_F(CmUserCertTest, UninstallUserCertTest004, TestSize.Level0)
 {
     int32_t ret;
     char invalidUriBuf[] = "oh:t=c;o=NOEXIST;u=0;a=0"; /*cert of uri is not exist*/
-    struct CmBlob invalidUri = { sizeof(invalidUriBuf), (uint8_t *)invalidUriBuf };
+    struct CmBlob invalidUri = { strlen(invalidUriBuf) + 1, (uint8_t *)invalidUriBuf };
 
     ret = CmUninstallUserTrustedCert(&invalidUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall test failed, recode:" << ret;
@@ -1001,7 +1001,7 @@ HWTEST_F(CmUserCertTest, GetUserCertInfoTest002, TestSize.Level0)
     for (uint32_t i = 0; i < cList->certsCount; ++i) {
         struct CertAbstract *ptr = &(cList->certAbstract[i]);
         ASSERT_TRUE(ptr != nullptr);
-        struct CmBlob uriBlob = {strlen(ptr->uri), (uint8_t *)(ptr->uri)};
+        struct CmBlob uriBlob = {strlen(ptr->uri) + 1, (uint8_t *)(ptr->uri)};
 
         struct CertInfo *cInfo = nullptr;
         InitUserCertInfo(&cInfo);
@@ -1043,7 +1043,7 @@ HWTEST_F(CmUserCertTest, GetUserCertInfoTest004, TestSize.Level0)
 {
     int32_t ret;
     char *uri = g_certInfoExpectResult[0].certInfo.uri;
-    struct CmBlob certUri = { sizeof(uri), (uint8_t *)uri };
+    struct CmBlob certUri = { strlen(uri) + 1, (uint8_t *)uri };
 
     struct CertInfo *cInfo = nullptr;
     InitUserCertInfo(&cInfo);
@@ -1062,7 +1062,7 @@ HWTEST_F(CmUserCertTest, GetUserCertInfoTest005, TestSize.Level0)
 {
     int32_t ret;
     char *uri = g_certInfoExpectResult[0].certInfo.uri;
-    struct CmBlob certUri = { sizeof(uri), (uint8_t *)uri };
+    struct CmBlob certUri = { strlen(uri) + 1, (uint8_t *)uri };
 
     ret = CmGetUserCertInfo(&certUri, CM_USER_TRUSTED_STORE, nullptr);  /* cInfo not malloc */
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
@@ -1120,7 +1120,7 @@ HWTEST_F(CmUserCertTest, SetUserCertStatusTest001, TestSize.Level0)
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Install test failed, recode:" << ret;
 
     char *uri = g_certStatusExpectResult[2].uri;
-    struct CmBlob uriTemp = { sizeof(uri), (uint8_t *)uri };
+    struct CmBlob uriTemp = { strlen(uri) + 1, (uint8_t *)uri };
     ret = CmSetUserCertStatus(&uriTemp, CM_USER_TRUSTED_STORE, g_certStatusExpectResult[2].inparamStatus);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal set user cert status test failed, recode:" << ret;
 
@@ -1150,7 +1150,7 @@ HWTEST_F(CmUserCertTest, SetUserCertStatusTest002, TestSize.Level0)
 
     uint32_t len = sizeof(g_certStatusExpectResult) / sizeof(g_certStatusExpectResult[0]);
     for (uint32_t i = 0; i < len; i++) {
-        struct CmBlob certUri = { strlen(g_certStatusExpectResult[i].uri),
+        struct CmBlob certUri = { strlen(g_certStatusExpectResult[i].uri) + 1,
             (uint8_t *)g_certStatusExpectResult[i].uri};
 
         ret = CmSetUserCertStatus(&certUri, CM_USER_TRUSTED_STORE, g_certStatusExpectResult[i].inparamStatus);
@@ -1239,7 +1239,7 @@ HWTEST_F(CmUserCertTest, SetUserCertStatusTest004, TestSize.Level0)
 HWTEST_F(CmUserCertTest, SetUserCertStatusTest005, TestSize.Level0)
 {
     int32_t ret;
-    struct CmBlob certUri = { strlen(g_certStatusExpectResult[1].uri),
+    struct CmBlob certUri = { strlen(g_certStatusExpectResult[1].uri) + 1,
         (uint8_t *)(g_certStatusExpectResult[1].uri) };
 
     ret = CmSetUserCertStatus(&certUri, 100, true); /* invalid store */
