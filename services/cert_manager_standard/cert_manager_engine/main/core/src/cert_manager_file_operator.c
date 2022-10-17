@@ -357,7 +357,7 @@ static int32_t CmUidLayerGetFileNames(const char *filePath, struct CmBlob *fileN
     }
     uint32_t filePathLen = strlen(filePath);
     if (filePathLen >= CM_MAX_FILE_NAME_LEN) {
-		CM_LOG_E("CmUidLayerGetFileNames filePathLen:%u", filePathLen);
+        CM_LOG_E("CmUidLayerGetFileNames filePathLen:%u", filePathLen);
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
 
