@@ -50,7 +50,7 @@ void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData
         CM_LOG_I("CmService package removed: uid is %u userId is %u", context.uid, context.userId);
         CmDeleteProcessInfo(&context);
     } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
-        context.userId = data.GetCode();
+        context.userId = (uint32_t)data.GetCode();
         CM_LOG_I("CmService user removed: userId is %d", context.userId);
         CmDeleteProcessInfo(&context);
     }

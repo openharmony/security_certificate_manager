@@ -21,20 +21,20 @@
 
 using namespace OHOS::HiviewDFX;
 
-static constexpr const char domain[] = "CERT_MANAGER";
-static constexpr const char g_eventName[] = "CERT_FAULT";
-static constexpr const char g_tagFunction[] = "FUNCTION";
-static constexpr const char g_tagUserId[] = "USER_ID";
-static constexpr const char g_tagUID[] = "UID";
-static constexpr const char g_tagCertName[] = "CERT_NAME";
-static constexpr const char g_tagErrorCode[] = "ERROR_CODE";
+static constexpr char domain[] = "CERT_MANAGER";
+static constexpr char g_eventName[] = "CERT_FAULT";
+static constexpr char g_tagFunction[] = "FUNCTION";
+static constexpr char g_tagUserId[] = "USER_ID";
+static constexpr char g_tagUID[] = "UID";
+static constexpr char g_tagCertName[] = "CERT_NAME";
+static constexpr char g_tagErrorCode[] = "ERROR_CODE";
 
 int WriteEvent(const char *functionName, const struct EventValues *eventValues)
 {
     int32_t ret = HiSysEventWrite(domain, g_eventName, HiSysEvent::EventType::FAULT,
         g_tagFunction, functionName,
-        g_tagUserId, eventValues->userId, 
-        g_tagUID, eventValues->uid, 
+        g_tagUserId, eventValues->userId,
+        g_tagUID, eventValues->uid,
         g_tagCertName, eventValues->certName,
         g_tagErrorCode, eventValues->errorCode);
     if (ret != CM_SUCCESS) {

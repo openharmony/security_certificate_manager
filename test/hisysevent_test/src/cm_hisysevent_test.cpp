@@ -174,7 +174,6 @@ HWTEST_F(CmHiSysEventTest, CmHiSysEventTest001, TestSize.Level0)
     (void)CmInstallAppCert(&appCert, &appCertPwd, &certAlias, store, &keyUri);
     ret = CmHiSysEventQueryResult("CmIpcServiceInstallAppCert");
     EXPECT_EQ(ret, CM_HISYSEVENT_QUERY_SUCCESS) << "query failed, ret = " << ret;
-
 }
 
 /**

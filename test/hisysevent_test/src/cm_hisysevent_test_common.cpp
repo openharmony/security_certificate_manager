@@ -29,6 +29,7 @@ using namespace std;
 static const int MAX_QUERY_EVENT_COUNT = 1000;
 static const int TIME_S_TO_MS = 1000;
 static const int TIME_MS_TO_US = 1000;
+static const int SLEEP_TIME = 2; /* 2 second */
 
 static long long int g_beginTime = 0;
 static long long int g_endTime = 0;
@@ -90,8 +91,8 @@ int32_t CmHiSysEventQueryResult(const string funStr)
 
     g_queryResult = false;
     g_queryStr = funStr;
-    
-    sleep(2); // Waiting for hisysevent to upload
+
+    sleep(SLEEP_TIME); // Waiting for hisysevent to upload
 
     // queryArg
     g_endTime = GetCurrentTime();
@@ -113,7 +114,7 @@ int32_t CmHiSysEventQueryResult(const string funStr)
         }
         return CM_HISYSEVENT_QUERY_FAILED;
     }
-    
+
     return CM_HISYSEVENT_QUERY_FAILED;
 }
 

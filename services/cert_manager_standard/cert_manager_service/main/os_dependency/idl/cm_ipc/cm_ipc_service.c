@@ -52,6 +52,31 @@
 #define MAX_LEN_PRIVATE_KEY     1024
 #define INSTALL_PARAMSET_SZIE   4
 
+static int32_t GetInputParams(const struct CmBlob *paramSetBlob, struct CmParamSet **paramSet,
+    struct CmContext *cmContext, struct CmParamOut *params, uint32_t paramsCount)
+{
+    int32_t ret = CmGetProcessInfoForIPC(cmContext);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get ipc info failed, ret = %d", ret);
+        return ret;
+    }
+
+    /* The paramSet blob pointer needs to be refreshed across processes. */
+    ret = CmGetParamSet((struct CmParamSet *)paramSetBlob->data, paramSetBlob->size, paramSet);
+    if (ret != HKS_SUCCESS) {
+        CM_LOG_E("get paramSet failed, ret = %d", ret);
+        return ret;
+    }
+
+    ret = CmParamSetToParams(*paramSet, params, paramsCount);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get params from paramSet failed, ret = %d", ret);
+        CmFreeParamSet(paramSet); /* if success no need free paramSet */
+    }
+
+    return ret;
+}
+
 static int32_t CmTrustCertificateListPack(struct CmBlob *tempCertificateList, const struct CmBlob *certificateList,
     const struct CertBlob *certBlob, const uint32_t *status)
 {
@@ -981,29 +1006,14 @@ void CmIpcServiceGetAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob
     struct CmBlob fileNames[MAX_COUNT_CERTIFICATE];
     struct CmParamSet *paramSet = NULL;
     struct CmParamOut params[] = {
-        {
-            .tag = CM_TAG_PARAM0_UINT32,
-            .uint32Param = &store
-        },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store },
     };
     uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
     (void)memset_s(fileNames, len, 0, len);
     do {
-        ret = CmGetParamSet((struct CmParamSet *)paramSetBlob->data, paramSetBlob->size, &paramSet);
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("GetAppCertList CmGetParamSet fail, ret = %d", ret);
-            break;
-        }
-
-        ret = CmParamSetToParams(paramSet, params, CM_ARRAY_SIZE(params));
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("GetAppCertList CmParamSetToParams fail, ret = %d", ret);
-            break;
-        }
-
-        ret = CmGetProcessInfoForIPC(&cmContext);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmGetProcessInfoForIPC fail, ret = %d", ret);
+            CM_LOG_E("GetUserCertList get input params failed, ret = %d", ret);
             break;
         }
 
@@ -1185,31 +1195,6 @@ void CmIpcServiceGetAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *ou
     CM_FREE_BLOB(certBlob);
     CM_FREE_BLOB(certificateInfo);
     CM_LOG_I("CmIpcServiceGetAppCert end:%d", ret);
-}
-
-static int32_t GetInputParams(const struct CmBlob *paramSetBlob, struct CmParamSet **paramSet,
-    struct CmContext *cmContext, struct CmParamOut *params, uint32_t paramsCount)
-{
-    int32_t ret = CmGetProcessInfoForIPC(cmContext);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("get ipc info failed, ret = %d", ret);
-        return ret;
-    }
-
-    /* The paramSet blob pointer needs to be refreshed across processes. */
-    ret = CmGetParamSet((struct CmParamSet *)paramSetBlob->data, paramSetBlob->size, paramSet);
-    if (ret != HKS_SUCCESS) {
-        CM_LOG_E("get paramSet failed, ret = %d", ret);
-        return ret;
-    }
-
-    ret = CmParamSetToParams(*paramSet, params, paramsCount);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("get params from paramSet failed, ret = %d", ret);
-        CmFreeParamSet(paramSet); /* if success no need free paramSet */
-    }
-
-    return ret;
 }
 
 static int32_t GetAuthedList(const struct CmContext *context, const struct CmBlob *keyUri, struct CmBlob *outData)
