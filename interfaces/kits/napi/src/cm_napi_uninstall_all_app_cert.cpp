@@ -68,7 +68,7 @@ static napi_value UninstallAllAppCertParseParams(
     napi_value argv[CM_NAPI_UNINSTALL_ALL_APP_CERT_MAX_ARGS] = {0};
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
-    if (argc < CM_NAPI_UNINSTALL_ALL_APP_CERT_MIN_ARGS) {
+    if ((argc != CM_NAPI_UNINSTALL_ALL_APP_CERT_MIN_ARGS) && (argc != CM_NAPI_UNINSTALL_ALL_APP_CERT_MAX_ARGS)) {
         ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
         CM_LOG_E("Missing parameter");
         return nullptr;
@@ -117,7 +117,7 @@ static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCert
             }
             DeleteUninstallAllAppCertAsyncContext(env, context);
         },
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);

@@ -82,7 +82,7 @@ napi_value InstallAppCertParseParams(
     }
 
     size_t index = 0;
-    context->keystore = (CmBlob *)CmMalloc(sizeof(CmBlob));
+    context->keystore = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
     if (context->keystore == nullptr) {
         CM_LOG_E("could not alloc memory");
         return nullptr;
@@ -127,13 +127,13 @@ napi_value InstallAppCertParseParams(
 
 static void InitKeyUri(struct CmBlob *&keyUri)
 {
-    keyUri = (struct CmBlob *)CmMalloc(sizeof(struct CmBlob));
+    keyUri = static_cast<struct CmBlob *>(CmMalloc(sizeof(struct CmBlob)));
     if (keyUri == NULL) {
         CM_LOG_E("malloc keyUri buffer failed");
         return;
     }
 
-    keyUri->data = (uint8_t *)CmMalloc(MAX_LEN_URI);
+    keyUri->data = static_cast<uint8_t *>(CmMalloc(MAX_LEN_URI));
     if (keyUri->data == NULL) {
         CM_LOG_E("malloc keyUri->data buffer failed");
         return;
@@ -194,7 +194,7 @@ napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext cont
             }
             DeleteInstallAppCertAsyncContext(env, context);
         },
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);

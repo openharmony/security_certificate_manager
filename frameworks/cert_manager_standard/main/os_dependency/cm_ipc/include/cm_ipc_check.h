@@ -30,11 +30,11 @@ int32_t CmGetBlobFromBuffer(struct CmBlob *blob, const struct CmBlob *srcBlob, u
 
 int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlob, uint32_t *destOffset);
 
-int32_t CheckCertificateListPara(struct CmBlob *inBlob, struct CmBlob *outBlob, const struct CmContext *cmContext,
-    const uint32_t store, struct CertList *certificateList);
+int32_t CheckCertificateListPara(const struct CmBlob *inBlob, const struct CmBlob *outBlob,
+    const struct CmContext *cmContext, const uint32_t store, const struct CertList *certificateList);
 
-int32_t CheckCertificateInfoPara(struct CmBlob *inBlob, struct CmBlob *outBlob, const struct CmContext *cmContext,
-    const uint32_t store, struct CertInfo *certificateInfo);
+int32_t CheckCertificateInfoPara(const struct CmBlob *inBlob, const struct CmBlob *outBlob,
+    const struct CmContext *cmContext, const uint32_t store, const struct CertInfo *certificateInfo);
 
 #ifdef __cplusplus
 }

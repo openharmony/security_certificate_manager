@@ -63,7 +63,7 @@ napi_value GetAppCertListParseParams(
     napi_value argv[CM_NAPI_GET_APP_CERT_LIST_MAX_ARGS] = {0};
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
-    if (argc < CM_NAPI_GET_APP_CERT_LIST_MIN_ARGS) {
+    if ((argc != CM_NAPI_GET_APP_CERT_LIST_MIN_ARGS) && (argc != CM_NAPI_GET_APP_CERT_LIST_MAX_ARGS)) {
         ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
         CM_LOG_E("Missing parameter");
         return nullptr;
@@ -99,7 +99,7 @@ napi_value GetAppCertListWriteResult(napi_env env, GetAppCertListAsyncContext co
 void InitAppCertList(struct CredentialList *credentialList)
 {
     uint32_t buffSize = (MAX_COUNT_CERTIFICATE * sizeof(struct CredentialAbstract));
-    credentialList->credentialAbstract = (struct CredentialAbstract *)CmMalloc(buffSize);
+    credentialList->credentialAbstract = static_cast<struct CredentialAbstract *>(CmMalloc(buffSize));
     if (credentialList->credentialAbstract == NULL) {
         CM_LOG_E("malloc file buffer failed");
         return;
@@ -123,7 +123,7 @@ napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext cont
         [](napi_env env, void *data) {
             GetAppCertListAsyncContext context = static_cast<GetAppCertListAsyncContext>(data);
 
-            context->credentialList = (struct CredentialList *)CmMalloc(sizeof(struct CredentialList));
+            context->credentialList = static_cast<struct CredentialList *>(CmMalloc(sizeof(struct CredentialList)));
             if (context->credentialList != nullptr) {
                 InitAppCertList(context->credentialList);
             }
@@ -148,7 +148,7 @@ napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext cont
             DeleteGetAppCertListAsyncContext(env, context);
             CM_LOG_I("get app cert list end");
         },
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status napiStatus = napi_queue_async_work(env, context->asyncWork);

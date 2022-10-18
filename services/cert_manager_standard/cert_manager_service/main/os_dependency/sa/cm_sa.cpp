@@ -27,8 +27,6 @@
 #include <unistd.h>
 #include "cm_event_observer.h"
 
-static bool g_certManagerStatusInit = false;
-
 namespace OHOS {
 namespace Security {
 namespace CertManager {
@@ -173,7 +171,7 @@ static int32_t ProcessMessage(uint32_t code, uint32_t outSize, const struct CmBl
                 CM_LOG_E("outData size is invalid, size:%u", outData.size);
                 return HW_SYSTEM_ERROR;
             }
-            outData.data = (uint8_t *)CmMalloc(outData.size);
+            outData.data = static_cast<uint8_t *>(CmMalloc(outData.size));
             if (outData.data == nullptr) {
                 CM_LOG_E("Malloc outData failed.");
                 return HW_SYSTEM_ERROR;
@@ -251,7 +249,7 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
         return HW_SYSTEM_ERROR;
     }
 
-    srcData.data = (uint8_t *)CmMalloc(srcData.size);
+    srcData.data = static_cast<uint8_t *>(CmMalloc(srcData.size));
     if (srcData.data == nullptr) {
         CM_LOG_E("Malloc srcData failed.");
         return HW_SYSTEM_ERROR;
@@ -292,11 +290,9 @@ void CertManagerService::OnStart()
         return;
     }
 
-    if (!g_certManagerStatusInit) {
-        if (CertManagerInitialize() != CMR_OK) {
-            CM_LOG_E("Failed to init CertManagerService");
-            return;
-        }
+    if (CertManagerInitialize() != CMR_OK) {
+        CM_LOG_E("Failed to init CertManagerService");
+        return;
     }
 
     (void)AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);

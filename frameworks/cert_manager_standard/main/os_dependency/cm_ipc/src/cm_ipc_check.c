@@ -18,8 +18,8 @@
 
 #include "cm_log.h"
 
-int32_t CheckCertificateListPara(struct CmBlob *inBlob, struct CmBlob *outBlob, const struct CmContext *cmContext,
-    const uint32_t store, struct CertList *certificateList)
+int32_t CheckCertificateListPara(const struct CmBlob *inBlob, const struct CmBlob *outBlob,
+    const struct CmContext *cmContext, const uint32_t store, const struct CertList *certificateList)
 {
     if ((inBlob == NULL) || (outBlob == NULL) || (cmContext == NULL) || (certificateList == NULL)) {
         CM_LOG_E("CheckCertificateListPara arg error");
@@ -28,8 +28,8 @@ int32_t CheckCertificateListPara(struct CmBlob *inBlob, struct CmBlob *outBlob, 
     return CM_SUCCESS;
 }
 
-int32_t CheckCertificateInfoPara(struct CmBlob *inBlob, struct CmBlob *outBlob, const struct CmContext *cmContext,
-    const uint32_t store, struct CertInfo *certificateInfo)
+int32_t CheckCertificateInfoPara(const struct CmBlob *inBlob, const struct CmBlob *outBlob,
+    const struct CmContext *cmContext, const uint32_t store, const struct CertInfo *certificateInfo)
 {
     if ((inBlob == NULL) || (outBlob == NULL) || (cmContext == NULL) || (certificateInfo == NULL)) {
         CM_LOG_E("CmCertificateInfoPack arg error");

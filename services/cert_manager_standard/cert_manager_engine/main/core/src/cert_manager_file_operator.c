@@ -529,11 +529,14 @@ static int32_t DirRemove(const char *path)
         return CMR_ERROR_INVALID_OPERATION;
     }
 
-    DIR *dirp;
-    struct dirent *dire;
     if (S_ISDIR(tmp.st_mode)) {
         uint32_t i = 0;
-        dirp = opendir(path);
+        struct dirent *dire = NULL;
+        DIR *dirp = opendir(path);
+        if (dirp == NULL) {
+            CM_LOG_E("open dir failed");
+            return CMR_ERROR_OPEN_FILE_FAIL;
+        }
         while ((dire = readdir(dirp)) != NULL) {
             if ((strcmp(dire->d_name, ".") == 0) || (strcmp(dire->d_name, "..") == 0)) {
                 continue;
@@ -551,7 +554,6 @@ static int32_t DirRemove(const char *path)
     }
     return CMR_ERROR_INVALID_ARGUMENT;
 }
-
 
 int32_t CmDirRemove(const char *path)
 {

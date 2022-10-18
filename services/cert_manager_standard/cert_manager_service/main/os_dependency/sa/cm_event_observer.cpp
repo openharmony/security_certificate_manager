@@ -37,7 +37,7 @@ SystemEventSubscriber::SystemEventSubscriber(const OHOS::EventFwk::CommonEventSu
 void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData &data)
 {
     CM_LOG_I("SystemEventSubscriber::OnReceiveEvent");
-    int userId;
+
     struct CmContext context;
     context.uid = INVALID_VALUE;
     auto want = data.GetWant();
@@ -45,6 +45,7 @@ void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData
     if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED ||
         action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
         context.uid = (uint32_t)want.GetIntParam(AppExecFwk::Constants::UID, -1);
+        int userId = 0;
         OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(context.uid, userId);
         context.userId = (uint32_t)userId;
         CM_LOG_I("CmService package removed: uid is %u userId is %u", context.uid, context.userId);
@@ -71,11 +72,6 @@ bool SystemEventObserver::SubscribeSystemEvent()
     matchingSkills.AddEvent(EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED);
     OHOS::EventFwk::CommonEventSubscribeInfo subscriberInfo(matchingSkills);
     systemEventSubscriber_ = std::make_shared<SystemEventSubscriber>(subscriberInfo);
-
-    if (systemEventSubscriber_ == nullptr) {
-        CM_LOG_E("Cm system subscriber nullptr");
-        return false;
-    }
 
     return OHOS::EventFwk::CommonEventManager::SubscribeCommonEvent(systemEventSubscriber_);
 }
