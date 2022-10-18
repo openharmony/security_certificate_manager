@@ -109,7 +109,7 @@ napi_value GetAppCertInfoWriteResult(napi_env env, GetAppCertInfoAsyncContext co
 
 static void InitAppCert(struct Credential *credential)
 {
-    credential->credData.data = (uint8_t *)CmMalloc(MAX_LEN_CERTIFICATE_CHAIN);
+    credential->credData.data = static_cast<uint8_t *>(CmMalloc(MAX_LEN_CERTIFICATE_CHAIN));
     if (credential->credData.data == NULL) {
         CM_LOG_E("malloc file buffer failed");
         return;
@@ -133,7 +133,7 @@ napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext cont
         [](napi_env env, void *data) {
             GetAppCertInfoAsyncContext context = static_cast<GetAppCertInfoAsyncContext>(data);
 
-            context->credential = (struct Credential *)CmMalloc(sizeof(struct Credential));
+            context->credential = static_cast<struct Credential *>(CmMalloc(sizeof(struct Credential)));
             if (context->credential != nullptr) {
                 (void)memset_s(context->credential, sizeof(struct Credential), 0, sizeof(struct Credential));
                 InitAppCert(context->credential);
@@ -158,7 +158,7 @@ napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext cont
             }
             DeleteGetAppCertInfoAsyncContext(env, context);
         },
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);

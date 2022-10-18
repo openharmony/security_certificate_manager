@@ -201,7 +201,8 @@ static napi_value ConvertResultAuthUri(napi_env env, const CmBlob *authUri)
     NAPI_CALL(env, napi_create_object(env, &result));
 
     napi_value authUriNapi = nullptr;
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)authUri->data, NAPI_AUTO_LENGTH, &authUriNapi));
+    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)authUri->data, NAPI_AUTO_LENGTH,
+        &authUriNapi));
     NAPI_CALL(env, napi_set_named_property(env, result, "uri", authUriNapi));
 
     return result;
@@ -301,7 +302,7 @@ static napi_value ConvertResultAuthList(napi_env env, const CmAppUidList *appUid
         }
 
         napi_value element = nullptr;
-        NAPI_CALL(env, napi_create_string_latin1(env, (const char *)uidStr, NAPI_AUTO_LENGTH, &element));
+        NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(uidStr), NAPI_AUTO_LENGTH, &element));
         NAPI_CALL(env, napi_set_element(env, uidListArray, i, element));
     }
 
@@ -342,7 +343,7 @@ static napi_value GrantUidAsyncWork(napi_env env, GrantAsyncContext context)
         env, nullptr, resourceName,
         GrantUidExecute,
         GrantUidComplete,
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
@@ -366,7 +367,7 @@ static napi_value RemoveUidAsyncWork(napi_env env, GrantAsyncContext context)
         env, nullptr, resourceName,
         RemoveUidExecute,
         RemoveOrIsAuthedComplete,
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
@@ -390,7 +391,7 @@ static napi_value IsAuthedAsyncWork(napi_env env, GrantAsyncContext context)
         env, nullptr, resourceName,
         IsAuthedExecute,
         RemoveOrIsAuthedComplete,
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
@@ -414,7 +415,7 @@ static napi_value GetUidListAsyncWork(napi_env env, GrantAsyncContext context)
         env, nullptr, resourceName,
         GetUidListExecute,
         GetUidListComplete,
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);

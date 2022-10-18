@@ -49,7 +49,7 @@ napi_value getCmContextAttribute(napi_env env, napi_value object, const char *ty
         return nullptr;
     }
 
-    srcData = (char *)CmMalloc(length + 1);
+    srcData = static_cast<char *>(CmMalloc(length + 1));
     if (srcData == nullptr) {
         napi_throw_error(env, NULL, "could not alloc memory");
         CM_LOG_E("could not alloc memory");
@@ -85,7 +85,7 @@ napi_value ParseCmContext(napi_env env, napi_value object, CmContext *&cmContext
         return nullptr;
     }
 
-    cmContext = (CmContext *)CmMalloc(sizeof(CmContext));
+    cmContext = static_cast<CmContext *>(CmMalloc(sizeof(CmContext)));
     if (cmContext == nullptr) {
         CmFree(userIdData);
         CmFree(uidData);
@@ -154,7 +154,7 @@ napi_value ParseString(napi_env env, napi_value object, CmBlob *&certUri)
         return nullptr;
     }
 
-    char *data = (char *)CmMalloc(length + 1);
+    char *data = static_cast<char *>(CmMalloc(length + 1));
     if (data == nullptr) {
         napi_throw_error(env, NULL, "could not alloc memory");
         CM_LOG_E("could not alloc memory");
@@ -171,7 +171,7 @@ napi_value ParseString(napi_env env, napi_value object, CmBlob *&certUri)
         return nullptr;
     }
 
-    certUri = (CmBlob *)CmMalloc(sizeof(CmBlob));
+    certUri = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
     if (certUri == nullptr) {
         CmFree(data);
         napi_throw_error(env, NULL, "could not alloc memory");
@@ -202,9 +202,9 @@ napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob)
     if (length == 0) {
         CM_LOG_I("The memory length created is only 1 Byte");
         // The memory length created is only 1 Byte
-        arrayBlob.data = (uint8_t *)CmMalloc(1);
+        arrayBlob.data = static_cast<uint8_t *>(CmMalloc(1));
     } else {
-        arrayBlob.data = (uint8_t *)CmMalloc(length);
+        arrayBlob.data = static_cast<uint8_t *>(CmMalloc(length));
     }
     if (arrayBlob.data == nullptr) {
         CM_LOG_E("Malloc failed");
@@ -244,7 +244,7 @@ napi_ref GetCallback(napi_env env, napi_value object)
 
 static napi_value GenerateAarrayBuffer(napi_env env, uint8_t *data, uint32_t size)
 {
-    uint8_t *buffer = (uint8_t *)CmMalloc(size);
+    uint8_t *buffer = static_cast<uint8_t *>(CmMalloc(size));
     if (buffer == nullptr) {
         return nullptr;
     }
@@ -280,10 +280,10 @@ napi_value GenerateCertAbstractArray(napi_env env, const struct CertAbstract *ce
         napi_value subjectName = nullptr;
         napi_value status = nullptr;
 
-        napi_create_string_latin1(env, (const char *)certAbstract[i].uri, NAPI_AUTO_LENGTH, &uri);
-        napi_create_string_latin1(env, (const char *)certAbstract[i].certAlias,
+        napi_create_string_latin1(env, static_cast<const char *>(certAbstract[i].uri), NAPI_AUTO_LENGTH, &uri);
+        napi_create_string_latin1(env, static_cast<const char *>(certAbstract[i].certAlias),
             NAPI_AUTO_LENGTH, &certAlias);
-        napi_create_string_latin1(env, (const char *)certAbstract[i].subjectName,
+        napi_create_string_latin1(env, static_cast<const char *>(certAbstract[i].subjectName),
             NAPI_AUTO_LENGTH, &subjectName);
         napi_get_boolean(env, certAbstract[i].status, &status);
 
@@ -311,11 +311,11 @@ napi_value GenerateCredentialAbstractArray(napi_env env,
         napi_value type = nullptr;
         napi_value alias = nullptr;
         napi_value keyUri = nullptr;
-        napi_create_string_latin1(env, (const char *)credentialAbstract[i].type,
+        napi_create_string_latin1(env, static_cast<const char *>(credentialAbstract[i].type),
             NAPI_AUTO_LENGTH, &type);
-        napi_create_string_latin1(env, (const char *)credentialAbstract[i].alias,
+        napi_create_string_latin1(env, static_cast<const char *>(credentialAbstract[i].alias),
             NAPI_AUTO_LENGTH, &alias);
-        napi_create_string_latin1(env, (const char *)credentialAbstract[i].keyUri,
+        napi_create_string_latin1(env, static_cast<const char *>(credentialAbstract[i].keyUri),
             NAPI_AUTO_LENGTH, &keyUri);
 
         napi_value element = nullptr;
@@ -346,23 +346,24 @@ napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo)
     napi_value notAfter = nullptr;
     napi_value fingerprintSha256 = nullptr;
     napi_value certInfoBlob = nullptr;
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)certInfo->uri, NAPI_AUTO_LENGTH, &uri));
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)certInfo->certAlias,
+    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->uri), NAPI_AUTO_LENGTH, &uri));
+    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->certAlias),
         NAPI_AUTO_LENGTH, &certAlias));
 
     NAPI_CALL(env, napi_get_boolean(env, certInfo->status, &status));
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)certInfo->issuerName,
+    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->issuerName),
         NAPI_AUTO_LENGTH, &issuerName));
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)certInfo->subjectName,
+    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->subjectName),
         NAPI_AUTO_LENGTH, &subjectName));
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)certInfo->serial, NAPI_AUTO_LENGTH, &serial));
+    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->serial),
+        NAPI_AUTO_LENGTH, &serial));
 
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)certInfo->notBefore,
+    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->notBefore),
         NAPI_AUTO_LENGTH, &notBefore));
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)certInfo->notAfter,
+    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->notAfter),
         NAPI_AUTO_LENGTH, &notAfter));
 
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)certInfo->fingerprintSha256,
+    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->fingerprintSha256),
         NAPI_AUTO_LENGTH, &fingerprintSha256));
 
     napi_value certBuffer = GenerateAarrayBuffer(env, certInfo->certInfo.data, certInfo->certInfo.size);
@@ -441,9 +442,12 @@ napi_value GenerateAppCertInfo(napi_env env, const struct Credential *credential
     napi_value certNum = nullptr;
     napi_value keyNum = nullptr;
     napi_value credData = nullptr;
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)credential->type, NAPI_AUTO_LENGTH, &type));
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)credential->alias, NAPI_AUTO_LENGTH, &alias));
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)credential->keyUri, NAPI_AUTO_LENGTH, &keyUri));
+    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(credential->type),
+        NAPI_AUTO_LENGTH, &type));
+    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(credential->alias),
+        NAPI_AUTO_LENGTH, &alias));
+    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(credential->keyUri),
+        NAPI_AUTO_LENGTH, &keyUri));
 
     NAPI_CALL(env, napi_create_int32(env, credential->certNum, &certNum));
     NAPI_CALL(env, napi_create_int32(env, credential->keyNum, &keyNum));

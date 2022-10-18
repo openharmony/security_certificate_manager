@@ -431,7 +431,7 @@ static void InitExecute(napi_env env, void *data)
 
 napi_value GenerateAarrayBuffer(napi_env env, uint8_t *data, uint32_t size)
 {
-    uint8_t *buffer = (uint8_t *)CmMalloc(size);
+    uint8_t *buffer = static_cast<uint8_t *>(CmMalloc(size));
     if (buffer == nullptr) {
         return nullptr;
     }
@@ -590,7 +590,7 @@ static napi_value CMInitAsyncWork(napi_env env, SignVerifyAsyncContext context)
         env, nullptr, resourceName,
         InitExecute,
         InitComplete,
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
@@ -614,7 +614,7 @@ static napi_value CMUpdateAsyncWork(napi_env env, SignVerifyAsyncContext context
         env, nullptr, resourceName,
         UpdateExecute,
         UpdateOrAbortComplete,
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
@@ -638,7 +638,7 @@ static napi_value CMFinishAsyncWork(napi_env env, SignVerifyAsyncContext context
         env, nullptr, resourceName,
         FinishExecute,
         FinishComplete,
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
@@ -662,7 +662,7 @@ static napi_value CMAbortAsyncWork(napi_env env, SignVerifyAsyncContext context)
         env, nullptr, resourceName,
         AbortExecute,
         UpdateOrAbortComplete,
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);

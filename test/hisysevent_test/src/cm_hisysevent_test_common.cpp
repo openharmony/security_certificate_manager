@@ -133,13 +133,13 @@ void FreeCMBlobData(struct CmBlob *blob)
 
 uint32_t InitUserCertInfo(struct CertInfo **cInfo)
 {
-    *cInfo = (struct CertInfo *)CmMalloc(sizeof(struct CertInfo));
+    *cInfo = static_cast<struct CertInfo *>(CmMalloc(sizeof(struct CertInfo)));
     if (*cInfo == nullptr) {
         return CMR_ERROR_MALLOC_FAIL;
     }
     (void)memset_s(*cInfo, sizeof(struct CertInfo), 0, sizeof(struct CertInfo));
 
-    (*cInfo)->certInfo.data = (uint8_t *)CmMalloc(MAX_LEN_CERTIFICATE);
+    (*cInfo)->certInfo.data = static_cast<uint8_t *>(CmMalloc(MAX_LEN_CERTIFICATE));
     if ((*cInfo)->certInfo.data == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
     }
@@ -150,13 +150,13 @@ uint32_t InitUserCertInfo(struct CertInfo **cInfo)
 
 uint32_t InitUserCertList(struct CertList **cList)
 {
-    *cList = (struct CertList *)CmMalloc(sizeof(struct CertList));
+    *cList = static_cast<struct CertList *>(CmMalloc(sizeof(struct CertList)));
     if (*cList == nullptr) {
         return CMR_ERROR_MALLOC_FAIL;
     }
 
     uint32_t buffSize = MAX_COUNT_CERTIFICATE * sizeof(struct CertAbstract);
-    (*cList)->certAbstract = (struct CertAbstract *)CmMalloc(buffSize);
+    (*cList)->certAbstract = static_cast<struct CertAbstract *>(CmMalloc(buffSize));
     if ((*cList)->certAbstract == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
     }
@@ -176,5 +176,4 @@ void FreeCertList(struct CertList *certList)
     certList->certAbstract = nullptr;
 
     CmFree(certList);
-    certList = nullptr;
 }
