@@ -54,6 +54,7 @@ extern "C" {
 
 #define MAX_BUF_LEN             64
 #define CM_ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
+#define EOK  (0)
 
 /*
  * Align to 4-tuple
