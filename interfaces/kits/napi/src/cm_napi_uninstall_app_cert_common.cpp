@@ -125,7 +125,7 @@ napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext 
             }
             DeleteUninstallAppCertAsyncContext(env, context);
         },
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);

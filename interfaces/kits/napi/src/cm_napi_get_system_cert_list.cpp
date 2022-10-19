@@ -149,7 +149,7 @@ static void GetCertListExecute(napi_env env, void *data)
 {
     GetCertListAsyncContext context = static_cast<GetCertListAsyncContext>(data);
 
-    context->certificateList = (struct CertList *)CmMalloc(sizeof(struct CertList));
+    context->certificateList = static_cast<struct CertList *>(CmMalloc(sizeof(struct CertList)));
     if (context->certificateList == nullptr) {
         CM_LOG_E("malloc certificateList fail");
         context->result = CMR_ERROR_MALLOC_FAIL;
@@ -161,7 +161,7 @@ static void GetCertListExecute(napi_env env, void *data)
         context->result = CmGetCertList(context->cmContext, context->store, context->certificateList);
     } else {
         uint32_t buffSize = MAX_COUNT_CERTIFICATE * sizeof(struct CertAbstract);
-        context->certificateList->certAbstract = (struct CertAbstract *)CmMalloc(buffSize);
+        context->certificateList->certAbstract = static_cast<struct CertAbstract *>(CmMalloc(buffSize));
         if (context->certificateList->certAbstract == nullptr) {
             CM_LOG_E("malloc certificateList certAbstract fail");
             context->result = CMR_ERROR_MALLOC_FAIL;
@@ -208,7 +208,7 @@ static napi_value GetCertListAsyncWork(napi_env env, GetCertListAsyncContext con
         resourceName,
         GetCertListExecute,
         GetCertListComplete,
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
