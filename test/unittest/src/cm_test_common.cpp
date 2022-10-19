@@ -33,6 +33,8 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 
+#define EOK  (0)
+
 using namespace testing::ext;
 namespace CertmanagerTest {
 #ifndef errno_t
