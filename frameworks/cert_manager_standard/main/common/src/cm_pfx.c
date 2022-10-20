@@ -131,5 +131,9 @@ int32_t CmParsePkcs12Cert(const struct CmBlob *p12Cert, char *passWd, EVP_PKEY *
     if (caCert != NULL) {
         sk_X509_pop_free(caCert, X509_free);
     }
+    if (cert != NULL) {
+        X509_free(cert);
+    }
     return ret;
 }
+
