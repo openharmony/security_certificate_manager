@@ -46,8 +46,6 @@
 #define MAX_PATH_LEN                        256
 #define NAME_DIGEST_SIZE                    4
 
-#define EOK  (0)
-
 #ifndef errno_t
 typedef int errno_t;
 #endif
