@@ -20,50 +20,68 @@
 #endif
 
 #include "cert_manager_api.h"
-#include "cm_client_ipc.h"
+#include "cm_ipc_client.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_type.h"
 
 #include "cm_request.h"
 
-CM_API_EXPORT int32_t CmGetCertList(const struct CmContext *cmContext, const uint32_t store,
-    struct CertList *certificateList)
+CM_API_EXPORT int32_t CmGetCertList(const uint32_t store, struct CertList *certificateList)
 {
     CM_LOG_I("enter get certificate list");
-    if ((cmContext == NULL) || (certificateList == NULL)) {
+    if (certificateList == NULL) {
+        CM_LOG_E("invalid input arguments");
         return CMR_ERROR_NULL_POINTER;
     }
 
-    int32_t ret = CmClientGetCertList(cmContext, store, certificateList);
+    if ((certificateList->certAbstract == NULL) || (store != CM_SYSTEM_TRUSTED_STORE)) {
+        CM_LOG_E("invalid input arguments store:%u", store);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CmClientGetCertList(store, certificateList);
     CM_LOG_I("leave get certificate list, result = %d", ret);
     return ret;
 }
 
-CM_API_EXPORT int32_t CmGetCertInfo(const struct CmContext *cmContext, const struct CmBlob *certUri,
-    const uint32_t store, struct CertInfo *certificateInfo)
+CM_API_EXPORT int32_t CmGetCertInfo(const struct CmBlob *certUri, uint32_t store,
+    struct CertInfo *certificateInfo)
 {
     CM_LOG_I("enter get certificate info");
-    if ((cmContext == NULL) || (certUri == NULL) || (certificateInfo == NULL)) {
+    if ((certUri == NULL) || (certificateInfo == NULL)) {
+        CM_LOG_E("invalid input arguments");
         return CMR_ERROR_NULL_POINTER;
     }
 
-    int32_t ret = CmClientGetCertInfo(cmContext, certUri, store, certificateInfo);
+    if ((certificateInfo->certInfo.data == NULL) || (certificateInfo->certInfo.size == 0) ||
+        (store != CM_SYSTEM_TRUSTED_STORE)) {
+        CM_LOG_E("invalid input arguments store:%u", store);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CmClientGetCertInfo(certUri, store, certificateInfo);
     CM_LOG_I("leave get certificate info, result = %d", ret);
     return ret;
 }
 
-CM_API_EXPORT int32_t CmSetCertStatus(const struct CmContext *cmContext, const struct CmBlob *certUri,
-    const uint32_t store, const bool status)
+CM_API_EXPORT int32_t CmSetCertStatus(const struct CmBlob *certUri, const uint32_t store,
+    const bool status)
 {
     CM_LOG_I("enter set certificate status");
-    if ((cmContext == NULL) || (certUri == NULL)) {
+    if (certUri == NULL) {
+        CM_LOG_E("invalid input arguments");
         return CMR_ERROR_NULL_POINTER;
     }
 
-    uint32_t uStatus = status ? 0: 1; // 0 indicates the certificate enabled status
+    if (store != CM_SYSTEM_TRUSTED_STORE) {
+        CM_LOG_E("invalid input arguments store:%u", store);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
 
-    int32_t ret = CmClientSetCertStatus(cmContext, certUri, store, uStatus);
+    uint32_t uStatus = status ? 0 : 1; // 0 indicates the certificate enabled status
+
+    int32_t ret = CmClientSetCertStatus(certUri, store, uStatus);
     CM_LOG_I("leave set certificate status, result = %d", ret);
     return ret;
 }
@@ -268,7 +286,7 @@ CM_API_EXPORT int32_t CmSetUserCertStatus(const struct CmBlob *certUri, uint32_t
         return CMR_ERROR_NULL_POINTER;
     }
 
-    uint32_t uStatus = status? 0: 1; // 0 indicates the certificate enabled status
+    uint32_t uStatus = status ? 0: 1; // 0 indicates the certificate enabled status
 
     int32_t ret = CmClientSetUserCertStatus(certUri, store, uStatus);
     CM_LOG_I("leave set cert status, result = %d", ret);

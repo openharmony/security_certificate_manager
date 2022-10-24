@@ -24,14 +24,13 @@ extern "C"
 {
 #endif
 
-int32_t CmClientGetCertList(const struct CmContext *cmContext, const uint32_t store,
-    struct CertList *certificateList);
+int32_t CmClientGetCertList(const uint32_t store, struct CertList *certificateList);
 
-int32_t CmClientGetCertInfo(const struct CmContext *cmContext, const struct CmBlob *certUri,
-    const uint32_t store, struct CertInfo *certificateList);
+int32_t CmClientGetCertInfo(const struct CmBlob *certUri, const uint32_t store,
+    struct CertInfo *certificateInfo);
 
-int32_t CmClientSetCertStatus(const struct CmContext *cmContext, const struct CmBlob *certUri,
-    const uint32_t store, const uint32_t status);
+int32_t CmClientSetCertStatus(const struct CmBlob *certUri, const uint32_t store,
+    const uint32_t status);
 
 int32_t CmClientInstallAppCert(const struct CmBlob *appCert, const struct CmBlob *appCertPwd,
     const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri);

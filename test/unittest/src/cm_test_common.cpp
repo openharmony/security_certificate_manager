@@ -59,14 +59,38 @@ void SetATPermission(void)
     OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
 }
 
-uint32_t InitCertList(struct CertList **certlist)
+int32_t InitCertInfo(struct CertInfo *certInfo)
+{
+    if (certInfo == nullptr) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+
+    certInfo->certInfo.data =  static_cast<uint8_t *>(CmMalloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data  == NULL) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
+
+    return CM_SUCCESS;
+}
+
+
+int32_t InitCertList(struct CertList **certlist)
 {
     *certlist = static_cast<struct CertList *>(CmMalloc(sizeof(struct CertList)));
     if (*certlist == nullptr) {
         return CMR_ERROR_MALLOC_FAIL;
     }
-    (*certlist)->certAbstract = nullptr;
-    (*certlist)->certsCount = 0;
+
+    struct CertList list;
+    uint32_t buffSize = sizeof(list.certsCount) + sizeof(struct CertListAbtInfo) * MAX_COUNT_CERTIFICATE;
+
+    (*certlist)->certAbstract = (struct CertAbstract *)CmMalloc(buffSize);
+    if ((*certlist)->certAbstract == NULL) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+
+    (*certlist)->certsCount = MAX_COUNT_CERTIFICATE;
 
     return CM_SUCCESS;
 }

@@ -44,6 +44,7 @@ ohos_shared_library("cert_manager_engine_core_standard") {
     "src/cert_manager_auth.c",
     "src/cert_manager_auth_list_mgr.c",
     "src/cert_manager_auth_mgr.c",
+    "src/cert_manager_check.c",
     "src/cert_manager_double_list.c",
     "src/cert_manager_file.c",
     "src/cert_manager_file_operator.c",

@@ -41,8 +41,8 @@ int32_t CmCertificateInfoPack(struct CmBlob *inData, const struct CmContext *cmC
 int32_t CmCertificateListUnpackFromService(const struct CmBlob *outData, bool needEncode,
     const struct CmContext *context, struct CertList *certificateList);
 
-int32_t CmCertificateInfoUnpackFromService(const struct CmBlob *outData, const struct CmContext *context,
-    struct CertInfo *certificateInfo, const struct CmBlob *certUri);
+int32_t CmCertificateInfoUnpackFromService(const struct CmBlob *outData, struct CertInfo *certificateInfo,
+    const struct CmBlob *certUri);
 
 int32_t CmCertificateStatusPack(struct CmBlob *inData, const struct CmContext *cmContext, const struct CmBlob *certUri,
     const uint32_t store, const uint32_t status);

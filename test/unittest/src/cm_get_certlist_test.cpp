@@ -123,7 +123,7 @@ void CmGetCertListTest::TearDown()
  */
 HWTEST_F(CmGetCertListTest, SimpleGetCertListTest001, TestSize.Level0)
 {
-    int32_t ret = CmGetCertList(&firstUserCtx, CM_SYSTEM_TRUSTED_STORE, lstCert);
+    int32_t ret = CmGetCertList(CM_SYSTEM_TRUSTED_STORE, lstCert);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmGetCertList failed,retcode:" << ret;
 }
 
@@ -138,7 +138,7 @@ HWTEST_F(CmGetCertListTest, PerformanceGetCertListTest002, TestSize.Level0)
     for (int times = 0; times < TIMES_PERFORMANCE; ++times) {
         struct CertList *listCert = NULL;
         ASSERT_TRUE(InitCertList(&listCert) == CM_SUCCESS);
-        int32_t ret = CmGetCertList(&secondUserCtx, CM_SYSTEM_TRUSTED_STORE, listCert);
+        int32_t ret = CmGetCertList(CM_SYSTEM_TRUSTED_STORE, listCert);
         EXPECT_EQ(ret, CM_SUCCESS) << "CmGetCertList Performance failed,retcode:" << ret;
         FreeCertList(listCert);
     }
@@ -152,7 +152,7 @@ HWTEST_F(CmGetCertListTest, PerformanceGetCertListTest002, TestSize.Level0)
  */
 HWTEST_F(CmGetCertListTest, GetCertListContent003, TestSize.Level0)
 {
-    int32_t ret = CmGetCertList(&firstUserCtx, CM_SYSTEM_TRUSTED_STORE, lstCert);
+    int32_t ret = CmGetCertList(CM_SYSTEM_TRUSTED_STORE, lstCert);
     EXPECT_EQ(ret, CM_SUCCESS) << "firstUserCtx CmGetCertList failed,retcode:" << ret;
 
     uint32_t length = sizeof(g_listexpectResult) / sizeof(g_listexpectResult[0]);
@@ -172,12 +172,12 @@ HWTEST_F(CmGetCertListTest, GetCertListContent003, TestSize.Level0)
  */
 HWTEST_F(CmGetCertListTest, AppGetCertListCompare004, TestSize.Level0)
 {
-    int32_t ret = CmGetCertList(&firstUserCtx, CM_SYSTEM_TRUSTED_STORE, lstCert);
+    int32_t ret = CmGetCertList(CM_SYSTEM_TRUSTED_STORE, lstCert);
     EXPECT_EQ(ret, CM_SUCCESS) << "first  CmGetCertList failed,retcode:" << ret;
 
     struct CertList *secondListCert = NULL;
     ASSERT_TRUE(InitCertList(&secondListCert) == CM_SUCCESS);
-    ret = CmGetCertList(&secondUserCtx, CM_SYSTEM_TRUSTED_STORE, secondListCert);
+    ret = CmGetCertList(CM_SYSTEM_TRUSTED_STORE, secondListCert);
     EXPECT_EQ(ret, CM_SUCCESS) << "secondUserCtx CmGetCertList failed,retcode:" << ret;
 
     EXPECT_EQ(lstCert->certsCount, secondListCert->certsCount) << "firstUserCtx count:" << lstCert->certsCount
@@ -194,8 +194,7 @@ HWTEST_F(CmGetCertListTest, AppGetCertListCompare004, TestSize.Level0)
  */
 HWTEST_F(CmGetCertListTest, ExceptionGetCertList005, TestSize.Level0)
 {
-    EXPECT_EQ(CmGetCertList(NULL, CM_SYSTEM_TRUSTED_STORE, lstCert), CMR_ERROR_NULL_POINTER);
-    EXPECT_EQ(CmGetCertList(&firstUserCtx, CM_SYSTEM_TRUSTED_STORE, NULL), CMR_ERROR_NULL_POINTER);
-    EXPECT_EQ(CmGetCertList(&secondUserCtx, 10, lstCert), CM_FAILURE);
+    EXPECT_EQ(CmGetCertList(CM_SYSTEM_TRUSTED_STORE, NULL), CMR_ERROR_NULL_POINTER);
+    EXPECT_EQ(CmGetCertList(10, lstCert), CMR_ERROR_INVALID_ARGUMENT);
 }
 }

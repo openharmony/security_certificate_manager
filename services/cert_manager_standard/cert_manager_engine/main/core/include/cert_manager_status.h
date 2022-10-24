@@ -78,12 +78,6 @@ struct CertStatus {
     char *fileName;
 };
 
-int32_t CertManagerSetCertificatesStatus(
-    const struct CmContext *context,
-    const struct CmBlob *certUri,
-    uint32_t store,
-    uint32_t status);
-
 int32_t CertManagerGetCertificatesStatus(
     const struct CmContext *context,
     const struct CmBlob *certificate,

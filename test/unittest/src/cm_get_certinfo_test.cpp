@@ -151,12 +151,15 @@ void CmGetCertInfoTest::TearDown()
 HWTEST_F(CmGetCertInfoTest, SimpleCmGetCertInfo001, TestSize.Level0)
 {
     char *uri = g_listCertInfoexpectResult[0].CertInfo.uri;
-    struct CmBlob uriBlob = {strlen(uri), (uint8_t *)(uri)};
+    struct CmBlob uriBlob = {strlen(uri) + 1, (uint8_t *)(uri)};
     struct CertInfo certInfo;
     unsigned int len = sizeof(struct CertInfo);
     (void)memset_s(&certInfo, len, 0, len);
-    int32_t ret = CmGetCertInfo(&firstUserCtx, &uriBlob, CM_SYSTEM_TRUSTED_STORE, &certInfo);
-    EXPECT_EQ(ret, CM_SUCCESS) << "CmGetCertInfo failed,retcode:" << ret;
+    int32_t ret = InitCertInfo(&certInfo);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CertInfo malloc faild, retcode:" << ret;
+
+    ret = CmGetCertInfo(&uriBlob, CM_SYSTEM_TRUSTED_STORE, &certInfo);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmGetCertInfo failed, retcode:" << ret;
 
     EXPECT_EQ(CompareCertInfo(&certInfo, &(g_listCertInfoexpectResult[0].CertInfo)), true) <<DumpCertInfo(&certInfo);
 
@@ -174,17 +177,23 @@ HWTEST_F(CmGetCertInfoTest, AppGetCertInfoCompare002, TestSize.Level0)
     int length = sizeof(g_listCertInfoexpectResult) / sizeof(g_listCertInfoexpectResult[0]);
 
     char *uri = g_listCertInfoexpectResult[length - 1].CertInfo.uri;
-    struct CmBlob uriBlob = {strlen(uri), (uint8_t *)(uri)};
+    struct CmBlob uriBlob = {strlen(uri) + 1, (uint8_t *)(uri)};
 
     struct CertInfo firstCertInfo, secondCertInfo;
-
     unsigned int len = sizeof(struct CertInfo);
+
     (void)memset_s(&firstCertInfo, len, 0, len);
+    int32_t ret = InitCertInfo(&firstCertInfo);
+    EXPECT_EQ(ret, CM_SUCCESS) << "firstCertInfo malloc faild, retcode:" << ret;
+
     (void)memset_s(&secondCertInfo, len, 0, len);
-    int32_t ret = CmGetCertInfo(&firstUserCtx, &uriBlob, CM_SYSTEM_TRUSTED_STORE, &firstCertInfo);
+    ret = InitCertInfo(&secondCertInfo);
+    EXPECT_EQ(ret, CM_SUCCESS) << "secondCertInfo malloc faild, retcode:" << ret;
+
+    ret = CmGetCertInfo(&uriBlob, CM_SYSTEM_TRUSTED_STORE, &firstCertInfo);
     EXPECT_EQ(ret, CM_SUCCESS) << "first CmGetCertInfo failed,retcode:" << ret;
 
-    ret = CmGetCertInfo(&secondUserCtx, &uriBlob, CM_SYSTEM_TRUSTED_STORE, &secondCertInfo);
+    ret = CmGetCertInfo(&uriBlob, CM_SYSTEM_TRUSTED_STORE, &secondCertInfo);
     EXPECT_EQ(ret, CM_SUCCESS) << "second CmGetCertInfo failed,retcode:" << ret;
 
     EXPECT_EQ(CompareCertInfo(&firstCertInfo, &secondCertInfo), true) << "Diffrent app do not get the same cert.";
@@ -202,19 +211,21 @@ HWTEST_F(CmGetCertInfoTest, AppGetAllCertInfo003, TestSize.Level0)
 {
     unsigned int len = sizeof(struct CertInfo);;
     struct CertInfo certInfo;
-    int32_t ret = CmGetCertList(&firstUserCtx, CM_SYSTEM_TRUSTED_STORE, lstCert);
+    int32_t ret = CmGetCertList(CM_SYSTEM_TRUSTED_STORE, lstCert);
 
     EXPECT_EQ(ret, CM_SUCCESS) << "CmGetCertList failed,retcode:" << ret;
 
     for (uint32_t i = 0; i < lstCert->certsCount; ++i) {
         (void)memset_s(&certInfo, len, 0, len);
+        ret = InitCertInfo(&certInfo);
+        EXPECT_EQ(ret, CM_SUCCESS) << "CertInfo malloc faild, retcode:" << ret;
 
         struct CertAbstract *ptr = &(lstCert->certAbstract[i]);
         ASSERT_TRUE(ptr != NULL);
 
-        struct CmBlob uriBlob = {strlen(ptr->uri), (uint8_t *)(ptr->uri)};
+        struct CmBlob uriBlob = {strlen(ptr->uri) + 1, (uint8_t *)(ptr->uri)};
 
-        ret = CmGetCertInfo(&secondUserCtx, &uriBlob, CM_SYSTEM_TRUSTED_STORE, &certInfo);
+        ret = CmGetCertInfo(&uriBlob, CM_SYSTEM_TRUSTED_STORE, &certInfo);
         EXPECT_EQ(ret, CM_SUCCESS) << " CmGetCertInfo failed,retcode:" << ptr->uri;
         FreeCMBlobData(&(certInfo.certInfo));
     }
@@ -229,26 +240,24 @@ HWTEST_F(CmGetCertInfoTest, AppGetAllCertInfo003, TestSize.Level0)
 HWTEST_F(CmGetCertInfoTest, ExceptionGetCertInfoTest004, TestSize.Level0)
 {
     char *uri = g_listCertInfoexpectResult[1].CertInfo.uri;
-    struct CmBlob uriBlob = {strlen(uri), (uint8_t *)(uri)};
+    struct CmBlob uriBlob = {strlen(uri) + 1, (uint8_t *)(uri)};
     struct CertInfo certInfo;
     unsigned int len = sizeof(struct CertInfo);
     (void)memset_s(&certInfo, len, 0, len);
-    EXPECT_EQ(CmGetCertInfo(NULL, &uriBlob, CM_SYSTEM_TRUSTED_STORE, &certInfo),
-    CMR_ERROR_NULL_POINTER);
-    FreeCMBlobData(&(certInfo.certInfo));
-    EXPECT_EQ(CmGetCertInfo(&secondUserCtx, NULL, CM_SYSTEM_TRUSTED_STORE, &certInfo),
-    CMR_ERROR_NULL_POINTER);
-    FreeCMBlobData(&(certInfo.certInfo));
-    EXPECT_EQ(CmGetCertInfo(&firstUserCtx, &uriBlob, 10,  &certInfo), CM_FAILURE);
-    FreeCMBlobData(&(certInfo.certInfo));
-    EXPECT_EQ(CmGetCertInfo(&firstUserCtx, &uriBlob, CM_SYSTEM_TRUSTED_STORE, NULL),
-    CMR_ERROR_NULL_POINTER);
-    FreeCMBlobData(&(certInfo.certInfo));
+    int32_t ret = InitCertInfo(&certInfo);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CertInfo malloc faild, retcode:" << ret;
+
+    EXPECT_EQ(CmGetCertInfo(NULL, CM_SYSTEM_TRUSTED_STORE, &certInfo), CMR_ERROR_NULL_POINTER);
+
+    EXPECT_EQ(CmGetCertInfo(&uriBlob, 10,  &certInfo), CMR_ERROR_INVALID_ARGUMENT);
+
+    EXPECT_EQ(CmGetCertInfo(&uriBlob, CM_SYSTEM_TRUSTED_STORE, NULL), CMR_ERROR_NULL_POINTER);
 
     const char *invalidUri = "INVALID";
     struct CmBlob invalidUriBlob = {strlen(invalidUri), (uint8_t *)invalidUri};
-    EXPECT_EQ(CmGetCertInfo(&firstUserCtx, &invalidUriBlob, CM_SYSTEM_TRUSTED_STORE, &certInfo),
-    CMR_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(CmGetCertInfo(&invalidUriBlob, CM_SYSTEM_TRUSTED_STORE, &certInfo),
+        CMR_ERROR_INVALID_ARGUMENT);
+
     FreeCMBlobData(&(certInfo.certInfo));
 }
 }

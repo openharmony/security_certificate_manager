@@ -30,11 +30,20 @@ int32_t CmGetBlobFromBuffer(struct CmBlob *blob, const struct CmBlob *srcBlob, u
 
 int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlob, uint32_t *destOffset);
 
-int32_t CheckCertificateListPara(const struct CmBlob *inBlob, const struct CmBlob *outBlob,
-    const struct CmContext *cmContext, const uint32_t store, const struct CertList *certificateList);
+int32_t CmServiceGetSystemCertListCheck(const uint32_t store);
 
-int32_t CheckCertificateInfoPara(const struct CmBlob *inBlob, const struct CmBlob *outBlob,
-    const struct CmContext *cmContext, const uint32_t store, const struct CertInfo *certificateInfo);
+int32_t CmServiceGetSystemCertCheck(const uint32_t store, const struct CmBlob *keyUri);
+
+int32_t CmServiceSetCertStatusCheck(const uint32_t store, const struct CmBlob *certUri, const uint32_t status);
+
+int32_t CmServiceInstallAppCertCheck(const struct CmBlob *appCert, const struct CmBlob *appCertPwd,
+    const struct CmBlob *certAlias, const uint32_t store, const struct CmContext *cmContext);
+
+int32_t CmServiceUninstallAppCertCheck(const uint32_t store, const struct CmBlob *certUri);
+
+int32_t CmServiceGetAppCertListCheck(const uint32_t store);
+
+int32_t CmServiceGetAppCertCheck(const uint32_t store, const struct CmBlob *keyUri);
 
 #ifdef __cplusplus
 }

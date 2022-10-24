@@ -71,22 +71,6 @@ int32_t CertManagerListCertificatesBySubjectName(
     uint32_t store,
     const struct CmBlob *subjectName);
 
-/**
- * List trusted certificates in the indicated trusted store or stores.
- * Memory will be allocated and should be released by CertManagerFreeTrustedCertificatesList.
- * Paras:
- * [IN] context - The context of the call.
- * [IN] certificate - The certificate for which the status is to set.
- * [IN] store - The trusted store where the certificate is to be considered.
- * [IN] status - The new status of the certificate.Must be one of CERT_STATUS* values.
- * Returns -CMR_OK on success.
- */
-int32_t CertManagerSetCertificatesStatus(
-    const struct CmContext *context,
-    const struct CmBlob *certificate,
-    uint32_t store,
-    uint32_t status);
-
 int32_t CertManagerFindCertFileName(
     const struct CmContext *context, const struct CmBlob *certificate, uint32_t store,
     struct CmMutableBlob *path, struct CmMutableBlob *fileName);

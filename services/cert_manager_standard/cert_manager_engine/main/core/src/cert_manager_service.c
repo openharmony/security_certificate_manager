@@ -33,10 +33,15 @@
 #include "cert_manager_uri.h"
 #include "cm_event_process.h"
 
-static int32_t CheckUri(const struct CmBlob *keyUri)
+int32_t CheckUri(const struct CmBlob *keyUri)
 {
     if (CmCheckBlob(keyUri) != CM_SUCCESS) {
         CM_LOG_E("invalid uri");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (keyUri->size > MAX_AUTH_LEN_URI) {
+        CM_LOG_E("invalid uri len:%u", keyUri->size);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -106,16 +111,6 @@ static int32_t GetPrivateAppCert(const struct CmContext *context, uint32_t store
 int32_t CmServiceGetAppCert(const struct CmContext *context, uint32_t store,
     struct CmBlob *keyUri, struct CmBlob *certBlob)
 {
-    if (CheckUri(keyUri) != CM_SUCCESS) {
-        CM_LOG_E("invalid input arguments");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (!CmHasCommonPermission()) {
-        CM_LOG_E("permission check failed");
-        return CMR_ERROR_PERMISSION_DENIED;
-    }
-
     if (store == CM_CREDENTIAL_STORE) {
         return GetPublicAppCert(context, store, keyUri, certBlob);
     } else if (store == CM_PRI_CREDENTIAL_STORE) {
@@ -261,25 +256,37 @@ int32_t CmServiceAbort(const struct CmContext *context, const struct CmBlob *han
 int32_t CmServiceGetCertList(const struct CmContext *context, uint32_t store, struct CmMutableBlob *certFileList)
 {
     int32_t ret = CM_SUCCESS;
-    struct CmMutableBlob uidPathList = { 0, NULL }; /* uid path list */
+    struct CmMutableBlob pathList = { 0, NULL }; /* uid path list */
 
     do {
-        /* get all uid path*/
-        ret = CmGetCertPathList(context, store, &uidPathList);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("GetCertPathList fail, ret = %d", ret);
+        if (store == CM_USER_TRUSTED_STORE) {
+            /* get all uid path*/
+            ret = CmGetCertPathList(context, store, &pathList);
+            if (ret != CM_SUCCESS) {
+                CM_LOG_E("GetCertPathList fail, ret = %d", ret);
+                break;
+            }
+        } else if (store == CM_SYSTEM_TRUSTED_STORE) {
+            ret = CmGetSysCertPathList(context, &pathList);
+            if (ret != CM_SUCCESS) {
+                CM_LOG_E("GetCertPathList fail, ret = %d", ret);
+                break;
+            }
+        } else {
+            ret = CM_FAILURE;
+            CM_LOG_E("Invalid store");
             break;
         }
 
         /* create certFilelist(path + name) from every uid */
-        ret = CreateCertFileList(&uidPathList, certFileList);
+        ret = CreateCertFileList(&pathList, certFileList);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CreateCertFileList fail, ret = %d", ret);
             break;
         }
     } while (0);
-    if (uidPathList.data != NULL) {
-        CmFreeCertPaths(&uidPathList);
+    if (pathList.data != NULL) {
+        CmFreeCertPaths(&pathList);
     }
     return ret;
 }
@@ -397,8 +404,8 @@ int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlo
     return ret;
 }
 
-int32_t CmServiceGetCertInfoPack(const struct CmBlob *certificateData, uint32_t status,
-    const struct CmBlob *certUri, struct CmBlob *certificateInfo)
+int32_t CmServiceGetCertInfoPack(const uint32_t store, const struct CmBlob *certificateData,
+    uint32_t status, const struct CmBlob *certUri, struct CmBlob *certificateInfo)
 {
     if (certificateInfo->size == 0) {
         CM_LOG_I("cert file is not exist");
@@ -424,6 +431,11 @@ int32_t CmServiceGetCertInfoPack(const struct CmBlob *certificateData, uint32_t 
     ret = CopyUint32ToBuffer(status, certificateInfo, &offset);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("copy cert status failed");
+        return ret;
+    }
+
+    if (store == CM_SYSTEM_TRUSTED_STORE) {
+        CM_LOG_I("system root ca have no alias");
         return ret;
     }
 

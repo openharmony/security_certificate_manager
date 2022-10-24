@@ -668,7 +668,7 @@ HWTEST_F(CmAppCertTest, CmGetAppCertAbnormalTest004, TestSize.Level0)
     int32_t ret;
     uint32_t store = CM_CREDENTIAL_STORE;
     uint8_t keyUriBuf[] = "oh:t=ak;o=keyA;u=0;a=0";
-    struct CmBlob keyUri = { strlen((char*)keyUriBuf), keyUriBuf };
+    struct CmBlob keyUri = { strlen((char*)keyUriBuf) + 1, keyUriBuf };
     struct Credential certificate;
     (void)memset_s(&certificate, sizeof(Credential), 0, sizeof(Credential));
 
@@ -839,7 +839,7 @@ HWTEST_F(CmAppCertTest, AppCertUnInstallBaseTest001, TestSize.Level0)
     int32_t ret;
     uint8_t keyUriBuf[] = "oh:t=ak;o=keyA;u=0;a=0";
     uint32_t store = CM_CREDENTIAL_STORE;
-    struct CmBlob keyUri = { strlen((char*)keyUriBuf), keyUriBuf };
+    struct CmBlob keyUri = { strlen((char*)keyUriBuf) + 1, keyUriBuf };
 
     uint8_t appCertPwdBuf[] = "123456";
     uint8_t certAliasBuf[] = "keyA";
@@ -882,7 +882,7 @@ HWTEST_F(CmAppCertTest, AppCertUnInstallAbnormalTest003, TestSize.Level0)
     int32_t ret;
     uint8_t keyUriBuf[] = "oh:t=ak;o=keyA;u=0;a=0";
     uint32_t store = 10;
-    struct CmBlob keyUri = { strlen((char*)keyUriBuf), keyUriBuf };
+    struct CmBlob keyUri = { strlen((char*)keyUriBuf) + 1, keyUriBuf };
     ret = CmUninstallAppCert(&keyUri, store);
 
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "AbNormalAppCertUnInstallTest test failed, retcode:" << ret;

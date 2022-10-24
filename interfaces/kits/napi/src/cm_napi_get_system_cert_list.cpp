@@ -157,19 +157,20 @@ static void GetCertListExecute(napi_env env, void *data)
     }
     context->certificateList->certAbstract = nullptr;
     context->certificateList->certsCount = 0;
-    if (context->store == CM_SYSTEM_TRUSTED_STORE) {
-        context->result = CmGetCertList(context->cmContext, context->store, context->certificateList);
-    } else {
-        uint32_t buffSize = MAX_COUNT_CERTIFICATE * sizeof(struct CertAbstract);
-        context->certificateList->certAbstract = static_cast<struct CertAbstract *>(CmMalloc(buffSize));
-        if (context->certificateList->certAbstract == nullptr) {
-            CM_LOG_E("malloc certificateList certAbstract fail");
-            context->result = CMR_ERROR_MALLOC_FAIL;
-            return;
-        }
-        (void)memset_s(context->certificateList->certAbstract, buffSize, 0, buffSize);
-        context->certificateList->certsCount = MAX_COUNT_CERTIFICATE;
 
+    uint32_t buffSize = MAX_COUNT_CERTIFICATE * sizeof(struct CertAbstract);
+    context->certificateList->certAbstract = static_cast<struct CertAbstract *>(CmMalloc(buffSize));
+    if (context->certificateList->certAbstract == nullptr) {
+        CM_LOG_E("malloc certificateList certAbstract fail");
+        context->result = CMR_ERROR_MALLOC_FAIL;
+        return;
+    }
+    (void)memset_s(context->certificateList->certAbstract, buffSize, 0, buffSize);
+    context->certificateList->certsCount = MAX_COUNT_CERTIFICATE;
+
+    if (context->store == CM_SYSTEM_TRUSTED_STORE) {
+        context->result = CmGetCertList(context->store, context->certificateList);
+    } else {
         context->result = CmGetUserCertList(context->store, context->certificateList);
     }
 }

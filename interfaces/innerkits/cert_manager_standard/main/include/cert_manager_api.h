@@ -22,14 +22,13 @@
 extern "C" {
 #endif
 
-CM_API_EXPORT int32_t CmGetCertList(const struct CmContext *cmContext, uint32_t store,
-    struct CertList *certificateList);
+CM_API_EXPORT int32_t CmGetCertList(uint32_t store, struct CertList *certificateList);
 
-CM_API_EXPORT int32_t CmGetCertInfo(const struct CmContext *cmContext, const struct CmBlob *certUri,
-    uint32_t store, struct CertInfo *certificateInfo);
+CM_API_EXPORT int32_t CmGetCertInfo(const struct CmBlob *certUri, uint32_t store,
+    struct CertInfo *certificateInfo);
 
-CM_API_EXPORT int32_t CmSetCertStatus(const struct CmContext *cmContext, const struct CmBlob *certUri,
-    uint32_t store, const bool status);
+CM_API_EXPORT int32_t CmSetCertStatus(const struct CmBlob *certUri, const uint32_t store,
+    const bool status);
 
 CM_API_EXPORT int32_t CmInstallAppCert(const struct CmBlob *appCert, const struct CmBlob *appCertPwd,
     const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri);
