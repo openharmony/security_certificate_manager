@@ -252,7 +252,7 @@ static int32_t CreateCertFile(struct CertFilePath *certFilePath, const char *pat
         i++;
     }
 
-    if ((i - *certCount) != fileNums) {
+    if ((i - *certCount) != (uint32_t)fileNums) {
         return CM_FAILURE;
     }
     (void) CmCloseDir(d);
