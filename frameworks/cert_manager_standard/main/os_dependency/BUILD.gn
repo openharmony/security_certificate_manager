@@ -34,7 +34,6 @@ ohos_static_library("libcert_manager_os_dependency_standard_static") {
     "_CM_LOG_ENABLE_",
   ]
   sources = [
-    "./cm_ipc/src/cm_ipc_check.c",
     "./cm_ipc/src/cm_ipc_client.c",
     "./cm_ipc/src/cm_ipc_serialization.c",
     "./cm_ipc/src/cm_load_sa.cpp",

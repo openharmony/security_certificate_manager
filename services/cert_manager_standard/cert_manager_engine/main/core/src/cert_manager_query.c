@@ -186,6 +186,60 @@ int32_t CmGetCertPathList(const struct CmContext *context, uint32_t store,
     return ret;
 }
 
+int32_t CmGetSysCertPathList(const struct CmContext *context, struct CmMutableBlob *certPathList)
+{
+    int32_t ret = CM_SUCCESS;
+    struct CmMutableBlob *cPathList = NULL;
+    uint8_t pathBuf[MAX_PATH_LEN] = {0};
+
+    ret = memcpy_s(pathBuf, MAX_PATH_LEN - 1, SYSTEM_CA_STORE, strlen(SYSTEM_CA_STORE));
+    if (ret != EOK) {
+        CM_LOG_E("copy path failed, path:%u", pathBuf);
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+
+    do {
+        cPathList = (struct CmMutableBlob *)CMMalloc(sizeof(struct CmMutableBlob));
+        if (cPathList == NULL) {
+            CM_LOG_E("malloc cPathList failed");
+            ret = CMR_ERROR_MALLOC_FAIL;
+            break;
+        }
+
+        (void)memset_s(cPathList, sizeof(struct CmMutableBlob), 0,
+            sizeof(struct CmMutableBlob));
+
+        if (MallocCertPathList(&cPathList[0], (char *)pathBuf) != CM_SUCCESS) {
+            CM_LOG_E("malloc cPathList[0] failed");
+            ret = CMR_ERROR_MALLOC_FAIL;
+            break;
+        }
+
+        char *path = (char *)cPathList[0].data;
+        if (sprintf_s(path, cPathList[0].size, "%s", pathBuf) < 0) {
+            CM_LOG_E("sprintf_s path failed");
+            ret = CMR_ERROR_INVALID_OPERATION;
+            break;
+        }
+
+        /* system root ca path only have one layer */
+        certPathList->data = (uint8_t *)cPathList;
+        certPathList->size = 1;
+
+        return CM_SUCCESS;
+    } while (0);
+
+    if (cPathList[0].data != NULL) {
+        CM_FREE_PTR(cPathList[0].data);
+    }
+
+    if (cPathList != NULL) {
+        CM_FREE_PTR(cPathList);
+    }
+
+    return ret;
+}
+
 static int32_t MallocCertFilePath(struct CertFilePath *certFilePath, const char *path,
     const char *fName)
 {
@@ -344,6 +398,63 @@ int32_t CmGetCertAlias(const char *uri, struct CmBlob *certAlias)
     return ret;
 }
 
+static int32_t CmSysCertInfoGetCertAlias(const uint32_t store, const struct CmBlob *certInfo,
+    struct CmBlob *certAlias)
+{
+    X509 *x509cert = InitCertContext(certInfo->data, certInfo->size);
+    int32_t certAliasLen = GetX509SubjectName(x509cert, CM_ORGANIZATION_NAME,
+        (char *)certAlias->data, MAX_LEN_CERT_ALIAS);
+    if (certAliasLen == 0) {
+        certAliasLen = GetX509SubjectName(x509cert, CM_COMMON_NAME,
+            (char *)certAlias->data, MAX_LEN_CERT_ALIAS);
+        if (certAliasLen == 0) {
+            CM_LOG_E("Failed to get certificates CN name");
+            return CMR_ERROR;
+        }
+    }
+
+    if (certAliasLen < 0) {
+        return CMR_ERROR;
+    }
+
+    if (x509cert != NULL) {
+        X509_free(x509cert);
+    }
+    certAlias->size = (uint32_t)certAliasLen;
+
+    return CM_SUCCESS;
+}
+
+int32_t CmCertInfoGetCertAlias(const uint32_t store, const struct CertFilePath *certFilePath,
+    struct CmBlob *certAlias)
+{
+    int32_t ret = CM_SUCCESS;
+    struct CmBlob certInfo = { 0, NULL };
+
+    if (store == CM_USER_TRUSTED_STORE) {
+        ret = CmGetCertAlias((char *)certFilePath->fileName.data, certAlias);
+    } else if (store == CM_SYSTEM_TRUSTED_STORE) {
+        ret = CmGetCertData((char *)certFilePath->fileName.data,
+            (char *)certFilePath->path.data, &certInfo);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed to get cert data");
+            return CM_FAILURE;
+        }
+
+        ret = CmSysCertInfoGetCertAlias(store, &certInfo, certAlias);
+    } else {
+        CM_LOG_E("Invalid store");
+        return CM_FAILURE;
+    }
+
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to get cert certAlias");
+    }
+
+    CM_FREE_BLOB(certInfo);
+    return ret;
+}
+
 static int32_t CmGetCertSubjectName(const char *fName, const char *path, struct CmBlob *subjectName)
 {
     int32_t ret = CM_SUCCESS;
@@ -399,7 +510,7 @@ int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
         }
         certBlob->uri[i].size = certFilePath[i].fileName.size; /* uri */
 
-        ret = CmGetCertAlias((char *)certFilePath[i].fileName.data, &(certBlob->certAlias[i])); /* certAlias */
+        ret = CmCertInfoGetCertAlias(store, &certFilePath[i], &(certBlob->certAlias[i]));
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get cert certAlias");
             return CM_FAILURE;

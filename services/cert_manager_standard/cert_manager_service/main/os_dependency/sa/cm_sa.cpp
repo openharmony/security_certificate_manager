@@ -109,9 +109,6 @@ static struct CmIpcPoint g_cmIpcHandler[] = {
     { CM_MSG_UNINSTALL_USER_CERTIFICATE, CmIpcServiceUninstallUserCert },
     { CM_MSG_UNINSTALL_ALL_USER_CERTIFICATE, CmIpcServiceUninstallAllUserCert },
 
-};
-
-static struct CmIpcEntryPoint g_cmIpcMessageHandler[] = {
     { CM_MSG_GET_CERTIFICATE_LIST, CmIpcServiceGetCertificateList },
     { CM_MSG_GET_CERTIFICATE_INFO, CmIpcServiceGetCertificateInfo },
     { CM_MSG_SET_CERTIFICATE_STATUS, CmIpcServiceSetCertStatus },
@@ -150,16 +147,7 @@ static inline bool IsInvalidLength(uint32_t length)
 
 static int32_t ProcessMessage(uint32_t code, uint32_t outSize, const struct CmBlob &srcData, MessageParcel &reply)
 {
-    uint32_t size = sizeof(g_cmIpcMessageHandler) / sizeof(g_cmIpcMessageHandler[0]);
-    for (uint32_t i = 0; i < size; ++i) {
-        CM_LOG_E("ProcessMessage msgId:%x gmsg:%x", code, g_cmIpcMessageHandler[i].msgId);
-        if (code == g_cmIpcMessageHandler[i].msgId) {
-            g_cmIpcMessageHandler[i].handler((const struct CmBlob *)&srcData, (const CmContext *)&reply);
-            return NO_ERROR;
-        }
-    }
-
-    size = sizeof(g_cmIpcHandler) / sizeof(g_cmIpcHandler[0]);
+    uint32_t size = sizeof(g_cmIpcHandler) / sizeof(g_cmIpcHandler[0]);
     for (uint32_t i = 0; i < size; ++i) {
         if (code != g_cmIpcHandler[i].msgId) {
             continue;

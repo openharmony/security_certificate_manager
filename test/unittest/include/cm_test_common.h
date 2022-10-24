@@ -32,7 +32,7 @@
 namespace CertmanagerTest {
 void FreeCMBlobData(struct CmBlob *blob);
 
-uint32_t InitCertList(struct CertList **certlist);
+int32_t InitCertList(struct CertList **certlist);
 
 void FreeCertList(struct CertList *certList);
 
@@ -57,6 +57,8 @@ void SetATPermission(void);
 uint32_t InitUserCertList(struct CertList **cList);
 
 uint32_t InitUserCertInfo(struct CertInfo **cInfo);
+
+int32_t InitCertInfo(struct CertInfo *certInfo);
 
 }
 #endif /* CM_TEST_COMMON_H */

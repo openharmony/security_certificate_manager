@@ -19,7 +19,7 @@
 #include "cm_mem.h"
 #include "cm_param.h"
 
-#include "cm_ipc_check.h"
+#include "cert_manager_check.h"
 
 static int32_t GetContextFromBuffer(struct CmContext *cmContext, const struct CmBlob *srcData, uint32_t *offset)
 {

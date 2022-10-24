@@ -129,7 +129,7 @@ static void SetCertStatusExecute(napi_env env, void *data)
 {
     SetCertStatusAsyncContext context = static_cast<SetCertStatusAsyncContext>(data);
     if (context->store == CM_SYSTEM_TRUSTED_STORE) {
-        context->result = CmSetCertStatus(context->cmContext, context->certUri, context->store,
+        context->result = CmSetCertStatus(context->certUri, context->store,
             context->status);
     } else if (context->store == CM_USER_TRUSTED_STORE) {
         context->result = CmSetUserCertStatus(context->certUri, context->store, context->status);

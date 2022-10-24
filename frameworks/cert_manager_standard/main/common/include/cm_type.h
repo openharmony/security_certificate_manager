@@ -40,6 +40,7 @@ extern "C" {
 #define MAX_SUFFIX_LEN           16
 #define MAX_COUNT_CERTIFICATE    256
 #define MAX_LEN_URI              64
+#define MAX_AUTH_LEN_URI         256
 #define MAX_LEN_CERT_ALIAS       64
 #define MAX_LEN_SUBJECT_NAME     256
 #define MAX_LEN_PACKGE_NAME      64
@@ -194,6 +195,16 @@ struct CertBlob {
     struct CmBlob subjectName[MAX_COUNT_CERTIFICATE];
 };
 
+struct CertListAbtInfo {
+    uint32_t uriSize;
+    char uri[MAX_LEN_URI];
+    uint32_t aliasSize;
+    char certAlias[MAX_LEN_CERT_ALIAS];
+    uint32_t status;
+    uint32_t subjectNameSize;
+    char subjectName[MAX_LEN_SUBJECT_NAME];
+};
+
 struct CertAbstract {
     char uri[MAX_LEN_URI];
     char certAlias[MAX_LEN_CERT_ALIAS];
@@ -204,6 +215,14 @@ struct CertAbstract {
 struct CertList {
     uint32_t certsCount;
     struct CertAbstract *certAbstract;
+};
+
+struct CertAbtInfo {
+    uint32_t aliasSize;
+    char certAlias[MAX_LEN_CERT_ALIAS];
+    uint32_t status;
+    uint32_t certsize;
+    uint8_t certData[MAX_LEN_CERTIFICATE];
 };
 
 struct CertInfo {
