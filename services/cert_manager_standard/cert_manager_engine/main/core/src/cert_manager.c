@@ -595,7 +595,7 @@ static int32_t CmGetMatchedFileNameIndex(const struct CmContext *context, const 
 }
 
 static int32_t CmGetMatchedFileNames(struct CmMutableBlob *matchName, const struct CmMutableBlob *fname,
-    uint32_t count, uint8_t *indexes)
+    uint32_t count, const uint8_t *indexes)
 {
     uint32_t i;
     uint32_t index;
@@ -969,10 +969,6 @@ int32_t CmGetUri(const char *filePath, struct CmBlob *uriBlob)
     }
 
     uint32_t filePathLen = strlen(filePath) + 1; /* include '\0' at end */
-    if (filePathLen == 0) {
-        return CM_FAILURE;
-    }
-
     for (i = filePathLen - 1; i >= 0; i--) {
         if (filePath[i] == '/') {
             break;
@@ -1190,7 +1186,7 @@ static int32_t RemoveAllUserCert(const struct CmContext *context, uint32_t store
     struct CmMutableBlob fileNames = { 0, NULL };
     struct CmMutableBlob *fNames = NULL;
     struct CmBlob uri[MAX_COUNT_CERTIFICATE];
-    struct CmMutableBlob pathBlob = { sizeof(path), (uint8_t *)path };
+    struct CmMutableBlob pathBlob = { strlen(path) + 1, (uint8_t *)path }; /* include '\0' at end. */
 
     uint32_t uriArraryLen = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
     (void)memset_s(uri, uriArraryLen, 0, uriArraryLen);

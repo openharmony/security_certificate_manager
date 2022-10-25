@@ -294,7 +294,7 @@ static napi_value InstallUserCertAsyncWork(napi_env env, UserCertAsyncContext co
         env, nullptr, resourceName,
         InstallUserCertExecute,
         InstallUserCertComplete,
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
@@ -345,7 +345,7 @@ static napi_value UninstallUserCertAsyncWork(napi_env env, UserCertAsyncContext 
         env, nullptr, resourceName,
         UninstallUserCertExecute,
         UninstallComplete,
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
@@ -375,7 +375,7 @@ static napi_value UninstallAllUserCertAsyncWork(napi_env env, UserCertAsyncConte
         env, nullptr, resourceName,
         UninstallAllUserCertExecute,
         UninstallComplete,
-        (void *)context,
+        static_cast<void *>(context),
         &context->asyncWork));
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
