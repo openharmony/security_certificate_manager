@@ -47,51 +47,6 @@ static int32_t GetContextFromBuffer(struct CmContext *cmContext, const struct Cm
     return ret;
 }
 
-int32_t CmTrustCertificateListUnpack(const struct CmBlob *srcData, struct CmContext *cmContext, uint32_t *store)
-{
-    uint32_t offset = 0;
-
-    int32_t ret = GetContextFromBuffer(cmContext, srcData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("get cmContext failed");
-        return ret;
-    }
-
-    ret = GetUint32FromBuffer(store, srcData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("get store failed");
-        return ret;
-    }
-
-    return ret;
-}
-
-int32_t CmTrustCertificateInfoUnpack(const struct CmBlob *srcData, struct CmContext *cmContext,
-    struct CmBlob *uriBlob, uint32_t *store)
-{
-    uint32_t offset = 0;
-
-    int32_t ret = GetContextFromBuffer(cmContext, srcData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("get cmContext failed");
-        return ret;
-    }
-
-    ret = CmGetBlobFromBuffer(uriBlob, srcData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("malloc packageName data failed");
-        return ret;
-    }
-
-    ret = GetUint32FromBuffer(store, srcData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("get store failed");
-        return ret;
-    }
-
-    return ret;
-}
-
 int32_t CmCertificateStatusUnpack(const struct CmBlob *srcData, struct CmContext *cmContext,
     struct CmBlob *uriBlob, uint32_t *store, uint32_t *status)
 {

@@ -18,6 +18,10 @@
 
 #include "cm_type_inner.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum CmMessage {
 #ifndef _CM_L1_TEE_
     CM_MSG_BASE = 0x3a400, /* range of message value defined by router. globally unique */
@@ -52,10 +56,6 @@ enum CmMessage {
 
     CM_MSG_MAX, /* new cmd type must be added before CM_MSG_MAX */
 };
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /*
  * SendRequest - Send the request message to target module by function call or ipc or other ways.

@@ -28,11 +28,6 @@
 extern "C" {
 #endif
 
-// Authentication related macros. These have to follow the definitions in HUKS.
-#define CM_AUTH_TYPE_NONE       0
-#define CM_AUTH_TYPE_BIO        1
-#define CM_AUTH_TYPE_PASSCODE   2
-
 enum CMErrorCode {
     CMR_OK = 0,
     CMR_ERROR = -1,
