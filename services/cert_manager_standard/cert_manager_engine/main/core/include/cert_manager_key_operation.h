@@ -18,15 +18,15 @@
 
 #include "cm_type.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum CmSignVerifyCmd {
     SIGN_VERIFY_CMD_UPDATE,
     SIGN_VERIFY_CMD_FINISH,
     SIGN_VERIFY_CMD_ABORT,
 };
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 int32_t CmKeyOpGenMacKey(const struct CmBlob *alias);
 

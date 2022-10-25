@@ -22,14 +22,6 @@
 extern "C" {
 #endif
 
-int32_t CmTrustCertificateListUnpack(const struct CmBlob *srcData, struct CmContext *cmContext, uint32_t *store);
-
-int32_t CmTrustCertificateInfoUnpack(const struct CmBlob *srcData, struct CmContext *cmContext,
-    struct CmBlob *uriBlob, uint32_t *store);
-
-int32_t CmCertificateStatusUnpack(const struct CmBlob *srcData, struct CmContext *cmContext,
-    struct CmBlob *uriBlob, uint32_t *store, uint32_t* status);
-
 int32_t CmParamSetToParams(const struct CmParamSet *paramSet, struct CmParamOut *outParams, uint32_t cnt);
 
 #ifdef __cplusplus

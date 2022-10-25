@@ -123,11 +123,8 @@ static inline int32_t CheckKeyObjectType(uint32_t type)
     return CMR_OK;
 }
 
-int32_t CertManagerImportKeyPair(
-    const struct CMApp *caller,
-    const struct CmBlob *keyPair,
-    const struct CMKeyProperties *properties,
-    const char *name)
+int32_t CertManagerImportKeyPair(const struct CMApp *caller, const struct CmBlob *keyPair,
+    const struct CMKeyProperties *properties, const char *name)
 {
     ASSERT_ARGS(caller && keyPair && properties && name);
     ASSERT_ARGS(strlen(name) > 0);

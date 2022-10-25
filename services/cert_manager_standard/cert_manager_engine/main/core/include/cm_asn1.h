@@ -94,23 +94,12 @@ do { \
 extern "C" {
 #endif
 
-int32_t CmAsn1GetObj(struct CmBlob *next, struct CmAsn1Obj *obj, const struct CmBlob *data);
-
 int32_t CmAsn1ExtractTag(struct CmBlob *next, struct CmAsn1Obj *obj, const struct CmBlob *data,
     uint32_t expected_tag);
 
 static inline int32_t CheckAsn1Blob(const struct CmAsn1Blob *blob)
 {
     if ((blob == NULL) || (blob->data == NULL) || (blob->size == 0)) {
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    return CM_SUCCESS;
-}
-
-static inline int32_t CheckAsn1Obj(const struct CmAsn1Obj *obj)
-{
-    if ((obj == NULL) || (CheckAsn1Blob(&obj->header) != CM_SUCCESS) ||
-        (CheckAsn1Blob(&obj->value) != CM_SUCCESS)) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     return CM_SUCCESS;

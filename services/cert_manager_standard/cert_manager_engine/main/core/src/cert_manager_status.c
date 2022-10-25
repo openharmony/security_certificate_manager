@@ -744,28 +744,12 @@ static int32_t CertManagerStatusFile(const struct CmContext *context, struct Cer
     return CMR_OK;
 }
 
-static int32_t CertStatus(const struct CmContext *context, const struct CmBlob *certificate,
-    uint32_t store, uint32_t status, uint32_t *stp)
-{
-    char fnBuf[CERT_MAX_PATH_LEN] = {0};
-    struct CmMutableBlob fileName = { sizeof(fnBuf), (uint8_t *) fnBuf };
-    char pathBuf[CERT_MAX_PATH_LEN] = {0};
-    struct CmMutableBlob path = { sizeof(pathBuf), (uint8_t *) pathBuf };
-    ASSERT_FUNC(CertManagerFindCertFileName(context, certificate, store, &path, &fileName));
-    struct CertFile certFile = {0, 0};
-
-    certFile.path = &(CM_BLOB(&path));
-    certFile.fileName = &(CM_BLOB(&fileName));
-
-    return CertManagerStatusFile(context, certFile, store, status, stp);
-}
-
 int32_t SetcertStatus(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, uint32_t status, uint32_t *stp)
 {
     char pathBuf[CERT_MAX_PATH_LEN] = {0};
     struct CmMutableBlob path = { sizeof(pathBuf), (uint8_t *) pathBuf };
-    struct CertFile certFile = {0, 0};
+    struct CertFile certFile = { 0, 0 };
     int32_t ret = CertManagerFindCertFileNameByUri(context, certUri, store, &path);
     if (ret != CMR_OK) {
         CM_LOG_E("CertManagerFindCertFileNameByUri error = %d", ret);
@@ -775,12 +759,6 @@ int32_t SetcertStatus(const struct CmContext *context, const struct CmBlob *cert
     certFile.fileName = &(CM_BLOB(certUri));
 
     return CertManagerStatusFile(context, certFile, store, status, stp);
-}
-
-int32_t CertManagerGetCertificatesStatus(const struct CmContext *context, const struct CmBlob *certificate,
-    uint32_t store, uint32_t *status)
-{
-    return CertStatus(context, certificate, store, CERT_STATUS_INVALID, status);
 }
 
 int32_t CmSetStatusEnable(const struct CmContext *context, struct CmMutableBlob *pathBlob,

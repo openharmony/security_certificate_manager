@@ -18,6 +18,10 @@
 
 #include "cm_type.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _CM_LOG_ENABLE_
 #undef LOG_TAG
 #define LOG_TAG "CM"
@@ -31,10 +35,6 @@ enum CmLogLevel {
     CM_LOG_LEVEL_W,
     CM_LOG_LEVEL_D,
 };
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifdef _CM_LOG_ENABLE_
 void CmLog(uint32_t logLevel, const char *funcName, uint32_t lineNo, const char *format, ...);

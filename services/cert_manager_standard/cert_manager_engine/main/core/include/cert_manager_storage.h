@@ -18,17 +18,15 @@
 
 #include "cm_type.h"
 
-#define CERT_MAX_PATH_LEN   256
-#define CERT_DIR            "/data/service/el1/public/cert_manager_service/certificates"
-
-#define CREDNTIAL_STORE     "/data/service/el1/public/cert_manager_service/certificates/credential/"
-#define SYSTEM_CA_STORE     "/system/etc/security/certificates/"
-#define USER_CA_STORE       "/data/service/el1/public/cert_manager_service/certificates/user/"
-#define PRI_CREDNTIAL_STORE        "/data/service/el1/public/cert_manager_service/certificates/priv_credential/"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define CERT_DIR            "/data/service/el1/public/cert_manager_service/certificates"
+#define CREDNTIAL_STORE     "/data/service/el1/public/cert_manager_service/certificates/credential/"
+#define SYSTEM_CA_STORE     "/system/etc/security/certificates/"
+#define USER_CA_STORE       "/data/service/el1/public/cert_manager_service/certificates/user/"
+#define PRI_CREDNTIAL_STORE "/data/service/el1/public/cert_manager_service/certificates/priv_credential/"
 
 int32_t GetRootPath(uint32_t store, char *rootPath, uint32_t pathLen);
 

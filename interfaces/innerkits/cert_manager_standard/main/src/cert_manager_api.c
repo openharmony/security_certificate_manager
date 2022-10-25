@@ -13,12 +13,7 @@
  * limitations under the License.
  */
 
-#ifdef CM_CONFIG_FILE
-#include CM_CONFIG_FILE
-#else
 #include "cm_config.h"
-#endif
-
 #include "cm_ipc_client.h"
 #include "cm_log.h"
 #include "cm_mem.h"

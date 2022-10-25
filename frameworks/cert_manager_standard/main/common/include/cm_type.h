@@ -54,6 +54,7 @@ extern "C" {
 #define MAX_LEN_APP_CERT_PASSWD 16
 
 #define MAX_BUF_LEN             64
+#define CERT_MAX_PATH_LEN       256
 #define CM_ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
 
 /*
