@@ -25,8 +25,6 @@
 #include "cm_type.h"
 #include "cert_manager_file_operator.h"
 
-#define MAX_LEN_URI          64
-
 inline uint32_t CertManagerFileSize(const char *path, const char *fileName)
 {
     return CmFileSize(path, fileName);

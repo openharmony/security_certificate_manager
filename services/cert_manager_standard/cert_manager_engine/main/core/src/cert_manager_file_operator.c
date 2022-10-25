@@ -375,7 +375,7 @@ static int32_t CmUidLayerGetFileNames(const char *filePath, struct CmBlob *fileN
     return CM_SUCCESS;
 }
 
-static int32_t CmUidLayerGetFileCountAndNames(const char *path, struct CmBlob *fileNames,
+int32_t CmUidLayerGetFileCountAndNames(const char *path, struct CmBlob *fileNames,
     const uint32_t arraySize, uint32_t *fileCount)
 {
     uint32_t count = *fileCount;
@@ -459,7 +459,7 @@ int32_t CmUserIdLayerGetFileCountAndNames(const char *path, struct CmBlob *fileN
             closedir(dir);
             return CMR_ERROR_INVALID_OPERATION;
         }
-        CM_LOG_E("CmIpcServiceGetAppCert07:%d", *fileCount);
+
         if ((dire->d_type == DT_DIR) && (strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0)) {
             if (CmUidLayerGetFileCountAndNames(userIdPath, fileNames, arraySize, fileCount) != CM_SUCCESS) {
                 CM_LOG_E("CmUidLayerGetFileCountAndNames faild");
@@ -470,7 +470,6 @@ int32_t CmUserIdLayerGetFileCountAndNames(const char *path, struct CmBlob *fileN
             (void)remove(userIdPath);
         }
         dire = readdir(dir);
-        CM_LOG_E("CmIpcServiceGetAppCert20:%d", *fileCount);
     }
     closedir(dir);
     return CM_SUCCESS;

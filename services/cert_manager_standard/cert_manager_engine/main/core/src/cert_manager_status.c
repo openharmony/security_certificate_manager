@@ -777,16 +777,6 @@ int32_t SetcertStatus(const struct CmContext *context, const struct CmBlob *cert
     return CertManagerStatusFile(context, certFile, store, status, stp);
 }
 
-int32_t CertManagerSetCertificatesStatus(const struct CmContext *context, const struct CmBlob *certUri,
-    uint32_t store, uint32_t status)
-{
-    if (CmCheckBlob(certUri) != CM_SUCCESS) {
-        CM_LOG_E("input params invalid");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    return SetcertStatus(context, certUri, store, status, NULL);
-}
-
 int32_t CertManagerGetCertificatesStatus(const struct CmContext *context, const struct CmBlob *certificate,
     uint32_t store, uint32_t *status)
 {

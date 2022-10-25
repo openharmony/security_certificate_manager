@@ -362,14 +362,9 @@ int32_t CertManagerListTrustedCertificates(const struct CmContext *context, stru
     char path[CERT_MAX_PATH_LEN] = {0};
     struct CmMutableBlob pathBlob = { sizeof(path), (uint8_t *)path };
 
-    if (!CmHasCommonPermission()) {
-        CM_LOG_E("permission check failed");
-        return CMR_ERROR_PERMISSION_DENIED;
-    }
-
     int32_t ret = CmGetFilePath(context, store, &pathBlob);
     if (ret != CMR_OK) {
-        CM_LOG_E("Failed obtain path fot store %x", store);
+        CM_LOG_E("Failed obtain path for store %x", store);
         return CMR_ERROR;
     }
     ret = CertManagerGetFilenames(&fileNames, path, certBlob->uri);
@@ -875,12 +870,6 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
 {
     ASSERT_ARGS(context && keyUri && keyUri->data && keyUri->size);
     int32_t ret;
-
-    if (!CmPermissionCheck(store)) {
-        CM_LOG_E("CmPermissionCheck check failed");
-        return CMR_ERROR_PERMISSION_DENIED;
-    }
-
     if (store == CM_CREDENTIAL_STORE) {
         ret = CmAuthDeleteAuthInfo(context, keyUri);
         if (ret != CM_SUCCESS) {
@@ -929,7 +918,7 @@ static int32_t CmAppCertGetFilePath(const struct CmContext *context, const uint3
 
     switch (store) {
         case CM_CREDENTIAL_STORE :
-            ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u", CREDNTIAL_STORE, context->userId);
+            ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u/%u", CREDNTIAL_STORE, context->userId, context->uid);
             break;
         case CM_PRI_CREDENTIAL_STORE :
             ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u", APP_CA_STORE, context->userId);
@@ -1072,22 +1061,25 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
     char pathBuf[CERT_MAX_PATH_LEN] = {0};
     struct CmBlob path = { sizeof(pathBuf), (uint8_t*)pathBuf };
 
-    if (store != CM_CREDENTIAL_STORE && store != CM_PRI_CREDENTIAL_STORE) {
-        CM_LOG_E("Parm is invalid store:%u", store);
-        return CM_FAILURE;
-    }
-
     int32_t ret = CmAppCertGetFilePath(context, store, &path);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get file path for store:%u faild", store);
         return CM_FAILURE;
     }
 
-    ret = CmUserIdLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
+    CM_LOG_I("Get app cert list path:%s", pathBuf);
+
+    if (store == CM_CREDENTIAL_STORE) {
+        ret = CmUidLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
+    } else {
+        ret = CmUserIdLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
+    }
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get file count and names from path faild ret:%d:path:%s", ret, pathBuf);
+        CM_LOG_E("Get file count and names from path faild ret:%d, path:%s", ret, pathBuf);
         return ret;
     }
+
+    CM_LOG_I("Get app cert list fileCount:%u", *fileCount);
 
     return CM_SUCCESS;
 }
