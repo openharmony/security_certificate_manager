@@ -13,19 +13,21 @@
  * limitations under the License.
  */
 
+#include "cm_openssl_ecc.h"
+
 #include <openssl/bio.h>
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 
-#include "cm_type.h"
+#include "securec.h"
+
 #include "cm_config.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_openssl_engine.h"
-#include "cm_openssl_ecc.h"
-#include "securec.h"
+#include "cm_type.h"
 
 static int32_t TransEccKeyToKeyBlob(
     const EC_KEY *eccKey, const struct KeyMaterialEcc *keyMaterial, BIGNUM *pubX, BIGNUM *pubY, uint8_t *rawMaterial)

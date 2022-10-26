@@ -13,28 +13,30 @@
  * limitations under the License.
  */
 
-#include "stdio.h"
-#include "stdbool.h"
-#include "stdint.h"
 #include "cert_manager.h"
-#include "cert_manager_type.h"
+
+#include <unistd.h>
+
+#include "cert_manager_auth_mgr.h"
 #include "cert_manager_file.h"
-#include "cert_manager_mem.h"
-#include "cert_manager_status.h"
 #include "cert_manager_file_operator.h"
-#include "securec.h"
-#include "cm_type.h"
+#include "cert_manager_mem.h"
+
+#include "cert_manager_permission_check.h"
+#include "cert_manager_status.h"
+#include "cert_manager_storage.h"
+#include "cert_manager_type.h"
+#include "cert_manager_uri.h"
 #include "cm_asn1.h"
 #include "cm_log.h"
+#include "cm_type.h"
 #include "cm_x509.h"
-#include "hks_type.h"
+
+#include "securec.h"
+
 #include "hks_api.h"
 #include "hks_param.h"
-#include "cert_manager_permission_check.h"
-#include "cert_manager_auth_mgr.h"
-#include "cert_manager_uri.h"
-#include "cert_manager_storage.h"
-#include <unistd.h>
+#include "hks_type.h"
 
 #define MAX_FILES_IN_DIR                    1000
 #define CERT_MANAGER_MD5_SIZE               32
@@ -45,10 +47,6 @@
 
 #define MAX_PATH_LEN                        256
 #define NAME_DIGEST_SIZE                    4
-
-#ifndef errno_t
-typedef int errno_t;
-#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -22,7 +22,6 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
-
 static constexpr uint32_t DEFAULT_INDATA_SIZE = 10;
 static constexpr uint32_t DEFAULT_HANDLE_SIZE = 8;
 

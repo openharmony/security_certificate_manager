@@ -23,8 +23,8 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
-#define MAX_URI_LEN            256
-#define TIMES_PERFORMANCE      1000
+constexpr uint32_t MAX_URI_LEN = 256;
+constexpr uint32_t TIMES_PERFORMANCE = 1000;
 
 static const uint8_t g_certData01[] = {  /* 40dc992e.0 */
     0x30, 0x82, 0x04, 0x31, 0x30, 0x82, 0x03, 0x19, 0xa0, 0x03, 0x02, 0x01, 0x02, 0x02, 0x01, 0x00,
@@ -1304,6 +1304,4 @@ HWTEST_F(CmUserCertTest, SetUserCertStatusTest008, TestSize.Level0)
     ret = CmUninstallUserTrustedCert(&certUri06);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall test failed, recode:" << ret;
 }
-
 }
-

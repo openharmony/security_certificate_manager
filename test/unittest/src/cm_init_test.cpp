@@ -25,7 +25,6 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
-
 static constexpr uint32_t INIT_COUNT_MULTI = 16;
 
 class CmInitTest : public testing::Test {
@@ -401,4 +400,3 @@ HWTEST_F(CmInitTest, CmInitTestPerformance019, TestSize.Level1)
     }
 }
 } // end of namespace
-

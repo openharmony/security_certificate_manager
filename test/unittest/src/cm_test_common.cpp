@@ -13,21 +13,15 @@
  * limitations under the License.
  */
 
-#include <limits.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include "cm_test_common.h"
 
 #include <gtest/gtest.h>
 
 #include "cert_manager_api.h"
 
-#include "cm_mem.h"
-#include "cm_test_common.h"
-#include "cm_test_log.h"
-
 #include "cm_cert_data.h"
+#include "cm_mem.h"
+#include "cm_test_log.h"
 
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
@@ -35,10 +29,6 @@
 
 using namespace testing::ext;
 namespace CertmanagerTest {
-#ifndef errno_t
-typedef int errno_t;
-#endif
-
 void SetATPermission(void)
 {
     const char **perms = new const char *[2]; // 2 permissions
@@ -270,61 +260,6 @@ bool CompareCredential(const struct Credential *firstCredential, const struct Cr
             (strcmp(firstCredential->keyUri, secondCredential->keyUri) == 0) &&
             (firstCredential->certNum == secondCredential->certNum) &&
             (firstCredential->keyNum == secondCredential->keyNum));
-}
-
-int32_t IsFileExist(const char *fileName)
-{
-    if (access(fileName, F_OK) != 0) {
-        CM_TEST_LOG_E("file not exist, fileName %s", fileName);
-        return -1;
-    }
-
-    return 0;
-}
-
-uint32_t FileRead(const char *fileName, uint32_t offset, uint8_t *buf, uint32_t len)
-{
-    (void)offset;
-    if (IsFileExist(fileName) != 0) {
-        return 0;
-    }
-
-    char filePath[PATH_MAX + 1] = {0};
-    (void)realpath(fileName, filePath);
-    if (strstr(filePath, "../") != nullptr) {
-        CM_TEST_LOG_E("invalid filePath, path %s", filePath);
-        return 0;
-    }
-
-    FILE *fp = fopen(filePath, "rb");
-    if (fp == nullptr) {
-        CM_TEST_LOG_E("failed to open file");
-        return 0;
-    }
-
-    uint32_t size = fread(buf, 1, len, fp);
-    if (fclose(fp) < 0) {
-        CM_TEST_LOG_E("failed to close file");
-        return 0;
-    }
-
-    return size;
-}
-
-uint32_t FileSize(const char *fileName)
-{
-    if (IsFileExist(fileName) != 0) {
-        return 0;
-    }
-
-    struct stat fileStat;
-    (void)memset_s(&fileStat, sizeof(fileStat), 0, sizeof(fileStat));
-    if (stat(fileName, &fileStat) != 0) {
-        CM_TEST_LOG_E("file stat fail.");
-        return 0;
-    }
-
-    return fileStat.st_size;
 }
 
 int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t store)

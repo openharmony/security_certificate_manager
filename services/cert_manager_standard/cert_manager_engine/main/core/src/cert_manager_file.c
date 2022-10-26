@@ -13,17 +13,16 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "securec.h"
-#include "cert_manager.h"
 #include "cert_manager_file.h"
+
+#include "securec.h"
+
+#include "cert_manager.h"
+#include "cert_manager_file_operator.h"
 #include "cert_manager_mem.h"
 #include "cert_manager_type.h"
 #include "cm_log.h"
 #include "cm_type.h"
-#include "cert_manager_file_operator.h"
 
 inline uint32_t CertManagerFileSize(const char *path, const char *fileName)
 {

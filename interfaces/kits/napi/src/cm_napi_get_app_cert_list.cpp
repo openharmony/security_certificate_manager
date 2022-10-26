@@ -19,7 +19,6 @@
 #include "cm_log.h"
 
 namespace CMNapi {
-
 napi_value CMNapiGetAppCertList(napi_env env, napi_callback_info info)
 {
     return CMNapiGetAppCertListCommon(env, info, APPLICATION_CERTIFICATE_STORE);
@@ -29,5 +28,4 @@ napi_value CMNapiGetPrivateAppCertList(napi_env env, napi_callback_info info)
 {
     return CMNapiGetAppCertListCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
 }
-
 }  // namespace CertManagerNapi

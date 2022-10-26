@@ -14,18 +14,21 @@
  */
 
 #include "cm_sa.h"
+
+#include <pthread.h>
+#include <unistd.h>
+
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "string_ex.h"
 #include "system_ability_definition.h"
+
+#include "cert_manager.h"
+#include "cert_manager_type.h"
+#include "cm_event_observer.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_ipc_service.h"
-#include "cert_manager.h"
-#include "cert_manager_type.h"
-#include <pthread.h>
-#include <unistd.h>
-#include "cm_event_observer.h"
 
 namespace OHOS {
 namespace Security {

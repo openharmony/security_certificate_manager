@@ -163,5 +163,4 @@ napi_value CMNapiUninstallAppCertCommon(napi_env env, napi_callback_info info, u
     }
     return result;
 }
-
 }  // namespace CertManagerNapi

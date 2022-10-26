@@ -13,14 +13,18 @@
  * limitations under the License.
  */
 
+#include "cm_x509.h"
+
+#include <openssl/asn1.h>
 #include <openssl/bio.h>
+#include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
-#include <openssl/err.h>
-#include <openssl/asn1.h>
+
 #include <string.h>
+
 #include "securec.h"
-#include "cm_x509.h"
+
 #include "cm_log.h"
 
 typedef X509_NAME *(FUNC)(const X509 *);

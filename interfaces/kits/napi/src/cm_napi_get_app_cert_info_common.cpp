@@ -196,5 +196,4 @@ napi_value CMNapiGetAppCertInfoCommon(napi_env env, napi_callback_info info, uin
     }
     return result;
 }
-
 }  // namespace CertManagerNapi

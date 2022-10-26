@@ -23,7 +23,6 @@ namespace CMNapi {
 napi_value CMNapiInstallAppCert(napi_env env, napi_callback_info info);
 
 napi_value CMNapiInstallPrivateAppCert(napi_env env, napi_callback_info info);
-
 }  // namespace CertManagerNapi
 
 #endif  // CM_NAPI_INSTALL_APP_CERT_H

@@ -22,7 +22,6 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
-
 class CmAbortTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -151,4 +150,3 @@ HWTEST_F(CmAbortTest, CmAbortTestPerformance006, TestSize.Level1)
     }
 }
 } // end of namespace
-

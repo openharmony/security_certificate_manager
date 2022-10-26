@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 
-#include "cm_config.h"
-#include "cm_ipc_client.h"
+#include "cert_manager_api.h"
+
 #include "cm_log.h"
 #include "cm_mem.h"
+#include "cm_ipc_client.h"
 #include "cm_type.h"
-#include "cert_manager_api.h"
-#include "cm_request.h"
 
 CM_API_EXPORT int32_t CmGetCertList(const uint32_t store, struct CertList *certificateList)
 {
