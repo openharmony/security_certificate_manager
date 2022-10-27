@@ -199,6 +199,7 @@ static int32_t EncodePathComp(char *encoded, uint32_t *offset, uint32_t *availLe
     uint32_t sep = 0;
     uint32_t off = *offset;
     uint32_t avail = *availLen;
+
     do
     {
         ret = EncodeComp(encoded, &off, &avail, P_TYPE, g_types[uri->type], P_RES_AVAIL, &sep, ';');
