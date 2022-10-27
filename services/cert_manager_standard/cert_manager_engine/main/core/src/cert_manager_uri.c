@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "securec.h"
+
 #include "cm_log.h"
 
 #ifdef __cplusplus
@@ -195,7 +196,7 @@ static int32_t EncodeComp(
 static int32_t EncodePathComp(char *encoded, uint32_t *offset, uint32_t *availLen,
     const struct CMUri *uri)
 {
-    int32_t ret = CM_SUCCESS;
+    int32_t ret = CM_FAILURE;
     uint32_t sep = 0;
     uint32_t off = *offset;
     uint32_t avail = *availLen;
@@ -204,28 +205,24 @@ static int32_t EncodePathComp(char *encoded, uint32_t *offset, uint32_t *availLe
         ret = EncodeComp(encoded, &off, &avail, P_TYPE, g_types[uri->type], P_RES_AVAIL, &sep, ';');
         if (ret != CM_SUCCESS) {
             CM_LOG_E("encode <t=> failed");
-            ret = CM_FAILURE;
             break;
         }
 
         ret = EncodeComp(encoded, &off, &avail, P_OBJECT, uri->object, P_RES_AVAIL, &sep, ';');
         if (ret != CM_SUCCESS) {
             CM_LOG_E("encode <o=> failed");
-            ret = CM_FAILURE;
             break;
         }
 
         ret = EncodeComp(encoded, &off, &avail, P_USER, uri->user, P_RES_AVAIL, &sep, ';');
         if (ret != CM_SUCCESS) {
             CM_LOG_E("encode <u=> failed");
-            ret = CM_FAILURE;
             break;
         }
 
         ret = EncodeComp(encoded, &off, &avail, P_APP, uri->app, P_RES_AVAIL, &sep, ';');
         if (ret != CM_SUCCESS) {
             CM_LOG_E("encode <a=> failed");
-            ret = CM_FAILURE;
             break;
         }
     } while (0);
@@ -243,7 +240,7 @@ static int32_t EncodeQueryComp(char *encoded, uint32_t *offset, uint32_t *availL
         return CM_SUCCESS;
     }
 
-    int32_t ret = CM_SUCCESS;
+    int32_t ret = CM_FAILURE;
     uint32_t sep = 0;
     uint32_t off = *offset;
     uint32_t avail = *availLen;
@@ -255,21 +252,18 @@ static int32_t EncodeQueryComp(char *encoded, uint32_t *offset, uint32_t *availL
         ret = EncodeComp(encoded, &off, &avail, Q_CLIENT_USER, uri->clientUser, Q_RES_AVAIL, &sep, '&');
         if (ret != CM_SUCCESS) {
             CM_LOG_E("encode <cu=> failed");
-            ret = CM_FAILURE;
             break;
         }
 
         ret = EncodeComp(encoded, &off, &avail, Q_CLIENT_APP, uri->clientApp, Q_RES_AVAIL, &sep, '&');
         if (ret != CM_SUCCESS) {
             CM_LOG_E("encode <ca=> failed");
-            ret = CM_FAILURE;
             break;
         }
 
         ret = EncodeComp(encoded, &off, &avail, Q_MAC, uri->mac, Q_RES_AVAIL, &sep, '&');
         if (ret != CM_SUCCESS) {
             CM_LOG_E("encode <m=> failed");
-            ret = CM_FAILURE;
             break;
         }
     } while (0);
@@ -308,12 +302,12 @@ int32_t CertManagerUriEncode(char *encoded, uint32_t *encodedLen, const struct C
 
     int32_t ret = EncodePathComp(encoded, &off, &avail, uri);
     if (ret != CM_SUCCESS) {
-        return CM_FAILURE;
+        return ret;
     }
 
     ret = EncodeQueryComp(encoded, &off, &avail, uri);
     if (ret != CM_SUCCESS) {
-        return CM_FAILURE;
+        return ret;
     }
 
     *encodedLen = off;
@@ -511,12 +505,12 @@ int32_t CertManagerUriDecode(struct CMUri *uri, const char *encoded)
 
     int32_t ret = DecodePath(uri, encoded, pathStart, pathEnd);
     if (ret != CM_SUCCESS) {
-        return CM_FAILURE;
+        return ret;
     }
 
     ret = DecodeQuery(uri, encoded, queryStart, queryEnd);
     if (ret != CM_SUCCESS) {
-        return CM_FAILURE;
+        return ret;
     }
 
     return CM_SUCCESS;
