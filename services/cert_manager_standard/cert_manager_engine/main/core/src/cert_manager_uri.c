@@ -199,8 +199,8 @@ static int32_t EncodePathComp(char *encoded, uint32_t *offset, uint32_t *availLe
     uint32_t sep = 0;
     uint32_t off = *offset;
     uint32_t avail = *availLen;
-    do
-    {
+
+    do {
         ret = EncodeComp(encoded, &off, &avail, P_TYPE, g_types[uri->type], P_RES_AVAIL, &sep, ';');
         if (ret != CM_SUCCESS) {
             CM_LOG_E("encode <t=> failed");
@@ -251,8 +251,7 @@ static int32_t EncodeQueryComp(char *encoded, uint32_t *offset, uint32_t *availL
     off++;
     avail--;
 
-    do
-    {
+    do {
         ret = EncodeComp(encoded, &off, &avail, Q_CLIENT_USER, uri->clientUser, Q_RES_AVAIL, &sep, '&');
         if (ret != CM_SUCCESS) {
             CM_LOG_E("encode <cu=> failed");
