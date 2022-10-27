@@ -25,8 +25,7 @@ static const uint32_t CM_CONTEXT_USERID = 1000;
 static const uint32_t CM_CONTEXT_USERID2 = 2000;
 static const uint32_t CM_CONTEXT_UID = 3000;
 static const uint32_t CM_CONTEXT_UID2 = 3001;
-
-#define TIMES_PERFORMANCE 10
+static const int TIMES_PERFORMANCE = 10;
 
 struct CertAbstractResult {
     struct CertAbstract certAbstract;

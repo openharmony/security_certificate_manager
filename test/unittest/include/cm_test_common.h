@@ -59,6 +59,5 @@ uint32_t InitUserCertList(struct CertList **cList);
 uint32_t InitUserCertInfo(struct CertInfo **cInfo);
 
 int32_t InitCertInfo(struct CertInfo *certInfo);
-
 }
 #endif /* CM_TEST_COMMON_H */

@@ -84,7 +84,6 @@ bool SystemEventObserver::UnSubscribeSystemEvent()
     }
     return OHOS::EventFwk::CommonEventManager::UnSubscribeCommonEvent(systemEventSubscriber_);
 }
-
 } // namespace Cm
 } // namespace Security
 } // namespace OHOS

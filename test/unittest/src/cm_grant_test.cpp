@@ -22,7 +22,6 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
-
 static constexpr uint32_t DEFAULT_AUTH_URI_LEN = 256;
 static constexpr uint32_t INVALID_AUTH_URI_LEN = 100;
 static constexpr uint32_t DEFAULT_APP_ID = 1000;

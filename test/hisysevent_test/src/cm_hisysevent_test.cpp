@@ -44,7 +44,7 @@ static void SetATPermission(void)
 
 using namespace testing::ext;
 namespace {
-#define MAX_URI_LEN            256
+static constexpr uint32_t MAX_URI_LEN = 256;
 static constexpr uint32_t DEFAULT_AUTH_URI_LEN = 256;
 static constexpr uint32_t DEFAULT_APP_ID = 1000;
 
@@ -326,6 +326,6 @@ HWTEST_F(CmHiSysEventTest, CmHiSysEventTest008, TestSize.Level0)
     int32_t ret = CmRemoveGrantedApp(&keyUri, appId);
 
     ret = CmHiSysEventQueryResult("CmIpcServiceRemoveGrantedApp");
-    EXPECT_EQ(ret, CM_HISYSEVENT_QUERY_SUCCESS) << "query failed, ret = " << ret;}
-
+    EXPECT_EQ(ret, CM_HISYSEVENT_QUERY_SUCCESS) << "query failed, ret = " << ret;
+}
 }

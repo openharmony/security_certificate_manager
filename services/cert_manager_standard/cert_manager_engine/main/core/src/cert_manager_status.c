@@ -13,22 +13,24 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <pthread.h>
-#include "securec.h"
-#include "cert_manager.h"
-#include "cm_log.h"
-#include "cert_manager_mem.h"
 #include "cert_manager_status.h"
-#include "cert_manager_type.h"
+
+#include <pthread.h>
+
+#include "securec.h"
+
+#include "cert_manager.h"
 #include "cert_manager_file.h"
 #include "cert_manager_file_operator.h"
+#include "cert_manager_mem.h"
+#include "cert_manager_type.h"
 #include "cert_manager_util.h"
+#include "cm_log.h"
 #include "cm_type.h"
-#include "hks_type.h"
-#include "hks_api.h"
 #include "rbtree.h"
+
+#include "hks_api.h"
+#include "hks_type.h"
 
 #define HEADER_LEN (4 + CM_INTEGRITY_TAG_LEN + CM_INTEGRITY_SALT_LEN)
 #define APPLICATION_TRUSTED_STORE      2

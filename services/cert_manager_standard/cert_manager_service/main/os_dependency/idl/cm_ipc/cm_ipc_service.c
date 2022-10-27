@@ -15,36 +15,32 @@
 
 #include "cm_ipc_service.h"
 
-#include <dlfcn.h>
-#include <stdbool.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include "cm_ipc_serialization.h"
-#include "cm_log.h"
-#include "cm_mem.h"
-#include "cm_type.h"
-#include "cm_response.h"
-#include "cert_manager_status.h"
-#include "cert_manager.h"
-#include "cm_pfx.h"
-#include "cert_manager_file_operator.h"
-#include "cert_manager_uri.h"
-#include "cert_manager_check.h"
-#include "cm_param.h"
 #include <openssl/x509.h>
 #include <openssl/err.h>
-#include "cert_manager_type.h"
-#include "hks_type.h"
+
+#include "cm_log.h"
+#include "cm_mem.h"
+#include "cm_ipc_serialization.h"
+#include "cm_openssl_curve25519.h"
 #include "cm_openssl_ecc.h"
 #include "cm_openssl_rsa.h"
-#include "cm_openssl_curve25519.h"
-#include "cert_manager_service.h"
-#include "cert_manager_permission_check.h"
-
-#include "cert_manager_query.h"
-#include "cert_manager_permission_check.h"
+#include "cm_param.h"
+#include "cm_pfx.h"
 #include "cm_report_wrapper.h"
+#include "cm_response.h"
+#include "cm_type.h"
+
+#include "cert_manager.h"
+#include "cert_manager_check.h"
+#include "cert_manager_file_operator.h"
+#include "cert_manager_permission_check.h"
+#include "cert_manager_query.h"
+#include "cert_manager_service.h"
+#include "cert_manager_status.h"
+#include "cert_manager_type.h"
+#include "cert_manager_uri.h"
+
+#include "hks_type.h"
 
 #define MAX_PACKAGENAME_LEN     32
 #define MAX_LEN_CERTIFICATE     8196
@@ -656,7 +652,7 @@ static int32_t GetAppCertInfo(const struct CmBlob *keyUri, struct CmBlob *certTy
 }
 
 static int32_t CmCertListGetAppCertInfo(const struct CmBlob *fileName, struct CmBlob *certType,
-     struct CmBlob *certUri,  struct CmBlob *certAlies)
+    struct CmBlob *certUri,  struct CmBlob *certAlies)
 {
     char uriBuf[MAX_LEN_URI] = {0};
     struct CmBlob keyUri = { sizeof(uriBuf), (uint8_t *)uriBuf };

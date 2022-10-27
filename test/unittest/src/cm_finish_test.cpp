@@ -25,7 +25,6 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
-
 static constexpr uint32_t DEFAULT_SIGNATURE_LEN = 1024;
 static constexpr uint32_t MAX_SESSION_NUM_MORE_1 = 16;
 

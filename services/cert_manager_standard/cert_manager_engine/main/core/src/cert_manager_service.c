@@ -260,7 +260,7 @@ int32_t CmServiceGetCertList(const struct CmContext *context, uint32_t store, st
 
     do {
         if (store == CM_USER_TRUSTED_STORE) {
-            /* get all uid path*/
+            /* get all uid path */
             ret = CmGetCertPathList(context, store, &pathList);
             if (ret != CM_SUCCESS) {
                 CM_LOG_E("GetCertPathList fail, ret = %d", ret);

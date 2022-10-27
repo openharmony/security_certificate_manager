@@ -14,18 +14,20 @@
  */
 
 #include "cm_request.h"
-#include "cm_load_sa.h"
-#include <securec.h>
-#include "iservice_registry.h"
-#include "cm_log.h"
+
 #include <chrono>
-#include <thread>
 #include <string>
+#include <thread>
+
+#include "securec.h"
+
+#include "cm_load_sa.h"
+#include "cm_log.h"
+
+#include "iservice_registry.h"
 
 using namespace std;
 using namespace OHOS;
-
-#define MAX_SA_BOOT_DELAY_TIME 30
 
 static int32_t CmLoadSystemAbility();
 
@@ -33,6 +35,7 @@ static sptr<IRemoteObject> cmProxy;
 
 namespace {
     constexpr int SA_ID_KEYSTORE_SERVICE = 3512;
+    constexpr uint32_t MAX_SA_BOOT_DELAY_TIME = 30;
     const std::u16string SA_KEYSTORE_SERVICE_DESCRIPTOR = u"ohos.security.cm.service";
     int32_t g_isLoadSystemAbility = CmLoadSystemAbility();
     sptr<OnDemandLoadCertManagerCallback> loadCallBack = nullptr;

@@ -23,7 +23,6 @@ namespace CMNapi {
 napi_value CMNapiGetAppCertInfo(napi_env env, napi_callback_info info);
 
 napi_value CMNapiGetPrivateAppCertInfo(napi_env env, napi_callback_info info);
-
 }  // namespace CertManagerNapi
 
 #endif  // CM_NAPI_GET_CREDENTIAL_INFO_H

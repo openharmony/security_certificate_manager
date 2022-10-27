@@ -13,19 +13,18 @@
  * limitations under the License.
  */
 
-#include "stdio.h"
-#include "stdbool.h"
-#include "stdint.h"
-#include "cert_manager_type.h"
-#include "cert_manager_file.h"
-#include "cert_manager_status.h"
-#include "cert_manager_mem.h"
 #include "cert_manager_util.h"
+
+#include "cert_manager_file.h"
+#include "cert_manager_mem.h"
+#include "cert_manager_status.h"
+#include "cert_manager_type.h"
 #include "cm_log.h"
 #include "cm_type.h"
+
 #include "hks_api.h"
-#include "hks_type.h"
 #include "hks_param.h"
+#include "hks_type.h"
 
 #define CMALG(x)      (x)
 #define CMPURPOSE(x)  (x)
