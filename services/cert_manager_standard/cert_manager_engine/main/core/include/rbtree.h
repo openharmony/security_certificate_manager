@@ -50,17 +50,15 @@ int RbTreeNew(struct RbTree *t);
 
 RbTreeKey RbTreeNodeKey(const struct RbTreeNode *n);
 
-int RbTreeDelete(struct RbTree *t, struct RbTreeNode *z);
+int32_t RbTreeDelete(struct RbTree *t, struct RbTreeNode *z);
 
-int RbTreeInsert(struct RbTree *t, RbTreeKey key, const RbTreeValue value);
+int32_t RbTreeInsert(struct RbTree *t, RbTreeKey key, const RbTreeValue value);
 
-int RbTreeDestroyEx(struct RbTree *t, RbTreeNodeHandler handler, const void *context);
+int32_t RbTreeFindNode(struct RbTreeNode **node, RbTreeKey key, const struct RbTree *tree);
 
-int RbTreeFindNode(struct RbTreeNode **node, RbTreeKey key, const struct RbTree *tree);
+int32_t RbTreeDecode(struct RbTree *t, RbTreeValueDecoder dec, uint8_t *buf, uint32_t size);
 
-int RbTreeDecode(struct RbTree *t, RbTreeValueDecoder dec, uint8_t *buf, uint32_t size);
-
-int RbTreeEncode(const struct RbTree *t, RbTreeValueEncoder enc, uint8_t *buf, uint32_t *size);
+int32_t RbTreeEncode(const struct RbTree *t, RbTreeValueEncoder enc, uint8_t *buf, uint32_t *size);
 
 #ifdef __cplusplus
 }
