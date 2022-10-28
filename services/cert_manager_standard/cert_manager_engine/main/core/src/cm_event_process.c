@@ -13,23 +13,21 @@
  * limitations under the License.
  */
 
-#include "cm_type.h"
-#include "cm_log.h"
-#include "cert_manager_status.h"
+#include "cm_event_process.h"
 
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include "hks_type.h"
-#include "hks_api.h"
-#include "hks_param.h"
-#include "cert_manager_file_operator.h"
 #include "securec.h"
-#include "cert_manager.h"
-#include "cm_event_process.h"
 
+#include "cert_manager.h"
 #include "cert_manager_auth_mgr.h"
+#include "cert_manager_file_operator.h"
+#include "cert_manager_key_operation.h"
 #include "cert_manager_session_mgr.h"
+#include "cert_manager_status.h"
+#include "cm_log.h"
+#include "cm_type.h"
 
 static void DeleteAuth(const struct CmContext *context, const char *fileName, bool isDeleteByUid)
 {
@@ -58,10 +56,8 @@ static int32_t CmTraversalDirActionCredential(const char *filePath, const char *
     }
 
     struct CmBlob keyUri = { strlen(fileName) + 1, (uint8_t *)fileName };
-
-    /* ignore the return of HksDeleteKey */
-    ret = HksDeleteKey(&HKS_BLOB(&keyUri), NULL);
-    if (ret != HKS_SUCCESS && ret != HKS_ERROR_NOT_EXIST) {
+    ret = CmKeyOpDeleteKey(&keyUri);
+    if (ret != CM_SUCCESS) { /* ignore the return of delete key */
         CM_LOG_I("App key delete failed ret: %d", ret);
     }
 
@@ -152,7 +148,7 @@ static int32_t RemoveDir(const char *dirPath)
     while (dire != NULL) {
         if (dire->d_type == DT_REG) { /* only care about files. */
             ret = CmFileRemove(dirPath, dire->d_name);
-            if (ret != HKS_SUCCESS) { /* Continue to delete remaining files */
+            if (ret != CM_SUCCESS) { /* Continue to delete remaining files */
                 CM_LOG_E("remove file failed when remove authlist files, ret = %d.", ret);
             }
         }

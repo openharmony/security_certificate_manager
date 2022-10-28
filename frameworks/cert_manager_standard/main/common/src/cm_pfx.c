@@ -13,18 +13,16 @@
  * limitations under the License.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "cm_pfx.h"
+
 #include <openssl/pkcs12.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/pem.h>
-#include "hks_type.h"
-#include "cm_type_inner.h"
+
 #include "cm_log.h"
 #include "cm_mem.h"
-#include "cm_pfx.h"
+#include "cm_type_inner.h"
 
 static int32_t CmGetAppCertChain(X509 *cert, STACK_OF(X509) *caCert, struct AppCert *appCert)
 {

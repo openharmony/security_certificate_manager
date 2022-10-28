@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef CM_IPC_SERIALIZATION_H
-#define CM_IPC_SERIALIZATION_H
+#ifndef CM_IPC_SERVICE_SERIALIZATION_H
+#define CM_IPC_SERVICE_SERIALIZATION_H
 
 #include "cm_type_inner.h"
 
@@ -22,10 +22,22 @@
 extern "C" {
 #endif
 
+int32_t CopyUint32ToBuffer(uint32_t value, const struct CmBlob *destBlob, uint32_t *destOffset);
+
+int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlob, uint32_t *destOffset);
+
 int32_t CmParamSetToParams(const struct CmParamSet *paramSet, struct CmParamOut *outParams, uint32_t cnt);
+
+int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store,
+    const struct CmMutableBlob *certFileList, struct CmBlob *certificateList);
+
+int32_t CmServiceGetCertInfoPack(const uint32_t store, const struct CmBlob *certificateData,
+    uint32_t status, const struct CmBlob *certUri, struct CmBlob *certificateInfo);
+
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* CM_IPC_SERVICE_SERIALIZATION_H */
+

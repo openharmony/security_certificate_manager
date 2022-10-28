@@ -44,6 +44,7 @@ extern "C" {
 #define MAX_LEN_CERT_ALIAS       64
 #define MAX_LEN_SUBJECT_NAME     256
 #define MAX_LEN_PACKGE_NAME      64
+#define MAX_UINT32_LEN           16
 
 #define MAX_LEN_ISSUER_NAME             128
 #define MAX_LEN_SERIAL                  64
@@ -134,6 +135,11 @@ enum CmErrorCode {
     CMR_ERROR_KEY_OPERATION_FAILED = -25,
 };
 
+enum CMErrorCode { /* temp use */
+    CMR_OK = 0,
+    CMR_ERROR = -1,
+};
+
 enum CmTagType {
     CM_TAG_TYPE_INVALID = 0 << 28,
     CM_TAG_TYPE_INT = 1 << 28,
@@ -196,6 +202,11 @@ struct CertBlob {
     struct CmBlob subjectName[MAX_COUNT_CERTIFICATE];
 };
 
+struct CmAppCertInfo {
+    struct CmBlob appCert;
+    struct CmBlob appCertPwd;
+};
+
 struct CertListAbtInfo {
     uint32_t uriSize;
     char uri[MAX_LEN_URI];
@@ -237,11 +248,6 @@ struct CertInfo {
     char notAfter[MAX_LEN_NOT_AFTER];
     char fingerprintSha256[MAX_LEN_FINGER_PRINT_SHA256];
     struct CmBlob certInfo;
-};
-
-struct CmProcessInfo {
-    struct CmBlob userId;
-    struct CmBlob processName;
 };
 
 struct CertFile {

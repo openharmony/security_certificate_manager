@@ -22,13 +22,7 @@
 extern "C" {
 #endif
 
-int32_t CopyUint32ToBuffer(uint32_t value, const struct CmBlob *destBlob, uint32_t *destOffset);
-
-int32_t GetUint32FromBuffer(uint32_t *value, const struct CmBlob *srcBlob, uint32_t *srcOffset);
-
-int32_t CmGetBlobFromBuffer(struct CmBlob *blob, const struct CmBlob *srcBlob, uint32_t *srcOffset);
-
-int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlob, uint32_t *destOffset);
+int32_t CheckUri(const struct CmBlob *keyUri);
 
 int32_t CmServiceGetSystemCertListCheck(const uint32_t store);
 

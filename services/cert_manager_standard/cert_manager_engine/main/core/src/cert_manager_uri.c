@@ -537,6 +537,82 @@ int32_t CertManagerGetUidFromUri(const struct CmBlob *uri, uint32_t *uid)
     return CM_SUCCESS;
 }
 
+int32_t CmConstructUri(const struct CMUri *uriObj, struct CmBlob *outUri)
+{
+    uint32_t outLen = 0;
+    int32_t ret = CertManagerUriEncode(NULL, &outLen, uriObj);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get uriObj len failed, ret = %d", ret);
+        return ret;
+    }
+
+    if ((outLen == 0) || (outLen > MAX_OUT_BLOB_SIZE)) {
+        CM_LOG_E("invalid outLen[%u]", outLen);
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+
+    char *data = (char *)CMMalloc(outLen);
+    if (data == NULL) {
+        CM_LOG_E("malloc uri buf failed");
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+    (void)memset_s(data, outLen, 0, outLen);
+    outUri->size = outLen; /* include 1 byte: the terminator('\0')  */
+
+    ret = CertManagerUriEncode(data, &outLen, uriObj); /* outLen not include '\0' */
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("encord uri failed");
+        outUri->size = 0;
+        CMFree(data);
+        return ret;
+    }
+
+    CM_LOG_I("urilen = %u, uir:%s", outLen, data);
+    outUri->data = (uint8_t *)data;
+    return CM_SUCCESS;
+}
+
+static int32_t UintToStr(uint32_t input, char *out, uint32_t outLen)
+{
+    if (snprintf_s(out, outLen, outLen - 1, "%u", input) < 0) {
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+    return CM_SUCCESS;
+}
+
+int32_t CmConstructCommonUri(const struct CmContext *context, const uint32_t type,
+    const struct CmBlob *certAlias, struct CmBlob *outUri)
+{
+    struct CMUri uriObj;
+    (void)memset_s(&uriObj, sizeof(struct CMUri), 0, sizeof(struct CMUri));
+
+    char userIdStr[MAX_UINT32_LEN] = { 0 };
+    int32_t ret = UintToStr(context->userId, userIdStr, MAX_UINT32_LEN);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("construct userId to str failed");
+        return ret;
+    }
+
+    char uidStr[MAX_UINT32_LEN] = { 0 };
+    ret = UintToStr(context->uid, uidStr, MAX_UINT32_LEN);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("construct uid to str failed");
+        return ret;
+    }
+
+    uriObj.object = (char *)certAlias->data;
+    uriObj.type = type;
+    uriObj.user = userIdStr;
+    uriObj.app = uidStr;
+
+    ret = CmConstructUri(&uriObj, outUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("construct uri failed, ret = %d", ret);
+    }
+    return ret;
+}
+
 #ifdef __cplusplus
 }
 #endif
+

@@ -13,21 +13,18 @@
  * limitations under the License.
  */
 
-#ifdef CM_CONFIG_FILE
-#include CM_CONFIG_FILE
-#else
-#include "cm_config.h"
-#endif
-
 #include "cert_manager_file_operator.h"
+
 #include <dirent.h>
 #include <errno.h>
 #include <limits.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
 #include "securec.h"
-#include "cm_log.h"
+
 #include "cert_manager_mem.h"
+#include "cm_log.h"
 
 static int32_t GetFileName(const char *path, const char *fileName, char *fullFileName, uint32_t fullFileNameLen)
 {

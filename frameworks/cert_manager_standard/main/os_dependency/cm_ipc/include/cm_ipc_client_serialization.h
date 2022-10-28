@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef CM_IPC_SERIALIZATION_H
-#define CM_IPC_SERIALIZATION_H
+#ifndef CM_IPC_CLIENT_SERIALIZATION_H
+#define CM_IPC_CLIENT_SERIALIZATION_H
 
 #include "cm_type_inner.h"
 
@@ -25,18 +25,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-int32_t CopyUint32ToBuffer(uint32_t value, const struct CmBlob *destBlob, uint32_t *destOffset);
-
-int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlob, uint32_t *destOffset);
 
 int32_t GetUint32FromBuffer(uint32_t *value, const struct CmBlob *srcBlob, uint32_t *srcOffset);
 
 int32_t CmGetBlobFromBuffer(struct CmBlob *blob, const struct CmBlob *srcBlob, uint32_t *srcOffset);
-
-int32_t CmCertificateListPack(struct CmBlob *inData, const struct CmContext *cmContext, const uint32_t store);
-
-int32_t CmCertificateInfoPack(struct CmBlob *inData, const struct CmContext *cmContext, const struct CmBlob *certUri,
-    const uint32_t store);
 
 int32_t CmCertificateListUnpackFromService(const struct CmBlob *outData, bool needEncode,
     const struct CmContext *context, struct CertList *certificateList);
@@ -44,13 +36,10 @@ int32_t CmCertificateListUnpackFromService(const struct CmBlob *outData, bool ne
 int32_t CmCertificateInfoUnpackFromService(const struct CmBlob *outData, struct CertInfo *certificateInfo,
     const struct CmBlob *certUri);
 
-int32_t CmCertificateStatusPack(struct CmBlob *inData, const struct CmContext *cmContext, const struct CmBlob *certUri,
-    const uint32_t store, const uint32_t status);
-
 int32_t CmParamsToParamSet(struct CmParam *params, uint32_t cnt, struct CmParamSet **outParamSet);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* CM_IPC_SERIALIZATION_H */
+#endif /* CM_IPC_CLIENT_SERIALIZATION_H */

@@ -41,7 +41,7 @@ ohos_shared_library("cert_manager_engine_core_standard") {
   ]
   sources = [
     "src/cert_manager.c",
-    "src/cert_manager_auth.c",
+    "src/cert_manager_app_cert_process.c",
     "src/cert_manager_auth_list_mgr.c",
     "src/cert_manager_auth_mgr.c",
     "src/cert_manager_check.c",
@@ -57,12 +57,8 @@ ohos_shared_library("cert_manager_engine_core_standard") {
     "src/cert_manager_status.c",
     "src/cert_manager_storage.c",
     "src/cert_manager_uri.c",
-    "src/cert_manager_util.c",
     "src/cm_asn1.c",
     "src/cm_event_process.c",
-    "src/cm_openssl_curve25519.c",
-    "src/cm_openssl_ecc.c",
-    "src/cm_openssl_rsa.c",
     "src/rbtree.c",
   ]
 

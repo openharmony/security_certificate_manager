@@ -28,9 +28,24 @@ enum CmSignVerifyCmd {
     SIGN_VERIFY_CMD_ABORT,
 };
 
+struct CmKeyProperties {
+    uint32_t algType;
+    uint32_t keySize;
+    uint32_t padding;
+    uint32_t digest;
+    uint32_t purpose;
+};
+
 int32_t CmKeyOpGenMacKey(const struct CmBlob *alias);
 
+int32_t CmKeyOpGenMacKeyIfNotExist(const struct CmBlob *alias);
+
+int32_t CmKeyOpDeleteKey(const struct CmBlob *alias);
+
 int32_t CmKeyOpCalcMac(const struct CmBlob *alias, const struct CmBlob *srcData, struct CmBlob *mac);
+
+int32_t CmKeyOpImportKey(const struct CmBlob *alias, const struct CmKeyProperties *properties,
+    const struct CmBlob *keyPair);
 
 int32_t CmKeyOpInit(const struct CmContext *context, const struct CmBlob *alias, const struct CmSignatureSpec *spec,
     struct CmBlob *handle);

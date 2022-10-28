@@ -20,12 +20,11 @@
 #include "cert_manager_auth_mgr.h"
 #include "cert_manager_file.h"
 #include "cert_manager_file_operator.h"
+#include "cert_manager_key_operation.h"
 #include "cert_manager_mem.h"
-
 #include "cert_manager_permission_check.h"
 #include "cert_manager_status.h"
 #include "cert_manager_storage.h"
-#include "cert_manager_type.h"
 #include "cert_manager_uri.h"
 #include "cm_asn1.h"
 #include "cm_log.h"
@@ -506,9 +505,8 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
         CM_LOG_E("CertManagerFileRemove failed ret: %d", ret);
         return ret;
     }
-    /* ignore the return of HksDeleteKey */
-    ret = HksDeleteKey(&HKS_BLOB(keyUri), NULL);
-    if (ret != HKS_SUCCESS && ret != HKS_ERROR_NOT_EXIST) {
+    ret = CmKeyOpDeleteKey(keyUri);
+    if (ret != CM_SUCCESS) { /* ignore the return of deleteKey */
         CM_LOG_I("CertManagerKeyRemove failed, ret: %d", ret);
     }
 
@@ -627,9 +625,8 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
 
             CM_LOG_I("CmRemoveSpecifiedAppCert i:%d, uri:%s", i, (char *)uriBlob.data);
 
-            /* ignore the return of HksDeleteKey */
-            retCode = HksDeleteKey(&HKS_BLOB(&uriBlob), NULL);
-            if (retCode != HKS_SUCCESS && retCode != HKS_ERROR_NOT_EXIST) {
+            retCode = CmKeyOpDeleteKey(&uriBlob);
+            if (retCode != CM_SUCCESS) { /* ignore the return of deleteKey */
                 CM_LOG_I("App key %u remove failed ret: %d", i, retCode);
             }
             ClearAuthInfo(context, &uriBlob, store);
@@ -725,49 +722,61 @@ static int32_t CherkCertCountBeyondMax(const char *path, const char *fileName)
     return ret;
 }
 
-int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *pathBlob,
-    const struct CmBlob *userCert, const struct CmBlob *certAlias, struct CmBlob *certUri)
+static int32_t ConstructCertUri(const struct CmContext *context, const struct CmBlob *certAlias,
+    struct CmBlob *certUri)
 {
-    int32_t ret = CM_SUCCESS;
-    char *userUri = NULL;
-
+    struct CmBlob commonUri = { 0, NULL };
+    int32_t ret;
     do {
-        ret = BuildUserUri(&userUri, (char *)certAlias->data, CM_URI_TYPE_CERTIFICATE, context);
+        ret = CmConstructCommonUri(context, CM_URI_TYPE_CERTIFICATE, certAlias, &commonUri);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("BuildUserUri failed");
+            CM_LOG_E("construct cert uri get common uri failed");
             break;
         }
 
-        ret = CherkCertCountBeyondMax((char*)pathBlob->data, userUri);
+        if (certUri->size < commonUri.size) {
+            CM_LOG_E("out cert uri size[%u] too small", certUri->size);
+            ret = CMR_ERROR_BUFFER_TOO_SMALL;
+            break;
+        }
+
+        if (memcpy_s(certUri->data, certUri->size, commonUri.data, commonUri.size) != EOK) {
+            CM_LOG_E("copy cert uri failed");
+            ret = CMR_ERROR_INVALID_OPERATION;
+            break;
+        }
+
+        certUri->size = commonUri.size;
+    } while (0);
+
+    CM_FREE_PTR(commonUri.data);
+    return ret;
+}
+
+int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *pathBlob,
+    const struct CmBlob *userCert, const struct CmBlob *certAlias, struct CmBlob *certUri)
+{
+    int32_t ret;
+    do {
+        ret = ConstructCertUri(context, certAlias, certUri);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get cert uri failed");
+            break;
+        }
+
+        ret = CherkCertCountBeyondMax((char*)pathBlob->data, (char *)certUri->data);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("cert count beyond maxcount, can't install");
             ret = CMR_ERROR_INVALID_ARGUMENT;
             break;
         }
 
-        if (CmFileWrite((char*)pathBlob->data, userUri, 0, userCert->data, userCert->size) != CMR_OK) {
+        if (CmFileWrite((char*)pathBlob->data, (char *)certUri->data, 0, userCert->data, userCert->size) != CMR_OK) {
             CM_LOG_E("Failed to write certificate: %s in to %s", certAlias->data, pathBlob->data);
             ret = CMR_ERROR_WRITE_FILE_FAIL;
             break;
         }
-
-        uint32_t size = strlen(userUri) + 1; /* end \0 */
-        if (certUri->size < size) {
-            CM_LOG_E("certUri size %u too small", certUri->size);
-            ret = CMR_ERROR_BUFFER_TOO_SMALL;
-            break;
-        }
-
-        if (memcpy_s(certUri->data, certUri->size, (uint8_t *)userUri, size) != EOK) {
-            ret = CMR_ERROR;
-            break;
-        }
-        certUri->size = size;
     } while (0);
-
-    if (userUri != NULL) {
-        CMFree(userUri);
-    }
     return ret;
 }
 

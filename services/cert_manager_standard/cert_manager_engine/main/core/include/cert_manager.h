@@ -15,7 +15,6 @@
 #ifndef CERT_MANAGER_H
 #define CERT_MANAGER_H
 
-#include "cert_manager_type.h"
 #include "cm_type.h"
 
 #ifdef __cplusplus
@@ -42,15 +41,10 @@ int32_t CertManagerFindCertFileNameByUri(
 int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *keyUri,
     const uint32_t store);
 
-int32_t CertManagerImportKeyPair(const struct CMApp *caller, const struct CmBlob *keypair,
-    const struct CMKeyProperties *properties, const char *name);
-
 int32_t GetFilePath(const struct CmContext *context, uint32_t store, char *pathPtr,
     char *suffix, uint32_t *suffixLen);
 
 int32_t CmRemoveAllAppCert(const struct CmContext *context);
-
-int32_t BuildObjUri(char **objUri, const char *name, uint32_t type, const struct CMApp *app);
 
 int32_t CmFreeCaFileNames(struct CmMutableBlob *fileNames);
 
@@ -73,8 +67,6 @@ int32_t NameHashFromUri(const char *fName, struct CmMutableBlob *nameDigest);
 int32_t CmRemoveUserCert(struct CmMutableBlob *pathBlob, const struct CmBlob *certUri);
 
 int32_t CmRemoveAllUserCert(const struct CmContext *context, uint32_t store, const struct CmMutableBlob *certPathList);
-
-int32_t BuildUserUri(char **userUri, const char *aliasName, uint32_t type, const struct CmContext *context);
 
 #ifdef __cplusplus
 }

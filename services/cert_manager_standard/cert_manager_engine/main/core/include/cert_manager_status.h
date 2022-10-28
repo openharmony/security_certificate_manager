@@ -16,10 +16,10 @@
 #ifndef CERT_MANAGER_STATUS_H
 #define CERT_MANAGER_STATUS_H
 
-#include "cert_manager_type.h"
 #include "cert_manager_mem.h"
 
 #include "rbtree.h"
+
 #include "cm_type.h"
 
 #define  CERT_STATUS_ENANLED           ((uint32_t) 0)

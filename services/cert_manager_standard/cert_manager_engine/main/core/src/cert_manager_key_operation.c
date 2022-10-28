@@ -26,14 +26,6 @@
 
 #define DEFAULT_LEN_USED_FOR_MALLOC 1024
 
-struct CmKeyProperties {
-    uint32_t algType;
-    uint32_t keySize;
-    uint32_t padding;
-    uint32_t digest;
-    uint32_t purpose;
-};
-
 static int32_t ConstructParamSet(const struct HksParam *params, uint32_t paramCount, struct HksParamSet **outParamSet)
 {
     struct HksParamSet *paramSet = NULL;
@@ -88,6 +80,33 @@ int32_t CmKeyOpGenMacKey(const struct CmBlob *alias)
     return CM_SUCCESS;
 }
 
+int32_t CmKeyOpGenMacKeyIfNotExist(const struct CmBlob *alias)
+{
+    struct HksBlob keyAlias = { alias->size, alias->data };
+    int32_t ret = HksKeyExist(&keyAlias, NULL);
+    if (ret == HKS_SUCCESS) {
+        return ret;
+    }
+    if (ret != HKS_ERROR_NOT_EXIST) {
+        CM_LOG_E("find mac key failed, ret = %d", ret);
+        return CMR_ERROR_KEY_OPERATION_FAILED;
+    }
+
+    return CmKeyOpGenMacKey(alias);
+}
+
+int32_t CmKeyOpDeleteKey(const struct CmBlob *alias)
+{
+    struct HksBlob keyAlias = { alias->size, alias->data };
+    int32_t ret = HksDeleteKey(&keyAlias, NULL);
+    if ((ret != HKS_SUCCESS) && (ret != HKS_ERROR_NOT_EXIST)) {
+        CM_LOG_E("hks delete key failed, ret = %d", ret);
+        return CMR_ERROR_KEY_OPERATION_FAILED;
+    }
+
+    return CM_SUCCESS;
+}
+
 int32_t CmKeyOpCalcMac(const struct CmBlob *alias, const struct CmBlob *srcData, struct CmBlob *mac)
 {
     struct HksParam macParams[] = {
@@ -126,6 +145,36 @@ int32_t CmKeyOpCalcMac(const struct CmBlob *alias, const struct CmBlob *srcData,
 
     HksFreeParamSet(&paramSet);
     return (ret == HKS_SUCCESS) ? CM_SUCCESS : CMR_ERROR_KEY_OPERATION_FAILED;
+}
+
+int32_t CmKeyOpImportKey(const struct CmBlob *alias, const struct CmKeyProperties *properties,
+    const struct CmBlob *keyPair)
+{
+    struct HksParam importKeyParams[] = {
+        { .tag = HKS_TAG_IMPORT_KEY_TYPE, .uint32Param = HKS_KEY_TYPE_KEY_PAIR },
+        { .tag = HKS_TAG_ALGORITHM, .uint32Param = properties->algType },
+        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = properties->keySize },
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = properties->purpose },
+        { .tag = HKS_TAG_DIGEST, .uint32Param =  properties->digest },
+        { .tag = HKS_TAG_PADDING, .uint32Param = properties->padding },
+    };
+
+    struct HksParamSet *paramSet = NULL;
+    int32_t ret = ConstructParamSet(importKeyParams, sizeof(importKeyParams) / sizeof(struct HksParam), &paramSet);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("construct import key paramSet failed");
+        return CMR_ERROR_KEY_OPERATION_FAILED;
+    }
+
+    struct HksBlob keyAlias = { alias->size, alias->data };
+    struct HksBlob key = { keyPair->size, keyPair->data };
+    ret = HksImportKey(&keyAlias, paramSet, &key);
+    HksFreeParamSet(&paramSet);
+    if (ret != HKS_SUCCESS) {
+        CM_LOG_E("hks import key failed, ret = %d", ret);
+        return CMR_ERROR_KEY_OPERATION_FAILED;
+    }
+    return CM_SUCCESS;
 }
 
 static void FillKeySpec(const struct HksParamSet *paramSet, struct CmKeyProperties *spec)
