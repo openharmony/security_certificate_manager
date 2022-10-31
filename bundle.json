@@ -66,8 +66,7 @@
           }
         ],
         "test": [
-            "//base/security/certificate_manager/test:unittest",
-            "//base/security/certificate_manager/test/hisysevent_test:cert_hisysevent_test"
+          "//base/security/certificate_manager/test:unittest"
         ]
       }
     }

@@ -14,10 +14,7 @@
 group("cert_manager_sdk_test") {
   testonly = true
   if (os_level == "standard") {
-    deps = [ 
-      "//base/security/certificate_manager/test:unittest",
-      "//base/security/certificate_manager/test/hisysevent_test:cert_hisysevent_test"
-      ]
+    deps = [ "//base/security/certificate_manager/test:unittest" ]
   } else {
   }
 }
@@ -184,9 +181,7 @@ group("cert_manager_type_base") {
 
 group("cert_manager_type_fwk") {
   if (os_level == "standard") {
-    deps = [
-      "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk"
-    ]
+    deps = [ "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk" ]
   } else if (os_level == "small") {
     deps = []
   } else {
