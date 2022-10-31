@@ -13,17 +13,15 @@
  * limitations under the License.
  */
 
+#include "cm_param.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "hks_type.h"
-
-#include "cm_type_inner.h"
 #include "cm_log.h"
 #include "cm_mem.h"
-#include "cm_pfx.h"
-#include "cm_param.h"
+#include "cm_type_inner.h"
 
 enum CmTagType GetTagType(enum CmTag tag)
 {
@@ -83,7 +81,7 @@ static int32_t CmFreshParamSet(struct CmParamSet *paramSet, bool isCopy)
             return CMR_ERROR_INVALID_ARGUMENT;
         }
         if (GetTagType(paramSet->params[i].tag) == CM_TAG_TYPE_BYTES) {
-            if (IsAdditionOverflow(offset, paramSet->params[i].blob.size)) {
+            if (CmIsAdditionOverflow(offset, paramSet->params[i].blob.size)) {
                 CM_LOG_E("blob size overflow!");
                 return CMR_ERROR_INVALID_ARGUMENT;
             }

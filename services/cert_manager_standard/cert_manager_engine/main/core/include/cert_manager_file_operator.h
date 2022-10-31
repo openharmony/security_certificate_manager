@@ -16,7 +16,7 @@
 #ifndef CM_FILE_OPERATOR_H
 #define CM_FILE_OPERATOR_H
 
-#include "cert_manager_type.h"
+#include "cm_type.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,3 +64,4 @@ int32_t CmDirRemove(const char *path);
 #endif
 
 #endif /* CM_FILE_OPERATOR_H */
+

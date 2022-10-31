@@ -22,9 +22,8 @@
 #include "cert_manager.h"
 #include "cert_manager_file.h"
 #include "cert_manager_file_operator.h"
+#include "cert_manager_key_operation.h"
 #include "cert_manager_mem.h"
-#include "cert_manager_type.h"
-#include "cert_manager_util.h"
 #include "cm_log.h"
 #include "cm_type.h"
 #include "rbtree.h"
@@ -80,9 +79,12 @@ struct treeNode {
 
 static int32_t Ikhmac(uint8_t *data, uint32_t len, uint8_t *mac)
 {
-    struct CmBlob dataBlob = { .size = len, .data = data};
-    struct CmMutableBlob macBlob = { .size = CM_INTEGRITY_TAG_LEN, .data = mac};
-    return CertManagerHmac(CM_INTEGRITY_KEY_URI, &dataBlob, &macBlob);
+    struct CmBlob dataBlob = { .size = len, .data = data };
+    struct CmBlob macBlob = { .size = CM_INTEGRITY_TAG_LEN, .data = mac };
+
+    char aliasData[] = CM_INTEGRITY_KEY_URI;
+    struct CmBlob alias = { strlen(aliasData), (uint8_t *)aliasData };
+    return CmKeyOpCalcMac(&alias, &dataBlob, &macBlob);
 }
 
 static void FreeStatus(struct CertStatus *cs)
@@ -423,7 +425,9 @@ int32_t CertManagerStatusInit(void)
         TRY_FUNC(RbTreeNew(&g_trees[i]), rc);
     }
 
-    TRY_FUNC(CertManagerGenerateHmacKey(CM_INTEGRITY_KEY_URI), rc);
+    char aliasData[] = CM_INTEGRITY_KEY_URI;
+    struct CmBlob alias = { strlen(aliasData), (uint8_t *)aliasData };
+    TRY_FUNC(CmKeyOpGenMacKeyIfNotExist(&alias), rc);
     TRY_FUNC(LoadStatus(CM_SYSTEM_TRUSTED_STORE), rc);
     TRY_FUNC(LoadStatus(CM_USER_TRUSTED_STORE), rc);
     TRY_FUNC(LoadStatus(CM_PRI_CREDENTIAL_STORE), rc);

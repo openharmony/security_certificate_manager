@@ -24,7 +24,6 @@
 #include "system_ability_definition.h"
 
 #include "cert_manager.h"
-#include "cert_manager_type.h"
 #include "cm_event_observer.h"
 #include "cm_log.h"
 #include "cm_mem.h"

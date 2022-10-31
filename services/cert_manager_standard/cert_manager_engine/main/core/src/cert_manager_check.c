@@ -13,13 +13,33 @@
  * limitations under the License.
  */
 
-#include <ctype.h>
-#include "cm_log.h"
-#include "cert_manager.h"
-#include "cm_ipc_serialization.h"
-#include "cert_manager_service.h"
-#include "cert_manager_permission_check.h"
 #include "cert_manager_check.h"
+
+#include <ctype.h>
+
+#include "cert_manager.h"
+#include "cert_manager_permission_check.h"
+#include "cm_log.h"
+
+int32_t CheckUri(const struct CmBlob *keyUri)
+{
+    if (CmCheckBlob(keyUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid uri");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (keyUri->size > MAX_AUTH_LEN_URI) {
+        CM_LOG_E("invalid uri len:%u", keyUri->size);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    for (uint32_t i = 1; i < keyUri->size; ++i) { /* from index 1 has '\0' */
+        if (keyUri->data[i] == 0) {
+            return CM_SUCCESS;
+        }
+    }
+    return CMR_ERROR_INVALID_ARGUMENT;
+}
 
 int32_t CmServiceGetSystemCertListCheck(const uint32_t store)
 {

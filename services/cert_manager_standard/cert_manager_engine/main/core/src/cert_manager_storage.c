@@ -184,7 +184,7 @@ int32_t CmGetCertFilePath(const struct CmContext *context, uint32_t store, struc
 
     char *path = (char *)pathBlob->data;
     if (sprintf_s(path, CERT_MAX_PATH_LEN, "%s", pathPtr) < 0) {
-            return CM_FAILURE;
+        return CM_FAILURE;
     }
     pathBlob->size = strlen(path) + 1;
 

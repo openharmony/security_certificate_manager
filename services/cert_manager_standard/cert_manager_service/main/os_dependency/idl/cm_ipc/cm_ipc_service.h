@@ -88,7 +88,6 @@ void CmIpcServiceUninstallUserCert(const struct CmBlob *paramSetBlob, struct CmB
 void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context);
 
-
 #ifdef __cplusplus
 }
 #endif

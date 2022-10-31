@@ -14,7 +14,7 @@
  */
 
 #include "cm_ipc_client.h"
-#include "cm_ipc_serialization.h"
+#include "cm_ipc_client_serialization.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_x509.h"
@@ -176,7 +176,7 @@ static int32_t SetCertificateStatus(enum CmMessage type, const struct CmBlob *ce
 
         ret = SendRequest(type, &parcelBlob, NULL);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmCertificateStatusPack request fail");
+            CM_LOG_E("send request fail");
             break;
         }
     } while (0);
@@ -190,50 +190,10 @@ int32_t CmClientSetCertStatus(const struct CmBlob *certUri, const uint32_t store
     return SetCertificateStatus(CM_MSG_SET_CERTIFICATE_STATUS, certUri, store, status);
 }
 
-static int32_t CmInstallAppCertUnpackFromService(const struct CmBlob *outData, struct CmBlob *keyUri)
-{
-    uint32_t offset = 0;
-    struct CmBlob blob = { 0, NULL };
-
-    if ((outData == NULL) || (keyUri == NULL) || (outData->data == NULL) ||
-        (keyUri->data == NULL)) {
-        return CMR_ERROR_NULL_POINTER;
-    }
-
-    int32_t ret = CmGetBlobFromBuffer(&blob, outData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get keyUri failed");
-        return ret;
-    }
-
-    if ((blob.size > keyUri->size) || memcpy_s(keyUri->data, keyUri->size, blob.data, blob.size) != EOK) {
-        CM_LOG_E("copy keyUri failed");
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-
-    keyUri->size = blob.size;
-    return CM_SUCCESS;
-}
-
-static int32_t InstallAppCertInitBlob(struct CmBlob *outBlob)
-{
-    int32_t ret = CM_SUCCESS;
-
-    uint32_t buffSize = sizeof(uint32_t) + MAX_LEN_URI;
-    outBlob->data = (uint8_t *)CmMalloc(buffSize);
-    if (outBlob->data == NULL) {
-        ret = CMR_ERROR_MALLOC_FAIL;
-    }
-    outBlob->size = buffSize;
-
-    return ret;
-}
-
 static int32_t InstallAppCert(const struct CmBlob *appCert, const struct CmBlob *appCertPwd,
     const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri)
 {
     int32_t ret;
-    struct CmBlob outBlob = { 0, NULL };
     struct CmParamSet *sendParamSet = NULL;
     struct CmParam params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER,
@@ -242,7 +202,7 @@ static int32_t InstallAppCert(const struct CmBlob *appCert, const struct CmBlob 
           .blob = *appCertPwd },
         { .tag = CM_TAG_PARAM2_BUFFER,
           .blob = *certAlias },
-        { .tag = CM_TAG_PARAM0_UINT32,
+        { .tag = CM_TAG_PARAM3_UINT32,
           .uint32Param = store },
     };
     do {
@@ -257,27 +217,14 @@ static int32_t InstallAppCert(const struct CmBlob *appCert, const struct CmBlob 
             .data = (uint8_t *)sendParamSet
         };
 
-        ret = InstallAppCertInitBlob(&outBlob);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("InstallAppCertInitBlob fail");
-            break;
-        }
-
-        ret = SendRequest(CM_MSG_INSTALL_APP_CERTIFICATE, &parcelBlob, &outBlob);
+        ret = SendRequest(CM_MSG_INSTALL_APP_CERTIFICATE, &parcelBlob, keyUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmParamSet send fail");
-            break;
-        }
-
-        ret = CmInstallAppCertUnpackFromService(&outBlob, keyUri);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmAppCertListUnpackFromService fail");
             break;
         }
     } while (0);
 
     CmFreeParamSet(&sendParamSet);
-    CM_FREE_BLOB(outBlob);
     return ret;
 }
 

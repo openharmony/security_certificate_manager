@@ -15,42 +15,42 @@
 
 #include "cert_manager_service.h"
 
+#include <openssl/x509.h>
+
 #include "securec.h"
 
+#include "cert_manager.h"
+#include "cert_manager_app_cert_process.h"
 #include "cert_manager_auth_mgr.h"
+#include "cert_manager_check.h"
 #include "cert_manager_key_operation.h"
 #include "cert_manager_mem.h"
 #include "cert_manager_permission_check.h"
-#include "cert_manager_storage.h"
-#include "cm_log.h"
-#include "cm_type.h"
-
 #include "cert_manager_query.h"
-#include "cm_ipc_serialization.h"
 #include "cert_manager_status.h"
-#include "cm_x509.h"
-#include "cert_manager.h"
+#include "cert_manager_storage.h"
 #include "cert_manager_uri.h"
 #include "cm_event_process.h"
+#include "cm_log.h"
+#include "cm_type.h"
+#include "cm_x509.h"
 
-int32_t CheckUri(const struct CmBlob *keyUri)
+int32_t CmServicInstallAppCert(const struct CmContext *context, struct CmAppCertInfo *appCertInfo,
+    const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri)
 {
-    if (CmCheckBlob(keyUri) != CM_SUCCESS) {
-        CM_LOG_E("invalid uri");
-        return CMR_ERROR_INVALID_ARGUMENT;
+    int32_t ret = CmServiceInstallAppCertCheck(&appCertInfo->appCert, &appCertInfo->appCertPwd,
+        certAlias, store, context);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("service intall app cert check params failed, ret = %d", ret);
+        return ret;
     }
 
-    if (keyUri->size > MAX_AUTH_LEN_URI) {
-        CM_LOG_E("invalid uri len:%u", keyUri->size);
-        return CMR_ERROR_INVALID_ARGUMENT;
+    ret = CmInstallAppCertPro(context, appCertInfo, certAlias, store, keyUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CmInstallAppCert fail, ret = %d", ret);
+        return ret;
     }
-
-    for (uint32_t i = 1; i < keyUri->size; ++i) { /* from index 1 has '\0' */
-        if (keyUri->data[i] == 0) {
-            return CM_SUCCESS;
-        }
-    }
-    return CMR_ERROR_INVALID_ARGUMENT;
+    return ret;
 }
 
 static int32_t GetPublicAppCert(const struct CmContext *context, uint32_t store,
@@ -291,73 +291,6 @@ int32_t CmServiceGetCertList(const struct CmContext *context, uint32_t store, st
     return ret;
 }
 
-static int32_t CmGetCertListPack(const struct CertBlob *certBlob, uint32_t *status, uint32_t certCount,
-    struct CmBlob *certificateList)
-{
-    uint32_t offset = 0;
-    uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
-        sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) + MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE;
-    if (certificateList->size < buffSize) {
-        CM_LOG_E("outdata size too small");
-        return CMR_ERROR_BUFFER_TOO_SMALL;
-    }
-    certificateList->size = buffSize;
-
-    int32_t ret = CopyUint32ToBuffer(certCount, certificateList, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("Copy cert count failed");
-        return ret;
-    }
-
-    for (uint32_t i = 0; i < certCount; i++) {
-        ret = CopyBlobToBuffer(&(certBlob->subjectName[i]), certificateList, &offset);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("Copy certificate subject failed");
-            return ret;
-        }
-        ret = CopyUint32ToBuffer(status[i], certificateList, &offset);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("Copy certificate status failed");
-            return ret;
-        }
-        ret = CopyBlobToBuffer(&(certBlob->uri[i]), certificateList, &offset);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("Copy certificate uri failed");
-            return ret;
-        }
-        ret = CopyBlobToBuffer(&(certBlob->certAlias[i]), certificateList, &offset);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("Copy certificate certAlias failed");
-            return ret;
-        }
-    }
-    return ret;
-}
-
-int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store,
-    const struct CmMutableBlob *certFileList, struct CmBlob *certificateList)
-{
-    uint32_t status[MAX_COUNT_CERTIFICATE] = {0};
-    struct CertBlob certBlob;
-    (void)memset_s(&certBlob, sizeof(struct CertBlob), 0, sizeof(struct CertBlob));
-    int32_t ret = CmGetCertListInfo(context, store, certFileList, &certBlob, status);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("CmGetCertListInfo fail");
-        CmFreeCertBlob(&certBlob);
-        return ret;
-    }
-
-    ret = CmGetCertListPack(&certBlob, status, certFileList->size, certificateList);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("CmGetCertListPack fail");
-        CmFreeCertBlob(&certBlob);
-        return ret;
-    }
-
-    CmFreeCertBlob(&certBlob);
-    return ret;
-}
-
 int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, struct CmBlob *certificateData, uint32_t *status)
 {
@@ -401,64 +334,6 @@ int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlo
     if (certFileList.data != NULL) {
         CmFreeCertFiles(&certFileList);
     }
-    return ret;
-}
-
-int32_t CmServiceGetCertInfoPack(const uint32_t store, const struct CmBlob *certificateData,
-    uint32_t status, const struct CmBlob *certUri, struct CmBlob *certificateInfo)
-{
-    if (certificateInfo->size == 0) {
-        CM_LOG_I("cert file is not exist");
-        return CM_SUCCESS;
-    }
-
-    int32_t ret = CM_SUCCESS;
-    uint32_t offset = 0;
-    uint32_t buffSize = sizeof(uint32_t) + MAX_LEN_CERTIFICATE + sizeof(uint32_t) +
-        MAX_LEN_CERT_ALIAS + sizeof(uint32_t);
-    if (certificateInfo->size < buffSize) {
-        CM_LOG_E("outdata size too small");
-        return CMR_ERROR_MALLOC_FAIL;
-    }
-    certificateInfo->size = buffSize;
-
-    ret = CopyBlobToBuffer(certificateData, certificateInfo, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("copy cert data failed");
-        return ret;
-    }
-
-    ret = CopyUint32ToBuffer(status, certificateInfo, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("copy cert status failed");
-        return ret;
-    }
-
-    if (store == CM_SYSTEM_TRUSTED_STORE) {
-        CM_LOG_I("system root ca have no alias");
-        return ret;
-    }
-
-    struct CmBlob certAlias;
-    certAlias.size = MAX_LEN_CERT_ALIAS;
-    certAlias.data = (uint8_t *)CMMalloc(MAX_LEN_CERT_ALIAS);
-    if (certAlias.data == NULL) {
-        return CMR_ERROR_MALLOC_FAIL;
-    }
-    (void)memset_s(certAlias.data, MAX_LEN_CERT_ALIAS, 0, MAX_LEN_CERT_ALIAS);
-    ret = CmGetCertAlias((char *)certUri->data, &(certAlias));
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("Failed to get cert certAlias");
-        CM_FREE_BLOB(certAlias);
-        return CM_FAILURE;
-    }
-    ret = CopyBlobToBuffer(&certAlias, certificateInfo, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("copy cert data failed");
-        CM_FREE_BLOB(certAlias);
-        return ret;
-    }
-    CM_FREE_BLOB(certAlias);
     return ret;
 }
 

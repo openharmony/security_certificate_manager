@@ -13,47 +13,13 @@
  * limitations under the License.
  */
 
-#include "cm_ipc_serialization.h"
+#include "cm_ipc_client_serialization.h"
 
 #include "cm_log.h"
 #include "cm_mem.h"
 
 #include "cm_param.h"
 #include "cm_x509.h"
-
-int32_t CopyUint32ToBuffer(uint32_t value, const struct CmBlob *destBlob, uint32_t *destOffset)
-{
-    if ((*destOffset > destBlob->size) || ((destBlob->size - *destOffset) < sizeof(value))) {
-        return CMR_ERROR_BUFFER_TOO_SMALL;
-    }
-
-    if (memcpy_s(destBlob->data + *destOffset, destBlob->size - *destOffset, &value, sizeof(value)) != EOK) {
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-    *destOffset += sizeof(value);
-    return CM_SUCCESS;
-}
-
-int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlob, uint32_t *destOffset)
-{
-    if ((*destOffset > destBlob->size) ||
-        ((destBlob->size - *destOffset) < (sizeof(blob->size) + ALIGN_SIZE(blob->size)))) {
-        return CMR_ERROR_BUFFER_TOO_SMALL;
-    }
-
-    if (memcpy_s(destBlob->data + *destOffset, destBlob->size - *destOffset,
-                 &(blob->size), sizeof(blob->size)) != EOK) {
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-    *destOffset += sizeof(blob->size);
-
-    if (memcpy_s(destBlob->data + *destOffset, destBlob->size - *destOffset, blob->data, blob->size) != EOK) {
-        *destOffset -= sizeof(blob->size);
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-    *destOffset += ALIGN_SIZE(blob->size);
-    return CM_SUCCESS;
-}
 
 int32_t GetUint32FromBuffer(uint32_t *value, const struct CmBlob *srcBlob, uint32_t *srcOffset)
 {
@@ -87,75 +53,6 @@ int32_t CmGetBlobFromBuffer(struct CmBlob *blob, const struct CmBlob *srcBlob, u
     return CM_SUCCESS;
 }
 
-static int32_t CmCopyCmContextToBuffer(const struct CmContext *cmContext, struct CmBlob *inData, uint32_t *offset)
-{
-    int32_t ret;
-    ret = CopyUint32ToBuffer(cmContext->userId, inData, offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("copy cmContext->userId failed");
-        return ret;
-    }
-
-    ret = CopyUint32ToBuffer(cmContext->uid, inData, offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("copy cmContext->uid failed");
-        return ret;
-    }
-
-    struct CmBlob packageName = {MAX_LEN_PACKGE_NAME, (uint8_t *)cmContext->packageName};
-    ret = CopyBlobToBuffer(&packageName, inData, offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("copy cmContext->packageName failed");
-        return ret;
-    }
-    return ret;
-}
-
-int32_t CmCertificateInfoPack(struct CmBlob *inData, const struct CmContext *cmContext,
-    const struct CmBlob *certUri, const uint32_t store)
-{
-    int32_t ret;
-    uint32_t offset = 0;
-
-    ret = CmCopyCmContextToBuffer(cmContext, inData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("copy cmContext failed");
-        return ret;
-    }
-
-    ret = CopyBlobToBuffer(certUri, inData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("copy certUri failed");
-        return ret;
-    }
-
-    ret = CopyUint32ToBuffer(store, inData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("copy store failed");
-        return ret;
-    }
-    return ret;
-}
-
-int32_t CmCertificateListPack(struct CmBlob *inData, const struct CmContext *cmContext, const uint32_t store)
-{
-    int32_t ret;
-    uint32_t offset = 0;
-
-    ret = CmCopyCmContextToBuffer(cmContext, inData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("copy cmContext failed");
-        return ret;
-    }
-
-    ret = CopyUint32ToBuffer(store, inData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("copy store failed");
-        return ret;
-    }
-    return ret;
-}
-
 static int32_t CmCertListGetCertCount(const struct CmBlob *outData, struct CertList *certificateList,
     uint32_t *offset)
 {
@@ -165,7 +62,7 @@ static int32_t CmCertListGetCertCount(const struct CmBlob *outData, struct CertL
         CM_LOG_E("Get certificateList->certsCount failed");
         return ret;
     }
-    
+
     if (certsCount > certificateList->certsCount) {
         CM_LOG_E("Caller Buffer too small");
         return CMR_ERROR_BUFFER_TOO_SMALL;
@@ -282,38 +179,6 @@ int32_t CmCertificateInfoUnpackFromService(const struct CmBlob *outData, struct 
         return CMR_ERROR_INVALID_OPERATION;
     }
     return CM_SUCCESS;
-}
-
-int32_t CmCertificateStatusPack(struct CmBlob *inData, const struct CmContext *cmContext, const struct CmBlob *certUri,
-    const uint32_t store, const uint32_t status)
-{
-    int32_t ret;
-    uint32_t offset = 0;
-
-    ret = CmCopyCmContextToBuffer(cmContext, inData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("CertificateStatus copy cmContext failed");
-        return ret;
-    }
-
-    ret = CopyBlobToBuffer(certUri, inData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("CertificateStatus copy certUri failed");
-        return ret;
-    }
-
-    ret = CopyUint32ToBuffer(store, inData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("CertificateStatus copy store failed");
-        return ret;
-    }
-
-    ret = CopyUint32ToBuffer(status, inData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("CertificateStatus copy store failed");
-        return ret;
-    }
-    return ret;
 }
 
 int32_t CmParamsToParamSet(struct CmParam *params, uint32_t cnt, struct CmParamSet **outParamSet)

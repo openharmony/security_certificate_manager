@@ -16,9 +16,9 @@
 #ifndef CERT_MANAGER_PFX_H
 #define CERT_MANAGER_PFX_H
 
-#include "cm_x509.h"
+#include <openssl/evp.h>
 
-#include <openssl/x509.h>
+#include "cm_type.h"
 
 #ifdef __cplusplus
 extern "C" {

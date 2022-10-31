@@ -21,7 +21,7 @@
 #define CM_PARAM_SET_MAX_SIZE (4 * 1024 * 1024)
 #define CM_DEFAULT_PARAM_SET_SIZE 512
 #define CM_DEFAULT_PARAM_CNT ((uint32_t)((CM_DEFAULT_PARAM_SET_SIZE - sizeof(struct CmParamSet)) / \
-    sizeof(struct HksParam)))
+    sizeof(struct CmParam)))
 #define CM_TAG_TYPE_MASK (0xF << 28)
 
 #ifdef __cplusplus

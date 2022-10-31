@@ -16,10 +16,8 @@
 #ifndef CERT_MANAGER_URI_H
 #define CERT_MANAGER_URI_H
 
-#include "cert_manager_type.h"
 #include "cert_manager_mem.h"
 #include "cm_type.h"
-#include "hks_type.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,6 +72,11 @@ int32_t CertManagerFreeUri(struct CMUri *uri);
 int32_t CertManagerUriDecode(struct CMUri *uri, const char *encoded);
 
 int32_t CertManagerGetUidFromUri(const struct CmBlob *uri, uint32_t *uid);
+
+int32_t CmConstructUri(const struct CMUri *uriObj, struct CmBlob *outUri);
+
+int32_t CmConstructCommonUri(const struct CmContext *context, const uint32_t type,
+    const struct CmBlob *certAlias, struct CmBlob *outUri);
 
 #ifdef __cplusplus
 }
