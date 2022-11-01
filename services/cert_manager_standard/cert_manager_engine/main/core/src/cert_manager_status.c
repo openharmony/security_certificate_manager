@@ -178,34 +178,44 @@ static int DecodeStatus(RbTreeValue *value, const uint8_t *buf, uint32_t size)
     }
 
     if (buf[size - 1] != '\0') {
-        CM_LOG_W("Unexpected cert status value.\n");
+        CM_LOG_E("Unexpected cert status value");
         return CMR_ERROR;
     }
 
-    struct CertStatus *cs = CMMalloc(sizeof(struct CertStatus));
+    struct CertStatus *cs = (struct CertStatus *)CMMalloc(sizeof(struct CertStatus));
     if (cs == NULL) {
-        CM_LOG_E("Failed to allocate memory.\n");
+        CM_LOG_E("Failed to allocate memory");
         return CMR_ERROR_MALLOC_FAIL;
     }
+    (void)memset_s(cs, sizeof(struct CertStatus), 0, sizeof(struct CertStatus));
 
     const uint8_t *s = buf;
 
-    if (memcpy_s(&cs->userId, sizeof(uint32_t), s, sizeof(uint32_t)) != EOK) {
-        return CMR_ERROR;
-    }
-    s += sizeof(uint32_t);
+    int32_t ret = CM_FAILURE;
+    do {
+        if (memcpy_s(&cs->userId, sizeof(uint32_t), s, sizeof(uint32_t)) != EOK) {
+            break;
+        }
+        s += sizeof(uint32_t);
 
-    if (memcpy_s(&cs->uid, sizeof(uint32_t), s, sizeof(uint32_t)) != EOK) {
-        return CMR_ERROR;
-    }
-    s += sizeof(uint32_t);
+        if (memcpy_s(&cs->uid, sizeof(uint32_t), s, sizeof(uint32_t)) != EOK) {
+            break;
+        }
+        s += sizeof(uint32_t);
 
-    if (memcpy_s(&cs->status, sizeof(uint32_t), s, sizeof(uint32_t)) != EOK) {
-        return CMR_ERROR;
+        if (memcpy_s(&cs->status, sizeof(uint32_t), s, sizeof(uint32_t)) != EOK) {
+            break;
+        }
+        s += sizeof(uint32_t);
+        ret = CM_SUCCESS;
+    } while (0);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("copy to cs failed");
+        CMFree(cs);
+        return ret;
     }
-    s += sizeof(uint32_t);
 
-    cs->fileName = strdup((char *) s);
+    cs->fileName = strdup((char *)s);
     *value = cs;
     return CMR_OK;
 }
