@@ -32,26 +32,16 @@ extern "C" {
 
 int32_t CertManagerInitialize(void);
 
-int32_t CertManagerFindCertFileName(const struct CmContext *context, const struct CmBlob *certificate,
-    uint32_t store, struct CmMutableBlob *path, struct CmMutableBlob *fileName);
-
 int32_t CertManagerFindCertFileNameByUri(
     const struct CmContext *context, const struct CmBlob *certUri, uint32_t store, struct CmMutableBlob *path);
 
 int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *keyUri,
     const uint32_t store);
 
-int32_t GetFilePath(const struct CmContext *context, uint32_t store, char *pathPtr,
-    char *suffix, uint32_t *suffixLen);
-
 int32_t CmRemoveAllAppCert(const struct CmContext *context);
-
-int32_t CmFreeCaFileNames(struct CmMutableBlob *fileNames);
 
 int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store, struct CmBlob *fileNames,
     const uint32_t fileSize, uint32_t *fileCount);
-
-int32_t CmGetFilePath(const struct CmContext *context, uint32_t store, struct CmMutableBlob *pathBlob);
 
 void CmFreeFileNameUri(struct CmBlob *uri, uint32_t size);
 

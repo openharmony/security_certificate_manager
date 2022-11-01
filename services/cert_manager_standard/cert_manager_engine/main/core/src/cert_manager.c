@@ -26,7 +26,6 @@
 #include "cert_manager_status.h"
 #include "cert_manager_storage.h"
 #include "cert_manager_uri.h"
-#include "cm_asn1.h"
 #include "cm_log.h"
 #include "cm_type.h"
 #include "cm_x509.h"
@@ -78,7 +77,7 @@ int32_t CertManagerInitialize(void)
     return CMR_OK;
 }
 
-int32_t CmFreeCaFileNames(struct CmMutableBlob *fileNames)
+static int32_t CmFreeCaFileNames(struct CmMutableBlob *fileNames)
 {
     uint32_t i;
     int32_t ret = 0;
@@ -108,7 +107,7 @@ int32_t CmFreeCaFileNames(struct CmMutableBlob *fileNames)
     return ret;
 }
 
-int32_t GetFilePath(const struct CmContext *context, uint32_t store, char *pathPtr,
+static int32_t GetFilePath(const struct CmContext *context, uint32_t store, char *pathPtr,
     char *suffix, uint32_t *suffixLen)
 {
     int32_t ret, retVal;
@@ -153,7 +152,7 @@ int32_t GetFilePath(const struct CmContext *context, uint32_t store, char *pathP
     return CMR_OK;
 }
 
-int32_t CmGetFilePath(const struct CmContext *context, uint32_t store, struct CmMutableBlob *pathBlob)
+static int32_t CmGetFilePath(const struct CmContext *context, uint32_t store, struct CmMutableBlob *pathBlob)
 {
     char pathPtr[MAX_PATH_LEN] = {0};
     uint32_t suffixLen = 0;
@@ -196,30 +195,6 @@ int32_t CmGetFilePath(const struct CmContext *context, uint32_t store, struct Cm
         CM_LOG_E("Failed to create folder %s", path);
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
-    return CMR_OK;
-}
-
-static int32_t CmGetSubjectNameAsn1(const struct CmBlob *certificate, struct CmAsn1Obj *subjectName)
-{
-    ASSERT_ARGS(certificate && certificate->size && certificate->data);
-    ASSERT_ARGS(subjectName);
-
-    struct CmAsn1Obj obj;
-    struct CmBlob next = { 0, NULL };
-    struct CmBlob cert = CM_BLOB(certificate);
-
-    (void)memset_s(&obj, sizeof(struct CmAsn1Obj), 0, sizeof(struct CmAsn1Obj));
-    ASSERT_CM_CALL(CmAsn1ExtractTag(&next, &obj, &cert, ASN_1_TAG_TYPE_SEQ));
-    struct CmBlob val = { obj.value.size, obj.value.data };
-
-    ASSERT_CM_CALL(CmAsn1ExtractTag(&val, &obj, &val, ASN_1_TAG_TYPE_SEQ));
-    struct CmBlob in_val = { obj.value.size, obj.value.data };
-
-    ASSERT_CM_CALL(CmAsn1ExtractTag(&in_val, &obj, &in_val, ASN_1_TAG_TYPE_CTX_SPEC0));
-    ASSERT_CM_CALL(CmAsn1ExtractTag(&in_val, &obj, &in_val, ASN_1_TAG_TYPE_INT));
-    ASSERT_CM_CALL(CmAsn1ExtractTag(&in_val, &obj, &in_val, ASN_1_TAG_TYPE_SEQ));
-    ASSERT_CM_CALL(CmAsn1ExtractTag(&in_val, subjectName, &in_val, ASN_1_TAG_TYPE_SEQ));
-
     return CMR_OK;
 }
 
@@ -287,49 +262,6 @@ cleanup:
     return ret;
 }
 
-static int32_t NameHashFromAsn1(const struct CmAsn1Obj *subject, struct CmMutableBlob *nameDigest)
-{
-    if (subject == NULL) {
-        CM_LOG_E("NULL pointer error");
-        return CMR_ERROR_NULL_POINTER;
-    }
-
-    uint8_t nameBuf[subject->header.size + subject->value.size];
-    struct HksBlob subjectName = {sizeof(nameBuf), nameBuf};
-    int32_t ret = memcpy_s(nameBuf, sizeof(nameBuf), subject->header.data, subject->header.size);
-    if (ret != EOK) {
-        CM_LOG_E("Memory copy failed");
-        return CMR_ERROR_BUFFER_TOO_SMALL;
-    }
-
-    ret = memcpy_s(nameBuf + subject->header.size, sizeof(nameBuf) - subject->header.size,
-        subject->value.data, subject->value.size);
-    if (ret != EOK) {
-        CM_LOG_E("Memory copy failed");
-        return CMR_ERROR_BUFFER_TOO_SMALL;
-    }
-
-    return NameHash(&subjectName, nameDigest);
-}
-
-/* This function constructes md5 hash part of filename for storing certificate.
- * All cetificates are stored in files namePrefix.count. where namePrefix = md5(subjectName)
- * and count is = 0, 1.... needed fpr potential hash collisions.
- */
-static int32_t CertManagerGetFileNamePrefix(const struct CmBlob *certificate, struct CmMutableBlob *namePrefix)
-{
-    struct CmAsn1Obj subjectAsn1;
-
-    (void)memset_s(&subjectAsn1, sizeof(struct CmAsn1Obj), 0, sizeof(struct CmAsn1Obj));
-    int32_t retVal = CmGetSubjectNameAsn1(certificate, &subjectAsn1);
-    if (retVal != CMR_OK) {
-        CM_LOG_E("Failed to obtain subjectName");
-        return CMR_ERROR_NOT_FOUND;
-    }
-    /* Compute name prefix for the certificate */
-    return NameHashFromAsn1(&subjectAsn1, namePrefix);
-}
-
 int32_t CertManagerFindCertFileNameByUri(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, struct CmMutableBlob *path)
 {
@@ -373,109 +305,6 @@ cleanup:
         (void)CmFreeCaFileNames(&fileNames);
     }
 
-    return ret;
-}
-
-static int32_t GetMathedCertificateFileName(const struct CmBlob *certificate, const struct CmMutableBlob *fNames,
-    const struct CmMutableBlob *path, struct CmMutableBlob *fileName, uint32_t index)
-{
-    uint32_t fsize;
-    int32_t ret = CMR_ERROR;
-    uint8_t certBuff[CERT_MANAGER_MAX_CERT_SIZE] = {0};
-
-    fsize = CertManagerFileRead((char *)path->data, (char *)fNames[index].data, 0, certBuff, sizeof(certBuff));
-    if (fsize == 0) {
-        CM_LOG_E("Failed to read file: %s/%s", (char *)path->data, fNames[index].data);
-        return CMR_ERROR_READ_FILE_ERROR;
-    }
-
-    /* Verify that this file contains certificate to be removed. i.e. we don't just have hash collision */
-    if ((certificate->size == fsize) && (memcmp(certificate->data, certBuff, fsize) == 0)) {
-        CM_LOG_I("Matching certificate found: %s\n", (char*)fNames[index].data);
-        /* this is the certificate, return the filename */
-        if (fileName->size < fNames[index].size + 1) {
-            /* shouldn't happen */
-            CM_LOG_E("File name buffer too small");
-            ret = CMR_ERROR_READ_FILE_ERROR;
-        }
-
-        if (memcpy_s(fileName->data, fileName->size, fNames[index].data, fNames[index].size) != EOK) {
-            CM_LOG_E("Failed to copy file name.\n");
-            ret = CMR_ERROR;
-        } else {
-            fileName->data[fNames[index].size] = '\0';
-            fileName->size = fNames[index].size;
-            ret = CMR_OK;
-        }
-    }
-    return ret;
-}
-
-static int32_t FindCertFileName(const struct CmMutableBlob *fileNames,  const struct CmBlob *certificate,
-    struct CmMutableBlob nameDigest, const struct CmMutableBlob *path, struct CmMutableBlob *fileName)
-{
-    uint32_t i;
-    int32_t retVal = CMR_ERROR_NOT_FOUND;
-    struct CmMutableBlob *fNames = (struct CmMutableBlob *)fileNames->data;
-
-    for (i = 0; i < fileNames->size; i++) {
-        if (fNames[i].data == NULL) {
-            CM_LOG_E("Corrupted file name at index: %u", i);
-            retVal = CMR_ERROR_STORAGE;
-        }
-        /* Check if file content is matching with the certificate */
-        if ((nameDigest.size < fNames[i].size) && (memcmp(nameDigest.data, fNames[i].data, nameDigest.size) == 0)) {
-            retVal = GetMathedCertificateFileName(certificate, fNames, path, fileName, i);
-            if (retVal != CMR_OK) {
-                CM_LOG_E("Failed to get matched file");
-            } else {
-                break;
-            }
-        }
-    }
-    return retVal;
-}
-
-int32_t CertManagerFindCertFileName(const struct CmContext *context, const struct CmBlob *certificate,
-    uint32_t store, struct CmMutableBlob *path, struct CmMutableBlob *fileName)
-{
-    ASSERT_ARGS(context && certificate && fileName);
-    struct CmMutableBlob fileNames = {0, NULL};
-    struct CmBlob uri[MAX_COUNT_CERTIFICATE];
-    uint8_t namePrefix[MAX_NAME_PREFIX] = {0};
-    struct CmMutableBlob nameDigest = {sizeof(namePrefix), namePrefix};
-    /* Compute name prefix for the certificate */
-    int32_t ret = CertManagerGetFileNamePrefix(certificate, &nameDigest);
-    if (ret != CMR_OK) {
-        CM_LOG_E("Failed to compute for removed certificate");
-        return ret;
-    }
-
-    do {
-        if (CmGetFilePath(context, store, path) != CMR_OK) {
-            CM_LOG_E("Failed obtain path for store %u", store);
-            ret = CMR_ERROR;
-            break;
-        }
-        uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
-        (void)memset_s(uri, len, 0, len);
-        if (CertManagerGetFilenames(&fileNames, (char *)path->data, uri) < 0) {
-            CM_LOG_E("Failed obtain filenames from path: %s", (char *)path->data);
-            ret = CMR_ERROR_STORAGE;
-            break;
-        }
-
-        ret = FindCertFileName(&fileNames, certificate, nameDigest, path, fileName);
-        if (ret != CMR_OK) {
-            CM_LOG_E("Failed find files");
-            break;
-        }
-    } while (0);
-
-    CmFreeFileNameUri(uri, MAX_COUNT_CERTIFICATE);
-    if (fileNames.data != NULL) {
-        (void) CmFreeCaFileNames(&fileNames);
-    }
     return ret;
 }
 
