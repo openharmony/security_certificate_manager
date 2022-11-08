@@ -79,6 +79,7 @@ int32_t InitCertList(struct CertList **certlist)
     if ((*certlist)->certAbstract == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
     }
+    (void)memset_s((*certlist)->certAbstract, buffSize, 0, buffSize);
 
     (*certlist)->certsCount = MAX_COUNT_CERTIFICATE;
 
