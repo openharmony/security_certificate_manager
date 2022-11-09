@@ -54,7 +54,7 @@ int32_t RbTreeDelete(struct RbTree *t, struct RbTreeNode *z);
 
 int32_t RbTreeInsert(struct RbTree *t, RbTreeKey key, const RbTreeValue value);
 
-int32_t RbTreeFindNode(struct RbTreeNode **node, RbTreeKey key, const struct RbTree *tree);
+int32_t RbTreeFindNode(struct RbTreeNode **nodePtr, RbTreeKey key, const struct RbTree *tree);
 
 int32_t RbTreeDecode(struct RbTree *t, RbTreeValueDecoder dec, uint8_t *buf, uint32_t size);
 

@@ -157,7 +157,7 @@ static int32_t EncodeComp(
         off++;
     }
 
-    if (EOK != memcpy_s(buf + off, avail, key, keyLen)) {
+    if (memcpy_s(buf + off, avail, key, keyLen) != EOK) {
         return CMR_ERROR;
     }
     off += keyLen;
@@ -357,7 +357,7 @@ static char *DecodeValue(const char *s, uint32_t off, uint32_t len)
         if (s[i] != '%') {
             buf[bufOff] = s[i];
         } else {
-            buf[bufOff] = HexDecode2(s[i+1], s[i+2]); /* 2 is array index */
+            buf[bufOff] = HexDecode2(s[i + 1], s[i + 2]); /* 2 is array index */
             i += 2; /* 2 is array index */
         }
     }

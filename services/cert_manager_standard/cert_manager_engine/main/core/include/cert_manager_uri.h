@@ -35,7 +35,7 @@ extern "C" {
 #define CM_URI_TYPE_APP_KEY ((uint32_t)2)
 #define CM_URI_TYPE_WLAN_KEY ((uint32_t)3)
 #define CM_URI_TYPE_MAX CM_URI_TYPE_WLAN_KEY
-#define CM_URI_TYPE_INVALID (CM_URI_TYPE_MAX+1)
+#define CM_URI_TYPE_INVALID (CM_URI_TYPE_MAX + 1)
 
 #define MALLOC CMMalloc
 #define FREE CMFree

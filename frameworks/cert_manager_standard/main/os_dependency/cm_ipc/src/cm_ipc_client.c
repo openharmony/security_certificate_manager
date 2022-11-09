@@ -949,7 +949,6 @@ static int32_t CmUserCertInfoUnpackFromService(const struct CmBlob *outBuf,
 
     ret = CmGetBlobFromBuffer(&bufBlob, outBuf, &offset);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("get cert data faild");
         return ret;
     }
     if (memcpy_s(userCertInfo->certAlias, MAX_LEN_CERT_ALIAS, bufBlob.data, bufBlob.size) != EOK) {

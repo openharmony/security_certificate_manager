@@ -71,7 +71,7 @@ struct CertEnableStatus {
     uint32_t status;
 };
 
-struct treeNode {
+struct TreeNode {
     uint32_t store;
     bool *found;
     RbTreeKey key;
@@ -462,7 +462,7 @@ static RbTreeKey GetRbTreeKey(uint32_t store, char *fn)
         key = GetRbTreeKeyFromName(fn);
     } else {
         int32_t ret = NameHashFromUri(fn, &nameDigest);
-        if (ret!= CMR_OK) {
+        if (ret != CMR_OK) {
             return ret;
         }
         key = GetRbTreeKeyFromName((char *)nameDigest.data);
@@ -601,7 +601,7 @@ static bool StatusMatch(const struct CmContext *context, const struct CertStatus
 }
 
 static int32_t CertManagerFindMatchedFile(const struct CmContext *context, struct RbTreeNode **treeNode,
-    struct RbTree *tree, struct treeNode tempPara, char *fn)
+    struct RbTree *tree, struct TreeNode tempPara, char *fn)
 {
     uint32_t store = tempPara.store;
     bool *found = tempPara.found;
@@ -654,7 +654,7 @@ static int32_t CertManagerStatus(const struct CmContext *context, struct RbTree 
     }
 
     /* furthrt check if the actual file name matched. */
-    struct treeNode tempPara = {store, &found, key};
+    struct TreeNode tempPara = {store, &found, key};
     rc = CertManagerFindMatchedFile(context, &node, tree, tempPara, fn);
     if (rc != CMR_OK) {
         CM_LOG_W("Failed to search file name");
@@ -691,7 +691,7 @@ static int32_t CertManagerCheckStorePermission(const struct CmContext *context, 
         if (!statusOnly) {
             CM_LOG_E("Storege type %u should be read on;y\n", store);
             return CMR_ERROR_NOT_PERMITTED;
-        } else if (CMR_OK != CertManagerIsCallerPrivileged(context)) {
+        } else if (CertManagerIsCallerPrivileged(context) != CMR_OK) {
             CM_LOG_W("Only privileged caller can change status in system stores.\n");
             return CMR_ERROR_NOT_PERMITTED;
         }
@@ -700,7 +700,7 @@ static int32_t CertManagerCheckStorePermission(const struct CmContext *context, 
         return CMR_ERROR_NOT_SUPPORTED;
     } else if (store == CM_USER_TRUSTED_STORE) {
         /* only priviled callers can update the user store */
-        if (CMR_OK != CertManagerIsCallerPrivileged(context)) {
+        if (CertManagerIsCallerPrivileged(context) != CMR_OK) {
             CM_LOG_W("Only privileged caller can modify user stores.\n");
             return CMR_ERROR_NOT_PERMITTED;
         }

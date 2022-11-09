@@ -141,7 +141,7 @@ int32_t SendRequest(enum CmMessage type, const struct CmBlob *inBlob,
         data.WriteUint32(outBlob->size);
     }
     data.WriteUint32(inBlob->size);
-    data.WriteBuffer(inBlob->data, (size_t)inBlob->size);
+    data.WriteBuffer(inBlob->data, static_cast<size_t>(inBlob->size));
 
     int error = cmProxy->SendRequest(type, data, reply, option);
     if (error != 0) {
