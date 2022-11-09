@@ -14,7 +14,10 @@
 group("cert_manager_sdk_test") {
   testonly = true
   if (os_level == "standard") {
-    deps = [ "//base/security/certificate_manager/test:unittest" ]
+    deps = [
+      "//base/security/certificate_manager/test:unittest",
+      "//base/security/certificate_manager/test/unittest/module_test:cm_coverage_test",
+    ]
   } else {
   }
 }
