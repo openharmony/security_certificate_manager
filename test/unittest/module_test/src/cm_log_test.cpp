@@ -48,7 +48,7 @@ void CmLogTest::TearDown()
 
 /**
 * @tc.name: CmLogTest001
-* @tc.desc: Warn
+* @tc.desc: Test Log Warn
 * @tc.type: FUNC
 * @tc.require: AR000H0MIA /SR000H09NA
 */
@@ -57,11 +57,23 @@ HWTEST_F(CmLogTest, CmLogTest001, TestSize.Level0)
     CM_LOG_W("this is test for log");
 }
 
+/**
+* @tc.name: CmLogTest002
+* @tc.desc: Test Log ID INVALID
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
 HWTEST_F(CmLogTest, CmLogTest002, TestSize.Level0)
 {
     CmLog(CM_LOG_LEVEL_D + 1, __func__, __LINE__, "this is test for default branch");
 }
 
+/**
+* @tc.name: CmLogTest003
+* @tc.desc: Test Log info length more than 512
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
 HWTEST_F(CmLogTest, CmLogTest003, TestSize.Level0)
 {
     CM_LOG_W("MoreThan512Bytes................................................"
