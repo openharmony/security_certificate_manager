@@ -221,7 +221,7 @@ static int32_t GetX509TimeFormat(TIME_FUNC fuc, const X509 *x509cert, char *outB
 
     struct DataTime dataTime;
     int32_t ret = GetX509Time(fuc, x509cert, &dataTime);
-    if (CM_SUCCESS != ret) {
+    if (ret != CM_SUCCESS) {
         return ret;
     }
 

@@ -44,14 +44,14 @@ void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData
     std::string action = want.GetAction();
     if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED ||
         action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
-        context.uid = (uint32_t)want.GetIntParam(AppExecFwk::Constants::UID, -1);
+        context.uid = static_cast<uint32_t>(want.GetIntParam(AppExecFwk::Constants::UID, -1));
         int userId = 0;
         OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(context.uid, userId);
-        context.userId = (uint32_t)userId;
+        context.userId = static_cast<uint32_t>(userId);
         CM_LOG_I("CmService package removed: uid is %u userId is %u", context.uid, context.userId);
         CmDeleteProcessInfo(&context);
     } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
-        context.userId = (uint32_t)data.GetCode();
+        context.userId = static_cast<uint32_t>(data.GetCode());
         CM_LOG_I("CmService user removed: userId is %d", context.userId);
         CmDeleteProcessInfo(&context);
     }

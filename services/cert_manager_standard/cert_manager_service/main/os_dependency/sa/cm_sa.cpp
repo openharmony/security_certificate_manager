@@ -45,39 +45,6 @@ using CmIpcHandlerFuncProc = void (*)(const struct CmBlob *msg, const CmContext 
 using CmIpcAppHandlerFuncProc = void (*)(const struct CmBlob *msg, struct CmBlob *outData,
     const CmContext *context);
 
-enum CmMessage {
-    CM_MSG_BASE = 0x3a400,
-
-    CM_MSG_GEN_KEY = CM_MSG_BASE,
-    CM_MSG_GET_CERTIFICATE_LIST,
-    CM_MSG_GET_CERTIFICATE_INFO,
-    CM_MSG_SET_CERTIFICATE_STATUS,
-    CM_MSG_INSTALL_APP_CERTIFICATE,
-    CM_MSG_UNINSTALL_APP_CERTIFICATE,
-    CM_MSG_UNINSTALL_ALL_APP_CERTIFICATE,
-    CM_MSG_GET_APP_CERTIFICATE_LIST,
-    CM_MSG_GET_APP_CERTIFICATE,
-
-    CM_MSG_GRANT_APP_CERT,
-    CM_MSG_GET_AUTHED_LIST,
-    CM_MSG_CHECK_IS_AUTHED_APP,
-    CM_MSG_REMOVE_GRANT_APP,
-    CM_MSG_INIT,
-    CM_MSG_UPDATE,
-    CM_MSG_FINISH,
-    CM_MSG_ABORT,
-
-    CM_MSG_GET_USER_CERTIFICATE_LIST,
-    CM_MSG_GET_USER_CERTIFICATE_INFO,
-    CM_MSG_SET_USER_CERTIFICATE_STATUS,
-    CM_MSG_INSTALL_USER_CERTIFICATE,
-    CM_MSG_UNINSTALL_USER_CERTIFICATE,
-    CM_MSG_UNINSTALL_ALL_USER_CERTIFICATE,
-
-    /* new cmd type must be added before HKS_MSG_MAX */
-    CM_MSG_MAX,
-};
-
 struct CmIpcPoint {
     enum CmMessage msgId;
     CmIpcAppHandlerFuncProc handler;
@@ -167,7 +134,8 @@ static int32_t ProcessMessage(uint32_t code, uint32_t outSize, const struct CmBl
                 return HW_SYSTEM_ERROR;
             }
         }
-        g_cmIpcHandler[i].handler((const struct CmBlob *)&srcData, &outData, (const CmContext *)&reply);
+        g_cmIpcHandler[i].handler(static_cast<const struct CmBlob *>(&srcData), &outData,
+            reinterpret_cast<const struct CmContext *>(&reply));
         CM_FREE_BLOB(outData);
         break;
     }
@@ -230,10 +198,14 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     }
 
     CM_LOG_I("OnRemoteRequest code:%u", code);
+    // check the code is valid
+    if (code < MSG_CODE_BASE || code >= MSG_CODE_MAX) {
+        return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
 
-    uint32_t outSize = (uint32_t)data.ReadUint32();
+    uint32_t outSize = static_cast<uint32_t>(data.ReadUint32());
     struct CmBlob srcData = { 0, nullptr };
-    srcData.size = (uint32_t)data.ReadUint32();
+    srcData.size = static_cast<uint32_t>(data.ReadUint32());
     if (IsInvalidLength(srcData.size)) {
         CM_LOG_E("srcData size is invalid, size:%u", srcData.size);
         return HW_SYSTEM_ERROR;
@@ -244,7 +216,7 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
         CM_LOG_E("Malloc srcData failed.");
         return HW_SYSTEM_ERROR;
     }
-    const uint8_t *pdata = data.ReadBuffer((size_t)srcData.size);
+    const uint8_t *pdata = data.ReadBuffer(static_cast<size_t>(srcData.size));
     if (pdata == nullptr) {
         CM_FREE_BLOB(srcData);
         CM_LOG_I("CMR_ERROR_NULL_POINTER");

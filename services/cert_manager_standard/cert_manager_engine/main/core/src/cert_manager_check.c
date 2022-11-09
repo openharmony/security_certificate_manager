@@ -56,14 +56,14 @@ int32_t CmServiceGetSystemCertListCheck(const uint32_t store)
     return CM_SUCCESS;
 }
 
-int32_t CmServiceGetSystemCertCheck(const uint32_t store, const struct CmBlob *keyUri)
+int32_t CmServiceGetSystemCertCheck(const uint32_t store, const struct CmBlob *certUri)
 {
     if (store != CM_SYSTEM_TRUSTED_STORE) {
         CM_LOG_E("invalid input arguments store:%u", store);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (CheckUri(keyUri) != CM_SUCCESS) {
+    if (CheckUri(certUri) != CM_SUCCESS) {
         CM_LOG_E("invalid input arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -76,14 +76,14 @@ int32_t CmServiceGetSystemCertCheck(const uint32_t store, const struct CmBlob *k
     return CM_SUCCESS;
 }
 
-int32_t CmServiceSetCertStatusCheck(const uint32_t store, const struct CmBlob *keyUri, const uint32_t status)
+int32_t CmServiceSetCertStatusCheck(const uint32_t store, const struct CmBlob *certUri, const uint32_t status)
 {
     if (store != CM_SYSTEM_TRUSTED_STORE) {
         CM_LOG_E("invalid input arguments store:%u", store);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (CheckUri(keyUri) != CM_SUCCESS) {
+    if (CheckUri(certUri) != CM_SUCCESS) {
         CM_LOG_E("invalid input arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }

@@ -364,19 +364,19 @@ int32_t RbTreeDelete(struct RbTree *t, struct RbTreeNode *z)
     return CM_SUCCESS;
 }
 
-int32_t RbTreeFindNode(struct RbTreeNode **np, RbTreeKey key, const struct RbTree *t)
+int32_t RbTreeFindNode(struct RbTreeNode **nodePtr, RbTreeKey key, const struct RbTree *tree)
 {
-    if (t == NULL || np == NULL) {
+    if (tree == NULL || nodePtr == NULL) {
         CM_LOG_E("input param is invaild");
         return CM_FAILURE;
     }
 
-    *np = NULL;
+    *nodePtr = NULL;
 
-    struct RbTreeNode *n = t->root;
-    while (n != t->nil) {
+    struct RbTreeNode *n = tree->root;
+    while (n != tree->nil) {
         if (KEY(n) == key) {
-            *np = n;
+            *nodePtr = n;
             return CM_SUCCESS;
         } else if (key < KEY(n)) {
             n = n->left;

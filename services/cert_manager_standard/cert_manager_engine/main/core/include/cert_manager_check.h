@@ -26,14 +26,14 @@ int32_t CheckUri(const struct CmBlob *keyUri);
 
 int32_t CmServiceGetSystemCertListCheck(const uint32_t store);
 
-int32_t CmServiceGetSystemCertCheck(const uint32_t store, const struct CmBlob *keyUri);
+int32_t CmServiceGetSystemCertCheck(const uint32_t store, const struct CmBlob *certUri);
 
 int32_t CmServiceSetCertStatusCheck(const uint32_t store, const struct CmBlob *certUri, const uint32_t status);
 
 int32_t CmServiceInstallAppCertCheck(const struct CmBlob *appCert, const struct CmBlob *appCertPwd,
     const struct CmBlob *certAlias, const uint32_t store, const struct CmContext *cmContext);
 
-int32_t CmServiceUninstallAppCertCheck(const uint32_t store, const struct CmBlob *certUri);
+int32_t CmServiceUninstallAppCertCheck(const uint32_t store, const struct CmBlob *keyUri);
 
 int32_t CmServiceGetAppCertListCheck(const uint32_t store);
 
