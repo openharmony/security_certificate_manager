@@ -17,7 +17,10 @@ module_output_path = "cert_manager_standard/cert_manager_standard_test"
 
 ohos_unittest("cm_module_test") {
   module_out_path = module_output_path
-  sources = [ "src/cm_log_test.cpp" ]
+  sources = [
+    "src/cm_cert_parse_test.cpp",
+    "src/cm_log_test.cpp",
+  ]
 
   include_dirs = [
     "//third_party/bounds_checking_function/include",
