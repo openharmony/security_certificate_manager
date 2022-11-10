@@ -20,7 +20,7 @@
 #include "cm_ipc_client.h"
 #include "cm_type.h"
 
-CM_API_EXPORT int32_t CmGetCertList(const uint32_t store, struct CertList *certificateList)
+CM_API_EXPORT int32_t CmGetCertList(uint32_t store, struct CertList *certificateList)
 {
     CM_LOG_I("enter get certificate list");
     if (certificateList == NULL) {
@@ -279,7 +279,7 @@ CM_API_EXPORT int32_t CmSetUserCertStatus(const struct CmBlob *certUri, uint32_t
         return CMR_ERROR_NULL_POINTER;
     }
 
-    uint32_t uStatus = status ? 0: 1; // 0 indicates the certificate enabled status
+    uint32_t uStatus = status ? 0 : 1; // 0 indicates the certificate enabled status
 
     int32_t ret = CmClientSetUserCertStatus(certUri, store, uStatus);
     CM_LOG_I("leave set cert status, result = %d", ret);

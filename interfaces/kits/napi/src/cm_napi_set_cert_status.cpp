@@ -77,7 +77,7 @@ static napi_value SetCertStatusParseParams(
     napi_env env, napi_callback_info info, SetCertStatusAsyncContext context)
 {
     size_t argc = CM_NAPI_SET_CERT_STATUS_MAX_ARGS;
-    napi_value argv[CM_NAPI_SET_CERT_STATUS_MAX_ARGS] = {0};
+    napi_value argv[CM_NAPI_SET_CERT_STATUS_MAX_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc < CM_NAPI_SET_CERT_STATUS_MIN_ARGS) {
@@ -141,13 +141,13 @@ static void SetCertStatusExecute(napi_env env, void *data)
 static void SetCertStatusComplete(napi_env env, napi_status status, void *data)
 {
     SetCertStatusAsyncContext context = static_cast<SetCertStatusAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         NAPI_CALL_RETURN_VOID(env, napi_get_boolean(env, true, &result[1]));
     } else {
-        const char *errorMessage = "set cert status error";
-        result[0] = GenerateBusinessError(env, context->result, errorMessage);
+        const char *errorMsg = "set cert status error";
+        result[0] = GenerateBusinessError(env, context->result, errorMsg);
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     if (context->deferred != nullptr) {

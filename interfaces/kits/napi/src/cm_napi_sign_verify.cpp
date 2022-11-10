@@ -136,7 +136,7 @@ static napi_value GetBlob(napi_env env, napi_value object, CmBlob *&blob)
 static napi_value ParseCMInitParams(napi_env env, napi_callback_info info, SignVerifyAsyncContext context)
 {
     size_t argc = CM_NAPI_INIT_ARGS_CNT;
-    napi_value argv[CM_NAPI_INIT_ARGS_CNT] = {0};
+    napi_value argv[CM_NAPI_INIT_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_INIT_ARGS_CNT) && (argc != (CM_NAPI_INIT_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
@@ -177,7 +177,7 @@ static napi_value ParseCMInitParams(napi_env env, napi_callback_info info, SignV
 static napi_value ParseCMUpdateParams(napi_env env, napi_callback_info info, SignVerifyAsyncContext context)
 {
     size_t argc = CM_NAPI_UPDATE_ARGS_CNT;
-    napi_value argv[CM_NAPI_UPDATE_ARGS_CNT] = {0};
+    napi_value argv[CM_NAPI_UPDATE_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_UPDATE_ARGS_CNT) && (argc != (CM_NAPI_UPDATE_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
@@ -345,7 +345,7 @@ static napi_value ProcessFinishThreeParam(napi_env env, napi_value *argv, SignVe
 static napi_value ParseCMFinishParams(napi_env env, napi_callback_info info, SignVerifyAsyncContext context)
 {
     size_t argc = CM_NAPI_FINISH_ARGS_CNT;
-    napi_value argv[CM_NAPI_FINISH_ARGS_CNT] = {0};
+    napi_value argv[CM_NAPI_FINISH_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_FINISH_ARGS_CNT) && (argc != (CM_NAPI_FINISH_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT)) &&
@@ -376,7 +376,7 @@ static napi_value ParseCMFinishParams(napi_env env, napi_callback_info info, Sig
 static napi_value ParseCMAbortParams(napi_env env, napi_callback_info info, SignVerifyAsyncContext context)
 {
     size_t argc = CM_NAPI_ABORT_ARGS_CNT;
-    napi_value argv[CM_NAPI_ABORT_ARGS_CNT] = {0};
+    napi_value argv[CM_NAPI_ABORT_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_ABORT_ARGS_CNT) && (argc != (CM_NAPI_ABORT_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
@@ -472,7 +472,7 @@ static napi_value ConvertResultHandle(napi_env env, const CmBlob *handle)
 static void InitComplete(napi_env env, napi_status status, void *data)
 {
     SignVerifyAsyncContext context = static_cast<SignVerifyAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultHandle(env, context->handle);
@@ -499,7 +499,7 @@ static void UpdateExecute(napi_env env, void *data)
 static void UpdateOrAbortComplete(napi_env env, napi_status status, void *data)
 {
     SignVerifyAsyncContext context = static_cast<SignVerifyAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         napi_get_boolean(env, true, &result[1]);
@@ -554,7 +554,7 @@ static napi_value ConvertResultSignature(napi_env env, bool isSign, const CmBlob
 static void FinishComplete(napi_env env, napi_status status, void *data)
 {
     SignVerifyAsyncContext context = static_cast<SignVerifyAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultSignature(env, context->isSign, context->signature);
