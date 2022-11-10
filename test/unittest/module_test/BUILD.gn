@@ -20,6 +20,7 @@ ohos_unittest("cm_module_test") {
   sources = [
     "src/cm_cert_parse_test.cpp",
     "src/cm_log_test.cpp",
+    "src/cm_param_test.cpp",
   ]
 
   include_dirs = [
