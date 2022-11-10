@@ -60,7 +60,7 @@ napi_value GetAppCertListParseParams(
     napi_env env, napi_callback_info info, GetAppCertListAsyncContext context)
 {
     size_t argc = CM_NAPI_GET_APP_CERT_LIST_MAX_ARGS;
-    napi_value argv[CM_NAPI_GET_APP_CERT_LIST_MAX_ARGS] = {0};
+    napi_value argv[CM_NAPI_GET_APP_CERT_LIST_MAX_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_GET_APP_CERT_LIST_MIN_ARGS) && (argc != CM_NAPI_GET_APP_CERT_LIST_MAX_ARGS)) {
@@ -100,7 +100,7 @@ void InitAppCertList(struct CredentialList *credentialList)
 {
     uint32_t buffSize = (MAX_COUNT_CERTIFICATE * sizeof(struct CredentialAbstract));
     credentialList->credentialAbstract = static_cast<struct CredentialAbstract *>(CmMalloc(buffSize));
-    if (credentialList->credentialAbstract == NULL) {
+    if (credentialList->credentialAbstract == nullptr) {
         CM_LOG_E("malloc file buffer failed");
         return;
     }
@@ -108,10 +108,10 @@ void InitAppCertList(struct CredentialList *credentialList)
     credentialList->credentialCount = MAX_COUNT_CERTIFICATE;
 }
 
-napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext context)
+napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
-    GenerateNapiPromise(env, context->callback, &context->deferred, &promise);
+    GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "GetAppCertListAsyncWork", NAPI_AUTO_LENGTH, &resourceName));
@@ -131,13 +131,13 @@ napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext cont
         },
         [](napi_env env, napi_status status, void *data) {
             GetAppCertListAsyncContext context = static_cast<GetAppCertListAsyncContext>(data);
-            napi_value result[RESULT_NUMBER] = {0};
+            napi_value result[RESULT_NUMBER] = { nullptr };
             if (context->result == CM_SUCCESS) {
                 NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
                 result[1] = GetAppCertListWriteResult(env, context);
             } else {
-                const char *errorMessage = "get app cert list info error";
-                result[0] = GenerateBusinessError(env, context->result, errorMessage);
+                const char *errorMsg = "get app cert list info error";
+                result[0] = GenerateBusinessError(env, context->result, errorMsg);
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
             if (context->deferred != nullptr) {
@@ -148,13 +148,13 @@ napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext cont
             DeleteGetAppCertListAsyncContext(env, context);
             CM_LOG_I("get app cert list end");
         },
-        static_cast<void *>(context),
-        &context->asyncWork));
+        static_cast<void *>(asyncContext),
+        &asyncContext->asyncWork));
 
-    napi_status napiStatus = napi_queue_async_work(env, context->asyncWork);
+    napi_status napiStatus = napi_queue_async_work(env, asyncContext->asyncWork);
     if (napiStatus != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
-        DeleteGetAppCertListAsyncContext(env, context);
+        DeleteGetAppCertListAsyncContext(env, asyncContext);
         CM_LOG_E("get app cert list could not queue async work");
         return nullptr;
     }

@@ -26,7 +26,7 @@ constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M
 constexpr int RESULT_ARG_NUMBER = 2;
 }  // namespace
 
-napi_value getCmContextAttribute(napi_env env, napi_value object, const char *type, int maxSize, char *&srcData)
+napi_value GetCmContextAttribute(napi_env env, napi_value object, const char *type, int maxSize, char *&srcData)
 {
     napi_value typeValue = nullptr;
     napi_status  status = napi_get_named_property(env, object, type, &typeValue);
@@ -44,14 +44,14 @@ napi_value getCmContextAttribute(napi_env env, napi_value object, const char *ty
         return nullptr;
     }
 
-    if ((int)length > maxSize) {
+    if (static_cast<int>(length) > maxSize) {
         CM_LOG_E("input param length too large");
         return nullptr;
     }
 
     srcData = static_cast<char *>(CmMalloc(length + 1));
     if (srcData == nullptr) {
-        napi_throw_error(env, NULL, "could not alloc memory");
+        napi_throw_error(env, nullptr, "could not alloc memory");
         CM_LOG_E("could not alloc memory");
         return nullptr;
     }
@@ -75,11 +75,11 @@ napi_value ParseCmContext(napi_env env, napi_value object, CmContext *&cmContext
     char *uidData = nullptr;
     char *packageNameData = nullptr;
 
-    napi_value userIdStatus = getCmContextAttribute(env, object,
+    napi_value userIdStatus = GetCmContextAttribute(env, object,
         CM_CONTEXT_PROPERTY_USERID.c_str(), CM_MAX_DATA_LEN, userIdData);
-    napi_value uidStatus = getCmContextAttribute(env, object,
+    napi_value uidStatus = GetCmContextAttribute(env, object,
         CM_CONTEXT_PROPERTY_UID.c_str(), CM_MAX_DATA_LEN, uidData);
-    napi_value packageNameStatus = getCmContextAttribute(env, object,
+    napi_value packageNameStatus = GetCmContextAttribute(env, object,
         CM_CONTEXT_PROPERTY_PACKAGENAME.c_str(), CM_MAX_DATA_LEN, packageNameData);
     if (userIdStatus == nullptr || uidStatus == nullptr || packageNameStatus == nullptr) {
         return nullptr;
@@ -90,13 +90,13 @@ napi_value ParseCmContext(napi_env env, napi_value object, CmContext *&cmContext
         CmFree(userIdData);
         CmFree(uidData);
         CmFree(packageNameData);
-        napi_throw_error(env, NULL, "could not alloc memory");
+        napi_throw_error(env, nullptr, "could not alloc memory");
         CM_LOG_E("could not alloc memory");
         return nullptr;
     }
 
-    cmContext->userId = (uint32_t)atoi(userIdData);
-    cmContext->uid = (uint32_t)atoi(uidData);
+    cmContext->userId = static_cast<uint32_t>(atoi(userIdData));
+    cmContext->uid = static_cast<uint32_t>(atoi(uidData));
     if (strncpy_s(cmContext->packageName, sizeof(cmContext->packageName),
         packageNameData, strlen(packageNameData)) != EOK) {
         CM_LOG_E("copy packageName failed");
@@ -156,7 +156,7 @@ napi_value ParseString(napi_env env, napi_value object, CmBlob *&certUri)
 
     char *data = static_cast<char *>(CmMalloc(length + 1));
     if (data == nullptr) {
-        napi_throw_error(env, NULL, "could not alloc memory");
+        napi_throw_error(env, nullptr, "could not alloc memory");
         CM_LOG_E("could not alloc memory");
         return nullptr;
     }
@@ -174,12 +174,12 @@ napi_value ParseString(napi_env env, napi_value object, CmBlob *&certUri)
     certUri = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
     if (certUri == nullptr) {
         CmFree(data);
-        napi_throw_error(env, NULL, "could not alloc memory");
+        napi_throw_error(env, nullptr, "could not alloc memory");
         CM_LOG_E("could not alloc memory");
         return nullptr;
     }
-    certUri->data = (uint8_t *)data;
-    certUri->size = (uint32_t)((length + 1) & UINT32_MAX);
+    certUri->data = reinterpret_cast<uint8_t *>(data);
+    certUri->size = static_cast<uint32_t>((length + 1) & UINT32_MAX);
 
     return GetInt32(env, 0);
 }
@@ -192,7 +192,8 @@ napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob)
     size_t offset = 0;
     void *rawData = nullptr;
     NAPI_CALL(
-        env, napi_get_typedarray_info(env, object, &arrayType, &length, (void **)&rawData, &arrayBuffer, &offset));
+        env, napi_get_typedarray_info(env, object, &arrayType, &length,
+        static_cast<void **>(&rawData), &arrayBuffer, &offset));
     NAPI_ASSERT(env, arrayType == napi_uint8_array, "Param is not uint8 array");
 
     if (length > CM_MAX_DATA_LEN) {
@@ -214,7 +215,7 @@ napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob)
     if (memcpy_s(arrayBlob.data, length, rawData, length) != EOK) {
         return nullptr;
     }
-    arrayBlob.size = (uint32_t)(length);
+    arrayBlob.size = static_cast<uint32_t>(length);
 
     return GetInt32(env, 0);
 }
@@ -402,7 +403,7 @@ int32_t TranformErrorCode(int32_t errorCode)
     return INNER_FAILURE;
 }
 
-napi_value GenerateBusinessError(napi_env env, int32_t errorCode, const char *errorMessage)
+napi_value GenerateBusinessError(napi_env env, int32_t errorCode, const char *errorMsg)
 {
     napi_value businessError = nullptr;
     NAPI_CALL(env, napi_create_object(env, &businessError));
@@ -412,7 +413,7 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode, const char *er
     NAPI_CALL(env, napi_create_int32(env, outCode, &code));
     NAPI_CALL(env, napi_set_named_property(env, businessError, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
     napi_value message = nullptr;
-    NAPI_CALL(env, napi_create_string_utf8(env, errorMessage, NAPI_AUTO_LENGTH, &message));
+    NAPI_CALL(env, napi_create_string_utf8(env, errorMsg, NAPI_AUTO_LENGTH, &message));
     NAPI_CALL(env, napi_set_named_property(env, businessError, BUSINESS_ERROR_PROPERTY_MESSAGE.c_str(), message));
     return businessError;
 }
@@ -532,28 +533,28 @@ void FreeCmContext(CmContext *&context)
 
 void FreeCertList(CertList *&certList)
 {
-    if (certList == NULL || certList->certAbstract == NULL) {
+    if (certList == nullptr || certList->certAbstract == nullptr) {
         return;
     }
 
     FreeCertAbstract(certList->certAbstract);
-    certList->certAbstract = NULL;
+    certList->certAbstract = nullptr;
 
     CmFree(certList);
-    certList = NULL;
+    certList = nullptr;
 }
 
 void FreeCredentialList(CredentialList *&credentialList)
 {
-    if (credentialList == NULL || credentialList->credentialAbstract == NULL) {
+    if (credentialList == nullptr || credentialList->credentialAbstract == nullptr) {
         return;
     }
 
     FreeCredentialAbstract(credentialList->credentialAbstract);
-    credentialList->credentialAbstract = NULL;
+    credentialList->credentialAbstract = nullptr;
 
     CmFree(credentialList);
-    credentialList = NULL;
+    credentialList = nullptr;
 }
 
 void FreeCertInfo(CertInfo *&certInfo)
