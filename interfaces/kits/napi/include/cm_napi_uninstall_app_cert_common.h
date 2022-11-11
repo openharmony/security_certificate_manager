@@ -38,7 +38,7 @@ void DeleteUninstallAppCertAsyncContext(napi_env env, UninstallAppCertAsyncConte
 napi_value UninstallAppCertParseParams(
     napi_env env, napi_callback_info info, UninstallAppCertAsyncContext context);
 
-napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext context);
+napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext asyncContext);
 
 napi_value CMNapiUninstallAppCertCommon(napi_env env, napi_callback_info info, uint32_t store);
 }  // namespace CertManagerNapi

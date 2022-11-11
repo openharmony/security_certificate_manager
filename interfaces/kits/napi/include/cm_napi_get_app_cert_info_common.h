@@ -42,7 +42,7 @@ napi_value GetAppCertInfoParseParams(
 
 napi_value GetAppCertInfoWriteResult(napi_env env, GetAppCertInfoAsyncContext context);
 
-napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext context);
+napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext asyncContext);
 
 napi_value CMNapiGetAppCertInfoCommon(napi_env env, napi_callback_info info, uint32_t store);
 }  // namespace CertManagerNapi
