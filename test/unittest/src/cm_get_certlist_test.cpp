@@ -61,22 +61,6 @@ struct CertAbstractResult g_listexpectResult[] = {
     }
 };
 
-static bool FindCertAbstract(const struct CertAbstract *abstract, const struct CertList *listCert)
-{
-    bool bFind = false;
-
-    if (abstract == NULL || listCert == NULL || listCert->certsCount == 0) {
-        return false;
-    }
-    for (uint32_t i = 0; i < listCert->certsCount; ++i) {
-        if (CompareCert(abstract, &(listCert->certAbstract[i]))) {
-            bFind = true;
-            break;
-        }
-    }
-    return bFind;
-}
-
 class CmGetCertListTest : public testing::Test {
 public:
     static void SetUpTestCase(void);

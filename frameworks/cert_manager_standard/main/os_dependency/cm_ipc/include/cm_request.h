@@ -16,46 +16,12 @@
 #ifndef CM_REQUEST_H
 #define CM_REQUEST_H
 
+#include "cm_ipc_msg_code.h"
 #include "cm_type_inner.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-enum CmMessage {
-#ifndef _CM_L1_TEE_
-    CM_MSG_BASE = 0x3a400, /* range of message value defined by router. globally unique */
-#else
-    CM_MSG_BASE = 1000, /* range of message value defined by SmartLock. Max 65535 */
-#endif
-    CM_MSG_GEN_KEY = CM_MSG_BASE,
-    CM_MSG_GET_CERTIFICATE_LIST,
-    CM_MSG_GET_CERTIFICATE_INFO,
-    CM_MSG_SET_CERTIFICATE_STATUS,
-    CM_MSG_INSTALL_APP_CERTIFICATE,
-    CM_MSG_UNINSTALL_APP_CERTIFICATE,
-    CM_MSG_UNINSTALL_ALL_APP_CERTIFICATE,
-    CM_MSG_GET_APP_CERTIFICATE_LIST,
-    CM_MSG_GET_APP_CERTIFICATE,
-
-    CM_MSG_GRANT_APP_CERT,
-    CM_MSG_GET_AUTHED_LIST,
-    CM_MSG_CHECK_IS_AUTHED_APP,
-    CM_MSG_REMOVE_GRANT_APP,
-    CM_MSG_INIT,
-    CM_MSG_UPDATE,
-    CM_MSG_FINISH,
-    CM_MSG_ABORT,
-
-    CM_MSG_GET_USER_CERTIFICATE_LIST,
-    CM_MSG_GET_USER_CERTIFICATE_INFO,
-    CM_MSG_SET_USER_CERTIFICATE_STATUS,
-    CM_MSG_INSTALL_USER_CERTIFICATE,
-    CM_MSG_UNINSTALL_USER_CERTIFICATE,
-    CM_MSG_UNINSTALL_ALL_USER_CERTIFICATE,
-
-    CM_MSG_MAX, /* new cmd type must be added before CM_MSG_MAX */
-};
 
 /*
  * SendRequest - Send the request message to target module by function call or ipc or other ways.
