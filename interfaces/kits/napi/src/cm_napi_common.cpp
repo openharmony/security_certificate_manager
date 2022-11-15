@@ -337,56 +337,47 @@ napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo)
     }
     napi_value result = nullptr;
     NAPI_CALL(env, napi_create_object(env, &result));
-    napi_value uri = nullptr;
-    napi_value certAlias = nullptr;
-    napi_value status = nullptr;
-    napi_value issuerName = nullptr;
-    napi_value subjectName = nullptr;
-    napi_value serial = nullptr;
-    napi_value notBefore = nullptr;
-    napi_value notAfter = nullptr;
-    napi_value fingerprintSha256 = nullptr;
-    napi_value certInfoBlob = nullptr;
-    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->uri), NAPI_AUTO_LENGTH, &uri));
+
+    struct CertInfoValue cInfVal = { nullptr };
+    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->uri),
+        NAPI_AUTO_LENGTH, &cInfVal.uri));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->certAlias),
-        NAPI_AUTO_LENGTH, &certAlias));
-
-    NAPI_CALL(env, napi_get_boolean(env, certInfo->status, &status));
+        NAPI_AUTO_LENGTH, &cInfVal.certAlias));
+    NAPI_CALL(env, napi_get_boolean(env, certInfo->status, &cInfVal.status));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->issuerName),
-        NAPI_AUTO_LENGTH, &issuerName));
+        NAPI_AUTO_LENGTH, &cInfVal.issuerName));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->subjectName),
-        NAPI_AUTO_LENGTH, &subjectName));
+        NAPI_AUTO_LENGTH, &cInfVal.subjectName));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->serial),
-        NAPI_AUTO_LENGTH, &serial));
-
+        NAPI_AUTO_LENGTH, &cInfVal.serial));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->notBefore),
-        NAPI_AUTO_LENGTH, &notBefore));
+        NAPI_AUTO_LENGTH, &cInfVal.notBefore));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->notAfter),
-        NAPI_AUTO_LENGTH, &notAfter));
-
+        NAPI_AUTO_LENGTH, &cInfVal.notAfter));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->fingerprintSha256),
-        NAPI_AUTO_LENGTH, &fingerprintSha256));
+        NAPI_AUTO_LENGTH, &cInfVal.fingerprintSha256));
 
     napi_value certBuffer = GenerateAarrayBuffer(env, certInfo->certInfo.data, certInfo->certInfo.size);
     if (certBuffer != nullptr) {
         NAPI_CALL(env, napi_create_typedarray(env, napi_uint8_array, certInfo->certInfo.size,
-            certBuffer, 0, &certInfoBlob));
+            certBuffer, 0, &cInfVal.certInfoBlob));
     }
 
-    napi_value element = nullptr;
-    NAPI_CALL(env, napi_create_object(env, &element));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_URI.c_str(), uri));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_CERTALIAS.c_str(), certAlias));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_STATUS.c_str(), status));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_ISSUERNAME.c_str(), issuerName));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_SUBJECTNAME.c_str(), subjectName));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_SERIAL.c_str(), serial));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_BEFORE.c_str(), notBefore));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_AFTER.c_str(), notAfter));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_FINGERSHA256.c_str(), fingerprintSha256));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_CERTINFO.c_str(), certInfoBlob));
+    napi_value elem = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &elem));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_URI.c_str(), cInfVal.uri));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_CERTALIAS.c_str(), cInfVal.certAlias));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_STATUS.c_str(), cInfVal.status));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_ISSUERNAME.c_str(), cInfVal.issuerName));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_SUBJECTNAME.c_str(), cInfVal.subjectName));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_SERIAL.c_str(), cInfVal.serial));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_BEFORE.c_str(), cInfVal.notBefore));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_AFTER.c_str(), cInfVal.notAfter));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_FINGERSHA256.c_str(),
+        cInfVal.fingerprintSha256));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_CERTINFO.c_str(), cInfVal.certInfoBlob));
 
-    return element;
+    return elem;
 }
 
 int32_t TranformErrorCode(int32_t errorCode)

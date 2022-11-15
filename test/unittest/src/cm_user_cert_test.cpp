@@ -629,6 +629,46 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest008, TestSize.Level0)
 }
 
 /**
+ * @tc.name: InstallUserCertTest009
+ * @tc.desc: Test CertManager Install user cert interface Abnormal function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MJ8 /SR000H09N7
+ */
+HWTEST_F(CmUserCertTest, InstallUserCertTest009, TestSize.Level0)
+{
+    int32_t ret;
+    uint8_t largeAliasBuf[] = "large-size-input-cert-alias-00000000000000000000000000000000000000000";
+    uint8_t certUriBuf[MAX_URI_LEN] = {0};
+
+    struct CmBlob userCertTemp = { sizeof(g_certData02), const_cast<uint8_t *>(g_certData02) };
+    struct CmBlob largeAlias = { sizeof(largeAliasBuf), largeAliasBuf };
+    struct CmBlob certUriTemp = { sizeof(certUriBuf), certUriBuf };
+
+    ret = CmInstallUserTrustedCert(&userCertTemp, &largeAlias, &certUriTemp);
+    EXPECT_EQ(ret, CM_FAILURE) << "Normal user cert Install test failed, recode:" << ret;
+}
+
+/**
+ * @tc.name: InstallUserCertTest010
+ * @tc.desc: Test CertManager Install user cert interface Abnormal function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MJ8 /SR000H09N7
+ */
+HWTEST_F(CmUserCertTest, InstallUserCertTest010, TestSize.Level0)
+{
+    int32_t ret;
+    char errAliasBuf[] = "AliasNoEnd";
+    uint8_t certUriBuf[MAX_URI_LEN] = {0};
+
+    struct CmBlob userCertTemp = { sizeof(g_certData01), const_cast<uint8_t *>(g_certData01) };
+    struct CmBlob noEndAlias = { strlen(errAliasBuf), reinterpret_cast<uint8_t *>(errAliasBuf) };
+    struct CmBlob certUriTemp = { sizeof(certUriBuf), certUriBuf };
+
+    ret = CmInstallUserTrustedCert(&userCertTemp, &noEndAlias, &certUriTemp);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "Normal user cert Install test failed, recode:" << ret;
+}
+
+/**
  * @tc.name: UninstallUserCertTest001
  * @tc.desc: Test CertManager Uninstall user cert interface base function
  * @tc.type: FUNC

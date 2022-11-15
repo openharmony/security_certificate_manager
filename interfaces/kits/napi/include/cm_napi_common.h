@@ -157,6 +157,19 @@ enum ErrorCode {
     NOT_FOUND = 17500003,
     INVALID_CERT_FORMAT = 17500004,
 };
+
+struct CertInfoValue {
+    napi_value uri;
+    napi_value certAlias;
+    napi_value status;
+    napi_value issuerName;
+    napi_value subjectName;
+    napi_value serial;
+    napi_value notBefore;
+    napi_value notAfter;
+    napi_value fingerprintSha256;
+    napi_value certInfoBlob;
+};
 }  // namespace CertManagerNapi
 
 #endif

@@ -585,11 +585,22 @@ static int32_t ConstructCertUri(const struct CmContext *context, const struct Cm
 int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *pathBlob,
     const struct CmBlob *userCert, const struct CmBlob *certAlias, struct CmBlob *certUri)
 {
+    if (certAlias->size > MAX_LEN_CERT_ALIAS) {
+        CM_LOG_E("alias size is too large");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     int32_t ret;
     do {
         ret = ConstructCertUri(context, certAlias, certUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("get cert uri failed");
+            break;
+        }
+
+        if (certUri->size > MAX_LEN_URI) {
+            CM_LOG_E("uri size is too large");
+            ret = CMR_ERROR_INVALID_ARGUMENT;
             break;
         }
 
