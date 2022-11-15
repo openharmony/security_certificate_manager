@@ -161,7 +161,7 @@ void FreeCMBlobData(struct CmBlob *blob)
     blob->size = 0;
 }
 
-bool CompareCert(const struct CertAbstract *firstCert, const struct CertAbstract *secondCert)
+static bool CompareCert(const struct CertAbstract *firstCert, const struct CertAbstract *secondCert)
 {
     if (firstCert == nullptr || secondCert == nullptr) {
         CM_TEST_LOG_E("cert invalid parameter");
@@ -281,5 +281,17 @@ int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t s
     struct CmBlob keyUri = { sizeof(uriData), uriData };
     return CmInstallAppCert(&appCert, &appCertPwd, alias, store, &keyUri);
 }
-}
 
+bool FindCertAbstract(const struct CertAbstract *abstract, const struct CertList *cList)
+{
+    if (abstract == NULL || cList == NULL || cList->certsCount == 0) {
+        return false;
+    }
+    for (uint32_t i = 0; i < cList->certsCount; ++i) {
+        if (CompareCert(abstract, &(cList->certAbstract[i]))) {
+            return true;
+        }
+    }
+    return false;
+}
+}

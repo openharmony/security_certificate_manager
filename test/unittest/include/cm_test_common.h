@@ -38,8 +38,6 @@ void FreeCertList(struct CertList *certList);
 
 uint32_t InitUserContext(struct CmContext* userCtx, const uint32_t userid, const uint32_t uid, const char *pktname);
 
-bool CompareCert(const struct CertAbstract *firstCert, const struct CertAbstract *secondCert);
-
 bool CompareCertInfo(const struct CertInfo *firstCert, const struct CertInfo *secondCert);
 
 bool CompareCredential(const struct Credential *firstCredential, const struct Credential *secondCredential);
@@ -59,5 +57,7 @@ uint32_t InitUserCertList(struct CertList **cList);
 uint32_t InitUserCertInfo(struct CertInfo **cInfo);
 
 int32_t InitCertInfo(struct CertInfo *certInfo);
+
+bool FindCertAbstract(const struct CertAbstract *abstract, const struct CertList *cList);
 }
 #endif /* CM_TEST_COMMON_H */
