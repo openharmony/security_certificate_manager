@@ -111,6 +111,8 @@ static napi_value ParseSpec(napi_env env, napi_value object, CmSignatureSpec *&s
         return nullptr;
     }
     spec->purpose = purposeValue;
+    spec->padding = CM_PADDING_PSS;
+    spec->digest = CM_DIGEST_SHA256;
 
     return GetInt32(env, 0);
 }

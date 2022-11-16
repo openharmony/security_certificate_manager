@@ -82,7 +82,7 @@ void CmInitTest::TearDown()
 HWTEST_F(CmInitTest, CmInitTest001, TestSize.Level0)
 {
     struct CmBlob *authUri = nullptr; /* authUri is NULL */
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 
@@ -100,7 +100,7 @@ HWTEST_F(CmInitTest, CmInitTest002, TestSize.Level0)
 {
     uint8_t uriData[] = "oh:t=ak;o=keyA;u=0;a=0";
     struct CmBlob authUri = { 0, uriData }; /* authUri size is 0 */
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 
@@ -118,7 +118,7 @@ HWTEST_F(CmInitTest, CmInitTest003, TestSize.Level0)
 {
     uint8_t uriData[] = "oh:t=ak;o=keyA;u=0;a=0";
     struct CmBlob authUri = { sizeof(uriData), nullptr }; /* authUri data is null */
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 
@@ -136,7 +136,7 @@ HWTEST_F(CmInitTest, CmInitTest004, TestSize.Level0)
 {
     uint8_t uriData[] = "oh:t=ak;o=keyA;u=0;a=0";
     struct CmBlob authUri = { strlen((char *)uriData), uriData }; /* authUri data not end of '\0' */
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 
@@ -154,7 +154,7 @@ HWTEST_F(CmInitTest, CmInitTest005, TestSize.Level0)
 {
     uint8_t uriData[] = "oh:t=ak;o=keyA;u=0"; /* authUri data has no app */
     struct CmBlob authUri = { sizeof(uriData), uriData };
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 
@@ -172,7 +172,7 @@ HWTEST_F(CmInitTest, CmInitTest006, TestSize.Level0)
 {
     uint8_t uriData[] = "oh:t=ak;o=keyA;a=0"; /* authUri data has no user */
     struct CmBlob authUri = { sizeof(uriData), uriData };
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 
@@ -190,7 +190,7 @@ HWTEST_F(CmInitTest, CmInitTest007, TestSize.Level0)
 {
     uint8_t uriData[] = "oh:t=ak;u=0;a=0"; /* authUri data has no object */
     struct CmBlob authUri = { sizeof(uriData), uriData };
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 
@@ -208,7 +208,7 @@ HWTEST_F(CmInitTest, CmInitTest008, TestSize.Level0)
 {
     uint8_t uriData[] = "oh:t=m;o=keyA;u=0;a=0"; /* authUri data type not ak */
     struct CmBlob authUri = { sizeof(uriData), uriData };
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 
@@ -245,7 +245,7 @@ HWTEST_F(CmInitTest, CmInitTest010, TestSize.Level0)
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 
     int32_t ret = CmInit(&g_rsaKeyUri, &spec, &handle);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(ret, CMR_ERROR_KEY_OPERATION_FAILED);
 }
 
 /**
@@ -256,7 +256,7 @@ HWTEST_F(CmInitTest, CmInitTest010, TestSize.Level0)
  */
 HWTEST_F(CmInitTest, CmInitTest011, TestSize.Level0)
 {
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     struct CmBlob *handle = nullptr; /* handle is NULL */
 
     int32_t ret = CmInit(&g_rsaKeyUri, &spec, handle);
@@ -271,7 +271,7 @@ HWTEST_F(CmInitTest, CmInitTest011, TestSize.Level0)
 */
 HWTEST_F(CmInitTest, CmInitTest012, TestSize.Level0)
 {
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handleValue = 0;
     struct CmBlob handle = { 0, (uint8_t *)&handleValue }; /* handle size is 0 */
 
@@ -287,7 +287,7 @@ HWTEST_F(CmInitTest, CmInitTest012, TestSize.Level0)
  */
 HWTEST_F(CmInitTest, CmInitTest013, TestSize.Level0)
 {
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     struct CmBlob handle = { sizeof(uint64_t), nullptr }; /* handle data is NULL */
 
     int32_t ret = CmInit(&g_rsaKeyUri, &spec, &handle);
@@ -302,7 +302,7 @@ HWTEST_F(CmInitTest, CmInitTest013, TestSize.Level0)
 */
 HWTEST_F(CmInitTest, CmInitTest014, TestSize.Level0)
 {
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint32_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue }; /* size smaller than sizeof(uint64_t) */
 
@@ -320,7 +320,7 @@ HWTEST_F(CmInitTest, CmInitTest015, TestSize.Level0)
 {
     uint8_t uriData[] = "oh:t=ak;o=NotExist64897;u=0;a=0";
     struct CmBlob authUri = { sizeof(uriData), uriData };
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 
@@ -336,7 +336,7 @@ HWTEST_F(CmInitTest, CmInitTest015, TestSize.Level0)
 */
 HWTEST_F(CmInitTest, CmInitTest016, TestSize.Level0)
 {
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 
@@ -352,7 +352,7 @@ HWTEST_F(CmInitTest, CmInitTest016, TestSize.Level0)
  */
 HWTEST_F(CmInitTest, CmInitTest017, TestSize.Level0)
 {
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_VERIFY };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_VERIFY, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 
@@ -368,7 +368,7 @@ HWTEST_F(CmInitTest, CmInitTest017, TestSize.Level0)
  */
 HWTEST_F(CmInitTest, CmInitTest018, TestSize.Level0)
 {
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_VERIFY };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_VERIFY, CM_PADDING_PSS, CM_DIGEST_SHA256 };
 
     for (uint32_t i = 0; i < INIT_COUNT_MULTI; ++i) {
         uint64_t handleValue = 0;
@@ -387,7 +387,7 @@ HWTEST_F(CmInitTest, CmInitTest018, TestSize.Level0)
  */
 HWTEST_F(CmInitTest, CmInitTestPerformance019, TestSize.Level1)
 {
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_VERIFY };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_VERIFY, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 

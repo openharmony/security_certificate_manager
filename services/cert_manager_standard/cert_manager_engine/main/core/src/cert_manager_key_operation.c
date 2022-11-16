@@ -24,6 +24,36 @@
 #include "hks_param.h"
 #include "hks_type.h"
 
+struct PropertyToHuks {
+    uint32_t cmProperty;
+    uint32_t huksProperty;
+};
+
+static struct PropertyToHuks g_cmPurposeProperty[] = {
+    { CM_KEY_PURPOSE_SIGN, HKS_KEY_PURPOSE_SIGN },
+    { CM_KEY_PURPOSE_VERIFY, HKS_KEY_PURPOSE_VERIFY },
+};
+
+static struct PropertyToHuks g_cmPaddingProperty[] = {
+    { CM_PADDING_NONE, HKS_PADDING_NONE },
+    { CM_PADDING_OAEP, HKS_PADDING_OAEP },
+    { CM_PADDING_PSS, HKS_PADDING_PSS },
+    { CM_PADDING_PKCS1_V1_5, HKS_PADDING_PKCS1_V1_5 },
+    { CM_PADDING_PKCS5, HKS_PADDING_PKCS5 },
+    { CM_PADDING_PKCS7, HKS_PADDING_PKCS7 },
+};
+
+static struct PropertyToHuks g_cmDigestProperty[] = {
+    { CM_DIGEST_NONE, CM_DIGEST_NONE },
+    { CM_DIGEST_MD5, CM_DIGEST_MD5 },
+    { CM_DIGEST_SHA1, CM_DIGEST_SHA1 },
+    { CM_DIGEST_SHA224, CM_DIGEST_SHA224 },
+    { CM_DIGEST_SHA256, CM_DIGEST_SHA256 },
+    { CM_DIGEST_SHA384, CM_DIGEST_SHA384 },
+    { CM_DIGEST_SHA512, CM_DIGEST_SHA512 },
+};
+
+#define INVALID_PROPERTY_VALUE 0xFFFF
 #define DEFAULT_LEN_USED_FOR_MALLOC 1024
 
 static int32_t ConstructParamSet(const struct HksParam *params, uint32_t paramCount, struct HksParamSet **outParamSet)
@@ -155,8 +185,6 @@ int32_t CmKeyOpImportKey(const struct CmBlob *alias, const struct CmKeyPropertie
         { .tag = HKS_TAG_ALGORITHM, .uint32Param = properties->algType },
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = properties->keySize },
         { .tag = HKS_TAG_PURPOSE, .uint32Param = properties->purpose },
-        { .tag = HKS_TAG_DIGEST, .uint32Param =  properties->digest },
-        { .tag = HKS_TAG_PADDING, .uint32Param = properties->padding },
     };
 
     struct HksParamSet *paramSet = NULL;
@@ -187,42 +215,46 @@ static void FillKeySpec(const struct HksParamSet *paramSet, struct CmKeyProperti
             case HKS_TAG_KEY_SIZE:
                 spec->keySize = paramSet->params[i].uint32Param;
                 break;
-            case HKS_TAG_PURPOSE:
-                spec->purpose = paramSet->params[i].uint32Param;
-                break;
-            case HKS_TAG_DIGEST:
-                spec->digest = paramSet->params[i].uint32Param;
-                break;
-            case HKS_TAG_PADDING:
-                spec->padding = paramSet->params[i].uint32Param;
-                break;
             default:
                 break;
         }
     }
 }
 
-static int32_t TranslateToHksPurpose(const uint32_t inputPurpose, uint32_t *hksPurpose)
+static void TranslateToHuksProperties(const struct CmSignatureSpec *spec, struct CmKeyProperties *keyProperties)
 {
-    if (inputPurpose == CM_KEY_PURPOSE_SIGN) {
-        *hksPurpose = HKS_KEY_PURPOSE_SIGN;
-    } else if (inputPurpose == CM_KEY_PURPOSE_VERIFY) {
-        *hksPurpose = HKS_KEY_PURPOSE_VERIFY;
-    } else {
-        return CMR_ERROR_INVALID_ARGUMENT;
+    keyProperties->purpose = INVALID_PROPERTY_VALUE;
+    keyProperties->padding = INVALID_PROPERTY_VALUE;
+    keyProperties->digest = INVALID_PROPERTY_VALUE;
+
+    for (uint32_t i = 0; i < CM_ARRAY_SIZE(g_cmPurposeProperty); ++i) {
+        if (spec->purpose == g_cmPurposeProperty[i].cmProperty) {
+            keyProperties->purpose = g_cmPurposeProperty[i].huksProperty;
+            break;
+        }
     }
-    return CM_SUCCESS;
+
+    for (uint32_t i = 0; i < CM_ARRAY_SIZE(g_cmPaddingProperty); ++i) {
+        if (spec->padding == g_cmPaddingProperty[i].cmProperty) {
+            keyProperties->padding = g_cmPaddingProperty[i].huksProperty;
+            break;
+        }
+    }
+
+    for (uint32_t i = 0; i < CM_ARRAY_SIZE(g_cmDigestProperty); ++i) {
+        if (spec->digest == g_cmDigestProperty[i].cmProperty) {
+            keyProperties->digest = g_cmDigestProperty[i].huksProperty;
+            break;
+        }
+    }
+    CM_LOG_I("purose[%u], digest[%u], padding[%u]", spec->purpose, spec->digest, spec->padding);
 }
 
 static int32_t AddParamsToParamSet(const struct CmBlob *commonUri, const struct CmSignatureSpec *spec,
     struct HksParamSet *paramSet)
 {
-    uint32_t purpose;
-    int32_t ret = TranslateToHksPurpose(spec->purpose, &purpose);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("invalid input purpose[%u]", spec->purpose);
-        return ret;
-    }
+    struct CmKeyProperties inputKeyProp = {0};
+    TranslateToHuksProperties(spec, &inputKeyProp);
 
     struct HksParamSet *outParamSet = (struct HksParamSet*)CMMalloc(DEFAULT_LEN_USED_FOR_MALLOC);
     if (outParamSet == NULL) {
@@ -231,6 +263,7 @@ static int32_t AddParamsToParamSet(const struct CmBlob *commonUri, const struct 
     }
     outParamSet->paramSetSize = DEFAULT_LEN_USED_FOR_MALLOC;
 
+    int32_t ret;
     do {
         ret = HksGetKeyParamSet((const struct HksBlob *)commonUri, NULL, outParamSet);
         if (ret != HKS_SUCCESS) {
@@ -243,9 +276,9 @@ static int32_t AddParamsToParamSet(const struct CmBlob *commonUri, const struct 
         struct HksParam params[] = {
             { .tag = HKS_TAG_ALGORITHM, .uint32Param = keySpec.algType },
             { .tag = HKS_TAG_KEY_SIZE, .uint32Param = keySpec.keySize },
-            { .tag = HKS_TAG_PURPOSE, .uint32Param = purpose },
-            { .tag = HKS_TAG_DIGEST, .uint32Param = keySpec.digest },
-            { .tag = HKS_TAG_PADDING, .uint32Param = keySpec.padding },
+            { .tag = HKS_TAG_PURPOSE, .uint32Param = inputKeyProp.purpose },
+            { .tag = HKS_TAG_DIGEST, .uint32Param = inputKeyProp.digest },
+            { .tag = HKS_TAG_PADDING, .uint32Param = inputKeyProp.padding },
         };
 
         ret = HksAddParams(paramSet, params, sizeof(params) / sizeof(struct HksParam));

@@ -121,7 +121,7 @@ HWTEST_F(CmAbortTest, CmAbortTest005, TestSize.Level0)
     struct CmBlob keyUri = { sizeof(uriData), uriData };
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
 
     ret = CmInit(&keyUri, &spec, &handle);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmInit failed, retcode:" << ret;
