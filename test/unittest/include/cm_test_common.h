@@ -59,5 +59,7 @@ uint32_t InitUserCertInfo(struct CertInfo **cInfo);
 int32_t InitCertInfo(struct CertInfo *certInfo);
 
 bool FindCertAbstract(const struct CertAbstract *abstract, const struct CertList *cList);
+
+void FreeCertInfo(struct CertInfo *cInfo);
 }
 #endif /* CM_TEST_COMMON_H */

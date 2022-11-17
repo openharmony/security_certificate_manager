@@ -23,7 +23,7 @@
 extern "C"
 #endif
 
-int32_t CertManagerGetFilenames(struct CmMutableBlob *fileNames, const char *path, struct CmBlob *uri);
+int32_t CertManagerGetFilenames(struct CmMutableBlob *fileNames, const char *path);
 
 uint32_t CertManagerFileSize(const char *path, const char *fileName);
 
@@ -37,6 +37,8 @@ int32_t CertManagerFileRemove(const char *path, const char *fileName);
 uint32_t GetNumberOfDirs(const char *userIdPath);
 
 int32_t GetCertCount(const char *path);
+
+void FreeFileNames(struct CmMutableBlob *fileNames);
 
 #ifdef __cplusplus
 }

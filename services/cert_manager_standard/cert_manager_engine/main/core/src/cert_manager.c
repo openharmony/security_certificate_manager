@@ -77,36 +77,6 @@ int32_t CertManagerInitialize(void)
     return CMR_OK;
 }
 
-static int32_t CmFreeCaFileNames(struct CmMutableBlob *fileNames)
-{
-    uint32_t i;
-    int32_t ret = 0;
-    struct CmMutableBlob *fNames;
-
-    if (fileNames == NULL) {
-        CM_LOG_E("Failed to free memory for certificate names");
-        return -1;
-    }
-    fNames = (struct CmMutableBlob *)fileNames->data;
-
-    for (i = 0; i < fileNames->size; i++) {
-        if (fNames[i].data == NULL) {
-            CM_LOG_E("Failed to free memory for certificate name: %u", i);
-            ret = -1;
-        } else {
-            if (memset_s(fNames[i].data, MAX_LEN_URI, 0, fNames[i].size) != EOK) {
-                return CMR_ERROR;
-            }
-            fNames[i].size = 0;
-            CMFree(fNames[i].data);
-        }
-    }
-    CMFree(fNames);
-    fileNames->size = 0;
-
-    return ret;
-}
-
 static int32_t GetFilePath(const struct CmContext *context, uint32_t store, char *pathPtr,
     char *suffix, uint32_t *suffixLen)
 {
@@ -262,49 +232,45 @@ cleanup:
     return ret;
 }
 
+static int32_t FindObjectCert(const struct CmBlob *certUri, const struct CmMutableBlob *fNames, uint32_t certCount)
+{
+    for (uint32_t i = 0; i < certCount; i++) {
+        if (fNames[i].data == NULL) {
+            CM_LOG_E("Corrupted file name at index: %u", i);
+            return CMR_ERROR_STORAGE;
+        }
+        /* Check if url is matching with the cert filename */
+        if ((certUri->size <= fNames[i].size) && (memcmp(certUri->data, fNames[i].data, certUri->size) == 0)) {
+            return CM_SUCCESS;
+        }
+    }
+    return CMR_ERROR_NOT_FOUND;
+}
+
 int32_t CertManagerFindCertFileNameByUri(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, struct CmMutableBlob *path)
 {
     ASSERT_ARGS(context && certUri && certUri->data);
-    int32_t ret = CMR_ERROR_NOT_FOUND;
-    struct CmMutableBlob *fNames = NULL;
-    struct CmMutableBlob fileNames = {0, NULL};
-    struct CmBlob uri[MAX_COUNT_CERTIFICATE];
 
-    if (CmGetFilePath(context, store, path) != CMR_OK) {
+    int32_t ret = CmGetFilePath(context, store, path);
+    if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed obtain path for store %x\n", store);
-        return CMR_ERROR;
+        return ret;
     }
 
-    uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
-    (void)memset_s(uri, len, 0, len);
-    if (CertManagerGetFilenames(&fileNames, (char*)path->data, uri) < 0) {
+    struct CmMutableBlob fileNames = { 0, NULL };
+    ret = CertManagerGetFilenames(&fileNames, (char *)path->data);
+    if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed obtain filenames from path: %s", (char *)path->data);
-        ret = CMR_ERROR_STORAGE;
-        goto cleanup;
+        return CMR_ERROR_STORAGE;
     }
 
-    fNames = (struct CmMutableBlob *)fileNames.data;
-
-    for (uint32_t i = 0; i < fileNames.size; i++) {
-        if (fNames[i].data == NULL) {
-            CM_LOG_E("Corrupted file name at index: %u", i);
-            ret = CMR_ERROR_STORAGE;
-            goto cleanup;
-        }
-        /* Check if url is matching with the cert filename */
-        if ((certUri->size <= fNames[i].size) && (memcmp(certUri->data, fNames[i].data, certUri->size) == 0)) {
-            ret = CMR_OK;
-            break;
-        }
+    struct CmMutableBlob *fNames = (struct CmMutableBlob *)fileNames.data;
+    ret = FindObjectCert(certUri, fNames, fileNames.size);
+    FreeFileNames(&fileNames);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("No cert matched, err: %d", ret);
     }
-
-cleanup:
-    CmFreeFileNameUri(uri, MAX_COUNT_CERTIFICATE);
-    if (fileNames.data != NULL) {
-        (void)CmFreeCaFileNames(&fileNames);
-    }
-
     return ret;
 }
 
@@ -489,13 +455,6 @@ int32_t CmRemoveAllAppCert(const struct CmContext *context)
     return ret;
 }
 
-void CmFreeFileNameUri(struct CmBlob *uri, uint32_t size)
-{
-    for (uint32_t i = 0; i < size; i++) {
-        CM_FREE_BLOB(uri[i]);
-    }
-}
-
 int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store, struct CmBlob *fileNames,
     const uint32_t fileSize, uint32_t *fileCount)
 {
@@ -636,34 +595,30 @@ int32_t CmRemoveUserCert(struct CmMutableBlob *pathBlob, const struct CmBlob *ce
 static int32_t RemoveAllUserCert(const struct CmContext *context, uint32_t store, const char* path)
 {
     ASSERT_ARGS(path);
-    int32_t ret = CM_SUCCESS;
     struct CmMutableBlob fileNames = { 0, NULL };
-    struct CmMutableBlob *fNames = NULL;
-    struct CmBlob uri[MAX_COUNT_CERTIFICATE];
     struct CmMutableBlob pathBlob = { strlen(path) + 1, (uint8_t *)path }; /* include '\0' at end. */
 
-    uint32_t uriArraryLen = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
-    (void)memset_s(uri, uriArraryLen, 0, uriArraryLen);
-    if (CertManagerGetFilenames(&fileNames, path, uri) < 0) {
+    int32_t ret = CertManagerGetFilenames(&fileNames, path);
+    if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed obtain filenames from path: %s", path);
-        return CM_FAILURE;
+        return ret;
     }
 
-    fNames = (struct CmMutableBlob *)fileNames.data;
+    struct CmMutableBlob *fNames = (struct CmMutableBlob *)fileNames.data;
     for (uint32_t i = 0; i < fileNames.size; i++) {
         ret = CertManagerFileRemove(path, (char *)fNames[i].data);
         if (ret != CMR_OK) {
-            CM_LOG_E("User Cert %d remove failed, ret: %d", i, ret);
+            CM_LOG_E("User Cert %u remove failed, ret: %d", i, ret);
             continue;
         }
-        ret = CmSetStatusEnable(context, &pathBlob, &uri[i], store);
+        ret = CmSetStatusEnable(context, &pathBlob, (struct CmBlob *)(&fNames[i]), store);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Update StatusFile %d fail, ret = %d", i, ret);
+            CM_LOG_E("Update StatusFile %u fail, ret = %d", i, ret);
             continue;
         }
     }
-    CmFreeFileNameUri(uri, MAX_COUNT_CERTIFICATE);
-    (void)CmFreeCaFileNames(&fileNames);
+
+    FreeFileNames(&fileNames);
     return ret;
 }
 
