@@ -194,8 +194,8 @@ int32_t CmServiceUninstallAppCertCheck(const uint32_t store, const struct CmBlob
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!CmHasCommonPermission()) {
-        CM_LOG_E("permission check failed");
+    if (!CmPermissionCheck(store)) {
+        CM_LOG_E("CmPermissionCheck check failed");
         return CMR_ERROR_PERMISSION_DENIED;
     }
 

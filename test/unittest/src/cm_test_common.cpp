@@ -161,6 +161,16 @@ void FreeCMBlobData(struct CmBlob *blob)
     blob->size = 0;
 }
 
+void FreeCertInfo(struct CertInfo *cInfo)
+{
+    if (cInfo == nullptr || (cInfo->certInfo).data == nullptr) {
+        return;
+    }
+
+    FreeCMBlobData(&(cInfo->certInfo));
+    CmFree(cInfo);
+}
+
 static bool CompareCert(const struct CertAbstract *firstCert, const struct CertAbstract *secondCert)
 {
     if (firstCert == nullptr || secondCert == nullptr) {
