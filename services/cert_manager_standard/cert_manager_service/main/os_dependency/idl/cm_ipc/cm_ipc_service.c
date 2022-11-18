@@ -407,6 +407,9 @@ static int32_t CertManagerImportRsaKey(const struct CMApp *caller, EVP_PKEY *pri
     }
 
 err:
+    if (keyPair.data != NULL) {
+        (void)memset_s(keyPair.data, keyPair.size, 0, keyPair.size);
+    }
     CM_FREE_BLOB(keyPair);
 
     return ret;
@@ -453,6 +456,9 @@ static int32_t CertManagerImportEccKey(const struct CMApp *caller, EVP_PKEY *pri
     }
 
 err:
+    if (keyPair.data != NULL) {
+        (void)memset_s(keyPair.data, keyPair.size, 0, keyPair.size);
+    }
     CM_FREE_BLOB(keyPair);
 
     return ret;
@@ -489,6 +495,9 @@ static int32_t CertManagerImportEd25519Key(const struct CMApp *caller, const EVP
         CM_LOG_E("Ed25519 key type import faild");
     }
 err:
+    if (keyPair.data != NULL) {
+        (void)memset_s(keyPair.data, keyPair.size, 0, keyPair.size);
+    }
     CM_FREE_BLOB(keyPair);
 
     return ret;
