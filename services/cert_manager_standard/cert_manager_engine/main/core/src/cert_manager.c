@@ -1192,7 +1192,6 @@ static int32_t RemoveAllUserCert(const struct CmContext *context, uint32_t store
     (void)memset_s(uri, uriArraryLen, 0, uriArraryLen);
     if (CertManagerGetFilenames(&fileNames, path, uri) < 0) {
         CM_LOG_E("Failed obtain filenames from path: %s", path);
-        (void)CmFreeCaFileNames(&fileNames);
         return CM_FAILURE;
     }
 
