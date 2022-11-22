@@ -76,13 +76,13 @@ static void TestUninstallAppCert(void)
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert failed, retcode:" << ret;
 }
 
-static void TestSign(const struct CmBlob *keyUri, const struct CmBlob *message, struct CmBlob *signature)
+static void TestSign(const struct CmBlob *keyUri, const struct CmSignatureSpec *spec,
+    const struct CmBlob *message, struct CmBlob *signature)
 {
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(uint64_t), (uint8_t *)&handleValue };
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
 
-    int32_t ret = CmInit(keyUri, &spec, &handle);
+    int32_t ret = CmInit(keyUri, spec, &handle);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestSign CmInit test failed";
 
     ret = CmUpdate(&handle, message);
@@ -96,14 +96,13 @@ static void TestSign(const struct CmBlob *keyUri, const struct CmBlob *message, 
     EXPECT_EQ(ret, CM_SUCCESS) << "TestSign CmAbort test failed";
 }
 
-static void TestVerify(const struct CmBlob *keyUri, const struct CmBlob *message, const struct CmBlob *signature,
-    bool isValidSignature)
+static void TestVerify(const struct CmBlob *keyUri, const struct CmSignatureSpec *spec,
+    const struct CmBlob *message, const struct CmBlob *signature, bool isValidSignature)
 {
     uint64_t handleValue = 0;
     struct CmBlob handle = { sizeof(uint64_t), (uint8_t *)&handleValue };
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_VERIFY };
 
-    int32_t ret = CmInit(keyUri, &spec, &handle);
+    int32_t ret = CmInit(keyUri, spec, &handle);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestVerify CmInit test failed";
 
     ret = CmUpdate(&handle, message);
@@ -126,7 +125,7 @@ static void TestVerify(const struct CmBlob *keyUri, const struct CmBlob *message
     EXPECT_EQ(ret, CM_SUCCESS) << "TestVerify CmAbort test failed";
 }
 
-static void TestSignVerify(uint32_t alg, bool isValidSignature)
+static void TestSignVerify(uint32_t alg, bool isValidSignature, struct CmSignatureSpec *spec)
 {
     /* install credential */
     TestInstallAppCert(alg);
@@ -136,10 +135,11 @@ static void TestSignVerify(uint32_t alg, bool isValidSignature)
     struct CmBlob signature = { DEFAULT_SIGNATURE_LEN, signData };
 
     /* sign */
-    TestSign(&g_keyUri, &message, &signature);
+    TestSign(&g_keyUri, spec, &message, &signature);
 
     /* verify */
-    TestVerify(&g_keyUri, &message, &signature, isValidSignature);
+    spec->purpose = CM_KEY_PURPOSE_VERIFY;
+    TestVerify(&g_keyUri, spec, &message, &signature, isValidSignature);
 
     /* uninstall rsa credential */
     TestUninstallAppCert();
@@ -147,7 +147,7 @@ static void TestSignVerify(uint32_t alg, bool isValidSignature)
 
 static void ProducerSessionMaxTest(void)
 {
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     uint64_t handle[MAX_SESSION_NUM_MORE_1];
     int32_t ret;
 
@@ -288,24 +288,26 @@ HWTEST_F(CmFinishTest, CmFinishTest006, TestSize.Level0)
 
 /**
 * @tc.name: CmFinishTest007
-* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, rsa sign verify
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, rsa sign verify, pss sha256
 * @tc.type: FUNC
 * @tc.require: AR000H0MIA /SR000H09NA
 */
 HWTEST_F(CmFinishTest, CmFinishTest007, TestSize.Level0)
 {
-    TestSignVerify(CERT_KEY_ALG_RSA, true);
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
+    TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
 }
 
 /**
 * @tc.name: CmFinishTest008
-* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, ecc sign verify
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, ecc sign verify, sha256
 * @tc.type: FUNC
 * @tc.require: AR000H0MIA /SR000H09NA
 */
 HWTEST_F(CmFinishTest, CmFinishTest008, TestSize.Level0)
 {
-    TestSignVerify(CERT_KEY_ALG_ECC, true);
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SHA256 };
+    TestSignVerify(CERT_KEY_ALG_ECC, true, &spec);
 }
 
 /**
@@ -316,7 +318,8 @@ HWTEST_F(CmFinishTest, CmFinishTest008, TestSize.Level0)
 */
 HWTEST_F(CmFinishTest, CmFinishTest009, TestSize.Level0)
 {
-    TestSignVerify(CERT_KEY_ALG_RSA, false);
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
+    TestSignVerify(CERT_KEY_ALG_RSA, false, &spec);
 }
 
 /**
@@ -327,7 +330,8 @@ HWTEST_F(CmFinishTest, CmFinishTest009, TestSize.Level0)
 */
 HWTEST_F(CmFinishTest, CmFinishTest010, TestSize.Level0)
 {
-    TestSignVerify(CERT_KEY_ALG_ECC, false);
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SHA256 };
+    TestSignVerify(CERT_KEY_ALG_ECC, false, &spec);
 }
 
 /**
@@ -351,8 +355,9 @@ HWTEST_F(CmFinishTest, CmFinishTest011, TestSize.Level0)
 */
 HWTEST_F(CmFinishTest, CmFinishTestPerformance012, TestSize.Level1)
 {
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     for (uint32_t i = 0; i < PERFORMACE_COUNT; ++i) {
-        TestSignVerify(CERT_KEY_ALG_ECC, true);
+        TestSignVerify(CERT_KEY_ALG_ECC, true, &spec);
     }
 }
 
@@ -364,9 +369,190 @@ HWTEST_F(CmFinishTest, CmFinishTestPerformance012, TestSize.Level1)
 */
 HWTEST_F(CmFinishTest, CmFinishTestPerformance013, TestSize.Level1)
 {
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
     for (uint32_t i = 0; i < PERFORMACE_COUNT; ++i) {
-        TestSignVerify(CERT_KEY_ALG_RSA, true);
+        TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
     }
+}
+
+/**
+* @tc.name: CmFinishTest014
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, rsa sign verify, pss, sha512
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest014, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA512 };
+    TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest015
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, rsa sign verify, pss, sha384
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest015, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA384 };
+    TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest016
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, rsa sign verify, pss, sha224
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest016, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA224 };
+    TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest017
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, rsa sign verify, pss, sha1
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest017, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA1 };
+    TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest018
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, rsa sign verify, pkcs1, nosha
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest018, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PKCS1_V1_5, CM_DIGEST_NONE };
+    TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest019
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, rsa sign verify, pkcs1, md5
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest019, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PKCS1_V1_5, CM_DIGEST_MD5 };
+    TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest020
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, rsa sign verify, pkcs1, sha224
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest020, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PKCS1_V1_5, CM_DIGEST_SHA224 };
+    TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
+}
+
+    /**
+* @tc.name: CmFinishTest021
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, rsa sign verify, pkcs1, sha256
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest021, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PKCS1_V1_5, CM_DIGEST_SHA256 };
+    TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
+}
+
+    /**
+* @tc.name: CmFinishTest022
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, rsa sign verify, pkcs1, sha384
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest022, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PKCS1_V1_5, CM_DIGEST_SHA384 };
+    TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest023
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, rsa sign verify, pkcs1, sha512
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest023, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PKCS1_V1_5, CM_DIGEST_SHA512 };
+    TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest024
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, rsa sign verify, pkcs1, sha1
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest024, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PKCS1_V1_5, CM_DIGEST_SHA1 };
+    TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest025
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, ecc sign verify, sha1
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest025, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SHA1 };
+    TestSignVerify(CERT_KEY_ALG_ECC, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest026
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, ecc sign verify, sha224
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest026, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SHA224 };
+    TestSignVerify(CERT_KEY_ALG_ECC, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest027
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, ecc sign verify, sha384
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest027, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SHA384 };
+    TestSignVerify(CERT_KEY_ALG_ECC, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest028
+* @tc.desc: Test CmIsAuthorizedApp normal case: caller is producer, ecc sign verify, sha512
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmFinishTest, CmFinishTest028, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SHA512 };
+    TestSignVerify(CERT_KEY_ALG_ECC, true, &spec);
 }
 } // end of namespace
 

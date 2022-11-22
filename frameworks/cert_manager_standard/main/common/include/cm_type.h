@@ -54,7 +54,6 @@ extern "C" {
 #define MAX_LEN_APP_CERT 20480
 #define MAX_LEN_APP_CERT_PASSWD 16
 
-#define MAX_BUF_LEN             64
 #define CERT_MAX_PATH_LEN       256
 #define CM_ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
 
@@ -63,18 +62,9 @@ extern "C" {
  * Before calling this function, ensure that the size does not overflow after 3 is added.
  */
 #define ALIGN_SIZE(size) ((((uint32_t)(size) + 3) >> 2) << 2)
-#define DEFAULT_ALIGN_MASK_SIZE 3
 
-#define CM_AE_TAG_LEN 16
 #define CM_BITS_PER_BYTE 8
-#define MAX_KEY_SIZE 2048
-#define CM_AE_TAG_LEN 16
-#define CM_AE_NONCE_LEN 12
-#define CM_MAX_KEY_ALIAS_LEN 64
-#define CM_MAX_PROCESS_NAME_LEN 50
-#define CM_MAX_RANDOM_LEN 1024
 #define CM_KEY_BYTES(keySize) (((keySize) + CM_BITS_PER_BYTE - 1) / CM_BITS_PER_BYTE)
-#define CM_SIGNATURE_MIN_SIZE 64
 #define CM_ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
 #define MAX_OUT_BLOB_SIZE (5 * 1024 * 1024)
 
@@ -103,6 +93,15 @@ enum CmKeyPurpose {
     CM_KEY_PURPOSE_UNWRAP = 64,                   /* Usable with unwrap key. */
     CM_KEY_PURPOSE_MAC = 128,                     /* Usable with mac. */
     CM_KEY_PURPOSE_AGREE = 256,                   /* Usable with agree. */
+};
+
+enum CmKeyPadding {
+    CM_PADDING_NONE = 0,
+    CM_PADDING_OAEP = 1,
+    CM_PADDING_PSS = 2,
+    CM_PADDING_PKCS1_V1_5 = 3,
+    CM_PADDING_PKCS5 = 4,
+    CM_PADDING_PKCS7 = 5,
 };
 
 enum CmErrorCode {
@@ -323,51 +322,6 @@ struct CmParamSet {
     struct CmParam params[];
 };
 
-struct CmKeySpec {
-    uint32_t algType;
-    uint32_t keyLen;
-    void *algParam; /* for example : struct HksKeyDerivationParam */
-};
-
-#define CM_DERIVE_DEFAULT_SALT_LEN 16
-#define CM_HMAC_DIGEST_SHA512_LEN 64
-#define CM_DEFAULT_RANDOM_LEN 16
-#define CM_MAX_KEY_AUTH_ID_LEN 64
-#define CM_KEY_MATERIAL_NUM 3
-#define CM_MAX_KEY_LEN (CM_KEY_BYTES(CM_RSA_KEY_SIZE_4096) * CM_KEY_MATERIAL_NUM)
-
-struct CmStoreHeaderInfo {
-    uint16_t version;
-    uint16_t keyCount;
-    uint32_t totalLen; /* key buffer total len */
-    uint32_t sealingAlg;
-    uint8_t salt[CM_DERIVE_DEFAULT_SALT_LEN];
-    uint8_t hmac[CM_HMAC_DIGEST_SHA512_LEN];
-};
-
-struct CmStoreKeyInfo {
-    uint16_t keyInfoLen; /* current keyinfo len */
-    uint16_t keySize;    /* keySize of key from crypto hal after encrypted */
-    uint8_t random[CM_DEFAULT_RANDOM_LEN];
-    uint8_t flag;        /* import or generate key */
-    uint8_t keyAlg;
-    uint8_t keyMode;
-    uint8_t digest;
-    uint8_t padding;
-    uint8_t rsv;
-    uint16_t keyLen;     /* keyLen from paramset, e.g. aes-256 */
-    uint32_t purpose;
-    uint32_t role;
-    uint16_t domain;
-    uint8_t aliasSize;
-    uint8_t authIdSize;
-};
-
-struct Cm25519KeyPair {
-    uint32_t publicBufferSize;
-    uint32_t privateBufferSize;
-};
-
 struct CmAppUidList {
     uint32_t appUidCount;
     uint32_t *appUid;
@@ -375,6 +329,8 @@ struct CmAppUidList {
 
 struct CmSignatureSpec {
     uint32_t purpose;
+    uint32_t padding;
+    uint32_t digest;
 };
 
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)
