@@ -135,6 +135,7 @@ static void TestSignVerify(uint32_t alg, bool isValidSignature, struct CmSignatu
     struct CmBlob signature = { DEFAULT_SIGNATURE_LEN, signData };
 
     /* sign */
+    spec->purpose = CM_KEY_PURPOSE_SIGN;
     TestSign(&g_keyUri, spec, &message, &signature);
 
     /* verify */
