@@ -24,6 +24,7 @@ ohos_shared_library("cert_manager_service") {
   sanitize = {
     cfi = true
     debug = false
+    blocklist = "//base/security/certificate_manager/cfi_blocklist.txt"
   }
   subsystem_name = "security"
   part_name = "certificate_manager"

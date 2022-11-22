@@ -33,18 +33,8 @@
 #include "securec.h"
 
 #include "hks_api.h"
-#include "hks_param.h"
-#include "hks_type.h"
-
-#define MAX_FILES_IN_DIR                    1000
-#define CERT_MANAGER_MD5_SIZE               32
-#define CERT_MANAGER_MAX_CERT_SIZE          4096
-
-#define MAX_NAME_PREFIX                     32
-#define MAX_NAME_DIGEST_LEN                 9
 
 #define MAX_PATH_LEN                        256
-#define NAME_DIGEST_SIZE                    4
 
 #ifdef __cplusplus
 extern "C" {
@@ -166,70 +156,6 @@ static int32_t CmGetFilePath(const struct CmContext *context, uint32_t store, st
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
     return CMR_OK;
-}
-
-static int32_t InitParamSet(struct HksParamSet **paramSet, const struct HksParam *params, uint32_t paramcount)
-{
-    int32_t ret = HksInitParamSet(paramSet);
-    if (ret != CMR_OK) {
-        CM_LOG_E("HksInitParamSet failed");
-        return ret;
-    }
-
-    ret = HksAddParams(*paramSet, params, paramcount);
-    if (ret != CMR_OK) {
-        CM_LOG_E("HksAddParams failed");
-        return ret;
-    }
-
-    ret = HksBuildParamSet(paramSet);
-    if (ret != CMR_OK) {
-        CM_LOG_E("HksBuildParamSet failed");
-        return ret;
-    }
-
-    return ret;
-}
-
-static int32_t NameHash(struct HksBlob *subjectName, struct CmMutableBlob *nameDigest)
-{
-    if ((nameDigest == NULL) || (nameDigest->data == NULL) || (nameDigest->size < NAME_DIGEST_SIZE)) {
-        CM_LOG_E("Invalid parameter");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    int32_t ret = CMR_OK;
-
-    struct HksParam hashParam = {
-        .tag = HKS_TAG_DIGEST,
-        .uint32Param = HKS_DIGEST_MD5
-    };
-    struct HksParamSet *hashParamSet;
-    ret = InitParamSet(&hashParamSet, &hashParam, sizeof(hashParam) / sizeof(struct HksParam));
-    if (ret != CMR_OK) {
-        ret = CMR_ERROR;
-        goto cleanup;
-    }
-
-    uint8_t hashBuff[CERT_MANAGER_MD5_SIZE];
-    struct HksBlob hash = { sizeof(hashBuff), hashBuff};
-    struct HksBlob tmp = HKS_BLOB(subjectName);
-    ret = HksHash(hashParamSet, &tmp, &hash);
-    if (ret != CMR_OK) {
-        ret = CMR_ERROR;
-        goto cleanup;
-    }
-    nameDigest->size = NAME_DIGEST_SIZE;
-    if (sprintf_s((char*)nameDigest->data, MAX_NAME_PREFIX, "%02x%02x%02x%02x",
-        hashBuff[3], hashBuff[2], hashBuff[1], hashBuff[0]) < 0) { /* 2 3 is array index */
-            ret = CMR_ERROR;
-            goto cleanup;
-        }
-
-cleanup:
-    if (hashParamSet != NULL) {
-        HksFreeParamSet(&hashParamSet);
-    }
-    return ret;
 }
 
 static int32_t FindObjectCert(const struct CmBlob *certUri, const struct CmMutableBlob *fNames, uint32_t certCount)
@@ -577,14 +503,6 @@ int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *p
         }
     } while (0);
     return ret;
-}
-
-int32_t NameHashFromUri(const char *fName, struct CmMutableBlob *nameDigest)
-{
-    uint32_t buffSize = (uint32_t)strlen(fName) + 1;
-    struct HksBlob certName = { buffSize, (uint8_t *)fName };
-
-    return NameHash(&certName, nameDigest);
 }
 
 int32_t CmRemoveUserCert(struct CmMutableBlob *pathBlob, const struct CmBlob *certUri)

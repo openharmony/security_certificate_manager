@@ -20,6 +20,7 @@
 #include "securec.h"
 
 #include "cert_manager.h"
+#include "cert_manager_crypto_operation.h"
 #include "cert_manager_file.h"
 #include "cert_manager_file_operator.h"
 #include "cert_manager_key_operation.h"
@@ -28,14 +29,12 @@
 #include "cm_type.h"
 #include "rbtree.h"
 
-#include "hks_api.h"
-#include "hks_type.h"
-
 #define HEADER_LEN (4 + CM_INTEGRITY_TAG_LEN + CM_INTEGRITY_SALT_LEN)
 #define APPLICATION_TRUSTED_STORE      2
 #define ENCODED_INT_COUNT              3
 
-#define MAX_NAME_DIGEST_LEN            9
+#define MAX_NAME_DIGEST_LEN            64
+#define RB_TREE_KEY_LEN                4
 
 #ifdef __cplusplus
 extern "C" {
@@ -361,8 +360,8 @@ static int32_t EncodeTree(struct RbTree *tree, uint8_t **bufptr, uint32_t *size)
     uint8_t *salt = buf + sizeof(uint32_t) + CM_INTEGRITY_TAG_LEN;
 
     /* generate random salt */
-    struct HksBlob r = { .size = CM_INTEGRITY_SALT_LEN, .data = salt };
-    (void) HksGenerateRandom(NULL, &r);
+    struct CmBlob r = { .size = CM_INTEGRITY_SALT_LEN, .data = salt };
+    (void)CmGetRandom(&r); /* ignore retcode */
 
     uint8_t *data = buf + HEADER_LEN;
     uint32_t dataLen = sz - HEADER_LEN;
@@ -447,27 +446,41 @@ finally:
     return rc;
 }
 
-inline static RbTreeKey GetRbTreeKeyFromName(char *name)
+static RbTreeKey GetRbTreeKeyFromName(const char *name)
 {
     /* use the first 4 bytes of file name (exluding the first bit) as the key */
-    return DECODE_UINT32(name) & 0x7fffffff;
+    uint32_t len = strlen(name);
+    if (len == 0) {
+        return 0;
+    }
+
+    len = (len < RB_TREE_KEY_LEN) ? len : RB_TREE_KEY_LEN;
+    uint8_t temp[RB_TREE_KEY_LEN] = {0};
+    if (memcpy_s(temp, RB_TREE_KEY_LEN, name, len) != EOK) {
+        return 0;
+    }
+
+    return DECODE_UINT32(temp) & 0x7fffffff;
 }
 
-static RbTreeKey GetRbTreeKey(uint32_t store, char *fn)
+static RbTreeKey GetRbTreeKeyFromNameBlob(const struct CmBlob *name)
 {
-    uint8_t buff[MAX_NAME_DIGEST_LEN];
-    RbTreeKey key;
-    struct CmMutableBlob nameDigest = { sizeof(buff), buff };
+    /* name size is ensured bigger than 4; use the first 4 bytes of file name (exluding the first bit) as the key */
+    return DECODE_UINT32(name->data) & 0x7fffffff;
+}
+
+static RbTreeKey GetRbTreeKey(uint32_t store, const char *fn)
+{
     if (store == CM_SYSTEM_TRUSTED_STORE) {
-        key = GetRbTreeKeyFromName(fn);
-    } else {
-        int32_t ret = NameHashFromUri(fn, &nameDigest);
-        if (ret != CMR_OK) {
-            return ret;
-        }
-        key = GetRbTreeKeyFromName((char *)nameDigest.data);
+        return GetRbTreeKeyFromName(fn);
     }
-    return key;
+
+    uint8_t tempBuf[MAX_NAME_DIGEST_LEN] = {0};
+    struct CmBlob nameDigest = { sizeof(tempBuf), tempBuf };
+    struct CmBlob certName = { (uint32_t)strlen(fn) + 1, (uint8_t *)fn };
+    (void)CmGetHash(&certName, &nameDigest); /* ignore return code: nameDigest is 0 */
+
+    return GetRbTreeKeyFromNameBlob(&nameDigest);
 }
 
 static uint32_t GetCertStatusNode(const struct RbTreeNode *node)
@@ -485,7 +498,7 @@ static uint32_t GetCertStatusNode(const struct RbTreeNode *node)
 }
 
 static int32_t SetCertStatusNode(const struct CmContext *ctx, struct RbTree *tree,
-    struct RbTreeNode *node, char *name, uint32_t status)
+    struct RbTreeNode *node, const char *name, uint32_t status)
 {
     if (node != NULL) {
         /* found a matching node */
@@ -527,7 +540,7 @@ static int32_t SetCertStatusNode(const struct CmContext *ctx, struct RbTree *tre
 }
 
 static int32_t SetUserCertStatusNode(const struct CertStatus *valInfo, struct RbTree *tree,
-    struct RbTreeNode *node, char *name, uint32_t store)
+    struct RbTreeNode *node, const char *name, uint32_t store)
 {
     uint32_t status = valInfo->status;
 
@@ -601,7 +614,7 @@ static bool StatusMatch(const struct CmContext *context, const struct CertStatus
 }
 
 static int32_t CertManagerFindMatchedFile(const struct CmContext *context, struct RbTreeNode **treeNode,
-    struct RbTree *tree, struct TreeNode tempPara, char *fn)
+    struct RbTree *tree, struct TreeNode tempPara, const char *fn)
 {
     uint32_t store = tempPara.store;
     bool *found = tempPara.found;
@@ -636,7 +649,7 @@ static int32_t CertManagerFindMatchedFile(const struct CmContext *context, struc
 }
 
 static int32_t CertManagerStatus(const struct CmContext *context, struct RbTree *tree,
-    struct CertEnableStatus certStatus, uint32_t store, char *fn)
+    struct CertEnableStatus certStatus, uint32_t store, const char *fn)
 {
     int rc = CMR_OK;
     bool found = false;
@@ -790,7 +803,7 @@ int32_t CmSetStatusEnable(const struct CmContext *context, struct CmMutableBlob 
 int32_t CmGetCertStatus(const struct CmContext *context, struct CertFilePath *certFilePath,
     uint32_t store, uint32_t *status)
 {
-    struct CertFile certFile = { 0, 0 };
+    struct CertFile certFile = { NULL, NULL };
     certFile.path = &(certFilePath->path);
     certFile.fileName = &(certFilePath->fileName);
 

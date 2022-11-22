@@ -1,0 +1,1 @@
+src:*/services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_crypto_operation.c

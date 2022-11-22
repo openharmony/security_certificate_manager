@@ -20,6 +20,7 @@ ohos_shared_library("cert_manager_engine_core_standard") {
   sanitize = {
     cfi = true
     debug = false
+    blocklist = "//base/security/certificate_manager/cfi_blocklist.txt"
   }
   subsystem_name = "security"
   part_name = "certificate_manager"
@@ -45,6 +46,7 @@ ohos_shared_library("cert_manager_engine_core_standard") {
     "src/cert_manager_auth_list_mgr.c",
     "src/cert_manager_auth_mgr.c",
     "src/cert_manager_check.c",
+    "src/cert_manager_crypto_operation.c",
     "src/cert_manager_double_list.c",
     "src/cert_manager_file.c",
     "src/cert_manager_file_operator.c",
@@ -63,6 +65,7 @@ ohos_shared_library("cert_manager_engine_core_standard") {
 
   deps = [
     "//base/security/certificate_manager/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
+    "//base/security/crypto_framework/frameworks:crypto_framework_lib",
     "//third_party/openssl:libcrypto_shared",
   ]
   external_deps = [
