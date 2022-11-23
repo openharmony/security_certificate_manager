@@ -66,13 +66,13 @@ static int32_t GetCertificateList(enum CmMessage type, const uint32_t store,
     do {
         ret = CmSendParcelInit(params, CM_ARRAY_SIZE(params), &parcelBlob, &sendParamSet);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("get cert list sendParcel failed");
+            CM_LOG_E("get system cert list sendParcel failed");
             break;
         }
 
         ret = GetCertListInitOutData(&outBlob);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("malloc getcertlist outdata failed");
+            CM_LOG_E("malloc cert list outdata failed");
             break;
         }
 
@@ -122,19 +122,19 @@ static int32_t GetCertificateInfo(enum CmMessage type, const struct CmBlob *cert
     do {
         ret = CmSendParcelInit(params, CM_ARRAY_SIZE(params), &parcelBlob, &sendParamSet);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("get cert info sendParcel failed");
+            CM_LOG_E("get system cert info sendParcel failed");
             break;
         }
 
         ret = GetCertInfoInitOutData(&outBlob);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("malloc getcertinfo outdata failed");
+            CM_LOG_E("malloc system cert info outdata failed");
             break;
         }
 
         ret = SendRequest(type, &parcelBlob, &outBlob);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("GetCertificateInfo request fail");
+            CM_LOG_E("get system cert info send request fail");
             break;
         }
 
@@ -170,13 +170,13 @@ static int32_t SetCertificateStatus(enum CmMessage type, const struct CmBlob *ce
     do {
         ret = CmSendParcelInit(params, CM_ARRAY_SIZE(params), &parcelBlob, &sendParamSet);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("set cert status sendParcel failed");
+            CM_LOG_E("set system cert status sendParcel failed");
             break;
         }
 
         ret = SendRequest(type, &parcelBlob, NULL);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("send request fail");
+            CM_LOG_E("set system cert status send request fail");
             break;
         }
     } while (0);

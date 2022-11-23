@@ -21,11 +21,6 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
-static const uint32_t CM_CONTEXT_UID = 3000;
-static const uint32_t CM_CONTEXT_UID2 = 3001;
-static const uint32_t CM_CONTEXT_USERID = 1000;
-static const uint32_t CM_CONTEXT_USERID2 = 2000;
-
 struct CertStatusExpectResult {
     char uri[MAX_LEN_URI];
     bool inparamStatus;
@@ -45,18 +40,14 @@ struct CertStatusExpectResult g_expectList[] = {
 };
 
 class CmSetCertStatusTest : public testing::Test {
-    public:
-        static void SetUpTestCase(void);
+public:
+    static void SetUpTestCase(void);
 
-        static void TearDownTestCase(void);
+    static void TearDownTestCase(void);
 
-        void SetUp();
+    void SetUp();
 
-        void TearDown();
-
-    public:
-        struct CmContext firstUserCtx;
-        struct CmContext secondUserCtx;
+    void TearDown();
 };
 
 void CmSetCertStatusTest::SetUpTestCase(void)
@@ -70,8 +61,6 @@ void CmSetCertStatusTest::TearDownTestCase(void)
 
 void CmSetCertStatusTest::SetUp()
 {
-    InitUserContext(&firstUserCtx, CM_CONTEXT_USERID, CM_CONTEXT_UID, "com.hap.test");
-    InitUserContext(&secondUserCtx, CM_CONTEXT_USERID2, CM_CONTEXT_UID2, "com.hap.test2");
 }
 
 void CmSetCertStatusTest::TearDown()
@@ -117,9 +106,9 @@ HWTEST_F(CmSetCertStatusTest, SetCertStatusAndQueryStatus002, TestSize.Level0)
 
         ret = CmGetCertInfo(&uriBlob, CM_SYSTEM_TRUSTED_STORE, &certDetailInfo);
         EXPECT_EQ(ret, CM_SUCCESS) << "SetCertStatusAndQueryStatus,CmGetCertInfo failed,retcode: " << ret;
-        uint32_t uStatus = (g_expectList[i].expectStatus == certDetailInfo.status) ? 1 : 0;
+        int32_t status = (g_expectList[i].expectStatus == certDetailInfo.status) ? 1 : 0;
 
-        EXPECT_EQ(uStatus, 1) << "SetCertStatusAndQueryStatus faild, cert info: " << DumpCertInfo(&certDetailInfo);
+        EXPECT_EQ(status, 1) << "SetCertStatusAndQueryStatus faild, cert info: " << DumpCertInfo(&certDetailInfo);
         FreeCMBlobData(&(certDetailInfo.certInfo));
 
         ret = CmSetCertStatus(&uriBlob, CM_SYSTEM_TRUSTED_STORE, true);

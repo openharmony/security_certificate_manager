@@ -21,11 +21,6 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
-static const uint32_t CM_CONTEXT_USERID = 1000;
-static const uint32_t CM_CONTEXT_UID = 3000;
-static const uint32_t CM_CONTEXT_USERID2 = 2000;
-static const uint32_t CM_CONTEXT_UID2 = 3001;
-
 struct CertInfoResult {
     struct CertInfo CertInfo;
     bool bExpectResult;
@@ -105,19 +100,15 @@ struct CertInfoResult g_listCertInfoexpectResult[] = {
 };
 
 class CmGetCertInfoTest : public testing::Test {
-    public:
-        static void SetUpTestCase(void);
+public:
+    static void SetUpTestCase(void);
 
-        static void TearDownTestCase(void);
+    static void TearDownTestCase(void);
 
-        void SetUp();
+    void SetUp();
 
-        void TearDown();
+    void TearDown();
 
-    public:
-
-    struct CmContext firstUserCtx;
-    struct CmContext secondUserCtx;
     struct CertList *lstCert;
 };
 
@@ -133,8 +124,6 @@ void CmGetCertInfoTest::TearDownTestCase(void)
 void CmGetCertInfoTest::SetUp()
 {
     InitCertList(&lstCert);
-    InitUserContext(&firstUserCtx, CM_CONTEXT_USERID, CM_CONTEXT_UID, "com.hap.test");
-    InitUserContext(&secondUserCtx, CM_CONTEXT_USERID2, CM_CONTEXT_UID2, "com.hap.test2");
 }
 
 void CmGetCertInfoTest::TearDown()
