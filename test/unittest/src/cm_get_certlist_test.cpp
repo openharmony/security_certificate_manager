@@ -21,10 +21,6 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
-static const uint32_t CM_CONTEXT_USERID = 1000;
-static const uint32_t CM_CONTEXT_USERID2 = 2000;
-static const uint32_t CM_CONTEXT_UID = 3000;
-static const uint32_t CM_CONTEXT_UID2 = 3001;
 static const int TIMES_PERFORMANCE = 10;
 
 struct CertAbstractResult {
@@ -71,9 +67,6 @@ public:
 
     void TearDown();
 
-public:
-    struct CmContext firstUserCtx;
-    struct CmContext secondUserCtx;
     struct CertList *lstCert;
 };
 
@@ -89,8 +82,6 @@ void CmGetCertListTest::TearDownTestCase(void)
 void CmGetCertListTest::SetUp()
 {
     InitCertList(&lstCert);
-    InitUserContext(&firstUserCtx, CM_CONTEXT_USERID, CM_CONTEXT_UID, "com.hap.test");
-    InitUserContext(&secondUserCtx, CM_CONTEXT_USERID2, CM_CONTEXT_UID2, "com.hap.test2");
 }
 
 void CmGetCertListTest::TearDown()

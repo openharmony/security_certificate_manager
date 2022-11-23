@@ -88,13 +88,13 @@ void CmIpcServiceGetCertificateList(const struct CmBlob *paramSetBlob, struct Cm
 
         ret = CmServiceGetCertList(&cmContext, store, &certFileList);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("GetCertList failed, ret = %d", ret);
+            CM_LOG_E("get cert list failed, ret = %d", ret);
             break;
         }
 
         ret = CmServiceGetCertListPack(&cmContext, store, &certFileList, outData);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmServiceGetCertListPack pack fail, ret = %d", ret);
+            CM_LOG_E("cert list data pack fail, ret = %d", ret);
             break;
         }
 
@@ -138,13 +138,13 @@ void CmIpcServiceGetCertificateInfo(const struct CmBlob *paramSetBlob, struct Cm
 
         ret = CmServiceGetCertInfo(&cmContext, &certUri, store, &certificateData, &status);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("GetCertInfo failed, ret = %d", ret);
+            CM_LOG_E("get cert info failed, ret = %d", ret);
             break;
         }
 
         ret = CmServiceGetCertInfoPack(store, &certificateData, status, &certUri, outData);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmServiceGetCertInfoPack pack failed, ret = %d", ret);
+            CM_LOG_E("cert info data pack failed, ret = %d", ret);
             break;
         }
 
@@ -188,7 +188,7 @@ void CmIpcServiceSetCertStatus(const struct CmBlob *paramSetBlob, struct CmBlob 
 
         ret = CmServiceSetCertStatus(&cmContext, &certUri, store, status);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("set cert status failed, ret = %d", ret);
+            CM_LOG_E("set system cert status failed, ret = %d", ret);
             break;
         }
     } while (0);
@@ -661,10 +661,10 @@ void CmIpcServiceGrantAppCertificate(const struct CmBlob *paramSetBlob, struct C
     struct CmBlob keyUri = { 0, NULL };
     int32_t ret;
     do {
-        uint32_t appUid = 0;
+        uint32_t grantUid = 0;
         struct CmParamOut params[] = {
             { .tag = CM_TAG_PARAM0_BUFFER, .blob = &keyUri },
-            { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &appUid },
+            { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &grantUid },
         };
         ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
@@ -672,7 +672,7 @@ void CmIpcServiceGrantAppCertificate(const struct CmBlob *paramSetBlob, struct C
             break;
         }
 
-        ret = CmServiceGrantAppCertificate(&cmContext, &keyUri, appUid, outData);
+        ret = CmServiceGrantAppCertificate(&cmContext, &keyUri, grantUid, outData);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("service grant app failed, ret = %d", ret);
             break;
@@ -1047,7 +1047,7 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
 
         ret = CmServiceSetCertStatus(&cmContext, &certUri, store, status);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("set cert status failed, ret = %d", ret);
+            CM_LOG_E("set user cert status failed, ret = %d", ret);
             break;
         }
     } while (0);
