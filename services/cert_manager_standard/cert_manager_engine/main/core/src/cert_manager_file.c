@@ -60,27 +60,20 @@ static int32_t GetNumberOfFiles(const char *path)
     return count;
 }
 
-void FreeFileNames(struct CmMutableBlob *fileNames)
+void FreeFileNames(struct CmMutableBlob *fNames, uint32_t fileCount)
 {
-    if (fileNames == NULL) {
+    if (fNames == NULL) {
         return ;
     }
 
-    if (fileNames->data == NULL) {
-        fileNames->size = 0;
-        return;
-    }
-
-    struct CmMutableBlob *fNames = (struct CmMutableBlob *)fileNames->data;
-    for (uint32_t i = 0; i < fileNames->size; i++) {
+    for (uint32_t i = 0; i < fileCount; i++) {
         fNames[i].size = 0;
         CM_FREE_PTR(fNames[i].data);
     }
     CMFree(fNames);
-    fileNames->size = 0;
 }
 
-static int32_t MallocFileNames(struct CmMutableBlob *fileNames, const char *path, uint32_t *fileCount)
+static int32_t MallocFileNames(struct CmMutableBlob **fNames, const char *path, uint32_t *fileCount)
 {
     int32_t fileNums = GetNumberOfFiles(path);
     if (fileNums == 0) {
@@ -99,15 +92,14 @@ static int32_t MallocFileNames(struct CmMutableBlob *fileNames, const char *path
     }
 
     uint32_t bufSize = sizeof(struct CmMutableBlob) * fileNums;
-    struct CmMutableBlob *fNames = (struct CmMutableBlob *)CMMalloc(bufSize);
-    if (fNames == NULL) {
+    struct CmMutableBlob *temp = (struct CmMutableBlob *)CMMalloc(bufSize);
+    if (temp == NULL) {
         CM_LOG_E("Failed to allocate memory for file names");
         return CMR_ERROR_MALLOC_FAIL;
     }
-    (void)memset_s(fNames, bufSize, 0, bufSize);
+    (void)memset_s(temp, bufSize, 0, bufSize);
 
-    fileNames->data = (uint8_t *)fNames;
-    fileNames->size = (uint32_t)fileNums;
+    *fNames = temp;
     *fileCount = (uint32_t)fileNums;
 
     return CM_SUCCESS;
@@ -132,7 +124,7 @@ static int32_t GetFileNames(const char *path, struct CmMutableBlob *fNames, uint
         }
 
         uint32_t nameSize = strlen(dire.fileName) + 1; /* include '\0' at end */
-        fNames[i].data = (uint8_t *)CMMalloc(nameSize);
+        fNames[i].data = (uint8_t *)CMMalloc(nameSize); /* uniformly free memory by caller */
         if (fNames[i].data == NULL) {
             CM_LOG_E("malloc file name data failed");
             ret = CMR_ERROR_MALLOC_FAIL;
@@ -166,30 +158,27 @@ int32_t CertManagerGetFilenames(struct CmMutableBlob *fileNames, const char *pat
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    int32_t ret;
     uint32_t fileCount = 0;
-    do {
-        ret = MallocFileNames(fileNames, path, &fileCount);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed to malloc memory for files name");
-            break;
-        }
-
-        struct CmMutableBlob *fNames = (struct CmMutableBlob *)fileNames->data;
-        ret = GetFileNames(path, fNames, fileCount);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("get file name failed");
-            break;
-        }
-    } while (0);
-
+    struct CmMutableBlob *fNames = NULL;
+    int32_t ret = MallocFileNames(&fNames, path, &fileCount);
     if (ret != CM_SUCCESS) {
-        FreeFileNames(fileNames);
+        CM_LOG_E("Failed to malloc memory for files name");
+        return ret;
     }
+
+    ret = GetFileNames(path, fNames, fileCount);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get file name failed");
+        FreeFileNames(fNames, fileCount);
+        return ret;
+    }
+
+    fileNames->data = (uint8_t *)fNames;
+    fileNames->size = fileCount;
     return ret;
 }
 
-uint32_t GetNumberOfDirs(const char *userIdPath)
+int32_t GetNumberOfDirs(const char *userIdPath)
 {
     void *dir = CmOpenDir(userIdPath);
     if (dir == NULL) {
@@ -197,7 +186,7 @@ uint32_t GetNumberOfDirs(const char *userIdPath)
         return CM_FAILURE;
     }
 
-    uint32_t fileCount = 0;
+    int32_t fileCount = 0;
     struct CmFileDirentInfo dire = {{0}};
     while (CmGetSubDir(dir, &dire) == CMR_OK) {
         fileCount++;

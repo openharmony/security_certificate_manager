@@ -285,8 +285,9 @@ int32_t CmServiceGetCertList(const struct CmContext *context, uint32_t store, st
             break;
         }
     } while (0);
+
     if (pathList.data != NULL) {
-        CmFreeCertPaths(&pathList);
+        CmFreePathList((struct CmMutableBlob *)pathList.data, pathList.size);
     }
     return ret;
 }
@@ -315,24 +316,25 @@ int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlo
             break;
         }
 
-        struct CertFilePath *certFilePath = (struct CertFilePath *)certFileList.data;
-        ret = CmGetCertStatus(context, &certFilePath[matchIndex], store, status); /* status */
+        struct CertFileInfo *cFileList = (struct CertFileInfo *)certFileList.data;
+        ret = CmGetCertStatus(context, &cFileList[matchIndex], store, status); /* status */
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get cert status");
             ret = CM_FAILURE;
             break;
         }
 
-        ret = CmGetCertData((char *)certFilePath[matchIndex].fileName.data,
-            (char *)certFilePath[matchIndex].path.data, certificateData); /* cert data */
+        ret = CmGetCertData((char *)cFileList[matchIndex].fileName.data,
+            (char *)cFileList[matchIndex].path.data, certificateData); /* cert data */
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get cert data");
             ret = CM_FAILURE;
             break;
         }
     } while (0);
+
     if (certFileList.data != NULL) {
-        CmFreeCertFiles(&certFileList);
+        CmFreeCertFiles((struct CertFileInfo *)certFileList.data, certFileList.size);
     }
     return ret;
 }
@@ -472,26 +474,22 @@ int32_t CmUninstallUserCert(const struct CmContext *context, const struct CmBlob
 
 int32_t CmUninstallAllUserCert(const struct CmContext *context)
 {
-    int32_t ret = CM_SUCCESS;
     uint32_t store = CM_USER_TRUSTED_STORE;
-    struct CmMutableBlob certPathList = { 0, NULL };
+    struct CmMutableBlob pathList = { 0, NULL };
 
-    do {
-        ret = CmGetCertPathList(context, store, &certPathList);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("GetCertPathList fail, ret = %d", ret);
-            break;
-        }
-
-        ret = CmRemoveAllUserCert(context, store, &certPathList);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("RemoveAllUserCert fail, ret = %d", ret);
-            break;
-        }
-    } while (0);
-    if (certPathList.data != NULL) {
-        CmFreeCertPaths(&certPathList);
+    int32_t ret = CmGetCertPathList(context, store, &pathList);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("GetCertPathList fail, ret = %d", ret);
+        return ret;
     }
+
+    ret = CmRemoveAllUserCert(context, store, &pathList);
+    CmFreePathList((struct CmMutableBlob *)pathList.data, pathList.size);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("RemoveAllUserCert fail, ret = %d", ret);
+        return ret;
+    }
+
     return ret;
 }
 

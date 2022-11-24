@@ -94,7 +94,7 @@ static int32_t CmReadRequestReply(MessageParcel &reply, struct CmBlob *outBlob)
         return CMR_ERROR_NULL_POINTER;
     }
     if (outBlob->size < outLen) {
-        CM_LOG_E("outBlob->size smaller than outLen.outBlob.siza[%d]", outBlob->size);
+        CM_LOG_E("outBlob size[%u] smaller than outLen[%u]", outBlob->size, outLen);
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
     if (memcpy_s(outBlob->data, outBlob->size, outData, outLen) != EOK) {

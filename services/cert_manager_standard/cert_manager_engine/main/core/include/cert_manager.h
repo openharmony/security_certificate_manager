@@ -52,7 +52,7 @@ int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *p
 
 int32_t CmRemoveUserCert(struct CmMutableBlob *pathBlob, const struct CmBlob *certUri);
 
-int32_t CmRemoveAllUserCert(const struct CmContext *context, uint32_t store, const struct CmMutableBlob *certPathList);
+int32_t CmRemoveAllUserCert(const struct CmContext *context, uint32_t store, const struct CmMutableBlob *pathList);
 
 #ifdef __cplusplus
 }

@@ -34,11 +34,11 @@ int32_t CertManagerFileWrite(const char *path, const char *fileName, uint32_t of
 
 int32_t CertManagerFileRemove(const char *path, const char *fileName);
 
-uint32_t GetNumberOfDirs(const char *userIdPath);
+int32_t GetNumberOfDirs(const char *userIdPath);
 
 int32_t GetCertCount(const char *path);
 
-void FreeFileNames(struct CmMutableBlob *fileNames);
+void FreeFileNames(struct CmMutableBlob *fNames, uint32_t fileCount);
 
 #ifdef __cplusplus
 }
