@@ -800,12 +800,12 @@ int32_t CmSetStatusEnable(const struct CmContext *context, struct CmMutableBlob 
     return CertManagerStatusFile(context, certFile, store, CERT_STATUS_ENANLED, NULL);
 }
 
-int32_t CmGetCertStatus(const struct CmContext *context, struct CertFilePath *certFilePath,
+int32_t CmGetCertStatus(const struct CmContext *context, struct CertFileInfo *cFile,
     uint32_t store, uint32_t *status)
 {
     struct CertFile certFile = { NULL, NULL };
-    certFile.path = &(certFilePath->path);
-    certFile.fileName = &(certFilePath->fileName);
+    certFile.path = &(cFile->path);
+    certFile.fileName = &(cFile->fileName);
 
     return CertManagerStatusFile(context, certFile, store, CERT_STATUS_INVALID, status);
 }

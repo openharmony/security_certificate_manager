@@ -254,7 +254,7 @@ struct CertFile {
     const struct CmBlob *path;
 };
 
-struct CertFilePath {
+struct CertFileInfo {
     struct CmBlob fileName;
     struct CmBlob path;
 };

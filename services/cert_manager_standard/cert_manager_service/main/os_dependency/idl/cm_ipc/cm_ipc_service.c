@@ -104,7 +104,10 @@ void CmIpcServiceGetCertificateList(const struct CmBlob *paramSetBlob, struct Cm
     if (ret != CM_SUCCESS) {
         CmSendResponse(context, ret, NULL);
     }
-    CmFreeCertFiles(&certFileList);
+
+    if (certFileList.data != NULL) {
+        CmFreeCertFiles((struct CertFileInfo *)certFileList.data, certFileList.size);
+    }
     CmFreeParamSet(&paramSet);
 }
 
@@ -964,7 +967,10 @@ void CmIpcServiceGetUserCertList(const struct CmBlob *paramSetBlob, struct CmBlo
     if (ret != CM_SUCCESS) {
         CmSendResponse(context, ret, NULL);
     }
-    CmFreeCertFiles(&certFileList);
+
+    if (certFileList.data != NULL) {
+        CmFreeCertFiles((struct CertFileInfo *)certFileList.data, certFileList.size);
+    }
     CmFreeParamSet(&paramSet);
 }
 

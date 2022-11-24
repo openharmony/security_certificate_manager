@@ -193,7 +193,7 @@ int32_t CertManagerFindCertFileNameByUri(const struct CmContext *context, const 
 
     struct CmMutableBlob *fNames = (struct CmMutableBlob *)fileNames.data;
     ret = FindObjectCert(certUri, fNames, fileNames.size);
-    FreeFileNames(&fileNames);
+    FreeFileNames(fNames, fileNames.size);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("No cert matched, err: %d", ret);
     }
@@ -536,7 +536,7 @@ static int32_t RemoveAllUserCert(const struct CmContext *context, uint32_t store
         }
     }
 
-    FreeFileNames(&fileNames);
+    FreeFileNames(fNames, fileNames.size);
     return ret;
 }
 
@@ -545,13 +545,13 @@ static int32_t RemoveAllUidDir(const char* path)
     return CM_ERROR(CmDirRemove(path));
 }
 
-int32_t CmRemoveAllUserCert(const struct CmContext *context, uint32_t store, const struct CmMutableBlob *certPathList)
+int32_t CmRemoveAllUserCert(const struct CmContext *context, uint32_t store, const struct CmMutableBlob *pathList)
 {
-    ASSERT_ARGS(certPathList && certPathList->data && certPathList->size);
+    ASSERT_ARGS(pathList && pathList->data && pathList->size);
     int32_t ret = CM_SUCCESS;
-    struct CmMutableBlob *path = (struct CmMutableBlob *)certPathList->data;
+    struct CmMutableBlob *path = (struct CmMutableBlob *)pathList->data;
 
-    for (uint32_t i = 0; i < certPathList->size; i++) {
+    for (uint32_t i = 0; i < pathList->size; i++) {
         ret = RemoveAllUserCert(context, store, (char *)path[i].data);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed remove usercert of path %s", (char *)path[i].data);
