@@ -75,7 +75,7 @@ int32_t InitCertList(struct CertList **certlist)
     struct CertList list;
     uint32_t buffSize = sizeof(list.certsCount) + sizeof(struct CertListAbtInfo) * MAX_COUNT_CERTIFICATE;
 
-    (*certlist)->certAbstract = (struct CertAbstract *)CmMalloc(buffSize);
+    (*certlist)->certAbstract = static_cast<struct CertAbstract *>(CmMalloc(buffSize));
     if ((*certlist)->certAbstract == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
     }
