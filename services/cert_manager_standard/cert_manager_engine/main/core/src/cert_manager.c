@@ -42,14 +42,6 @@ extern "C" {
 
 static bool g_hksInitialized = false;
 
-struct CmMathedIndexPara {
-    char *path;
-    uint32_t store;
-    uint32_t *status;
-    uint32_t *count;
-    uint8_t *indexes;
-};
-
 int32_t CertManagerInitialize(void)
 {
     if (!g_hksInitialized) {

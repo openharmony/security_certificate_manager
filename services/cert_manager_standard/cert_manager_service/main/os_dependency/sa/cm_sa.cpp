@@ -50,11 +50,6 @@ struct CmIpcPoint {
     CmIpcAppHandlerFuncProc handler;
 };
 
-struct CmIpcEntryPoint {
-    enum CmMessage msgId;
-    CmIpcHandlerFuncProc handler;
-};
-
 static struct CmIpcPoint g_cmIpcHandler[] = {
     { CM_MSG_INSTALL_APP_CERTIFICATE, CmIpcServiceInstallAppCert },
     { CM_MSG_UNINSTALL_APP_CERTIFICATE, CmIpcServiceUninstallAppCert },

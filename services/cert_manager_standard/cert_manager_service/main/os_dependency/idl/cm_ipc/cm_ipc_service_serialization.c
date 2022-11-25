@@ -102,10 +102,9 @@ static int32_t GetNullBlobParam(const struct CmParamSet *paramSet, struct CmPara
 
 int32_t CmParamSetToParams(const struct CmParamSet *paramSet, struct CmParamOut *outParams, uint32_t cnt)
 {
-    int32_t ret;
     struct CmParam *param = NULL;
     for (uint32_t i = 0; i < cnt; i++) {
-        ret = CmGetParam(paramSet, outParams[i].tag, &param);
+        int32_t ret = CmGetParam(paramSet, outParams[i].tag, &param);
         if (ret == CM_SUCCESS) {
             ret = GetNormalParam(param, &outParams[i]);
         } else {
