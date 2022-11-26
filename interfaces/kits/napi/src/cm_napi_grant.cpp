@@ -78,6 +78,10 @@ static napi_value ParseString2Uint32(napi_env env, napi_value object, uint32_t &
     napi_value result = ParseString(env, object, blob);
     if (result == nullptr) {
         CM_LOG_E("parse string to blob failed");
+        if (blob != nullptr) {
+            CM_FREE_PTR(blob->data);
+            CmFree(blob);
+        }
         return nullptr;
     }
 

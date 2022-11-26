@@ -57,9 +57,7 @@ static int32_t GetFullFileName(const char *path, const char *fileName, char **fu
     if (tmpFileName == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
     }
-    if (memset_s(tmpFileName, nameLen, 0, nameLen) != EOK) {
-        return CMR_ERROR;
-    }
+    (void)memset_s(tmpFileName, nameLen, 0, nameLen);
 
     int32_t ret = GetFileName(path, fileName, tmpFileName, nameLen);
     if (ret != CMR_OK) {
