@@ -346,10 +346,15 @@ static inline uint32_t IndexOf(char sep, const char *data, uint32_t start, uint3
 
 static char *DecodeValue(const char *s, uint32_t off, uint32_t len)
 {
-    if (s == NULL || len == 0) {
+    if (s == NULL || len == 0 || len > MAX_AUTH_LEN_URI) {
+        CM_LOG_E("input value failed");
         return NULL;
     }
     char *buf = MALLOC(len + 1);
+    if (buf == NULL) {
+        CM_LOG_E("malloc buf failed");
+        return NULL;
+    }
     (void)memset_s(buf, len + 1, 0, len + 1);
 
     uint32_t bufOff = 0;
@@ -488,28 +493,31 @@ int32_t CertManagerUriDecode(struct CMUri *uri, const char *encoded)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
+    (void)memset_s(uri, sizeof(*uri), 0, sizeof(*uri));
     uri->type = CM_URI_TYPE_INVALID;
+
     uint32_t len = strlen(encoded);
     uint32_t off = 0;
-    CM_LOG_I("CertManagerUriDecode keyUri:%s, %s, len:%d, schem:%d", encoded, SCHEME, len, strlen(SCHEME));
     if (len < strlen(SCHEME) || memcmp(encoded, SCHEME, strlen(SCHEME))) {
-        CM_LOG_W("Scheme mismatch. Not a cert manager URI: %s\n", encoded);
+        CM_LOG_E("Scheme mismatch. Not a cert manager URI");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     off += strlen(SCHEME);
 
     uint32_t pathStart = off;
     uint32_t pathEnd = IndexOf('?', encoded, off, len);
-    uint32_t queryStart = pathEnd == len ? len : pathEnd + 1;
+    uint32_t queryStart = (pathEnd == len) ? len : pathEnd + 1;
     uint32_t queryEnd = len;
 
     int32_t ret = DecodePath(uri, encoded, pathStart, pathEnd);
     if (ret != CM_SUCCESS) {
+        CertManagerFreeUri(uri);
         return ret;
     }
 
     ret = DecodeQuery(uri, encoded, queryStart, queryEnd);
     if (ret != CM_SUCCESS) {
+        CertManagerFreeUri(uri);
         return ret;
     }
 

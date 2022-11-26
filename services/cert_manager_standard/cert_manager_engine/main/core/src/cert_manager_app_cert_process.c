@@ -209,6 +209,7 @@ int32_t SaveKeyMaterialCurve25519(uint32_t algType, const EVP_PKEY *pKey, struct
     if (EVP_PKEY_get_raw_private_key(pKey, buffer + offset, &tmpPriKeyLen) != CM_OPENSSL_SUCCESS) {
         CM_LOG_E("EVP_PKEY_get_raw_private_key");
         (void)memset_s(buffer, totalSize, 0, totalSize);
+        CMFree(buffer);
         return CMR_ERROR_INVALID_OPERATION;
     }
     uint32_t priKeyLen = (uint32_t)tmpPriKeyLen;

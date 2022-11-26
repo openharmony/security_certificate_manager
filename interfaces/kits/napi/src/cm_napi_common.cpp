@@ -26,7 +26,8 @@ constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M
 constexpr int RESULT_ARG_NUMBER = 2;
 }  // namespace
 
-napi_value GetCmContextAttribute(napi_env env, napi_value object, const char *type, int maxSize, char *&srcData)
+static napi_value GetCmContextAttribute(napi_env env, napi_value object, const char *type, int maxSize,
+    char *&srcData)
 {
     napi_value typeValue = nullptr;
     napi_status  status = napi_get_named_property(env, object, type, &typeValue);
@@ -61,6 +62,7 @@ napi_value GetCmContextAttribute(napi_env env, napi_value object, const char *ty
     status = napi_get_value_string_utf8(env, typeValue, srcData, length + 1, &result);
     if (status != napi_ok) {
         CmFree(srcData);
+        srcData = nullptr;
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("could not get string");
         return nullptr;
@@ -75,31 +77,39 @@ napi_value ParseCmContext(napi_env env, napi_value object, CmContext *&cmContext
     char *uidData = nullptr;
     char *packageNameData = nullptr;
 
-    napi_value userIdStatus = GetCmContextAttribute(env, object,
-        CM_CONTEXT_PROPERTY_USERID.c_str(), CM_MAX_DATA_LEN, userIdData);
-    napi_value uidStatus = GetCmContextAttribute(env, object,
-        CM_CONTEXT_PROPERTY_UID.c_str(), CM_MAX_DATA_LEN, uidData);
-    napi_value packageNameStatus = GetCmContextAttribute(env, object,
-        CM_CONTEXT_PROPERTY_PACKAGENAME.c_str(), CM_MAX_DATA_LEN, packageNameData);
-    if (userIdStatus == nullptr || uidStatus == nullptr || packageNameStatus == nullptr) {
-        return nullptr;
-    }
+    int32_t ret = CM_SUCCESS;
+    do {
+        napi_value userIdStatus = GetCmContextAttribute(env, object,
+            CM_CONTEXT_PROPERTY_USERID.c_str(), CM_MAX_DATA_LEN, userIdData);
+        napi_value uidStatus = GetCmContextAttribute(env, object,
+            CM_CONTEXT_PROPERTY_UID.c_str(), CM_MAX_DATA_LEN, uidData);
+        napi_value packageNameStatus = GetCmContextAttribute(env, object,
+            CM_CONTEXT_PROPERTY_PACKAGENAME.c_str(), CM_MAX_DATA_LEN, packageNameData);
+        if (userIdStatus == nullptr || uidStatus == nullptr || packageNameStatus == nullptr) {
+            CM_LOG_E("get userid or uid or packName failed");
+            ret = CMR_ERROR;
+            break;
+        }
 
-    cmContext = static_cast<CmContext *>(CmMalloc(sizeof(CmContext)));
-    if (cmContext == nullptr) {
-        CmFree(userIdData);
-        CmFree(uidData);
-        CmFree(packageNameData);
-        napi_throw_error(env, nullptr, "could not alloc memory");
-        CM_LOG_E("could not alloc memory");
-        return nullptr;
-    }
+        cmContext = static_cast<CmContext *>(CmMalloc(sizeof(CmContext)));
+        if (cmContext == nullptr) {
+            CM_LOG_E("could not alloc memory");
+            ret = CMR_ERROR_MALLOC_FAIL;
+            break;
+        }
 
-    cmContext->userId = static_cast<uint32_t>(atoi(userIdData));
-    cmContext->uid = static_cast<uint32_t>(atoi(uidData));
-    if (strncpy_s(cmContext->packageName, sizeof(cmContext->packageName),
-        packageNameData, strlen(packageNameData)) != EOK) {
-        CM_LOG_E("copy packageName failed");
+        cmContext->userId = static_cast<uint32_t>(atoi(userIdData));
+        cmContext->uid = static_cast<uint32_t>(atoi(uidData));
+        if (strcpy_s(cmContext->packageName, sizeof(cmContext->packageName), packageNameData) != EOK) {
+            CM_LOG_E("copy package name failed");
+            ret = CMR_ERROR_INVALID_OPERATION;
+            break;
+        }
+    } while (0);
+    CM_FREE_PTR(userIdData);
+    CM_FREE_PTR(uidData);
+    CM_FREE_PTR(packageNameData);
+    if (ret != CM_SUCCESS) {
         return nullptr;
     }
     return GetInt32(env, 0);
@@ -249,12 +259,9 @@ static napi_value GenerateAarrayBuffer(napi_env env, uint8_t *data, uint32_t siz
     if (buffer == nullptr) {
         return nullptr;
     }
+    (void)memcpy_s(buffer, size, data, size);
 
     napi_value outBuffer = nullptr;
-    if (memcpy_s(buffer, size, data, size) != EOK) {
-        return nullptr;
-    }
-
     napi_status status = napi_create_external_arraybuffer(
         env, buffer, size, [](napi_env env, void *data, void *hint) { CmFree(data); }, nullptr, &outBuffer);
     if (status == napi_ok) {

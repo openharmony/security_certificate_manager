@@ -493,9 +493,10 @@ int32_t RbTreeEncode(const struct RbTree *t, RbTreeValueEncoder enc, uint8_t *bu
     return CM_SUCCESS;
 }
 
-int32_t RbTreeDecode(struct RbTree *t, RbTreeValueDecoder dec, uint8_t *buf, uint32_t size)
+int32_t RbTreeDecode(struct RbTree *t, RbTreeValueDecoder dec, RbTreeValueFree freeFunc,
+    uint8_t *buf, uint32_t size)
 {
-    if (t == NULL || t->root == NULL || dec == NULL || size == 0) {
+    if (t == NULL || t->root == NULL || dec == NULL || freeFunc == NULL || buf == NULL || size == 0) {
         CM_LOG_E("input param is invaild");
         return CM_FAILURE;
     }
@@ -537,6 +538,7 @@ int32_t RbTreeDecode(struct RbTree *t, RbTreeValueDecoder dec, uint8_t *buf, uin
 
         rc = RbTreeInsert(t, key, value);
         if (rc != CM_SUCCESS) {
+            freeFunc(&value);
             return rc;
         }
         off += sz;

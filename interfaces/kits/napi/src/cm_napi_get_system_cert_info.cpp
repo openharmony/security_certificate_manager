@@ -95,6 +95,7 @@ static napi_value GetSystemCertInfoParseParams(
     size_t index = 0;
     napi_value result = ParseCmContext(env, argv[index], context->cmContext);
     if (result == nullptr) {
+        ThrowParamsError(env, PARAM_ERROR, "get context type error");
         CM_LOG_E("CertInfo could not get cert manager context");
         return nullptr;
     }

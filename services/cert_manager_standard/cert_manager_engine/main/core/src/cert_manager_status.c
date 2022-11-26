@@ -167,6 +167,17 @@ static int EncodeStatus(RbTreeValue value, uint8_t *buf, uint32_t *size)
     return CMR_OK;
 }
 
+static void DecodeFreeStatus(RbTreeValue *value)
+{
+    if (value == NULL || *value == NULL) {
+        return;
+    }
+
+    /* value is used internally, it can ensure that the type conversion is safe */
+    FreeStatus((struct CertStatus *)*value);
+    value = NULL;
+}
+
 static int DecodeStatus(RbTreeValue *value, const uint8_t *buf, uint32_t size)
 {
     /* each cert status struct is encoded as (userId | uid | status | fileName)
@@ -293,7 +304,7 @@ static int32_t LoadTreeStatus(struct RbTree *tree, pthread_rwlock_t *treeLock, u
     dataLen -= CM_INTEGRITY_SALT_LEN;
     if (dataLen > 0) {
         pthread_rwlock_wrlock(treeLock);
-        rc = RbTreeDecode(tree, DecodeStatus, data, dataLen);
+        rc = RbTreeDecode(tree, DecodeStatus, DecodeFreeStatus, data, dataLen);
         pthread_rwlock_unlock(treeLock);
 
         if (rc != CMR_OK) {
