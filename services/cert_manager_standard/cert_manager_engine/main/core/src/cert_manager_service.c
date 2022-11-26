@@ -362,7 +362,7 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
 
         ret = CmGetCertFilePath(context, store, &pathBlob);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed obtain path for store:%d path:%s", store, pathBuf);
+            CM_LOG_E("Failed obtain path for store:%u path:%s", store, pathBuf);
             break;
         }
 
