@@ -559,7 +559,7 @@ int32_t CmGetMatchedCertIndex(const struct CmMutableBlob *certFileList, const st
 
     for (uint32_t i = 0; i < certFileList->size; i++) {
         if (cFileList[i].fileName.data == NULL) {
-            CM_LOG_E("Corrupted file name at index: %d.\n", i);
+            CM_LOG_E("Corrupted file name at index: %u.\n", i);
             continue;
         }
 

@@ -839,7 +839,7 @@ static int32_t GetUserCertList(enum CmMessage type, const uint32_t store,
 
         ret = SendRequest(type, &parcelBlob, &outBlob);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("GetCertList request failed, ret: %u", ret);
+            CM_LOG_E("GetCertList request failed, ret: %d", ret);
             break;
         }
 
@@ -991,7 +991,7 @@ static int32_t GetUserCertInfo(enum CmMessage type, const struct CmBlob *certUri
 
         ret = SendRequest(type, &parcelBlob, &outBlob);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("GetCertInfo request failed, ret: %u", ret);
+            CM_LOG_E("GetCertInfo request failed, ret: %d", ret);
             break;
         }
 
@@ -1033,7 +1033,7 @@ static int32_t SetUserCertStatus(enum CmMessage type, const struct CmBlob *certU
 
         ret = SendRequest(type, &parcelBlob, NULL);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("SetCertStatus request failed, ret: %u", ret);
+            CM_LOG_E("SetCertStatus request failed, ret: %d", ret);
             break;
         }
     } while (0);
@@ -1067,7 +1067,7 @@ static int32_t InstallUserCert(enum CmMessage type, const struct CmBlob *userCer
 
         ret = SendRequest(type, &parcelBlob, certUri);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("InstallUserCert request failed, ret: %u", ret);
+            CM_LOG_E("InstallUserCert request failed, ret: %d", ret);
             break;
         }
     } while (0);
@@ -1099,7 +1099,7 @@ static int32_t UninstallUserCert(enum CmMessage type, const struct CmBlob *certU
 
         ret = SendRequest(type, &parcelBlob, NULL);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("UninstallUserCert request failed, ret: %u", ret);
+            CM_LOG_E("UninstallUserCert request failed, ret: %d", ret);
             break;
         }
     } while (0);
@@ -1120,7 +1120,7 @@ static int32_t UninstallAllUserCert(enum CmMessage type)
 
     ret = SendRequest(type, &parcelBlob, NULL);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("UninstallAllUserCert request failed, ret: %u", ret);
+        CM_LOG_E("UninstallAllUserCert request failed, ret: %d", ret);
     }
     return ret;
 }
