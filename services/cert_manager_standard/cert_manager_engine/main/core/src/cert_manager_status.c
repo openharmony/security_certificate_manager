@@ -175,7 +175,7 @@ static void DecodeFreeStatus(RbTreeValue *value)
 
     /* value is used internally, it can ensure that the type conversion is safe */
     FreeStatus((struct CertStatus *)*value);
-    value = NULL;
+    *value = NULL;
 }
 
 static int DecodeStatus(RbTreeValue *value, const uint8_t *buf, uint32_t size)
