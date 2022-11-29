@@ -389,7 +389,7 @@ static int32_t DecodePath(struct CMUri *uri, const char *path, uint32_t start, u
         uint32_t i = IndexOf(';', path, start, end);
         if (i <= start) {
             // something is wrong
-            CM_LOG_W("Invalid uri path: %s\n", path);
+            CM_LOG_W("Invalid uri path\n");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
 
@@ -433,7 +433,7 @@ static int32_t DecodePath(struct CMUri *uri, const char *path, uint32_t start, u
         } else if (e != NULL) {
             *e = DecodeEnum(path, valueOff, valueLen, values, valueCount);
         } else {
-            CM_LOG_W("Invalid field in path: %s\n", path);
+            CM_LOG_W("Invalid field in path\n");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
 
@@ -449,7 +449,7 @@ static int32_t DecodeQuery(struct CMUri *uri, const char *query, uint32_t start,
         uint32_t i = IndexOf('&', query, start, end);
         if (i <= start) {
             // something is wrong
-            CM_LOG_W("Invalid uri query: %s\n", query);
+            CM_LOG_W("Invalid uri query\n");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
 
@@ -477,7 +477,7 @@ static int32_t DecodeQuery(struct CMUri *uri, const char *query, uint32_t start,
                 *field = DecodeValue(query, valueOff, valueLen);
             }
         } else {
-            CM_LOG_W("Invalid field in query: %s\n", query);
+            CM_LOG_W("Invalid field in query\n");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
 
@@ -575,7 +575,6 @@ int32_t CmConstructUri(const struct CMUri *uriObj, struct CmBlob *outUri)
         return ret;
     }
 
-    CM_LOG_I("urilen = %u, uir:%s", outLen, data);
     outUri->data = (uint8_t *)data;
     return CM_SUCCESS;
 }

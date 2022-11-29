@@ -324,8 +324,8 @@ int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlo
             break;
         }
 
-        ret = CmGetCertData((char *)cFileList[matchIndex].fileName.data,
-            (char *)cFileList[matchIndex].path.data, certificateData); /* cert data */
+        ret = CmStorageGetBuf((char *)cFileList[matchIndex].path.data,
+            (char *)cFileList[matchIndex].fileName.data, certificateData); /* cert data */
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get cert data");
             ret = CM_FAILURE;
@@ -362,7 +362,7 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
 
         ret = CmGetCertFilePath(context, store, &pathBlob);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed obtain path for store:%u path:%s", store, pathBuf);
+            CM_LOG_E("Failed obtain path for store:%u", store);
             break;
         }
 

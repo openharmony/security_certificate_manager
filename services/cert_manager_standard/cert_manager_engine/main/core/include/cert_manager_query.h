@@ -22,8 +22,6 @@
 extern "C" {
 #endif
 
-int32_t CmGetCertData(const char *fName, const char *path, struct CmBlob *certData);
-
 int32_t CmGetCertPathList(const struct CmContext *context, uint32_t store, struct CmMutableBlob *pathList);
 
 int32_t CmGetSysCertPathList(const struct CmContext *context, struct CmMutableBlob *pathList);

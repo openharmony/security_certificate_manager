@@ -188,7 +188,7 @@ int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store
 int32_t CmServiceGetCertInfoPack(const uint32_t store, const struct CmBlob *certificateData,
     uint32_t status, const struct CmBlob *certUri, struct CmBlob *certificateInfo)
 {
-    if (certificateInfo->size == 0) {
+    if (certificateData->size == 0) {
         CM_LOG_I("cert file is not exist");
         return CM_SUCCESS;
     }

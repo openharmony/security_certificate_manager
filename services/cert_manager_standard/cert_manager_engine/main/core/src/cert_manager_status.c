@@ -239,7 +239,7 @@ static int32_t ReadFile(const char *file, uint8_t **bufptr, uint32_t *size)
 
     sz = CertManagerFileSize(CERT_STATUS_DIR, file);
     if (sz == 0) {
-        CM_LOG_I("Status file not found. Skip loading from %s/%s\n", CERT_STATUS_DIR, file);
+        CM_LOG_I("Status file not found\n");
         goto finally;
     }
 
@@ -436,7 +436,7 @@ int32_t CertManagerStatusInit(void)
 {
     int rc = CMR_OK;
     if (CmMakeDir(CERT_STATUS_DIR) == CMR_ERROR_MAKE_DIR_FAIL) {
-        CM_LOG_E("Failed to create folder %s\n", CERT_STATUS_DIR);
+        CM_LOG_E("Failed to create folder\n");
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
 
