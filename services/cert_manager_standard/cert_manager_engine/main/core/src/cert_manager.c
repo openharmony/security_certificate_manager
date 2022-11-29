@@ -50,7 +50,7 @@ int32_t CertManagerInitialize(void)
     }
 
     if (CmMakeDir(CERT_DIR) == CMR_ERROR_MAKE_DIR_FAIL) {
-        CM_LOG_E("Failed to create folder %s\n", CERT_DIR);
+        CM_LOG_E("Failed to create folder\n");
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
 
@@ -122,7 +122,7 @@ static int32_t CmGetFilePath(const struct CmContext *context, uint32_t store, st
 
     /* Create folder if it does not exist */
     if (CmMakeDir(pathPtr) == CMR_ERROR_MAKE_DIR_FAIL) {
-        CM_LOG_E("Failed to create path folder:%s", pathPtr);
+        CM_LOG_E("Failed to create path folder");
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
 
@@ -144,7 +144,7 @@ static int32_t CmGetFilePath(const struct CmContext *context, uint32_t store, st
 
     pathBlob->size = strlen(path) + 1;
     if (CmMakeDir(path) == CMR_ERROR_MAKE_DIR_FAIL) {
-        CM_LOG_E("Failed to create folder %s", path);
+        CM_LOG_E("Failed to create folder");
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
     return CMR_OK;
@@ -179,7 +179,7 @@ int32_t CertManagerFindCertFileNameByUri(const struct CmContext *context, const 
     struct CmMutableBlob fileNames = { 0, NULL };
     ret = CertManagerGetFilenames(&fileNames, (char *)path->data);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Failed obtain filenames from path: %s", (char *)path->data);
+        CM_LOG_E("Failed obtain filenames from path");
         return CMR_ERROR_STORAGE;
     }
 
@@ -318,11 +318,9 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
 
         if (CmUserIdLayerGetFileCountAndNames(pathBuf, fileNames, MAX_COUNT_CERTIFICATE, &fileCount) != CM_SUCCESS) {
             ret = CM_FAILURE;
-            CM_LOG_E("Get file count and names from path faild: %s", pathBuf);
+            CM_LOG_E("Get file count and names from path faild");
             break;
         }
-
-        CM_LOG_I("CmRemoveSpecifiedAppCert fileCount:%u", fileCount);
 
         for (uint32_t i = 0; i < fileCount; i++) {
             if (CertManagerFileRemove(NULL, (char *)fileNames[i].data) != CM_SUCCESS) {
@@ -335,8 +333,6 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
                 CM_LOG_E("Get uri failed");
                 continue;
             }
-
-            CM_LOG_I("CmRemoveSpecifiedAppCert i:%d, uri:%s", i, (char *)uriBlob.data);
 
             retCode = CmKeyOpDeleteKey(&uriBlob);
             if (retCode != CM_SUCCESS) { /* ignore the return of deleteKey */
@@ -385,7 +381,7 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
         return CM_FAILURE;
     }
 
-    CM_LOG_I("Get app cert list path:%s", pathBuf);
+    CM_LOG_I("Get app cert list path");
 
     if (store == CM_CREDENTIAL_STORE) {
         ret = CmUidLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
@@ -393,7 +389,7 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
         ret = CmUserIdLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
     }
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get file count and names from path faild ret:%d, path:%s", ret, pathBuf);
+        CM_LOG_E("Get file count and names from path faild ret:%d", ret);
         return ret;
     }
 
@@ -489,7 +485,7 @@ int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *p
         }
 
         if (CmFileWrite((char*)pathBlob->data, (char *)certUri->data, 0, userCert->data, userCert->size) != CMR_OK) {
-            CM_LOG_E("Failed to write certificate: %s in to %s", certAlias->data, pathBlob->data);
+            CM_LOG_E("Failed to write certificate");
             ret = CMR_ERROR_WRITE_FILE_FAIL;
             break;
         }
@@ -510,7 +506,7 @@ static int32_t RemoveAllUserCert(const struct CmContext *context, uint32_t store
 
     int32_t ret = CertManagerGetFilenames(&fileNames, path);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Failed obtain filenames from path: %s", path);
+        CM_LOG_E("Failed obtain filenames from path");
         return ret;
     }
 
@@ -546,12 +542,12 @@ int32_t CmRemoveAllUserCert(const struct CmContext *context, uint32_t store, con
     for (uint32_t i = 0; i < pathList->size; i++) {
         ret = RemoveAllUserCert(context, store, (char *)path[i].data);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed remove usercert of path %s", (char *)path[i].data);
+            CM_LOG_E("Failed remove usercert at %u_th dir", i);
             continue;
         }
         ret = RemoveAllUidDir((char *)path[i].data);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Remove UidPath %s fail, ret = %d", (char *)path[i].data, ret);
+            CM_LOG_E("Remove UidPath fail, ret = %d", ret);
             continue;
         }
     }

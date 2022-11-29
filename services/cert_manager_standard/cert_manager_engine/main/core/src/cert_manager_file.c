@@ -82,7 +82,7 @@ static int32_t MallocFileNames(struct CmMutableBlob **fNames, const char *path, 
     }
 
     if (fileNums < 0) {
-        CM_LOG_E("Failed to obtain number of files from: path = %s", path);
+        CM_LOG_E("Failed to obtain number of files from: path");
         return CM_FAILURE;
     }
 
@@ -109,7 +109,7 @@ static int32_t GetFileNames(const char *path, struct CmMutableBlob *fNames, uint
 {
     void *d = CmOpenDir(path);
     if (d == NULL) {
-        CM_LOG_E("Failed to open directory: %s", path);
+        CM_LOG_E("Failed to open directory");
         return CM_FAILURE;
     }
 

@@ -97,7 +97,7 @@ static uint32_t FileRead(const char *fileName, uint32_t offset, uint8_t *buf, ui
     char filePath[PATH_MAX + 1] = {0};
     (void)realpath(fileName, filePath);
     if (strstr(filePath, "../") != NULL) {
-        CM_LOG_E("invalid filePath, path %s", filePath);
+        CM_LOG_E("invalid filePath");
         return 0;
     }
 
@@ -163,14 +163,14 @@ static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *b
     }
     (void)realpath(fileName, filePath);
     if (strstr(filePath, "../") != NULL) {
-        CM_LOG_E("invalid filePath, path %s", filePath);
+        CM_LOG_E("invalid filePath");
         return CMR_ERROR_NOT_EXIST;
     }
 
     /* caller function ensures that the folder exists */
     FILE *fp = fopen(filePath, "wb+");
     if (fp == NULL) {
-        CM_LOG_E("open file fail. filePath:%s", filePath);
+        CM_LOG_E("open file fail");
         return CMR_ERROR_OPEN_FILE_FAIL;
     }
 
@@ -217,7 +217,7 @@ static int32_t FileRemove(const char *fileName)
     }
 
     if ((unlink(fileName) != 0) && (errno != ENOENT)) {
-        CM_LOG_E("failed to remove file: filename = %s, errno = 0x%x", fileName, errno);
+        CM_LOG_E("failed to remove file: errno = 0x%x", errno);
         return CMR_ERROR_REMOVE_FILE_FAIL;
     }
 
@@ -244,7 +244,7 @@ int32_t CmFileRemove(const char *path, const char *fileName)
 int32_t CmMakeDir(const char *path)
 {
     if ((access(path, F_OK)) != -1) {
-        CM_LOG_I(" %s exist", path);
+        CM_LOG_I("path exist");
         return CMR_OK;
     }
 
@@ -377,7 +377,7 @@ int32_t CmUidLayerGetFileCountAndNames(const char *path, struct CmBlob *fileName
     char uidPath[CM_MAX_FILE_NAME_LEN] = {0};
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
-        CM_LOG_I("Uid layer dir is not exist:%s", path);
+        CM_LOG_I("Uid layer dir is not exist");
         return CM_SUCCESS;
     }
     DIR *dir = opendir(path);
@@ -427,7 +427,7 @@ int32_t CmUserIdLayerGetFileCountAndNames(const char *path, struct CmBlob *fileN
     char userIdPath[CM_MAX_FILE_NAME_LEN] = { 0 };
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
-        CM_LOG_I("UserId layer dir is not exist:%s", path);
+        CM_LOG_I("UserId layer dir is not exist");
         return CM_SUCCESS;
     }
     DIR *dir = opendir(path);

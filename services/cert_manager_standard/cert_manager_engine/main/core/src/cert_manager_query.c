@@ -28,30 +28,6 @@
 
 #define MAX_PATH_LEN                  256
 
-int32_t CmGetCertData(const char *fName, const char *path, struct CmBlob *certData)
-{
-    int32_t ret = CM_SUCCESS;
-    uint32_t dataSize = CertManagerFileSize(path, fName);
-    if (dataSize == 0) {
-        CM_LOG_E("cert %s is not exist", fName);
-        return CMR_ERROR_NOT_EXIST;
-    }
-
-    certData->data = (uint8_t *)CMMalloc(dataSize);
-    if (certData->data == NULL) {
-        CM_LOG_E("allocate data memory for cert: %s", fName);
-        return CM_FAILURE;
-    }
-    certData->size = dataSize;
-    if (CertManagerFileRead(path, fName, 0, certData->data, dataSize) != dataSize) {
-        CM_LOG_E("read cert %s failed", fName);
-        CM_FREE_BLOB(*certData);
-        return CM_FAILURE;
-    }
-
-    return ret;
-}
-
 static int32_t MallocCertPath(struct CmMutableBlob *cPath, const char *path)
 {
     uint32_t pathSize = strlen(path) + 1;
@@ -83,7 +59,7 @@ static int32_t ConstrutPathList(const char *useridPath, struct CmMutableBlob *cP
     int32_t ret = CM_SUCCESS;
     void *d = CmOpenDir(useridPath);
     if (d == NULL) {
-        CM_LOG_E("Failed to open directory: %s", useridPath);
+        CM_LOG_E("Failed to open directory");
         return CM_FAILURE;
     }
 
@@ -125,7 +101,7 @@ static int32_t CreateCertPathList(const char *useridPath, struct CmMutableBlob *
 {
     int32_t uidCount = GetNumberOfDirs(useridPath);
     if (uidCount < 0) {
-        CM_LOG_E("Failed to obtain number of uid from: path = %s", useridPath);
+        CM_LOG_E("Failed to obtain number of uid from path");
         return CM_FAILURE;
     }
 
@@ -253,7 +229,7 @@ static int32_t GetCertNameAndPath(struct CertFileInfo *certFile, const char *pat
 {
     int32_t ret = MallocCertNameAndPath(certFile, path, fileName); /* uniformly free memory by caller */
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("malloc certfile for cert %s failed", fileName);
+        CM_LOG_E("malloc certfile for cert failed");
         return ret;
     }
 
@@ -305,7 +281,7 @@ static int32_t CreateCertFile(struct CertFileInfo *cFileList, const char *path, 
 
         ret = GetCertNameAndPath(&cFileList[i], path, dire.fileName);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("malloc certfile for cert %s failed", dire.fileName);
+            CM_LOG_E("malloc certfile for cert failed");
             break;
         }
 
@@ -343,7 +319,7 @@ int32_t CreateCertFileList(const struct CmMutableBlob *pathList, struct CmMutabl
     for (uint32_t i = 0; i < pathList->size; i++) {
         ret = CreateCertFile(cFileList, (char *)uidPath[i].data, &certCount);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CreateCertFile fail of %s", (char *)uidPath[i].data);
+            CM_LOG_E("Create CertFile fail of %u_th", i);
             CmFreeCertFiles(cFileList, certCount);
             return ret;
         }
@@ -396,11 +372,12 @@ int32_t CmGetCertAlias(const char *uri, struct CmBlob *certAlias)
         return ret;
     }
 
-    uint32_t size = strlen(certUri.object);
-    if (memcpy_s(certAlias->data, MAX_LEN_CERT_ALIAS, (uint8_t *)certUri.object, size) != EOK) {
+    uint32_t objectSize = strlen(certUri.object) + 1;
+    if (memcpy_s(certAlias->data, certAlias->size, (uint8_t *)certUri.object, objectSize) != EOK) {
+        (void)CertManagerFreeUri(&certUri);
         return CM_FAILURE;
     }
-    certAlias->size = size + 1;
+    certAlias->size = objectSize;
     (void)CertManagerFreeUri(&certUri);
     return ret;
 }
@@ -441,8 +418,7 @@ int32_t CmCertInfoGetCertAlias(const uint32_t store, const struct CertFileInfo *
     if (store == CM_USER_TRUSTED_STORE) {
         ret = CmGetCertAlias((char *)cFile->fileName.data, certAlias);
     } else if (store == CM_SYSTEM_TRUSTED_STORE) {
-        ret = CmGetCertData((char *)cFile->fileName.data,
-            (char *)cFile->path.data, &certInfo);
+        ret = CmStorageGetBuf((char *)cFile->path.data, (char *)cFile->fileName.data, &certInfo);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get cert data");
             return CM_FAILURE;
@@ -466,7 +442,7 @@ static int32_t CmGetCertSubjectName(const char *fName, const char *path, struct 
 {
     int32_t ret = CM_SUCCESS;
     struct CmBlob certData = { 0, NULL };
-    ret = CmGetCertData(fName, path, &certData);
+    ret = CmStorageGetBuf(path, fName, &certData);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get cert data failed");
         return CM_FAILURE;

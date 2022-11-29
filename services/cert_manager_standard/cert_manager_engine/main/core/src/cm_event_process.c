@@ -31,7 +31,7 @@
 
 static void DeleteAuth(const struct CmContext *context, const char *fileName, bool isDeleteByUid)
 {
-    CM_LOG_I("fileName is:%s, isDeleteByUid:%d", fileName, isDeleteByUid);
+    CM_LOG_I("isDeleteByUid:%d", isDeleteByUid);
     struct CmBlob keyUri = { strlen(fileName) + 1, (uint8_t *)fileName };
 
     int32_t ret;
@@ -48,7 +48,6 @@ static void DeleteAuth(const struct CmContext *context, const char *fileName, bo
 
 static int32_t CmTraversalDirActionCredential(const char *filePath, const char *fileName)
 {
-    CM_LOG_I("CmTraversalDirActionCredential: fileName is:%s", fileName);
     int32_t ret = remove(filePath);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("App cert delete faild, ret: %d", ret);
@@ -74,9 +73,6 @@ static int32_t CmTraversalDirActionUserCa(const struct CmContext *context, const
         CM_LOG_E("User cert delete faild, ret: %d", ret);
         return ret;
     }
-
-    CM_LOG_I("CmTraversalDirActionUserCa: fileName is:%s", fileName);
-    CM_LOG_I("CmTraversalDirActionUserCa: uid is %u userId is %u", context->uid, context->userId);
 
     ret = SetcertStatus(context, &certUri, store, status, NULL);
     if (ret != CM_SUCCESS) {
@@ -194,7 +190,7 @@ static int32_t CmTraversalUidLayerDir(const struct CmContext *context, const cha
     char uidPath[CM_MAX_FILE_NAME_LEN] = {0};
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
-        CM_LOG_I("Dir is not exist:%s", path);
+        CM_LOG_I("Dir is not exist");
         return CM_SUCCESS;
     }
 
@@ -257,7 +253,7 @@ static int32_t CmTraversalUserIdLayerDir(struct CmContext *context, const char *
 
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
-        CM_LOG_I("UserId dir is not exist:%s", path);
+        CM_LOG_I("UserId dir is not exist");
         return CM_SUCCESS;
     }
 
@@ -298,7 +294,7 @@ static int32_t CmTraversalDir(struct CmContext *context, const char *path, const
 
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
-        CM_LOG_I("Root dir is not exist:%s", path);
+        CM_LOG_I("Root dir is not exist");
         return CM_SUCCESS;
     }
 

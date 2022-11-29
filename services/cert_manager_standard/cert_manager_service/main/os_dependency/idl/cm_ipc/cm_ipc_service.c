@@ -408,8 +408,6 @@ static int32_t CmServiceGetAppCertListPack(struct CmBlob *certificateList, const
             return ret;
         }
 
-        CM_LOG_I("CmServiceGetAppCertListPack i:%u, Type:%s, certUri:%s, Alies:%s", i, typeBuf, certUriBuf, aliesBuf);
-
         ret = CopyBlobToBuffer(&certType, certificateList, &offset);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Copy certType failed");
