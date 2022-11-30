@@ -13,19 +13,20 @@
  * limitations under the License.
  */
 
-#include "cm_log.h"
-#include "cm_mem.h"
-#include "cm_type_inner.h"
 #include "cm_report_wrapper.h"
 
-int32_t ReportFaultEvent(const char *funcName, const struct CmContext *cmContext, const char *certName, int32_t errorCode)
+#include "cert_manager_check.h"
+#include "cm_log.h"
+
+static int32_t ReportFaultEvent(const char *funcName, const struct CmContext *cmContext,
+    const char *name, int32_t errorCode)
 {
     if (errorCode == CM_SUCCESS) {
         return CM_SUCCESS;
     }
     int32_t ret;
 
-    struct EventValues eventValues = { cmContext->userId, cmContext->uid, certName, errorCode };
+    struct EventValues eventValues = { cmContext->userId, cmContext->uid, name, errorCode };
     ret = WriteEvent(funcName, &eventValues);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("ReportFaultEvent failed, ret = %d", ret);
@@ -33,10 +34,13 @@ int32_t ReportFaultEvent(const char *funcName, const struct CmContext *cmContext
     return ret;
 }
 
-void CmReport(const char *funcName, const struct CmContext *cmContext, const char *certName, int32_t errorCode)
+void CmReport(const char *funcName, const struct CmContext *cmContext,
+    const struct CmBlob *certName, int32_t errorCode)
 {
-    int32_t ret = ReportFaultEvent(funcName, cmContext, certName, errorCode);
+    int32_t ret = CheckUri(certName);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("report fault event failed, ret = %d", ret);
+        (void)ReportFaultEvent(funcName, cmContext, "NULL", errorCode);
+        return;
     }
+    (void)ReportFaultEvent(funcName, cmContext, (char *)certName->data, errorCode);
 }
