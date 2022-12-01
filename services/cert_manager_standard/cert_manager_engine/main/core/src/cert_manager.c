@@ -275,21 +275,26 @@ void CmFreeFileNames(struct CmBlob *fileNames, const uint32_t fileSize)
 
 int32_t CmGetUri(const char *filePath, struct CmBlob *uriBlob)
 {
-    uint32_t i;
     if ((filePath == NULL) || (uriBlob == NULL) || (uriBlob->data == NULL)) {
         CM_LOG_E("CmGetUri param is null");
         return CM_FAILURE;
     }
 
-    uint32_t filePathLen = strlen(filePath) + 1; /* include '\0' at end */
-    for (i = filePathLen - 1; i >= 0; i--) {
+    uint32_t filePathLen = strlen(filePath);
+    if ((filePathLen == 0) || (filePathLen > CM_MAX_FILE_NAME_LEN)) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t i = (int32_t)(filePathLen - 1);
+    for (; i >= 0; i--) {
         if (filePath[i] == '/') {
             break;
         }
     }
 
-    uint32_t uriLen = filePathLen - i - 1;
-    if ((uriLen == 0) || (memcpy_s(uriBlob->data, MAX_LEN_URI, &filePath[i + 1], uriLen) != EOK)) {
+    int32_t index = i + 1; /* index range: 0 to filePathLen */
+    uint32_t uriLen = filePathLen - (uint32_t)index + 1; /* include '\0' at end, range: 1 to filePathLen + 1 */
+    if (memcpy_s(uriBlob->data, uriBlob->size, &filePath[index], uriLen) != EOK) {
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
     uriBlob->size = uriLen;
@@ -328,7 +333,8 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
                 continue;
             }
 
-            (void)memset_s(uriBuf, MAX_LEN_URI, 0, MAX_LEN_URI);
+            uriBlob.size = sizeof(uriBuf);
+            (void)memset_s(uriBuf, uriBlob.size, 0, uriBlob.size);
             if (CmGetUri((char *)fileNames[i].data, &uriBlob) != CM_SUCCESS) {
                 CM_LOG_E("Get uri failed");
                 continue;
