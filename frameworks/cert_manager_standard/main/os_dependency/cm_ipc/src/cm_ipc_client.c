@@ -39,9 +39,9 @@ static int32_t CmSendParcelInit(struct CmParam *params, uint32_t paramCount,
 
 static int32_t GetCertListInitOutData(struct CmBlob *outListBlob)
 {
-    struct CertList certList;
-    uint32_t buffSize = sizeof(struct CertListAbtInfo) * MAX_COUNT_CERTIFICATE  +
-        sizeof(certList.certsCount);
+    /* buff struct: certCount + MAX_CERT_COUNT * (subjectBlob + status + uriBlob + aliasBlob) */
+    uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
+        sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) +  MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE;
     outListBlob->data = (uint8_t *)CmMalloc(buffSize);
     if (outListBlob->data == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
@@ -96,7 +96,9 @@ int32_t CmClientGetCertList(const uint32_t store, struct CertList *certificateLi
 
 static int32_t GetCertInfoInitOutData(struct CmBlob *outInfoBlob)
 {
-    uint32_t buffSize = sizeof(struct CertAbtInfo);
+    /* buff struct: certDataBlob + status + aliasBlob */
+    uint32_t buffSize = sizeof(uint32_t) + MAX_LEN_CERTIFICATE + sizeof(uint32_t) +
+        MAX_LEN_CERT_ALIAS + sizeof(uint32_t);
 
     outInfoBlob->data = (uint8_t *)CmMalloc(buffSize);
     if (outInfoBlob->data == NULL) {
@@ -138,7 +140,7 @@ static int32_t GetCertificateInfo(enum CmMessage type, const struct CmBlob *cert
             break;
         }
 
-        ret = CmCertificateInfoUnpackFromService(&outBlob, certificateInfo, certUri);
+        ret = CmCertificateInfoUnpackFromService(&outBlob, certUri, certificateInfo);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("GetCertificateInfo unpack failed, ret = %d", ret);
             break;
@@ -860,112 +862,8 @@ int32_t CmClientGetUserCertList(const uint32_t store, struct CertList *certifica
     return GetUserCertList(CM_MSG_GET_USER_CERTIFICATE_LIST, store, certificateList);
 }
 
-static int32_t GetInfoFromX509cert(X509 *x509cert, struct CertInfo *userCertInfo)
-{
-    int32_t subjectNameLen = 0;
-    subjectNameLen = GetX509SubjectNameLongFormat(x509cert, userCertInfo->subjectName, MAX_LEN_SUBJECT_NAME);
-    if (subjectNameLen == 0) {
-        CM_LOG_E("get cert subjectName failed");
-        return CM_FAILURE;
-    }
-
-    int32_t issuerNameLen = 0;
-    issuerNameLen = GetX509SubjectNameLongFormat(x509cert, userCertInfo->issuerName, MAX_LEN_ISSUER_NAME);
-    if (issuerNameLen == 0) {
-        CM_LOG_E("get cert issuerName failed");
-        return CM_FAILURE;
-    }
-
-    int32_t serialLen = 0;
-    serialLen = GetX509SerialNumber(x509cert, userCertInfo->serial, MAX_LEN_SERIAL);
-    if (serialLen == 0) {
-        CM_LOG_E("get cert serial failed");
-        return CM_FAILURE;
-    }
-
-    int32_t notBeforeLen = 0;
-    notBeforeLen = GetX509NotBefore(x509cert, userCertInfo->notBefore, MAX_LEN_NOT_BEFORE);
-    if (notBeforeLen == 0) {
-        CM_LOG_E("get cert notBefore failed");
-        return CM_FAILURE;
-    }
-
-    int32_t notAfterLen = 0;
-    notAfterLen = GetX509NotAfter(x509cert, userCertInfo->notAfter, MAX_LEN_NOT_AFTER);
-    if (notAfterLen == 0) {
-        CM_LOG_E("get cert notAfter failed");
-        return CM_FAILURE;
-    }
-
-    int32_t fingerprintLen = 0;
-    fingerprintLen = GetX509Fingerprint(x509cert, userCertInfo->fingerprintSha256, MAX_LEN_FINGER_PRINT_SHA256);
-    if (fingerprintLen == 0) {
-        CM_LOG_E("get cert fingerprintSha256 failed");
-        return CM_FAILURE;
-    }
-    return CM_SUCCESS;
-}
-
-static int32_t CmUserCertInfoUnpackFromService(const struct CmBlob *outBuf,
-    const struct CmBlob *certUri, struct CertInfo *userCertInfo)
-{
-    if ((outBuf == NULL) || (userCertInfo == NULL) || (outBuf->data == NULL) ||
-        (userCertInfo->certInfo.data == NULL)) {
-        return CMR_ERROR_NULL_POINTER;
-    }
-
-    struct CmBlob bufBlob;
-    uint32_t offset = 0;
-    int32_t ret = CmGetBlobFromBuffer(&bufBlob, outBuf, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("get cert data faild");
-        return ret;
-    }
-    if (memcpy_s(userCertInfo->certInfo.data, userCertInfo->certInfo.size,
-        bufBlob.data, bufBlob.size) != EOK) {
-        CM_LOG_E("copy cert data failed");
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-    userCertInfo->certInfo.size = bufBlob.size;
-
-    X509 *x509UserCert = InitCertContext(userCertInfo->certInfo.data, userCertInfo->certInfo.size);
-    if (x509UserCert == NULL) {
-        CM_LOG_E("Parse X509 cert fail");
-        return CMR_ERROR_INVALID_CERT_FORMAT;
-    }
-    ret = GetInfoFromX509cert(x509UserCert, userCertInfo);
-    if (ret != CM_SUCCESS) {
-        return ret;
-    }
-    FreeCertContext(x509UserCert);
-
-    uint32_t status = 0;
-    ret = GetUint32FromBuffer(&(status), outBuf, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("copy status failed");
-        return ret;
-    }
-    userCertInfo->status = (status >= 1) ? false : true;
-
-    ret = CmGetBlobFromBuffer(&bufBlob, outBuf, &offset);
-    if (ret != CM_SUCCESS) {
-        return ret;
-    }
-    if (memcpy_s(userCertInfo->certAlias, MAX_LEN_CERT_ALIAS, bufBlob.data, bufBlob.size) != EOK) {
-        CM_LOG_E("copy alias failed");
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-
-    (void)memset_s(userCertInfo->uri, MAX_LEN_URI, 0, MAX_LEN_URI);
-    if (memcpy_s(userCertInfo->uri, MAX_LEN_URI, certUri->data, certUri->size) != EOK) {
-        CM_LOG_E("copy uri failed");
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-    return CM_SUCCESS;
-}
-
 static int32_t GetUserCertInfo(enum CmMessage type, const struct CmBlob *certUri,
-    const uint32_t store, struct CertInfo *certificateInfo)
+    const uint32_t store, struct CertInfo *userCertInfo)
 {
     int32_t ret = CM_SUCCESS;
     struct CmBlob outBlob = {0, NULL};
@@ -995,7 +893,7 @@ static int32_t GetUserCertInfo(enum CmMessage type, const struct CmBlob *certUri
             break;
         }
 
-        ret = CmUserCertInfoUnpackFromService(&outBlob, certUri, certificateInfo);
+        ret = CmCertificateInfoUnpackFromService(&outBlob, certUri, userCertInfo);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("getcertinfo unpack from service failed");
             break;

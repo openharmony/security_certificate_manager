@@ -64,29 +64,7 @@ int32_t InitCertInfo(struct CertInfo *certInfo)
     return CM_SUCCESS;
 }
 
-
-int32_t InitCertList(struct CertList **certlist)
-{
-    *certlist = static_cast<struct CertList *>(CmMalloc(sizeof(struct CertList)));
-    if (*certlist == nullptr) {
-        return CMR_ERROR_MALLOC_FAIL;
-    }
-
-    struct CertList list;
-    uint32_t buffSize = sizeof(list.certsCount) + sizeof(struct CertListAbtInfo) * MAX_COUNT_CERTIFICATE;
-
-    (*certlist)->certAbstract = static_cast<struct CertAbstract *>(CmMalloc(buffSize));
-    if ((*certlist)->certAbstract == NULL) {
-        return CMR_ERROR_MALLOC_FAIL;
-    }
-    (void)memset_s((*certlist)->certAbstract, buffSize, 0, buffSize);
-
-    (*certlist)->certsCount = MAX_COUNT_CERTIFICATE;
-
-    return CM_SUCCESS;
-}
-
-uint32_t InitUserCertList(struct CertList **cList)
+int32_t InitCertList(struct CertList **cList)
 {
     *cList = static_cast<struct CertList *>(CmMalloc(sizeof(struct CertList)));
     if (*cList == nullptr) {
@@ -104,7 +82,7 @@ uint32_t InitUserCertList(struct CertList **cList)
     return CM_SUCCESS;
 }
 
-uint32_t InitUserCertInfo(struct CertInfo **cInfo)
+int32_t InitUserCertInfo(struct CertInfo **cInfo)
 {
     *cInfo = static_cast<struct CertInfo *>(CmMalloc(sizeof(struct CertInfo)));
     if (*cInfo == nullptr) {
@@ -121,7 +99,7 @@ uint32_t InitUserCertInfo(struct CertInfo **cInfo)
     return CM_SUCCESS;
 }
 
-uint32_t InitUserContext(struct CmContext* userCtx, const uint32_t userid, const uint32_t uid, const char *pktname)
+int32_t InitUserContext(struct CmContext* userCtx, const uint32_t userid, const uint32_t uid, const char *pktname)
 {
     if (pktname == nullptr || userCtx  == nullptr) {
         return CMR_ERROR_INVALID_ARGUMENT;
