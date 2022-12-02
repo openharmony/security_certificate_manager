@@ -360,7 +360,7 @@ static int32_t CmMallocCertBlob(struct CertBlob *certBlob, uint32_t certCount)
     return CM_SUCCESS;
 }
 
-int32_t CmGetCertAlias(const char *uri, struct CmBlob *certAlias)
+static int32_t GetUserCertAlias(const char *uri, struct CmBlob *alias)
 {
     int32_t ret = CM_SUCCESS;
     struct CMUri certUri;
@@ -373,58 +373,46 @@ int32_t CmGetCertAlias(const char *uri, struct CmBlob *certAlias)
     }
 
     uint32_t objectSize = strlen(certUri.object) + 1;
-    if (memcpy_s(certAlias->data, certAlias->size, (uint8_t *)certUri.object, objectSize) != EOK) {
+    if (memcpy_s(alias->data, alias->size, (uint8_t *)certUri.object, objectSize) != EOK) {
         (void)CertManagerFreeUri(&certUri);
         return CM_FAILURE;
     }
-    certAlias->size = objectSize;
+    alias->size = objectSize;
     (void)CertManagerFreeUri(&certUri);
     return ret;
 }
 
-static int32_t CmSysCertInfoGetCertAlias(const uint32_t store, const struct CmBlob *certInfo,
-    struct CmBlob *certAlias)
+static int32_t GetSysCertAlias(const struct CmBlob *certData, struct CmBlob *alias)
 {
-    X509 *x509cert = InitCertContext(certInfo->data, certInfo->size);
-    int32_t certAliasLen = GetX509SubjectName(x509cert, CM_ORGANIZATION_NAME,
-        (char *)certAlias->data, MAX_LEN_CERT_ALIAS);
-    if (certAliasLen == 0) {
-        certAliasLen = GetX509SubjectName(x509cert, CM_COMMON_NAME,
-            (char *)certAlias->data, MAX_LEN_CERT_ALIAS);
-        if (certAliasLen == 0) {
+    X509 *cert = InitCertContext(certData->data, certData->size);
+    if (cert == NULL) {
+        CM_LOG_E("cert data can't convert x509 format");
+        return CM_FAILURE;
+    }
+
+    int32_t aliasLen = GetX509SubjectName(cert, CM_ORGANIZATION_NAME, (char *)alias->data, alias->size);
+    if (aliasLen <= 0) {
+        aliasLen = GetX509SubjectName(cert, CM_COMMON_NAME, (char *)alias->data, alias->size);
+        if (aliasLen <= 0) {
             CM_LOG_E("Failed to get certificates CN name");
-            return CMR_ERROR;
+            FreeCertContext(cert);
+            return CM_FAILURE;
         }
     }
+    alias->size = (uint32_t)aliasLen + 1;
 
-    if (certAliasLen < 0) {
-        return CMR_ERROR;
-    }
-
-    if (x509cert != NULL) {
-        X509_free(x509cert);
-    }
-    certAlias->size = (uint32_t)certAliasLen;
-
+    FreeCertContext(cert);
     return CM_SUCCESS;
 }
 
-int32_t CmCertInfoGetCertAlias(const uint32_t store, const struct CertFileInfo *cFile,
-    struct CmBlob *certAlias)
+int32_t CmGetCertAlias(const uint32_t store, const char *uri, const struct CmBlob *certData, struct CmBlob *alias)
 {
-    int32_t ret = CM_SUCCESS;
-    struct CmBlob certInfo = { 0, NULL };
+    int32_t ret;
 
     if (store == CM_USER_TRUSTED_STORE) {
-        ret = CmGetCertAlias((char *)cFile->fileName.data, certAlias);
+        ret = GetUserCertAlias(uri, alias);
     } else if (store == CM_SYSTEM_TRUSTED_STORE) {
-        ret = CmStorageGetBuf((char *)cFile->path.data, (char *)cFile->fileName.data, &certInfo);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed to get cert data");
-            return CM_FAILURE;
-        }
-
-        ret = CmSysCertInfoGetCertAlias(store, &certInfo, certAlias);
+        ret = GetSysCertAlias(certData, alias);
     } else {
         CM_LOG_E("Invalid store");
         return CM_FAILURE;
@@ -432,39 +420,30 @@ int32_t CmCertInfoGetCertAlias(const uint32_t store, const struct CertFileInfo *
 
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed to get cert certAlias");
+        return ret;
     }
 
-    CM_FREE_BLOB(certInfo);
-    return ret;
+    return CM_SUCCESS;
 }
 
-static int32_t CmGetCertSubjectName(const char *fName, const char *path, struct CmBlob *subjectName)
+static int32_t CmGetCertSubjectName(const struct CmBlob *certData, struct CmBlob *subjectName)
 {
-    int32_t ret = CM_SUCCESS;
-    struct CmBlob certData = { 0, NULL };
-    ret = CmStorageGetBuf(path, fName, &certData);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("get cert data failed");
+    X509 *cert = InitCertContext(certData->data, certData->size);
+    if (cert == NULL) {
+        CM_LOG_E("cert data can't convert x509 format");
         return CM_FAILURE;
     }
 
-    int32_t subjectNameLen = 0;
-    X509 *cert = InitCertContext(certData.data, certData.size);
-    if (cert == NULL) {
-        CM_LOG_E("cert data can't convert x509 format");
-        ret = CM_FAILURE;
-    }
-    subjectNameLen = GetX509SubjectNameLongFormat(cert, (char *)subjectName->data,
-        MAX_LEN_SUBJECT_NAME);
-    if (subjectNameLen == 0) {
+    int32_t subjectLen = GetX509SubjectNameLongFormat(cert, (char *)subjectName->data, MAX_LEN_SUBJECT_NAME);
+    if (subjectLen <= 0) {
         CM_LOG_E("get cert subjectName failed");
-        ret = CM_FAILURE;
+        FreeCertContext(cert);
+        return CM_FAILURE;
     }
-    subjectName->size = (uint32_t)subjectNameLen + 1;
+    subjectName->size = (uint32_t)subjectLen + 1;
 
-    CM_FREE_BLOB(certData);
     FreeCertContext(cert);
-    return ret;
+    return CM_SUCCESS;
 }
 
 int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
@@ -493,18 +472,28 @@ int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
         }
         certBlob->uri[i].size = cFileList[i].fileName.size; /* uri */
 
-        ret = CmCertInfoGetCertAlias(store, &cFileList[i], &(certBlob->certAlias[i]));
+        struct CmBlob certData = { 0, NULL };
+        ret = CmStorageGetBuf((char *)cFileList[i].path.data, (char *)cFileList[i].fileName.data, &certData);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed to get cert certAlias");
+            CM_LOG_E("get cert data failed");
             return CM_FAILURE;
         }
 
-        ret = CmGetCertSubjectName((char *)cFileList[i].fileName.data, (char *)cFileList[i].path.data,
-            &(certBlob->subjectName[i])); /* subjectName */
+        ret = CmGetCertAlias(store, (char *)cFileList[i].fileName.data, &certData,
+            &(certBlob->certAlias[i])); /* alias */
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed to get cert subjectName");
+            CM_LOG_E("Failed to get cert certAlias");
+            CM_FREE_BLOB(certData);
             return CM_FAILURE;
         }
+
+        ret = CmGetCertSubjectName(&certData, &(certBlob->subjectName[i])); /* subjectName */
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed to get cert subjectName");
+            CM_FREE_BLOB(certData);
+            return CM_FAILURE;
+        }
+        CM_FREE_BLOB(certData);
     }
     return ret;
 }

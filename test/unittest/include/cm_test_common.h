@@ -32,11 +32,9 @@
 namespace CertmanagerTest {
 void FreeCMBlobData(struct CmBlob *blob);
 
-int32_t InitCertList(struct CertList **certlist);
-
 void FreeCertList(struct CertList *certList);
 
-uint32_t InitUserContext(struct CmContext* userCtx, const uint32_t userid, const uint32_t uid, const char *pktname);
+int32_t InitUserContext(struct CmContext* userCtx, const uint32_t userid, const uint32_t uid, const char *pktname);
 
 bool CompareCertInfo(const struct CertInfo *firstCert, const struct CertInfo *secondCert);
 
@@ -52,9 +50,9 @@ std::string DumpCertList(struct CertList *certList);
 
 void SetATPermission(void);
 
-uint32_t InitUserCertList(struct CertList **cList);
+int32_t InitCertList(struct CertList **cList);
 
-uint32_t InitUserCertInfo(struct CertInfo **cInfo);
+int32_t InitUserCertInfo(struct CertInfo **cInfo);
 
 int32_t InitCertInfo(struct CertInfo *certInfo);
 

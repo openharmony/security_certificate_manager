@@ -193,8 +193,6 @@ int32_t CmServiceGetCertInfoPack(const uint32_t store, const struct CmBlob *cert
         return CM_SUCCESS;
     }
 
-    int32_t ret = CM_SUCCESS;
-    uint32_t offset = 0;
     uint32_t buffSize = sizeof(uint32_t) + MAX_LEN_CERTIFICATE + sizeof(uint32_t) +
         MAX_LEN_CERT_ALIAS + sizeof(uint32_t);
     if (certificateInfo->size < buffSize) {
@@ -203,20 +201,16 @@ int32_t CmServiceGetCertInfoPack(const uint32_t store, const struct CmBlob *cert
     }
     certificateInfo->size = buffSize;
 
-    ret = CopyBlobToBuffer(certificateData, certificateInfo, &offset);
+    uint32_t offset = 0;
+    int32_t ret = CopyBlobToBuffer(certificateData, certificateInfo, &offset); /* certData */
     if (ret != CM_SUCCESS) {
         CM_LOG_E("copy cert data failed");
         return ret;
     }
 
-    ret = CopyUint32ToBuffer(status, certificateInfo, &offset);
+    ret = CopyUint32ToBuffer(status, certificateInfo, &offset); /* status */
     if (ret != CM_SUCCESS) {
         CM_LOG_E("copy cert status failed");
-        return ret;
-    }
-
-    if (store == CM_SYSTEM_TRUSTED_STORE) {
-        CM_LOG_I("system root ca have no alias");
         return ret;
     }
 
@@ -228,14 +222,14 @@ int32_t CmServiceGetCertInfoPack(const uint32_t store, const struct CmBlob *cert
     }
     (void)memset_s(certAlias.data, MAX_LEN_CERT_ALIAS, 0, MAX_LEN_CERT_ALIAS);
 
-    ret = CmGetCertAlias((char *)certUri->data, &(certAlias));
+    ret = CmGetCertAlias(store, (char *)certUri->data, certificateData, &(certAlias));
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed to get cert certAlias");
         CM_FREE_BLOB(certAlias);
         return CM_FAILURE;
     }
 
-    ret = CopyBlobToBuffer(&certAlias, certificateInfo, &offset);
+    ret = CopyBlobToBuffer(&certAlias, certificateInfo, &offset); /* certAlias */
     if (ret != CM_SUCCESS) {
         CM_LOG_E("copy cert data failed");
         CM_FREE_BLOB(certAlias);

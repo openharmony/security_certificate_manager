@@ -828,7 +828,7 @@ HWTEST_F(CmUserCertTest, GetUserCertListTest001, TestSize.Level0)
     }
 
     struct CertList *certList001 = nullptr;
-    InitUserCertList(&certList001);
+    InitCertList(&certList001);
     ret = CmGetUserCertList(CM_USER_TRUSTED_STORE, certList001);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal get user cert list test failed, recode:" << ret;
     FreeCertList(certList001);
@@ -855,7 +855,7 @@ HWTEST_F(CmUserCertTest, GetUserCertListTest002, TestSize.Level0)
     }
 
     struct CertList *certList002 = nullptr;
-    InitUserCertList(&certList002);
+    InitCertList(&certList002);
     ret = CmGetUserCertList(CM_USER_TRUSTED_STORE, certList002);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal get user cert list test failed, recode:" << ret;
 
@@ -893,7 +893,7 @@ HWTEST_F(CmUserCertTest, GetUserCertListTest003, TestSize.Level0)
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
 
     struct CertList *certList003 = nullptr;
-    InitUserCertList(&certList003);
+    InitCertList(&certList003);
     ret = CmGetUserCertList(100, certList003); /* invalid store 100 */
     EXPECT_EQ(ret, CM_FAILURE);
     FreeCertList(certList003);
@@ -922,7 +922,7 @@ HWTEST_F(CmUserCertTest, GetUserCertListTest004, TestSize.Level0)
 
     for (uint32_t times = 0; times < PERFORMACE_COUNT; ++times) {
         struct CertList *certList004 = nullptr;
-        InitUserCertList(&certList004);
+        InitCertList(&certList004);
         ret = CmGetUserCertList(CM_USER_TRUSTED_STORE, certList004);
         EXPECT_EQ(ret, CM_SUCCESS) << "Normal get user cert list test failed, recode:" << ret;
         FreeCertList(certList004);
@@ -941,7 +941,7 @@ HWTEST_F(CmUserCertTest, GetUserCertListTest004, TestSize.Level0)
 HWTEST_F(CmUserCertTest, GetUserCertListTest005, TestSize.Level0)
 {
     struct CertList *certList005 = nullptr;
-    InitUserCertList(&certList005);
+    InitCertList(&certList005);
     int32_t ret = CmGetUserCertList(CM_USER_TRUSTED_STORE, certList005); /* empty dir */
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal get user cert list test failed, recode:" << ret;
     FreeCertList(certList005);
@@ -998,7 +998,7 @@ HWTEST_F(CmUserCertTest, GetUserCertInfoTest002, TestSize.Level0)
     }
 
     struct CertList *certList006 = nullptr;
-    InitUserCertList(&certList006);
+    InitCertList(&certList006);
     ret = CmGetUserCertList(CM_USER_TRUSTED_STORE, certList006);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal get user cert list test failed, recode:" << ret;
 
@@ -1199,7 +1199,7 @@ HWTEST_F(CmUserCertTest, SetUserCertStatusTest003, TestSize.Level0)
     }
 
     struct CertList *certList007 = nullptr;
-    InitUserCertList(&certList007);
+    InitCertList(&certList007);
     ret = CmGetUserCertList(CM_USER_TRUSTED_STORE, certList007);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal get user cert list test failed, recode:" << ret;
 
