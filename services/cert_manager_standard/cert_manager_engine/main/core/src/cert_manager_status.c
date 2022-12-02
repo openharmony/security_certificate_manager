@@ -36,6 +36,8 @@
 #define MAX_NAME_DIGEST_LEN            64
 #define RB_TREE_KEY_LEN                4
 
+#define MAX_STATUS_TREE_MALLOC_SIZE    (5 * 1024 * 1024)   /* max 5M tree file size */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -350,41 +352,42 @@ static int32_t LoadStatus(uint32_t store)
 
 static int32_t EncodeTree(struct RbTree *tree, uint8_t **bufptr, uint32_t *size)
 {
-    int32_t rc = CMR_OK;
-    uint8_t *buf = NULL;
     uint32_t sz = 0;
-
-    TRY_FUNC(RbTreeEncode(tree, EncodeStatus, NULL, &sz), rc);
-    CM_LOG_D("%u bytes required to encode the status tree.\n", sz);
+    int32_t rc = RbTreeEncode(tree, EncodeStatus, NULL, &sz);
+    if (rc != CM_SUCCESS) {
+        CM_LOG_E("get rbtree encode length failed, ret = %d", rc);
+        return rc;
+    }
+    if (sz > MAX_STATUS_TREE_MALLOC_SIZE) {
+        CM_LOG_E("invalid encode tree size[%u]", sz);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
 
     sz += HEADER_LEN;
-
-    buf = CMMalloc(sz);
+    uint8_t *buf = (uint8_t *)CMMalloc(sz);
     if (buf == NULL) {
-        CM_LOG_W("Failed to allocate memory.\n");
+        CM_LOG_E("Failed to allocate memory.\n");
         return CMR_ERROR_MALLOC_FAIL;
     }
-    ASSERT_FUNC(memset_s(buf, sz, 0, sz));
+    (void)memset_s(buf, sz, 0, sz);
 
     ENCODE_UINT32(buf, VERSION_1);
 
     uint8_t *salt = buf + sizeof(uint32_t) + CM_INTEGRITY_TAG_LEN;
-
-    /* generate random salt */
-    struct CmBlob r = { .size = CM_INTEGRITY_SALT_LEN, .data = salt };
+    struct CmBlob r = { CM_INTEGRITY_SALT_LEN, salt };
     (void)CmGetRandom(&r); /* ignore retcode */
 
     uint8_t *data = buf + HEADER_LEN;
     uint32_t dataLen = sz - HEADER_LEN;
-    TRY_FUNC(RbTreeEncode(tree, EncodeStatus, data, &dataLen), rc);
-
-finally:
-    if (rc != CMR_OK) {
+    rc = RbTreeEncode(tree, EncodeStatus, data, &dataLen);
+    if (rc != CM_SUCCESS) {
+        CM_LOG_E("encode status tree failed, ret = %d", rc);
         FREE_PTR(buf);
-    } else {
-        *bufptr = buf;
-        *size = sz;
+        return rc;
     }
+
+    *bufptr = buf;
+    *size = sz;
     return rc;
 }
 

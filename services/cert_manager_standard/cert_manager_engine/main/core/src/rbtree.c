@@ -422,26 +422,33 @@ static void TraversePostOrder(const struct RbTree *t, const struct RbTreeNode *x
 
 static void Encoder(RbTreeKey key, RbTreeValue value, const void *context)
 {
-    struct EncoderContext *ctx = (struct EncoderContext *) context;
+    struct EncoderContext *ctx = (struct EncoderContext *)context;
     if (ctx->status != CM_SUCCESS) {
-        /* already failed. do not continue */
-        CM_LOG_W("already failed: %d\n", ctx->status);
+        CM_LOG_E("already failed: %d", ctx->status); /* already failed. do not continue */
         return;
     }
-    uint32_t keySize = sizeof(RbTreeKey);
-    uint32_t valueSize = 0;
 
-    /* get value size */
-    int rc = ctx->enc(value, NULL, &valueSize);
+    uint32_t valueSize = 0;
+    int rc = ctx->enc(value, NULL, &valueSize); /* get value size */
     if (rc != CM_SUCCESS) {
-        CM_LOG_W("value encoder get length failed: %d\n", rc);
+        CM_LOG_E("value encoder get length failed: %d", rc);
         ctx->status = rc;
+        return;
+    }
+
+    uint32_t keySize = sizeof(RbTreeKey);
+    if (valueSize > (UINT32_MAX - keySize - sizeof(uint32_t))) {
+        ctx->status = CMR_ERROR_INVALID_ARGUMENT;
         return;
     }
 
     /* each code is encoded ad (key | encoded_value_len | encoded_value)
        encoded_value_len is uint32_t. */
     uint32_t sz = keySize + sizeof(uint32_t) + valueSize;
+    if (sz > (UINT32_MAX - ctx->off)) {
+        ctx->status = CMR_ERROR_INVALID_ARGUMENT;
+        return;
+    }
 
     /* if buffer is provided, do the actual encoding */
     if (ctx->buf != NULL) {
@@ -450,17 +457,19 @@ static void Encoder(RbTreeKey key, RbTreeValue value, const void *context)
             return;
         }
         uint8_t *buf = ctx->buf + ctx->off;
-        if (memcpy_s(buf, ctx->len, &key, keySize) != EOK) {
+        if (memcpy_s(buf, ctx->len - ctx->off, &key, keySize) != EOK) {
+            ctx->status = CMR_ERROR_INVALID_ARGUMENT;
             return;
         }
         buf += keySize;
-        if (memcpy_s(buf, ctx->len, &valueSize, sizeof(uint32_t)) != EOK) {
+        if (memcpy_s(buf, ctx->len - ctx->off - keySize, &valueSize, sizeof(uint32_t)) != EOK) {
+            ctx->status = CMR_ERROR_INVALID_ARGUMENT;
             return;
         }
         buf += sizeof(uint32_t);
         rc = ctx->enc(value, buf, &valueSize);
         if (rc != CM_SUCCESS) {
-            CM_LOG_W("value encoder encoding failed: %d\n", rc);
+            CM_LOG_E("value encoder encoding failed: %d", rc);
             ctx->status = rc;
             return;
         }
@@ -468,7 +477,6 @@ static void Encoder(RbTreeKey key, RbTreeValue value, const void *context)
     /* in any case, updata offset in context. */
     ctx->off += sz;
 }
-
 
 int32_t RbTreeEncode(const struct RbTree *t, RbTreeValueEncoder enc, uint8_t *buf, uint32_t *size)
 {
