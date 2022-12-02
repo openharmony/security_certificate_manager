@@ -98,6 +98,11 @@ int32_t CmServiceSetCertStatusCheck(const uint32_t store, const struct CmBlob *c
         return CMR_ERROR_PERMISSION_DENIED;
     }
 
+    if (!CmIsSystemApp()) {
+        CM_LOG_E("set cert status: caller is not system app");
+        return CMR_ERROR_NOT_SYSTEMP_APP;
+    }
+
     return CM_SUCCESS;
 }
 
@@ -175,8 +180,13 @@ int32_t CmServiceInstallAppCertCheck(const struct CmBlob *appCert, const struct 
     }
 
     if (!CmPermissionCheck(store)) {
-        CM_LOG_E("CmPermissionCheck check failed");
+        CM_LOG_E("permission check failed");
         return CMR_ERROR_PERMISSION_DENIED;
+    }
+
+    if (!CmIsSystemAppByStoreType(store)) {
+        CM_LOG_E("install app cert: caller is not system app");
+        return CMR_ERROR_NOT_SYSTEMP_APP;
     }
 
     return CM_SUCCESS;
@@ -195,8 +205,13 @@ int32_t CmServiceUninstallAppCertCheck(const uint32_t store, const struct CmBlob
     }
 
     if (!CmPermissionCheck(store)) {
-        CM_LOG_E("CmPermissionCheck check failed");
+        CM_LOG_E("permission check failed");
         return CMR_ERROR_PERMISSION_DENIED;
+    }
+
+    if (!CmIsSystemAppByStoreType(store)) {
+        CM_LOG_E("uninstall app cert: caller is not system app");
+        return CMR_ERROR_NOT_SYSTEMP_APP;
     }
 
     return CM_SUCCESS;
@@ -212,6 +227,11 @@ int32_t CmServiceGetAppCertListCheck(const uint32_t store)
     if (!CmHasPrivilegedPermission() || !CmHasCommonPermission()) {
         CM_LOG_E("permission check failed");
         return CMR_ERROR_PERMISSION_DENIED;
+    }
+
+    if (!CmIsSystemApp()) {
+        CM_LOG_E("get app cert list: caller is not system app");
+        return CMR_ERROR_NOT_SYSTEMP_APP;
     }
 
     return CM_SUCCESS;

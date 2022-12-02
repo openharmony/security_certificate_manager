@@ -98,6 +98,10 @@ static int32_t GetPrivateAppCert(const struct CmContext *context, uint32_t store
             CM_LOG_E("not caller and FA, permission check failed");
             return CMR_ERROR_PERMISSION_DENIED;
         }
+        if (!CmIsSystemApp()) {
+            CM_LOG_E("get private app cert: caller is not system app");
+            return CMR_ERROR_NOT_SYSTEMP_APP;
+        }
     }
 
     ret = CmStorageGetAppCert(context, store, keyUri, certBlob);
@@ -131,6 +135,10 @@ int32_t CmServiceGrantAppCertificate(const struct CmContext *context, const stru
         CM_LOG_E("permission check failed");
         return CMR_ERROR_PERMISSION_DENIED;
     }
+    if (!CmIsSystemApp()) {
+        CM_LOG_E("grant: caller is not system app");
+        return CMR_ERROR_NOT_SYSTEMP_APP;
+    }
 
     return CmAuthGrantAppCertificate(context, keyUri, appUid, authUri);
 }
@@ -146,6 +154,10 @@ int32_t CmServiceGetAuthorizedAppList(const struct CmContext *context, const str
     if (!CmHasPrivilegedPermission() || !CmHasCommonPermission()) {
         CM_LOG_E("permission check failed");
         return CMR_ERROR_PERMISSION_DENIED;
+    }
+    if (!CmIsSystemApp()) {
+        CM_LOG_E("get authed list: caller is not system app");
+        return CMR_ERROR_NOT_SYSTEMP_APP;
     }
 
     return CmAuthGetAuthorizedAppList(context, keyUri, appUidList);
@@ -176,6 +188,10 @@ int32_t CmServiceRemoveGrantedApp(const struct CmContext *context, const struct 
     if (!CmHasPrivilegedPermission() || !CmHasCommonPermission()) {
         CM_LOG_E("permission check failed");
         return CMR_ERROR_PERMISSION_DENIED;
+    }
+    if (!CmIsSystemApp()) {
+        CM_LOG_E("remove grant: caller is not system app");
+        return CMR_ERROR_NOT_SYSTEMP_APP;
     }
 
     return CmAuthRemoveGrantedApp(context, keyUri, appUid);

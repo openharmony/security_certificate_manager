@@ -132,6 +132,7 @@ enum CmErrorCode {
     CMR_ERROR_PERMISSION_DENIED = -23,
     CMR_ERROR_AUTH_CHECK_FAILED = -24,
     CMR_ERROR_KEY_OPERATION_FAILED = -25,
+    CMR_ERROR_NOT_SYSTEMP_APP = -26,
 };
 
 enum CMErrorCode { /* temp use */

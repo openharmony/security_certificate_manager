@@ -358,6 +358,10 @@ int32_t CmRemoveAllAppCert(const struct CmContext *context)
         CM_LOG_E("permission check failed");
         return CMR_ERROR_PERMISSION_DENIED;
     }
+    if (!CmIsSystemApp()) {
+        CM_LOG_E("remove app cert: caller is not system app");
+        return CMR_ERROR_NOT_SYSTEMP_APP;
+    }
 
     /* Only public and private credential removed can be returned */
     /* remove pubic credential app cert */

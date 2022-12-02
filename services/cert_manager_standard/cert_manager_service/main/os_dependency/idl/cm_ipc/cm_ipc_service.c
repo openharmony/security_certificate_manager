@@ -1031,6 +1031,11 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
             ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
+        if (!CmIsSystemApp()) {
+            CM_LOG_E("set user status: caller is not system app");
+            ret = CMR_ERROR_NOT_SYSTEMP_APP;
+            break;
+        }
 
         ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
@@ -1065,6 +1070,11 @@ void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlo
         if (!CmHasCommonPermission() || !CmHasPrivilegedPermission()) {
             CM_LOG_E("caller no permission");
             ret = CMR_ERROR_PERMISSION_DENIED;
+            break;
+        }
+        if (!CmIsSystemApp()) {
+            CM_LOG_E("install user cert: caller is not system app");
+            ret = CMR_ERROR_NOT_SYSTEMP_APP;
             break;
         }
 
@@ -1110,6 +1120,11 @@ void CmIpcServiceUninstallUserCert(const struct CmBlob *paramSetBlob, struct CmB
             ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
+        if (!CmIsSystemApp()) {
+            CM_LOG_E("uninstall user cert: caller is not system app");
+            ret = CMR_ERROR_NOT_SYSTEMP_APP;
+            break;
+        }
 
         ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
@@ -1139,6 +1154,11 @@ void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct 
         if (!CmHasCommonPermission() || !CmHasPrivilegedPermission()) {
             CM_LOG_E("caller no permission");
             ret = CMR_ERROR_PERMISSION_DENIED;
+            break;
+        }
+        if (!CmIsSystemApp()) {
+            CM_LOG_E("uninstall all user cert: caller is not system app");
+            ret = CMR_ERROR_NOT_SYSTEMP_APP;
             break;
         }
 
