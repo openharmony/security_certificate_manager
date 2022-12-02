@@ -206,6 +206,16 @@ struct CmAppCertInfo {
     struct CmBlob appCertPwd;
 };
 
+struct CertListAbtInfo {
+    uint32_t uriSize;
+    char uri[MAX_LEN_URI];
+    uint32_t aliasSize;
+    char certAlias[MAX_LEN_CERT_ALIAS];
+    uint32_t status;
+    uint32_t subjectNameSize;
+    char subjectName[MAX_LEN_SUBJECT_NAME];
+};
+
 struct CertAbstract {
     char uri[MAX_LEN_URI];
     char certAlias[MAX_LEN_CERT_ALIAS];
@@ -216,6 +226,14 @@ struct CertAbstract {
 struct CertList {
     uint32_t certsCount;
     struct CertAbstract *certAbstract;
+};
+
+struct CertAbtInfo {
+    uint32_t aliasSize;
+    char certAlias[MAX_LEN_CERT_ALIAS];
+    uint32_t status;
+    uint32_t certsize;
+    uint8_t certData[MAX_LEN_CERTIFICATE];
 };
 
 struct CertInfo {
