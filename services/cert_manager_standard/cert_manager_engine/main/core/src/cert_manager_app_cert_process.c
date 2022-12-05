@@ -95,7 +95,7 @@ static int32_t TransEccKeyToKeyBlob(const EC_KEY *eccKey, const struct HksKeyMat
     return ret;
 }
 
-int32_t SaveKeyMaterialEcc(const EC_KEY *eccKey, const uint32_t keySize, struct CmBlob *keyOut)
+static int32_t SaveKeyMaterialEcc(const EC_KEY *eccKey, const uint32_t keySize, struct CmBlob *keyOut)
 {
     struct CmBlob rawMaterial = { 0, NULL };
     /* public exponent x and y, and private exponent, so need size is: keySize / 8 * 3 */
@@ -131,7 +131,7 @@ int32_t SaveKeyMaterialEcc(const EC_KEY *eccKey, const uint32_t keySize, struct 
     return ret;
 }
 
-int32_t SaveKeyMaterialRsa(const RSA *rsa, const uint32_t keySize, struct CmBlob *keyOut)
+static int32_t SaveKeyMaterialRsa(const RSA *rsa, const uint32_t keySize, struct CmBlob *keyOut)
 {
     const uint32_t keyByteLen = keySize / CM_BITS_PER_BYTE;
     const uint32_t rawMaterialLen = sizeof(struct HksKeyMaterialRsa) + keyByteLen * CM_RSA_KEYPAIR_CNT;
@@ -183,7 +183,7 @@ int32_t SaveKeyMaterialRsa(const RSA *rsa, const uint32_t keySize, struct CmBlob
     return ret;
 }
 
-int32_t SaveKeyMaterialCurve25519(uint32_t algType, const EVP_PKEY *pKey, struct CmBlob *keyOut)
+static int32_t SaveKeyMaterialCurve25519(uint32_t algType, const EVP_PKEY *pKey, struct CmBlob *keyOut)
 {
     uint32_t totalSize = sizeof(struct HksKeyMaterial25519) + (CURVE25519_KEY_LEN_BYTES << 1);
     uint8_t *buffer = (uint8_t *)CMMalloc(totalSize);

@@ -554,6 +554,39 @@ int32_t RbTreeDecode(struct RbTree *t, RbTreeValueDecoder dec, RbTreeValueFree f
     return CM_SUCCESS;
 }
 
+static void TraverseDestroy(struct RbTree *t, struct RbTreeNode *x)
+{
+    if (x != t->nil) {
+        TraverseDestroy(t, x->left);
+        x->left = t->nil;
+        TraverseDestroy(t, x->right);
+        x->right = t->nil;
+        CMFree(x);
+    }
+}
+
+static void RbTreeDestroy(struct RbTree *t)
+{
+    if (t == NULL) {
+        return;
+    }
+
+    TraverseDestroy(t, t->root);
+    CMFree(t->nil);
+    t->nil = NULL;
+    t->root = NULL;
+}
+
+void RbTreeDestroyEx(struct RbTree *t, RbTreeNodeHandler freeFunc)
+{
+    if ((t == NULL) || (freeFunc == NULL)) {
+        return;
+    }
+
+    TraverseInOrder(t, t->root, freeFunc, NULL);
+    RbTreeDestroy(t);
+}
+
 #ifdef __cplusplus
 }
 

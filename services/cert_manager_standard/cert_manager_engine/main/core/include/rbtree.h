@@ -62,6 +62,8 @@ int32_t RbTreeDecode(struct RbTree *t, RbTreeValueDecoder dec, RbTreeValueFree f
 
 int32_t RbTreeEncode(const struct RbTree *t, RbTreeValueEncoder enc, uint8_t *buf, uint32_t *size);
 
+void RbTreeDestroyEx(struct RbTree *t, RbTreeNodeHandler freeFunc);
+
 #ifdef __cplusplus
 }
 #endif
