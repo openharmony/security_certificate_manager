@@ -188,16 +188,16 @@ static int32_t GetInfoFromCertData(struct CertInfo *cInfo)
     return CM_SUCCESS;
 }
 
-int32_t CmCertificateInfoUnpackFromService(const struct CmBlob *outBuf, const struct CmBlob *certUri,
+int32_t CmCertificateInfoUnpackFromService(const struct CmBlob *outData, const struct CmBlob *certUri,
     struct CertInfo *cInfo)
 {
-    if ((cInfo == NULL) || (cInfo->certInfo.data == NULL)) {
-        return CMR_ERROR_NULL_POINTER;
+    if (CmCheckBlob(&(cInfo->certInfo))) {
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     struct CmBlob bufBlob = { 0, NULL };
     uint32_t offset = 0;
-    int32_t ret = CmGetBlobFromBuffer(&bufBlob, outBuf, &offset);
+    int32_t ret = CmGetBlobFromBuffer(&bufBlob, outData, &offset);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get cert data faild");
         return ret;
@@ -214,14 +214,14 @@ int32_t CmCertificateInfoUnpackFromService(const struct CmBlob *outBuf, const st
     }
 
     uint32_t status = 0;
-    ret = GetUint32FromBuffer(&(status), outBuf, &offset);
+    ret = GetUint32FromBuffer(&(status), outData, &offset);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("copy status failed");
         return ret;
     }
     cInfo->status = (status >= 1) ? false : true;
 
-    ret = CmGetBlobFromBuffer(&bufBlob, outBuf, &offset);
+    ret = CmGetBlobFromBuffer(&bufBlob, outData, &offset);
     if (ret != CM_SUCCESS) {
         return ret;
     }

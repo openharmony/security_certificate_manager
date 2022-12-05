@@ -29,7 +29,7 @@ int32_t CmGetSysCertPathList(const struct CmContext *context, struct CmMutableBl
 int32_t CreateCertFileList(const struct CmMutableBlob *pathList, struct CmMutableBlob *certFileList);
 
 int32_t CmGetCertAlias(const uint32_t store, const char *uri, const struct CmBlob *certData,
-    struct CmBlob *certAlias);
+    struct CmBlob *alias);
 
 int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
     const struct CmMutableBlob *certFileList, struct CertBlob *certBlob, uint32_t *status);
