@@ -89,7 +89,7 @@ int32_t CmServiceSetCertStatusCheck(const uint32_t store, const struct CmBlob *c
     }
 
     if ((status != 0) && (status != 1)) {
-        CM_LOG_E("invalid input arguments store:%u", status);
+        CM_LOG_E("invalid input status:%u", status);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 

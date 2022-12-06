@@ -34,8 +34,6 @@ void FreeCMBlobData(struct CmBlob *blob);
 
 void FreeCertList(struct CertList *certList);
 
-int32_t InitUserContext(struct CmContext* userCtx, const uint32_t userid, const uint32_t uid, const char *pktname);
-
 bool CompareCertInfo(const struct CertInfo *firstCert, const struct CertInfo *secondCert);
 
 bool CompareCredential(const struct Credential *firstCredential, const struct Credential *secondCredential);
