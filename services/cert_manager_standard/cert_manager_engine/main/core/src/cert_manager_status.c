@@ -435,6 +435,37 @@ finally:
     return rc;
 }
 
+static void FreeTreeNodeValue(RbTreeKey key, RbTreeValue value, const void *context)
+{
+    (void)key;
+    (void)context;
+    if (value != NULL) {
+        /* value is used internally, it can ensure that the type conversion is safe */
+        FreeStatus((struct CertStatus *)value);
+    }
+}
+
+static void DestroyTree(uint32_t store)
+{
+    int storeIndex = GetStoreIndex(store);
+    if (storeIndex < 0) {
+        return;
+    }
+    struct RbTree *tree = &g_trees[storeIndex];
+    pthread_rwlock_t *treeLock = &g_treeLocks[storeIndex];
+
+    pthread_rwlock_wrlock(treeLock);
+    RbTreeDestroyEx(tree, FreeTreeNodeValue);
+    pthread_rwlock_unlock(treeLock);
+}
+
+static void DestroyStatusTree(void)
+{
+    DestroyTree(CM_SYSTEM_TRUSTED_STORE);
+    DestroyTree(CM_USER_TRUSTED_STORE);
+    DestroyTree(CM_PRI_CREDENTIAL_STORE);
+}
+
 int32_t CertManagerStatusInit(void)
 {
     int rc = CMR_OK;
@@ -456,6 +487,9 @@ int32_t CertManagerStatusInit(void)
     TRY_FUNC(LoadStatus(CM_PRI_CREDENTIAL_STORE), rc);
 
 finally:
+    if (rc != CM_SUCCESS) {
+        DestroyStatusTree();
+    }
     pthread_rwlock_unlock(&g_statusLock);
     return rc;
 }
