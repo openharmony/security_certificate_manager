@@ -151,6 +151,7 @@ void FreeCredential(Credential *&credential);
 
 enum ErrorCode {
     SUCCESS = 0,
+    NOT_SYSTEM_APP = 202,
     PARAM_ERROR = 401,
     INNER_FAILURE = 17500001,
     NO_PERMISSION = 17500002,

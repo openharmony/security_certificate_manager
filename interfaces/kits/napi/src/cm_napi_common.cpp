@@ -398,6 +398,9 @@ int32_t TranformErrorCode(int32_t errorCode)
     if (errorCode == CMR_ERROR_NOT_PERMITTED) {
         return NO_PERMISSION;
     }
+    if (errorCode == CMR_ERROR_NOT_SYSTEMP_APP) {
+        return NOT_SYSTEM_APP;
+    }
     return INNER_FAILURE;
 }
 
