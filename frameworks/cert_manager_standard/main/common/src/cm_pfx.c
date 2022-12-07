@@ -47,6 +47,7 @@ static int32_t CmGetAppCertChain(X509 *cert, STACK_OF(X509) *caCert, struct AppC
             ret = CM_FAILURE;
             break;
         }
+        certCount++;
         /* copy app ca cert to bio */
         for (int32_t i = 0; i < sk_X509_num(caCert); i++) {
             xCert = sk_X509_value(caCert, i);

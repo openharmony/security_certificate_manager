@@ -99,20 +99,6 @@ int32_t InitUserCertInfo(struct CertInfo **cInfo)
     return CM_SUCCESS;
 }
 
-int32_t InitUserContext(struct CmContext* userCtx, const uint32_t userid, const uint32_t uid, const char *pktname)
-{
-    if (pktname == nullptr || userCtx  == nullptr) {
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    userCtx->userId = userid;
-    userCtx->uid = uid;
-    errno_t ret = strcpy_s(userCtx->packageName, MAX_LEN_PACKGE_NAME, pktname);
-    if (ret != EOK) {
-        return CM_FAILURE;
-    }
-    return CM_SUCCESS;
-}
-
 void FreeCertList(struct CertList *certList)
 {
     if (certList == nullptr || certList->certAbstract == nullptr) {

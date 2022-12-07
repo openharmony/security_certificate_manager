@@ -30,7 +30,7 @@ struct CredentialResult {
 
 struct CredentialResult g_credentialexpectResult[] = {
     {
-        {1, "ak", "keyA", "oh:t=ak;o=keyA;u=0;a=0", 1, 1, { 0, NULL }}, true
+        {1, "ak", "keyA", "oh:t=ak;o=keyA;u=0;a=0", 2, 1, { 0, NULL }}, true /* certNum is 2; keyNum is 1 */
     }
 };
 
