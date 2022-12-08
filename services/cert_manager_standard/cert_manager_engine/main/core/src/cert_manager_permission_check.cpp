@@ -50,7 +50,8 @@ bool CmIsSystemApp(void)
     AccessTokenID tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
     auto tokenType = AccessTokenKit::GetTokenType(tokenId);
     if (tokenType == TOKEN_HAP) { /* only care about hap type */
-        return TokenIdKit::IsSystemAppByFullTokenID(tokenId);
+        uint64_t fullTokenId = OHOS::IPCSkeleton::GetCallingFullTokenID();
+        return TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     }
     return true;
 }
