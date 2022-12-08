@@ -35,6 +35,29 @@
 #include "cm_type.h"
 #include "cm_x509.h"
 
+static int32_t CheckPermission(bool needPriPermission, bool needCommonPermission)
+{
+    if (needPriPermission) {
+        if (!CmHasPrivilegedPermission()) {
+            CM_LOG_E("caller lacks pri permission");
+            return CMR_ERROR_PERMISSION_DENIED;
+        }
+        if (!CmIsSystemApp()) {
+            CM_LOG_E("caller is not system app");
+            return CMR_ERROR_NOT_SYSTEMP_APP;
+        }
+    }
+
+    if (needCommonPermission) {
+        if (!CmHasCommonPermission()) {
+            CM_LOG_E("caller lacks common permission");
+            return CMR_ERROR_PERMISSION_DENIED;
+        }
+    }
+
+    return CM_SUCCESS;
+}
+
 int32_t CmServicInstallAppCert(const struct CmContext *context, struct CmAppCertInfo *appCertInfo,
     const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri)
 {
@@ -94,13 +117,9 @@ static int32_t GetPrivateAppCert(const struct CmContext *context, uint32_t store
     int32_t ret = CmCheckCallerIsProducer(context, keyUri);
     if (ret != CM_SUCCESS) {
         /* caller is not producer, check wether has ACCESS_CERT_MANAGER_INTERNAL permission */
-        if (!CmHasPrivilegedPermission()) {
-            CM_LOG_E("not caller and FA, permission check failed");
-            return CMR_ERROR_PERMISSION_DENIED;
-        }
-        if (!CmIsSystemApp()) {
-            CM_LOG_E("get private app cert: caller is not system app");
-            return CMR_ERROR_NOT_SYSTEMP_APP;
+        ret = CheckPermission(true, false);
+        if (ret != CM_SUCCESS) {
+            return ret;
         }
     }
 
@@ -131,13 +150,9 @@ int32_t CmServiceGrantAppCertificate(const struct CmContext *context, const stru
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!CmHasPrivilegedPermission() || !CmHasCommonPermission()) {
-        CM_LOG_E("permission check failed");
-        return CMR_ERROR_PERMISSION_DENIED;
-    }
-    if (!CmIsSystemApp()) {
-        CM_LOG_E("grant: caller is not system app");
-        return CMR_ERROR_NOT_SYSTEMP_APP;
+    int32_t ret = CheckPermission(true, true);
+    if (ret != CM_SUCCESS) {
+        return ret;
     }
 
     return CmAuthGrantAppCertificate(context, keyUri, appUid, authUri);
@@ -151,13 +166,9 @@ int32_t CmServiceGetAuthorizedAppList(const struct CmContext *context, const str
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!CmHasPrivilegedPermission() || !CmHasCommonPermission()) {
-        CM_LOG_E("permission check failed");
-        return CMR_ERROR_PERMISSION_DENIED;
-    }
-    if (!CmIsSystemApp()) {
-        CM_LOG_E("get authed list: caller is not system app");
-        return CMR_ERROR_NOT_SYSTEMP_APP;
+    int32_t ret = CheckPermission(true, true);
+    if (ret != CM_SUCCESS) {
+        return ret;
     }
 
     return CmAuthGetAuthorizedAppList(context, keyUri, appUidList);
@@ -170,9 +181,9 @@ int32_t CmServiceIsAuthorizedApp(const struct CmContext *context, const struct C
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!CmHasCommonPermission()) {
-        CM_LOG_E("permission check failed");
-        return CMR_ERROR_PERMISSION_DENIED;
+    int32_t ret = CheckPermission(false, true);
+    if (ret != CM_SUCCESS) {
+        return ret;
     }
 
     return CmAuthIsAuthorizedApp(context, authUri);
@@ -185,13 +196,9 @@ int32_t CmServiceRemoveGrantedApp(const struct CmContext *context, const struct 
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!CmHasPrivilegedPermission() || !CmHasCommonPermission()) {
-        CM_LOG_E("permission check failed");
-        return CMR_ERROR_PERMISSION_DENIED;
-    }
-    if (!CmIsSystemApp()) {
-        CM_LOG_E("remove grant: caller is not system app");
-        return CMR_ERROR_NOT_SYSTEMP_APP;
+    int32_t ret = CheckPermission(true, true);
+    if (ret != CM_SUCCESS) {
+        return ret;
     }
 
     return CmAuthRemoveGrantedApp(context, keyUri, appUid);
@@ -205,13 +212,13 @@ int32_t CmServiceInit(const struct CmContext *context, const struct CmBlob *auth
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!CmHasCommonPermission()) {
-        CM_LOG_E("permission check failed");
-        return CMR_ERROR_PERMISSION_DENIED;
+    int32_t ret = CheckPermission(false, true);
+    if (ret != CM_SUCCESS) {
+        return ret;
     }
 
     struct CmBlob commonUri = { 0, NULL };
-    int32_t ret = CmCheckAndGetCommonUri(context, authUri, &commonUri);
+    ret = CmCheckAndGetCommonUri(context, authUri, &commonUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("check and get common uri failed, ret = %d", ret);
         return ret;
@@ -230,9 +237,9 @@ int32_t CmServiceUpdate(const struct CmContext *context, const struct CmBlob *ha
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!CmHasCommonPermission()) {
-        CM_LOG_E("permission check failed");
-        return CMR_ERROR_PERMISSION_DENIED;
+    int32_t ret = CheckPermission(false, true);
+    if (ret != CM_SUCCESS) {
+        return ret;
     }
 
     return CmKeyOpProcess(SIGN_VERIFY_CMD_UPDATE, context, handle, inData, NULL);
@@ -246,9 +253,9 @@ int32_t CmServiceFinish(const struct CmContext *context, const struct CmBlob *ha
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!CmHasCommonPermission()) {
-        CM_LOG_E("permission check failed");
-        return CMR_ERROR_PERMISSION_DENIED;
+    int32_t ret = CheckPermission(false, true);
+    if (ret != CM_SUCCESS) {
+        return ret;
     }
 
     return CmKeyOpProcess(SIGN_VERIFY_CMD_FINISH, context, handle, inData, outData);
@@ -261,9 +268,9 @@ int32_t CmServiceAbort(const struct CmContext *context, const struct CmBlob *han
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!CmHasCommonPermission()) {
-        CM_LOG_E("permission check failed");
-        return CMR_ERROR_PERMISSION_DENIED;
+    int32_t ret = CheckPermission(false, true);
+    if (ret != CM_SUCCESS) {
+        return ret;
     }
 
     return CmKeyOpProcess(SIGN_VERIFY_CMD_ABORT, context, handle, NULL, NULL);
