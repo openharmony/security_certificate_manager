@@ -65,3 +65,16 @@ group("unittest") {
   testonly = true
   deps = [ ":cm_sdk_test" ]
 }
+
+group("module_test") {
+  testonly = true
+  deps = [ "//base/security/certificate_manager/test/unittest/module_test:cm_module_test" ]
+}
+
+group("permission_test") {
+  testonly = true
+  deps = [
+    "//base/security/certificate_manager/test/unittest/common_permission_test:cm_common_permission_test",
+    "//base/security/certificate_manager/test/unittest/inner_permission_test:cm_inner_permission_test",
+  ]
+}
