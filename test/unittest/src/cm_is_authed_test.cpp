@@ -314,7 +314,7 @@ HWTEST_F(CmIsAuthedTest, CmIsAuthedTest015, TestSize.Level0)
 
 /**
  * @tc.name: CmIsAuthedTest016
- * @tc.desc: Test CmIsAuthorizedApp can find mac key
+ * @tc.desc: Test CmIsAuthorizedApp can not find mac key
  * @tc.type: FUNC
  * @tc.require: AR000H0MIA /SR000H09NA
  */

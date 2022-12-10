@@ -15,19 +15,19 @@ import("//build/test.gni")
 
 module_output_path = "cert_manager_standard/cert_manager_standard_test"
 
-ohos_unittest("cm_module_test") {
+ohos_unittest("cm_inner_permission_test") {
   module_out_path = module_output_path
   sources = [
-    "src/cm_cert_parse_test.cpp",
-    "src/cm_log_test.cpp",
-    "src/cm_param_test.cpp",
+    "../src/cm_test_common.cpp",
+    "cm_inner_permission_test.cpp",
   ]
 
   include_dirs = [
-    "//third_party/bounds_checking_function/include",
-    "//third_party/openssl/include",
-    "include",
+    "//base/security/access_token/interfaces/innerkits/token_setproc/include",
+    "//base/security/access_token/interfaces/innerkits/nativetoken/include",
+    "//base/security/access_token/interfaces/innerkits/accesstoken/include",
     "../include",
+    "//third_party/bounds_checking_function/include",
   ]
   cflags_cc = [
     "-Wall",
@@ -35,11 +35,13 @@ ohos_unittest("cm_module_test") {
   ]
   cflags = cflags_cc
   deps = [
+    "//base/security/access_token/interfaces/innerkits/accesstoken:libaccesstoken_sdk",
+    "//base/security/access_token/interfaces/innerkits/nativetoken:libnativetoken",
+    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
     "//base/security/certificate_manager/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
     "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
     "//third_party/bounds_checking_function:libsec_static",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_shared",
   ]
   defines = [ "_CM_LOG_ENABLE_" ]
   external_deps = [ "c_utils:utils" ]

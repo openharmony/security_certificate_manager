@@ -47,6 +47,7 @@ void SetATPermission(void)
     auto tokenId = GetAccessTokenId(&infoInstance);
     SetSelfTokenID(tokenId);
     OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+    delete[] perms;
 }
 
 int32_t InitCertInfo(struct CertInfo *certInfo)
