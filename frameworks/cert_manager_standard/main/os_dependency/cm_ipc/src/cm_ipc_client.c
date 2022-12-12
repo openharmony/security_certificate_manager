@@ -529,6 +529,7 @@ static int32_t CmAppCertInfoUnpackFromService(const struct CmBlob *outData, stru
         CM_LOG_E("copy credData failed");
         return CMR_ERROR_INVALID_OPERATION;
     }
+    certificateInfo->credData.size = blob.size;
 
     return CM_SUCCESS;
 }
