@@ -68,7 +68,8 @@
         "test": [
           "//base/security/certificate_manager/test:unittest",
           "//base/security/certificate_manager/test:module_test",
-          "//base/security/certificate_manager/test:permission_test"
+          "//base/security/certificate_manager/test:permission_test",
+          "//base/security/certificate_manager/test/fuzz_test:fuzztest"
         ]
       }
     }
