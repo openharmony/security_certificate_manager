@@ -15,8 +15,6 @@
 
 #include "cm_test_common.h"
 
-#include <gtest/gtest.h>
-
 #include "cert_manager_api.h"
 
 #include "cm_cert_data.h"
@@ -27,7 +25,6 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 
-using namespace testing::ext;
 namespace CertmanagerTest {
 void SetATPermission(void)
 {
