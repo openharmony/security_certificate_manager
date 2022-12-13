@@ -189,7 +189,7 @@ static int32_t FreshParamSet(struct CmParamSet *paramSet, bool isCopy)
                 return CMR_ERROR_INVALID_ARGUMENT;
             }
             if (isCopy && memcpy_s((uint8_t *)paramSet + offset, size - offset,
-                paramSet->params[i].blob.data, paramSet->params[i].blob.size)) {
+                paramSet->params[i].blob.data, paramSet->params[i].blob.size) != EOK) {
                 CM_LOG_E("FreshParamSet copy param blob failed!");
                 return CMR_ERROR_INVALID_OPERATION;
             }
