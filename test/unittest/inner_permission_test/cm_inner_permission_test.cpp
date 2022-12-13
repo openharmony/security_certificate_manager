@@ -40,22 +40,22 @@ public:
 
 void CmInnerPermissionTest::SetUpTestCase(void)
 {
-    const char **perms = new const char *[1]; // 1 permission
-    perms[0] = "ohos.permission.ACCESS_CERT_MANAGER"; // normal
+    const char **permission = new const char *[1]; // 1 permission
+    permission[0] = "ohos.permission.ACCESS_CERT_MANAGER"; // normal
     NativeTokenInfoParams infoInstance = {
         .dcapsNum = 0,
         .permsNum = 1,
         .dcaps = nullptr,
-        .perms = perms,
+        .perms = permission,
         .acls = nullptr,
-        .processName = "TestCertManager",
+        .processName = "TestCmInnerPermisson",
         .aplStr = "system_basic",
     };
 
     auto tokenId = GetAccessTokenId(&infoInstance);
     SetSelfTokenID(tokenId);
     OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
-    delete[] perms;
+    delete[] permission;
 }
 
 void CmInnerPermissionTest::TearDownTestCase(void)

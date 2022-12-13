@@ -64,10 +64,10 @@ static int32_t CmLoadSystemAbility()
     int32_t ret = saManager->LoadSystemAbility(SA_ID_KEYSTORE_SERVICE, loadCallBack);
     if (ret != ERR_OK) {
         CM_LOG_E("systemAbilityId:%d load failed,result code:%d", SA_ID_KEYSTORE_SERVICE, ret);
-        return CM_SUCCESS;
+        return CM_FAILURE;
     }
 
-    return ret;
+    return CM_SUCCESS;
 }
 
 static int32_t CmReadRequestReply(MessageParcel &reply, struct CmBlob *outBlob)
@@ -109,7 +109,7 @@ int32_t SendRequest(enum CmMessage type, const struct CmBlob *inBlob,
 {
     uint32_t i = 0;
     if (CmLoadSystemAbility() != CM_SUCCESS) {
-        CM_LOG_E("LoadSystemAbility success.");
+        CM_LOG_E("LoadSystemAbility failed.");
         return CMR_ERROR_INVALID_OPERATION;
     }
 

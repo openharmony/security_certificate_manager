@@ -190,7 +190,7 @@ static int32_t CalcUriMac(const struct CMUri *uriObj, uint32_t clientUid, struct
             break;
         }
 
-        /* construc mac key URI */
+        /* construct mac key URI */
         ret = ConstructMacKeyUri(uriObj, clientUid, &macKeyUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("construct mac key uri, ret = %d", ret);
@@ -223,7 +223,7 @@ static int32_t DeleteMacKey(const struct CMUri *uriObj, uint32_t clientUid)
     int32_t ret;
 
     do {
-        /* construc mac key URI */
+        /* construct mac key URI */
         ret = ConstructMacKeyUri(uriObj, clientUid, &macKeyUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("construct mac key uri, ret = %d", ret);
