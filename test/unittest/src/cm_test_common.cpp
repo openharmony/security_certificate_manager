@@ -232,7 +232,8 @@ bool CompareCredential(const struct Credential *firstCredential, const struct Cr
             (strcmp(firstCredential->alias, secondCredential->alias) == 0) &&
             (strcmp(firstCredential->keyUri, secondCredential->keyUri) == 0) &&
             (firstCredential->certNum == secondCredential->certNum) &&
-            (firstCredential->keyNum == secondCredential->keyNum));
+            (firstCredential->keyNum == secondCredential->keyNum) &&
+            (firstCredential->credData.size == secondCredential->credData.size));
 }
 
 int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t store)
