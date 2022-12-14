@@ -18,13 +18,17 @@ group("fuzztest") {
   testonly = true
   if (os_level == "standard") {
     deps = [
+      "//base/security/certificate_manager/test/fuzz_test/cmgetappcert_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmgetappcertlist_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmgetcertinfo_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmgetcertlist_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmgetusercertinfo_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmgetusercertlist_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cminstallappcert_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cminstallusertrustedcert_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmsetcertstatus_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmsetusercertstatus_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmuninstallappcert_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmuninstallusertrustedcert_fuzzer:fuzztest",
     ]
   }
