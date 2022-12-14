@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "cmgetcertinfo_fuzzer.h"
+#include "cmgetusercertinfo_fuzzer.h"
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
@@ -31,8 +31,9 @@ namespace OHOS {
 
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
-        struct CmBlob sysUri = { 0, nullptr };
-        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &sysUri)) {
+
+        struct CmBlob userCertUri = { 0, nullptr };
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &userCertUri)) {
             CmFree(myData);
             return false;
         }
@@ -43,14 +44,14 @@ namespace OHOS {
             return false;
         }
 
-        struct CertInfo sysCertInfo;
-        if (!GetCertInfoFromBuffer(myData, &remainSize, &offset, &sysCertInfo)) {
+        struct CertInfo userCertInfo;
+        if (!GetCertInfoFromBuffer(myData, &remainSize, &offset, &userCertInfo)) {
             CmFree(myData);
             return false;
         }
 
         CertmanagerTest::SetATPermission();
-        (void)CmGetCertInfo(&sysUri, store, &sysCertInfo);
+        (void)CmGetUserCertInfo(&userCertUri, store, &userCertInfo);
 
         CmFree(myData);
         return true;
@@ -64,3 +65,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::DoSomethingInterestingWithMyAPI(data, size);
     return 0;
 }
+

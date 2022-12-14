@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "cmgetcertinfo_fuzzer.h"
+#include "cminstallusertrustedcert_fuzzer.h"
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
@@ -21,9 +21,11 @@
 
 using namespace CmFuzzTest;
 namespace OHOS {
+    static const uint32_t CM_BLOB_NUM = 3;
+
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
-        uint32_t minSize = sizeof(struct CmBlob) + sizeof(uint32_t) + sizeof(struct CertInfo);
+        uint32_t minSize = CM_BLOB_NUM * sizeof(struct CmBlob);
         uint8_t *myData;
         if (!CopyMyData(data, size, minSize, &myData)) {
             return false;
@@ -31,26 +33,26 @@ namespace OHOS {
 
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
-        struct CmBlob sysUri = { 0, nullptr };
-        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &sysUri)) {
+        struct CmBlob userCert = {0, NULL};
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &userCert)) {
             CmFree(myData);
             return false;
         }
 
-        uint32_t store;
-        if (!GetUintFromBuffer(myData, &remainSize, &offset, &store)) {
+        struct CmBlob certAlias = {0, NULL};
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &certAlias)) {
             CmFree(myData);
             return false;
         }
 
-        struct CertInfo sysCertInfo;
-        if (!GetCertInfoFromBuffer(myData, &remainSize, &offset, &sysCertInfo)) {
+        struct CmBlob certUri = {0, NULL};
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &certUri)) {
             CmFree(myData);
             return false;
         }
 
         CertmanagerTest::SetATPermission();
-        (void)CmGetCertInfo(&sysUri, store, &sysCertInfo);
+        (void)CmInstallUserTrustedCert(&userCert, &certAlias, &certUri);
 
         CmFree(myData);
         return true;
@@ -64,3 +66,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::DoSomethingInterestingWithMyAPI(data, size);
     return 0;
 }
+
