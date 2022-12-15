@@ -33,6 +33,7 @@ group("fuzztest") {
       "//base/security/certificate_manager/test/fuzz_test/cminstallusertrustedcert_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmisauthorizedapp_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmremovegrantedapp_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmsendrequest_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmsetcertstatus_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmsetusercertstatus_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmuninstallappcert_fuzzer:fuzztest",
