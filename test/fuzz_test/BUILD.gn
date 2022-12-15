@@ -18,6 +18,8 @@ group("fuzztest") {
   testonly = true
   if (os_level == "standard") {
     deps = [
+      "//base/security/certificate_manager/test/fuzz_test/cmabort_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmfinish_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmgetappcert_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmgetappcertlist_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmgetauthorizedapplist_fuzzer:fuzztest",
@@ -26,6 +28,7 @@ group("fuzztest") {
       "//base/security/certificate_manager/test/fuzz_test/cmgetusercertinfo_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmgetusercertlist_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmgrantappcertificate_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cminit_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cminstallappcert_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cminstallusertrustedcert_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmisauthorizedapp_fuzzer:fuzztest",
@@ -34,6 +37,7 @@ group("fuzztest") {
       "//base/security/certificate_manager/test/fuzz_test/cmsetusercertstatus_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmuninstallappcert_fuzzer:fuzztest",
       "//base/security/certificate_manager/test/fuzz_test/cmuninstallusertrustedcert_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmupdate_fuzzer:fuzztest",
     ]
   }
 }
