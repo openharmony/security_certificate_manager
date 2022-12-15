@@ -23,9 +23,9 @@ using namespace CmFuzzTest;
 namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
-        uint32_t minSize = sizeof(struct CmBlob) + sizeof(uint32_t) + sizeof(struct CertInfo);
+        uint32_t buffSize = sizeof(struct CmBlob) + sizeof(uint32_t) + sizeof(struct CertInfo);
         uint8_t *myData;
-        if (!CopyMyData(data, size, minSize, &myData)) {
+        if (!CopyMyData(data, size, buffSize, &myData)) {
             return false;
         }
 
