@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "cmgetcertlist_fuzzer.h"
+#include "cmremovegrantedapp_fuzzer.h"
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
@@ -23,28 +23,29 @@ using namespace CmFuzzTest;
 namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
-        uint32_t buffSize = sizeof(uint32_t) + sizeof(struct CertList);
+        uint32_t minSize = sizeof(uint32_t) + sizeof(struct CmBlob);
         uint8_t *myData;
-        if (!CopyMyData(data, size, buffSize, &myData)) {
+        if (!CopyMyData(data, size, minSize, &myData)) {
             return false;
         }
 
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
-        uint32_t sysStore;
-        if (!GetUintFromBuffer(myData, &remainSize, &offset, &sysStore)) {
+
+        struct CmBlob grantKeyUri = {0, NULL};
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &grantKeyUri)) {
             CmFree(myData);
             return false;
         }
 
-        struct CertList sysCertList = { 0, nullptr };
-        if (!GetCertListFromBuffer(myData, &remainSize, &offset, &sysCertList)) {
+        uint32_t appUid;
+        if (!GetUintFromBuffer(myData, &remainSize, &offset, &appUid)) {
             CmFree(myData);
             return false;
         }
 
         CertmanagerTest::SetATPermission();
-        (void)CmGetCertList(sysStore, &sysCertList);
+        (void)CmRemoveGrantedApp(&grantKeyUri, appUid);
 
         CmFree(myData);
         return true;
@@ -58,3 +59,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::DoSomethingInterestingWithMyAPI(data, size);
     return 0;
 }
+

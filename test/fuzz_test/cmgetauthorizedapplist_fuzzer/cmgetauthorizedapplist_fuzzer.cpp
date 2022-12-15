@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "cmgetcertlist_fuzzer.h"
+#include "cmgetauthorizedapplist_fuzzer.h"
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
@@ -23,28 +23,34 @@ using namespace CmFuzzTest;
 namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
-        uint32_t buffSize = sizeof(uint32_t) + sizeof(struct CertList);
+        uint32_t minSize = sizeof(struct CmBlob) + sizeof(struct CmAppUidList);
         uint8_t *myData;
-        if (!CopyMyData(data, size, buffSize, &myData)) {
+        if (!CopyMyData(data, size, minSize, &myData)) {
             return false;
         }
 
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
-        uint32_t sysStore;
-        if (!GetUintFromBuffer(myData, &remainSize, &offset, &sysStore)) {
+
+        struct CmBlob authorUri = {0, NULL};
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &authorUri)) {
             CmFree(myData);
             return false;
         }
 
-        struct CertList sysCertList = { 0, nullptr };
-        if (!GetCertListFromBuffer(myData, &remainSize, &offset, &sysCertList)) {
+        struct CmAppUidList appUidList = {0, NULL};
+        if (!GetUintFromBuffer(myData, &remainSize, &offset, &(appUidList.appUidCount))) {
             CmFree(myData);
             return false;
         }
+        if (appUidList.appUidCount > remainSize / sizeof(uint32_t)) {
+            CmFree(myData);
+            return false;
+        }
+        appUidList.appUid = reinterpret_cast<uint32_t *>(myData  + offset);
 
         CertmanagerTest::SetATPermission();
-        (void)CmGetCertList(sysStore, &sysCertList);
+        (void)CmGetAuthorizedAppList(&authorUri, &appUidList);
 
         CmFree(myData);
         return true;
@@ -58,3 +64,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::DoSomethingInterestingWithMyAPI(data, size);
     return 0;
 }
+
