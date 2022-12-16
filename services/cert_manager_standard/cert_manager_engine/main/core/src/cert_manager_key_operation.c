@@ -44,13 +44,13 @@ static struct PropertyToHuks g_cmPaddingProperty[] = {
 };
 
 static struct PropertyToHuks g_cmDigestProperty[] = {
-    { CM_DIGEST_NONE, CM_DIGEST_NONE },
-    { CM_DIGEST_MD5, CM_DIGEST_MD5 },
-    { CM_DIGEST_SHA1, CM_DIGEST_SHA1 },
-    { CM_DIGEST_SHA224, CM_DIGEST_SHA224 },
-    { CM_DIGEST_SHA256, CM_DIGEST_SHA256 },
-    { CM_DIGEST_SHA384, CM_DIGEST_SHA384 },
-    { CM_DIGEST_SHA512, CM_DIGEST_SHA512 },
+    { CM_DIGEST_NONE, HKS_DIGEST_NONE },
+    { CM_DIGEST_MD5, HKS_DIGEST_MD5 },
+    { CM_DIGEST_SHA1, HKS_DIGEST_SHA1 },
+    { CM_DIGEST_SHA224, HKS_DIGEST_SHA224 },
+    { CM_DIGEST_SHA256, HKS_DIGEST_SHA256 },
+    { CM_DIGEST_SHA384, HKS_DIGEST_SHA384 },
+    { CM_DIGEST_SHA512, HKS_DIGEST_SHA512 },
 };
 
 #define INVALID_PROPERTY_VALUE 0xFFFF
@@ -247,7 +247,7 @@ static void TranslateToHuksProperties(const struct CmSignatureSpec *spec, struct
             break;
         }
     }
-    CM_LOG_I("purose[%u], digest[%u], padding[%u]", spec->purpose, spec->digest, spec->padding);
+    CM_LOG_I("purpose[%u], digest[%u], padding[%u]", spec->purpose, spec->digest, spec->padding);
 }
 
 static int32_t AddParamsToParamSet(const struct CmBlob *commonUri, const struct CmSignatureSpec *spec,

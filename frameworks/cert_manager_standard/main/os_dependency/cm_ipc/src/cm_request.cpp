@@ -123,16 +123,9 @@ int32_t SendRequest(enum CmMessage type, const struct CmBlob *inBlob,
         return CMR_ERROR_NULL_POINTER;
     }
 
-    enum CmSendType sendType = CM_SEND_TYPE_SYNC;
-
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option;
-    if (sendType == CM_SEND_TYPE_SYNC) {
-        option = MessageOption::TF_SYNC;
-    } else {
-        option = MessageOption::TF_ASYNC;
-    }
+    MessageOption option = MessageOption::TF_SYNC;
 
     data.WriteInterfaceToken(SA_KEYSTORE_SERVICE_DESCRIPTOR);
     if (outBlob == nullptr) {

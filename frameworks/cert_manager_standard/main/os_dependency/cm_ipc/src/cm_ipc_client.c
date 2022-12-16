@@ -496,7 +496,7 @@ static int32_t CmAppCertInfoUnpackFromService(const struct CmBlob *outData, stru
 
     int32_t ret = GetUint32FromBuffer(&certificateInfo->isExist, outData, &offset);
     if (ret != CM_SUCCESS || certificateInfo->isExist == 0) {
-        CM_LOG_E("Get certificateInfo->isExist failed ret:%d, is exist:%d", ret, certificateInfo->isExist);
+        CM_LOG_E("Get certificateInfo->isExist failed ret:%d, is exist:%u", ret, certificateInfo->isExist);
         return ret;
     }
 
