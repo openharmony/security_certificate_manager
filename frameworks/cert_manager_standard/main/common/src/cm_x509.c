@@ -150,8 +150,7 @@ int32_t GetX509SubjectNameLongFormat(const X509 *x509cert, char *outBuf, uint32_
         if (length < 0) {
             return length;
         }
-        if (snprintf_s(outBuf + offset, NAME_LONGFORMAT_MAX_SIZE - offset,
-            NAME_LONGFORMAT_MAX_SIZE - offset - 1, "%s=%s%c",
+        if (snprintf_s(outBuf + offset, outBufMaxSize - offset, outBufMaxSize - offset - 1, "%s=%s%c",
             subjectNameList[j], subjectName, (char)(((j + 1) == sizeList) ? '\0' : ',')) < 0) {
             return CMR_ERROR_INVALID_OPERATION;
         }
@@ -175,8 +174,7 @@ int32_t GetX509IssueNameLongFormat(const X509 *x509cert, char *outBuf, uint32_t 
         if (length < 0) {
             return length;
         }
-        if (snprintf_s(outBuf + offset, NAME_LONGFORMAT_MAX_SIZE - offset,
-            NAME_LONGFORMAT_MAX_SIZE - offset - 1, "%s=%s%c",
+        if (snprintf_s(outBuf + offset, outBufMaxSize - offset, outBufMaxSize - offset - 1, "%s=%s%c",
             issueNameList[j], issueName, (char)(((j + 1) == sizeList) ? '\0' : ',')) < 0) {
             return CMR_ERROR_INVALID_OPERATION;
         }
