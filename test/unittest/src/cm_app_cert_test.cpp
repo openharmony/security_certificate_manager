@@ -16,7 +16,8 @@
 #include <gtest/gtest.h>
 
 #include "cert_manager_api.h"
-#include "cm_cert_data.h"
+#include "cm_cert_data_ecc.h"
+#include "cm_cert_data_part1_rsa.h"
 #include "cm_mem.h"
 #include "cm_test_common.h"
 
@@ -51,8 +52,8 @@ struct CredentialAbstractResult g_expectList[] = {
     }
 };
 
-static const struct CmBlob g_appCert = { sizeof(g_rsaP12Certinfo), const_cast<uint8_t *>(g_rsaP12Certinfo) };
-static const struct CmBlob g_eccAppCert = { sizeof(g_eccP12Certinfo), const_cast<uint8_t *>(g_eccP12Certinfo) };
+static const struct CmBlob g_appCert = { sizeof(g_rsa2048P12CertInfo), const_cast<uint8_t *>(g_rsa2048P12CertInfo) };
+static const struct CmBlob g_eccAppCert = { sizeof(g_eccP256P12CertInfo), const_cast<uint8_t *>(g_eccP256P12CertInfo) };
 static const struct CmBlob g_appCertPwd = { sizeof(g_certPwd), const_cast<uint8_t *>(g_certPwd) };
 
 static const uint8_t g_p12AbnormalCertinfo[] = {

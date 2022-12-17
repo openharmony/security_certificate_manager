@@ -21,13 +21,21 @@
 
 #include  <string>
 
-#define CERT_KEY_ALG_RSA 1
-#define CERT_KEY_ALG_ECC 2
-
 #define PERFORMACE_COUNT 1000
 
 #define DELIMITER "$$$"
 #define ENDOF  "\n"
+
+constexpr uint32_t CERT_KEY_ALG_RSA = 1;
+constexpr uint32_t CERT_KEY_ALG_ECC = 2;
+constexpr uint32_t CERT_KEY_ALG_RSA_512 = 3;
+constexpr uint32_t CERT_KEY_ALG_RSA_1024 = 4;
+constexpr uint32_t CERT_KEY_ALG_RSA_3072 = 5;
+constexpr uint32_t CERT_KEY_ALG_RSA_4096 = 6;
+constexpr uint32_t CERT_KEY_ALG_ECC_P224 = 7;
+constexpr uint32_t CERT_KEY_ALG_ECC_P384 = 8;
+constexpr uint32_t CERT_KEY_ALG_ECC_P521 = 9;
+constexpr uint32_t CERT_KEY_ALG_ED25519 = 10;
 
 namespace CertmanagerTest {
 void FreeCMBlobData(struct CmBlob *blob);
