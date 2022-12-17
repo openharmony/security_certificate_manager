@@ -17,7 +17,10 @@
 
 #include "cert_manager_api.h"
 
-#include "cm_cert_data.h"
+#include "cm_cert_data_ecc.h"
+#include "cm_cert_data_ed25519.h"
+#include "cm_cert_data_part1_rsa.h"
+#include "cm_cert_data_part2_rsa.h"
 #include "cm_mem.h"
 #include "cm_test_log.h"
 
@@ -239,18 +242,53 @@ bool CompareCredential(const struct Credential *firstCredential, const struct Cr
 int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t store)
 {
     struct CmBlob appCert = { 0, NULL };
-    if (alg == CERT_KEY_ALG_RSA) {
-        appCert.size = sizeof(g_rsaP12Certinfo);
-        appCert.data = (uint8_t *)g_rsaP12Certinfo;
-    } else if (alg == CERT_KEY_ALG_ECC) {
-        appCert.size = sizeof(g_eccP12Certinfo);
-        appCert.data = (uint8_t *)g_eccP12Certinfo;
-    } else {
-        return CMR_ERROR_INVALID_ARGUMENT;
+    switch (alg) {
+        case CERT_KEY_ALG_RSA:
+            appCert.size = sizeof(g_rsa2048P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_rsa2048P12CertInfo);
+            break;
+        case CERT_KEY_ALG_ECC:
+            appCert.size = sizeof(g_eccP256P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_eccP256P12CertInfo);
+            break;
+        case CERT_KEY_ALG_RSA_512:
+            appCert.size = sizeof(g_rsa512P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_rsa512P12CertInfo);
+            break;
+        case CERT_KEY_ALG_RSA_1024:
+            appCert.size = sizeof(g_rsa1024P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_rsa1024P12CertInfo);
+            break;
+        case CERT_KEY_ALG_RSA_3072:
+            appCert.size = sizeof(g_rsa3072P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_rsa3072P12CertInfo);
+            break;
+        case CERT_KEY_ALG_RSA_4096:
+            appCert.size = sizeof(g_rsa4096P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_rsa4096P12CertInfo);
+            break;
+        case CERT_KEY_ALG_ECC_P224:
+            appCert.size = sizeof(g_eccP224P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_eccP224P12CertInfo);
+            break;
+        case CERT_KEY_ALG_ECC_P384:
+            appCert.size = sizeof(g_eccP384P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_eccP384P12CertInfo);
+            break;
+        case CERT_KEY_ALG_ECC_P521:
+            appCert.size = sizeof(g_eccP521P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_eccP521P12CertInfo);
+            break;
+        case CERT_KEY_ALG_ED25519:
+            appCert.size = sizeof(g_ed25519P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_ed25519P12CertInfo);
+            break;
+        default:
+            return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    struct CmBlob appCertPwd = { sizeof(g_certPwd), (uint8_t *)g_certPwd };
-    uint8_t uriData[100] = {0};
+    struct CmBlob appCertPwd = { sizeof(g_certPwd), const_cast<uint8_t *>(g_certPwd) };
+    uint8_t uriData[MAX_LEN_URI] = {0};
     struct CmBlob keyUri = { sizeof(uriData), uriData };
     return CmInstallAppCert(&appCert, &appCertPwd, alias, store, &keyUri);
 }
