@@ -130,7 +130,19 @@ static void TestSignVerify(uint32_t alg, bool isValidSignature, struct CmSignatu
     /* install credential */
     TestInstallAppCert(alg);
 
-    struct CmBlob message = { sizeof(g_messageData), (uint8_t *)g_messageData };
+    struct CmBlob message = { 0, nullptr };
+    uint8_t srcData[] = {
+        0xc2, 0xa7, 0xc5, 0x33, 0x79, 0xb0, 0xcd, 0x86, 0x74, 0x09, 0x98, 0x16, 0xd5, 0x85, 0x1b, 0xd6,
+        0x87, 0xe3, 0xe0, 0x53, 0x7d, 0xe0, 0xff, 0x1d, 0xdb, 0x27, 0x98, 0xe8, 0x87, 0xe5, 0xb7, 0x03,
+    };
+    if (spec->digest != CM_DIGEST_NONE) {
+        message.size = sizeof(g_messageData);
+        message.data = const_cast<uint8_t *>(g_messageData);
+    } else {
+        message.size = sizeof(srcData);
+        message.data = srcData;
+    }
+
     uint8_t signData[DEFAULT_SIGNATURE_LEN] = {0};
     struct CmBlob signature = { DEFAULT_SIGNATURE_LEN, signData };
 
