@@ -218,10 +218,7 @@ int32_t CmGetParamSet(const struct CmParamSet *inParamSet, uint32_t inParamSetSi
         CM_LOG_E("malloc from param set failed!");
         return CMR_ERROR_MALLOC_FAIL;
     }
-
-    if (memcpy_s(buf, size, inParamSet, size) != EOK) {
-        return CMR_ERROR_INVALID_OPERATION;
-    }
+    (void)memcpy_s(buf, size, inParamSet, size);
 
     ret = FreshParamSet(buf, false);
     if (ret != CM_SUCCESS) {
