@@ -27,7 +27,6 @@ extern "C" {
 #define TIME_FORMAT_MAX_SIZE 16
 #define NAME_MAX_SIZE 256
 #define FINGERPRINT_MAX_SIZE  128
-#define NAME_LONGFORMAT_MAX_SIZE 1024
 #define NAME_DELIMITER_SIZE 2
 #define NAME_ANS1TIME_LEN   12
 
@@ -40,7 +39,6 @@ extern "C" {
 #define CM_ORGANIZATION_NAME "O"
 #define CM_ORGANIZATION_UNIT_NAME  "OU"
 
- 
 #define ASN1_TAG_TYPE_SEQ 0x30
 enum CmCertFormat {
     CM_CERT_FORMAT_PEM,

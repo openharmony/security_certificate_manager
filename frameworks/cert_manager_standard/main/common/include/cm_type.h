@@ -46,7 +46,7 @@ extern "C" {
 #define MAX_LEN_PACKGE_NAME      64
 #define MAX_UINT32_LEN           16
 
-#define MAX_LEN_ISSUER_NAME             128
+#define MAX_LEN_ISSUER_NAME             256
 #define MAX_LEN_SERIAL                  64
 #define MAX_LEN_NOT_BEFORE              32
 #define MAX_LEN_NOT_AFTER               32
