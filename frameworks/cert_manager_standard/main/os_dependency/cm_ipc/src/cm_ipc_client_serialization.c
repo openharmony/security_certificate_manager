@@ -137,7 +137,7 @@ static int32_t GetInfoFromX509Cert(X509 *x509cert, struct CertInfo *cInfo)
         return CM_FAILURE;
     }
 
-    int32_t issuerNameLen = GetX509SubjectNameLongFormat(x509cert, cInfo->issuerName, MAX_LEN_ISSUER_NAME);
+    int32_t issuerNameLen = GetX509IssueNameLongFormat(x509cert, cInfo->issuerName, MAX_LEN_ISSUER_NAME);
     if (issuerNameLen <= 0) {
         CM_LOG_E("get cert issuerName failed");
         return CM_FAILURE;

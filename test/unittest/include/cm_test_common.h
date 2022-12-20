@@ -44,6 +44,8 @@ void FreeCertList(struct CertList *certList);
 
 bool CompareCertInfo(const struct CertInfo *firstCert, const struct CertInfo *secondCert);
 
+bool CompareCertData(const struct CmBlob *firstData, const struct CmBlob *secondData);
+
 bool CompareCredential(const struct Credential *firstCredential, const struct Credential *secondCredential);
 
 bool CompareCredentialList(const struct CredentialAbstract *firstCert, const struct CredentialAbstract *secondCert);
