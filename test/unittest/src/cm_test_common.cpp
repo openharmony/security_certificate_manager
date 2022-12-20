@@ -208,6 +208,15 @@ bool CompareCertInfo(const struct CertInfo *firstCert, const struct CertInfo *se
             (strcmp(firstCert->fingerprintSha256, secondCert->fingerprintSha256) == 0));
 }
 
+bool CompareCertData(const struct CmBlob *firstData, const struct CmBlob *secondData)
+{
+    if (firstData == nullptr || secondData == nullptr) {
+        return false;
+    }
+    return ((firstData->size == secondData->size) &&
+            (memcmp(firstData->data, secondData->data, static_cast<int32_t>(firstData->size)) == 0));
+}
+
 std::string DumpCertInfo(const struct CertInfo *certInfo)
 {
     if (certInfo == nullptr) {
