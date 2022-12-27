@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "cert_manager_uri.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,8 +22,6 @@
 #include "securec.h"
 
 #include "cm_log.h"
-#include "cert_manager_status.h"
-#include "cert_manager_uri.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,12 +48,12 @@ int32_t CertManagerFreeUri(struct CMUri *uri)
     if (uri == NULL) {
         return CMR_OK;
     }
-    FREE_PTR(uri->object);
-    FREE_PTR(uri->user);
-    FREE_PTR(uri->app);
-    FREE_PTR(uri->mac);
-    FREE_PTR(uri->clientUser);
-    FREE_PTR(uri->clientApp);
+    CM_FREE_PTR(uri->object);
+    CM_FREE_PTR(uri->user);
+    CM_FREE_PTR(uri->app);
+    CM_FREE_PTR(uri->mac);
+    CM_FREE_PTR(uri->clientUser);
+    CM_FREE_PTR(uri->clientApp);
     return CMR_OK;
 }
 
@@ -77,8 +77,7 @@ static int IsUnreserved(const char *resAvail, size_t resAvailLen, char c)
     return 0;
 }
 
-static uint32_t GetComponentEncodedLen(
-    const char *key, const char *value,
+static uint32_t GetComponentEncodedLen(const char *key, const char *value,
     const char *resAvail, uint32_t *sep)
 {
     if (value == NULL) {
@@ -158,7 +157,7 @@ static int32_t EncodeComp(
         off++;
     }
 
-    if (EOK != memcpy_s(buf + off, avail, key, keyLen)) {
+    if (memcpy_s(buf + off, avail, key, keyLen) != EOK) {
         return CMR_ERROR;
     }
     off += keyLen;
@@ -194,15 +193,97 @@ static int32_t EncodeComp(
     return CMR_OK;
 }
 
+static int32_t EncodePathComp(char *encoded, uint32_t *offset, uint32_t *availLen,
+    const struct CMUri *uri)
+{
+    int32_t ret = CM_FAILURE;
+    uint32_t sep = 0;
+    uint32_t off = *offset;
+    uint32_t avail = *availLen;
+
+    do {
+        ret = EncodeComp(encoded, &off, &avail, P_TYPE, g_types[uri->type], P_RES_AVAIL, &sep, ';');
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("encode <t=> failed");
+            break;
+        }
+
+        ret = EncodeComp(encoded, &off, &avail, P_OBJECT, uri->object, P_RES_AVAIL, &sep, ';');
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("encode <o=> failed");
+            break;
+        }
+
+        ret = EncodeComp(encoded, &off, &avail, P_USER, uri->user, P_RES_AVAIL, &sep, ';');
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("encode <u=> failed");
+            break;
+        }
+
+        ret = EncodeComp(encoded, &off, &avail, P_APP, uri->app, P_RES_AVAIL, &sep, ';');
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("encode <a=> failed");
+            break;
+        }
+    } while (0);
+
+    *offset = off;
+    *availLen = avail;
+    return ret;
+}
+
+static int32_t EncodeQueryComp(char *encoded, uint32_t *offset, uint32_t *availLen,
+    const struct CMUri *uri)
+{
+    if (uri->clientUser == NULL && uri->clientApp == NULL && uri->mac == NULL) {
+        // no query. we are done.
+        return CM_SUCCESS;
+    }
+
+    int32_t ret = CM_FAILURE;
+    uint32_t sep = 0;
+    uint32_t off = *offset;
+    uint32_t avail = *availLen;
+    encoded[off] = '?';
+    off++;
+    avail--;
+
+    do {
+        ret = EncodeComp(encoded, &off, &avail, Q_CLIENT_USER, uri->clientUser, Q_RES_AVAIL, &sep, '&');
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("encode <cu=> failed");
+            break;
+        }
+
+        ret = EncodeComp(encoded, &off, &avail, Q_CLIENT_APP, uri->clientApp, Q_RES_AVAIL, &sep, '&');
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("encode <ca=> failed");
+            break;
+        }
+
+        ret = EncodeComp(encoded, &off, &avail, Q_MAC, uri->mac, Q_RES_AVAIL, &sep, '&');
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("encode <m=> failed");
+            break;
+        }
+    } while (0);
+
+    *offset = off;
+    *availLen = avail;
+    return ret;
+}
+
 int32_t CertManagerUriEncode(char *encoded, uint32_t *encodedLen, const struct CMUri *uri)
 {
-    ASSERT_ARGS(encodedLen);
-    ASSERT_ARGS(uri && IS_TYPE_VALID(uri->type));
+    if (encodedLen == NULL || uri == NULL || !IS_TYPE_VALID(uri->type)) {
+        CM_LOG_E("input params is invaild");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
 
     uint32_t encLen = GetEncodedLen(uri) + 1;
     if (encoded == NULL) {
         *encodedLen = encLen;
-        return CMR_OK;
+        return CM_SUCCESS;
     }
 
     if (*encodedLen < encLen) {
@@ -210,37 +291,27 @@ int32_t CertManagerUriEncode(char *encoded, uint32_t *encodedLen, const struct C
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
 
-    uint32_t sep = 0;
     uint32_t off = 0;
     uint32_t avail = *encodedLen;
 
-    if (EOK != memcpy_s(encoded, avail, SCHEME, strlen(SCHEME))) {
-        return CMR_ERROR;
+    if (memcpy_s(encoded, avail, SCHEME, strlen(SCHEME)) != EOK) {
+        return CM_FAILURE;
     }
     off += strlen(SCHEME);
     avail -= strlen(SCHEME);
 
-    ASSERT_FUNC(EncodeComp(encoded, &off, &avail, P_TYPE, g_types[uri->type], P_RES_AVAIL, &sep, ';'));
-    ASSERT_FUNC(EncodeComp(encoded, &off, &avail, P_OBJECT, uri->object, P_RES_AVAIL, &sep, ';'));
-    ASSERT_FUNC(EncodeComp(encoded, &off, &avail, P_USER, uri->user, P_RES_AVAIL, &sep, ';'));
-    ASSERT_FUNC(EncodeComp(encoded, &off, &avail, P_APP, uri->app, P_RES_AVAIL, &sep, ';'));
-
-    if (uri->clientUser == NULL && uri->clientApp == NULL && uri->mac == NULL) {
-        // no query. we are done.
-        *encodedLen = off;
-        return CMR_OK;
+    int32_t ret = EncodePathComp(encoded, &off, &avail, uri);
+    if (ret != CM_SUCCESS) {
+        return ret;
     }
 
-    encoded[off] = '?';
-    off++;
-    avail--;
-    sep = 0;
-    ASSERT_FUNC(EncodeComp(encoded, &off, &avail, Q_CLIENT_USER, uri->clientUser, Q_RES_AVAIL, &sep, '&'));
-    ASSERT_FUNC(EncodeComp(encoded, &off, &avail, Q_CLIENT_APP, uri->clientApp, Q_RES_AVAIL, &sep, '&'));
-    ASSERT_FUNC(EncodeComp(encoded, &off, &avail, Q_MAC, uri->mac, Q_RES_AVAIL, &sep, '&'));
+    ret = EncodeQueryComp(encoded, &off, &avail, uri);
+    if (ret != CM_SUCCESS) {
+        return ret;
+    }
 
     *encodedLen = off;
-    return CMR_OK;
+    return CM_SUCCESS;
 }
 
 static uint32_t HexDecode(uint32_t h)
@@ -275,10 +346,15 @@ static inline uint32_t IndexOf(char sep, const char *data, uint32_t start, uint3
 
 static char *DecodeValue(const char *s, uint32_t off, uint32_t len)
 {
-    if (s == NULL || len == 0) {
+    if (s == NULL || len == 0 || len > MAX_AUTH_LEN_URI) {
+        CM_LOG_E("input value failed");
         return NULL;
     }
     char *buf = MALLOC(len + 1);
+    if (buf == NULL) {
+        CM_LOG_E("malloc buf failed");
+        return NULL;
+    }
     (void)memset_s(buf, len + 1, 0, len + 1);
 
     uint32_t bufOff = 0;
@@ -286,7 +362,7 @@ static char *DecodeValue(const char *s, uint32_t off, uint32_t len)
         if (s[i] != '%') {
             buf[bufOff] = s[i];
         } else {
-            buf[bufOff] = HexDecode2(s[i+1], s[i+2]); /* 2 is array index */
+            buf[bufOff] = HexDecode2(s[i + 1], s[i + 2]); /* 2 is array index */
             i += 2; /* 2 is array index */
         }
     }
@@ -313,7 +389,7 @@ static int32_t DecodePath(struct CMUri *uri, const char *path, uint32_t start, u
         uint32_t i = IndexOf(';', path, start, end);
         if (i <= start) {
             // something is wrong
-            CM_LOG_W("Invalid uri path: %s\n", path);
+            CM_LOG_W("Invalid uri path\n");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
 
@@ -357,7 +433,7 @@ static int32_t DecodePath(struct CMUri *uri, const char *path, uint32_t start, u
         } else if (e != NULL) {
             *e = DecodeEnum(path, valueOff, valueLen, values, valueCount);
         } else {
-            CM_LOG_W("Invalid field in path: %s\n", path);
+            CM_LOG_W("Invalid field in path\n");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
 
@@ -373,7 +449,7 @@ static int32_t DecodeQuery(struct CMUri *uri, const char *query, uint32_t start,
         uint32_t i = IndexOf('&', query, start, end);
         if (i <= start) {
             // something is wrong
-            CM_LOG_W("Invalid uri query: %s\n", query);
+            CM_LOG_W("Invalid uri query\n");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
 
@@ -401,7 +477,7 @@ static int32_t DecodeQuery(struct CMUri *uri, const char *query, uint32_t start,
                 *field = DecodeValue(query, valueOff, valueLen);
             }
         } else {
-            CM_LOG_W("Invalid field in query: %s\n", query);
+            CM_LOG_W("Invalid field in query\n");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
 
@@ -412,29 +488,40 @@ static int32_t DecodeQuery(struct CMUri *uri, const char *query, uint32_t start,
 
 int32_t CertManagerUriDecode(struct CMUri *uri, const char *encoded)
 {
-    ASSERT_ARGS(uri);
-    ASSERT_ARGS(encoded);
+    if (uri == NULL || encoded == NULL) {
+        CM_LOG_E("input params is invaild");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
 
+    (void)memset_s(uri, sizeof(*uri), 0, sizeof(*uri));
     uri->type = CM_URI_TYPE_INVALID;
 
     uint32_t len = strlen(encoded);
     uint32_t off = 0;
-    CM_LOG_I("CertManagerUriDecode keyUri:%s, %s, len:%d, schem:%d", encoded, SCHEME, len, strlen(SCHEME));
     if (len < strlen(SCHEME) || memcmp(encoded, SCHEME, strlen(SCHEME))) {
-        CM_LOG_W("Scheme mismatch. Not a cert manager URI: %s\n", encoded);
+        CM_LOG_E("Scheme mismatch. Not a cert manager URI");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     off += strlen(SCHEME);
 
     uint32_t pathStart = off;
     uint32_t pathEnd = IndexOf('?', encoded, off, len);
-    uint32_t queryStart = pathEnd == len ? len : pathEnd + 1;
+    uint32_t queryStart = (pathEnd == len) ? len : pathEnd + 1;
     uint32_t queryEnd = len;
 
-    ASSERT_FUNC(DecodePath(uri, encoded, pathStart, pathEnd));
-    ASSERT_FUNC(DecodeQuery(uri, encoded, queryStart, queryEnd));
+    int32_t ret = DecodePath(uri, encoded, pathStart, pathEnd);
+    if (ret != CM_SUCCESS) {
+        CertManagerFreeUri(uri);
+        return ret;
+    }
 
-    return CMR_OK;
+    ret = DecodeQuery(uri, encoded, queryStart, queryEnd);
+    if (ret != CM_SUCCESS) {
+        CertManagerFreeUri(uri);
+        return ret;
+    }
+
+    return CM_SUCCESS;
 }
 
 int32_t CertManagerGetUidFromUri(const struct CmBlob *uri, uint32_t *uid)
@@ -458,6 +545,81 @@ int32_t CertManagerGetUidFromUri(const struct CmBlob *uri, uint32_t *uid)
     return CM_SUCCESS;
 }
 
+int32_t CmConstructUri(const struct CMUri *uriObj, struct CmBlob *outUri)
+{
+    uint32_t outLen = 0;
+    int32_t ret = CertManagerUriEncode(NULL, &outLen, uriObj);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get uriObj len failed, ret = %d", ret);
+        return ret;
+    }
+
+    if ((outLen == 0) || (outLen > MAX_OUT_BLOB_SIZE)) {
+        CM_LOG_E("invalid outLen[%u]", outLen);
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+
+    char *data = (char *)CMMalloc(outLen);
+    if (data == NULL) {
+        CM_LOG_E("malloc uri buf failed");
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+    (void)memset_s(data, outLen, 0, outLen);
+    outUri->size = outLen; /* include 1 byte: the terminator('\0')  */
+
+    ret = CertManagerUriEncode(data, &outLen, uriObj); /* outLen not include '\0' */
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("encord uri failed");
+        outUri->size = 0;
+        CMFree(data);
+        return ret;
+    }
+
+    outUri->data = (uint8_t *)data;
+    return CM_SUCCESS;
+}
+
+static int32_t UintToStr(uint32_t input, char *out, uint32_t outLen)
+{
+    if (snprintf_s(out, outLen, outLen - 1, "%u", input) < 0) {
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+    return CM_SUCCESS;
+}
+
+int32_t CmConstructCommonUri(const struct CmContext *context, const uint32_t type,
+    const struct CmBlob *certAlias, struct CmBlob *outUri)
+{
+    struct CMUri uriObj;
+    (void)memset_s(&uriObj, sizeof(struct CMUri), 0, sizeof(struct CMUri));
+
+    char userIdStr[MAX_UINT32_LEN] = { 0 };
+    int32_t ret = UintToStr(context->userId, userIdStr, MAX_UINT32_LEN);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("construct userId to str failed");
+        return ret;
+    }
+
+    char uidStr[MAX_UINT32_LEN] = { 0 };
+    ret = UintToStr(context->uid, uidStr, MAX_UINT32_LEN);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("construct uid to str failed");
+        return ret;
+    }
+
+    uriObj.object = (char *)certAlias->data;
+    uriObj.type = type;
+    uriObj.user = userIdStr;
+    uriObj.app = uidStr;
+
+    ret = CmConstructUri(&uriObj, outUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("construct uri failed, ret = %d", ret);
+    }
+    return ret;
+}
+
 #ifdef __cplusplus
 }
 #endif
+

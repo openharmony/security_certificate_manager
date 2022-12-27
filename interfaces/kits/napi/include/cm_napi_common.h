@@ -54,26 +54,15 @@ static const std::string CM_CERT_PROPERTY_STATUS = "status";
 static const std::string BUSINESS_ERROR_PROPERTY_CODE = "code";
 static const std::string BUSINESS_ERROR_PROPERTY_MESSAGE = "message";
 
-static const size_t CM_HANDLE_OFFSET32 = 32;
-static const std::string CM_OPTIONS_PROPERTY_PROPERTIES = "properties";
-static const std::string CM_OPTIONS_PROPERTY_INDATA = "inData";
-
-static const std::string CM_PARAM_PROPERTY_TAG = "tag";
-static const std::string CM_PARAM_PROPERTY_VALUE = "value";
-
 static const std::string CM_RESULT_PRPPERTY_CERTLIST = "certList";
 static const std::string CM_RESULT_PRPPERTY_CERTINFO = "certInfo";
 static const std::string CM_RESULT_PRPPERTY_CREDENTIAL_LIST = "credentialList";
 static const std::string CM_RESULT_PRPPERTY_CREDENTIAL = "credential";
 
-static const std::string CM_HANDLE_PROPERTY_HANDLE = "handle";
-
 static const int32_t CERT_MANAGER_SYS_CAP = 17500000;
 static const int32_t RESULT_NUMBER = 2;
 static const uint32_t APPLICATION_CERTIFICATE_STORE = 0;
 static const uint32_t APPLICATION_PRIVATE_CERTIFICATE_STORE = 3;
-static const uint32_t SYSTEM_CERTIFICATE_STORE = 1;
-
 
 napi_value ParseCmContext(napi_env env, napi_value object, CmContext *&cmContext);
 napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store);
@@ -92,7 +81,7 @@ napi_value GenerateCredentialAbstractArray(napi_env env,
 napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo);
 napi_value GenerateAppCertInfo(napi_env env, const struct Credential *credential);
 void ThrowParamsError(napi_env env, int32_t errorCode, std::string errMsg);
-napi_value GenerateBusinessError(napi_env env, int32_t errorCode, const char *errorMessage);
+napi_value GenerateBusinessError(napi_env env, int32_t errorCode, const char *errorMsg);
 
 void DeleteNapiContext(napi_env env, napi_async_work &asyncWork, napi_ref &callback);
 
@@ -145,14 +134,14 @@ inline void FreeCertAbstract(CertAbstract *&certAbstract)
     certAbstract = nullptr;
 }
 
-inline void FreeCredentialAbstract(CredentialAbstract *&CredentialAbstract)
+inline void FreeCredentialAbstract(CredentialAbstract *&credentialAbstract)
 {
-    if (CredentialAbstract == nullptr) {
+    if (credentialAbstract == nullptr) {
         return;
     }
 
-    CmFree(CredentialAbstract);
-    CredentialAbstract = nullptr;
+    CmFree(credentialAbstract);
+    credentialAbstract = nullptr;
 }
 
 void FreeCertList(CertList *&certList);
@@ -162,11 +151,25 @@ void FreeCredential(Credential *&credential);
 
 enum ErrorCode {
     SUCCESS = 0,
+    NOT_SYSTEM_APP = 202,
     PARAM_ERROR = 401,
     INNER_FAILURE = 17500001,
     NO_PERMISSION = 17500002,
     NOT_FOUND = 17500003,
     INVALID_CERT_FORMAT = 17500004,
+};
+
+struct CertInfoValue {
+    napi_value uri;
+    napi_value certAlias;
+    napi_value status;
+    napi_value issuerName;
+    napi_value subjectName;
+    napi_value serial;
+    napi_value notBefore;
+    napi_value notAfter;
+    napi_value fingerprintSha256;
+    napi_value certInfoBlob;
 };
 }  // namespace CertManagerNapi
 

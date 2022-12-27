@@ -83,7 +83,7 @@ static napi_value GetSystemCertInfoParseParams(
     napi_env env, napi_callback_info info, GetCertInfoAsyncContext context)
 {
     size_t argc = CM_NAPI_GET_SYSTEM_CERT_INFO_MAX_ARGS;
-    napi_value argv[CM_NAPI_GET_SYSTEM_CERT_INFO_MAX_ARGS] = {0};
+    napi_value argv[CM_NAPI_GET_SYSTEM_CERT_INFO_MAX_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc < CM_NAPI_GET_SYSTEM_CERT_INFO_MIN_ARGS) {
@@ -95,6 +95,7 @@ static napi_value GetSystemCertInfoParseParams(
     size_t index = 0;
     napi_value result = ParseCmContext(env, argv[index], context->cmContext);
     if (result == nullptr) {
+        ThrowParamsError(env, PARAM_ERROR, "get context type error");
         CM_LOG_E("CertInfo could not get cert manager context");
         return nullptr;
     }
@@ -120,7 +121,7 @@ static napi_value GetUserCertInfoParseParams(
     napi_env env, napi_callback_info info, GetCertInfoAsyncContext context)
 {
     size_t argc = CM_NAPI_GET_USER_CERT_INFO_MAX_ARGS;
-    napi_value argv[CM_NAPI_GET_USER_CERT_INFO_MAX_ARGS] = {0};
+    napi_value argv[CM_NAPI_GET_USER_CERT_INFO_MAX_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_GET_USER_CERT_INFO_MAX_ARGS) && (argc != CM_NAPI_GET_USER_CERT_INFO_MIN_ARGS)) {
@@ -176,17 +177,18 @@ static void GetCertInfoExecute(napi_env env, void *data)
     }
     (void)memset_s(context->certificate, sizeof(struct CertInfo), 0, sizeof(struct CertInfo));
 
+    context->certificate->certInfo.data = static_cast<uint8_t *>(CmMalloc(MAX_LEN_CERTIFICATE));
+    if (context->certificate->certInfo.data == nullptr) {
+        CM_LOG_E("malloc certificate certInfo data fail");
+        context->result = CMR_ERROR_MALLOC_FAIL;
+        return;
+    }
+    context->certificate->certInfo.size = MAX_LEN_CERTIFICATE;
+
     if (context->store == CM_SYSTEM_TRUSTED_STORE) {
-        context->result = CmGetCertInfo(context->cmContext, context->certUri, context->store,
+        context->result = CmGetCertInfo(context->certUri, context->store,
             context->certificate);
     } else {
-        context->certificate->certInfo.data = static_cast<uint8_t *>(CmMalloc(MAX_LEN_CERTIFICATE));
-        if (context->certificate->certInfo.data == nullptr) {
-            CM_LOG_E("malloc certificate certInfo data fail");
-            context->result = CMR_ERROR_MALLOC_FAIL;
-            return;
-        }
-        context->certificate->certInfo.size = MAX_LEN_CERTIFICATE;
         context->result = CmGetUserCertInfo(context->certUri, context->store, context->certificate);
     }
 }
@@ -194,13 +196,13 @@ static void GetCertInfoExecute(napi_env env, void *data)
 static void GetCertInfoComplete(napi_env env, napi_status status, void *data)
 {
     GetCertInfoAsyncContext context = static_cast<GetCertInfoAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         result[1] = GetCertInfoWriteResult(env, context);
     } else {
-        const char *errorMessage = "get system cert info error";
-        result[0] = GenerateBusinessError(env, context->result, errorMessage);
+        const char *errorMsg = "get system cert info error";
+        result[0] = GenerateBusinessError(env, context->result, errorMsg);
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     if (context->deferred != nullptr) {

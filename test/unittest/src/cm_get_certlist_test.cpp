@@ -21,12 +21,7 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
-static const uint32_t CM_CONTEXT_USERID = 1000;
-static const uint32_t CM_CONTEXT_USERID2 = 2000;
-static const uint32_t CM_CONTEXT_UID = 3000;
-static const uint32_t CM_CONTEXT_UID2 = 3001;
-
-#define TIMES_PERFORMANCE 10
+static const int TIMES_PERFORMANCE = 10;
 
 struct CertAbstractResult {
     struct CertAbstract certAbstract;
@@ -62,22 +57,6 @@ struct CertAbstractResult g_listexpectResult[] = {
     }
 };
 
-static bool FindCertAbstract(const struct CertAbstract *abstract, const struct CertList *listCert)
-{
-    bool bFind = false;
-
-    if (abstract == NULL || listCert == NULL || listCert->certsCount == 0) {
-        return false;
-    }
-    for (uint32_t i = 0; i < listCert->certsCount; ++i) {
-        if (CompareCert(abstract, &(listCert->certAbstract[i]))) {
-            bFind = true;
-            break;
-        }
-    }
-    return bFind;
-}
-
 class CmGetCertListTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -88,9 +67,6 @@ public:
 
     void TearDown();
 
-public:
-    struct CmContext firstUserCtx;
-    struct CmContext secondUserCtx;
     struct CertList *lstCert;
 };
 
@@ -106,8 +82,6 @@ void CmGetCertListTest::TearDownTestCase(void)
 void CmGetCertListTest::SetUp()
 {
     InitCertList(&lstCert);
-    InitUserContext(&firstUserCtx, CM_CONTEXT_USERID, CM_CONTEXT_UID, "com.hap.test");
-    InitUserContext(&secondUserCtx, CM_CONTEXT_USERID2, CM_CONTEXT_UID2, "com.hap.test2");
 }
 
 void CmGetCertListTest::TearDown()
@@ -123,7 +97,7 @@ void CmGetCertListTest::TearDown()
  */
 HWTEST_F(CmGetCertListTest, SimpleGetCertListTest001, TestSize.Level0)
 {
-    int32_t ret = CmGetCertList(&firstUserCtx, CM_SYSTEM_TRUSTED_STORE, lstCert);
+    int32_t ret = CmGetCertList(CM_SYSTEM_TRUSTED_STORE, lstCert);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmGetCertList failed,retcode:" << ret;
 }
 
@@ -138,7 +112,7 @@ HWTEST_F(CmGetCertListTest, PerformanceGetCertListTest002, TestSize.Level0)
     for (int times = 0; times < TIMES_PERFORMANCE; ++times) {
         struct CertList *listCert = NULL;
         ASSERT_TRUE(InitCertList(&listCert) == CM_SUCCESS);
-        int32_t ret = CmGetCertList(&secondUserCtx, CM_SYSTEM_TRUSTED_STORE, listCert);
+        int32_t ret = CmGetCertList(CM_SYSTEM_TRUSTED_STORE, listCert);
         EXPECT_EQ(ret, CM_SUCCESS) << "CmGetCertList Performance failed,retcode:" << ret;
         FreeCertList(listCert);
     }
@@ -152,7 +126,7 @@ HWTEST_F(CmGetCertListTest, PerformanceGetCertListTest002, TestSize.Level0)
  */
 HWTEST_F(CmGetCertListTest, GetCertListContent003, TestSize.Level0)
 {
-    int32_t ret = CmGetCertList(&firstUserCtx, CM_SYSTEM_TRUSTED_STORE, lstCert);
+    int32_t ret = CmGetCertList(CM_SYSTEM_TRUSTED_STORE, lstCert);
     EXPECT_EQ(ret, CM_SUCCESS) << "firstUserCtx CmGetCertList failed,retcode:" << ret;
 
     uint32_t length = sizeof(g_listexpectResult) / sizeof(g_listexpectResult[0]);
@@ -172,12 +146,12 @@ HWTEST_F(CmGetCertListTest, GetCertListContent003, TestSize.Level0)
  */
 HWTEST_F(CmGetCertListTest, AppGetCertListCompare004, TestSize.Level0)
 {
-    int32_t ret = CmGetCertList(&firstUserCtx, CM_SYSTEM_TRUSTED_STORE, lstCert);
+    int32_t ret = CmGetCertList(CM_SYSTEM_TRUSTED_STORE, lstCert);
     EXPECT_EQ(ret, CM_SUCCESS) << "first  CmGetCertList failed,retcode:" << ret;
 
     struct CertList *secondListCert = NULL;
     ASSERT_TRUE(InitCertList(&secondListCert) == CM_SUCCESS);
-    ret = CmGetCertList(&secondUserCtx, CM_SYSTEM_TRUSTED_STORE, secondListCert);
+    ret = CmGetCertList(CM_SYSTEM_TRUSTED_STORE, secondListCert);
     EXPECT_EQ(ret, CM_SUCCESS) << "secondUserCtx CmGetCertList failed,retcode:" << ret;
 
     EXPECT_EQ(lstCert->certsCount, secondListCert->certsCount) << "firstUserCtx count:" << lstCert->certsCount
@@ -194,8 +168,7 @@ HWTEST_F(CmGetCertListTest, AppGetCertListCompare004, TestSize.Level0)
  */
 HWTEST_F(CmGetCertListTest, ExceptionGetCertList005, TestSize.Level0)
 {
-    EXPECT_EQ(CmGetCertList(NULL, CM_SYSTEM_TRUSTED_STORE, lstCert), CMR_ERROR_NULL_POINTER);
-    EXPECT_EQ(CmGetCertList(&firstUserCtx, CM_SYSTEM_TRUSTED_STORE, NULL), CMR_ERROR_NULL_POINTER);
-    EXPECT_EQ(CmGetCertList(&secondUserCtx, 10, lstCert), CM_FAILURE);
+    EXPECT_EQ(CmGetCertList(CM_SYSTEM_TRUSTED_STORE, NULL), CMR_ERROR_NULL_POINTER);
+    EXPECT_EQ(CmGetCertList(10, lstCert), CMR_ERROR_INVALID_ARGUMENT);
 }
 }

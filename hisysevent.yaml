@@ -18,6 +18,6 @@ CERT_FAULT:
     __BASE: {type: FAULT, level: CRITICAL, tag: cert, desc: fault event for certmanager}
     FUNCTION: {type: STRING, desc: function name}
     USER_ID: {type: INT32, desc: user id}
-    UID: {type: INT32, desc: uid}
+    UID: {type: INT32, desc: application id}
     CERT_NAME: {type: STRING, desc: cert name}
     ERROR_CODE: {type: INT32, desc: error code}

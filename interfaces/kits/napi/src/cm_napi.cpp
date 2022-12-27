@@ -116,8 +116,8 @@ extern "C" {
         .nm_filename = nullptr,
         .nm_register_func = CMNapiRegister,
         .nm_modname = "security.certmanager",
-        .nm_priv = ((void *)0),
-        .reserved = {0},
+        .nm_priv =  nullptr,
+        .reserved = { nullptr },
     };
 
     __attribute__((constructor)) void CertManagerRegister(void)

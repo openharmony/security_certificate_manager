@@ -13,17 +13,15 @@
  * limitations under the License.
  */
 
+#include "cm_param.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "hks_type.h"
-
-#include "cm_type_inner.h"
 #include "cm_log.h"
 #include "cm_mem.h"
-#include "cm_pfx.h"
-#include "cm_param.h"
+#include "cm_type_inner.h"
 
 enum CmTagType GetTagType(enum CmTag tag)
 {
@@ -83,7 +81,7 @@ static int32_t CmFreshParamSet(struct CmParamSet *paramSet, bool isCopy)
             return CMR_ERROR_INVALID_ARGUMENT;
         }
         if (GetTagType(paramSet->params[i].tag) == CM_TAG_TYPE_BYTES) {
-            if (IsAdditionOverflow(offset, paramSet->params[i].blob.size)) {
+            if (CmIsAdditionOverflow(offset, paramSet->params[i].blob.size)) {
                 CM_LOG_E("blob size overflow!");
                 return CMR_ERROR_INVALID_ARGUMENT;
             }
@@ -191,7 +189,7 @@ static int32_t FreshParamSet(struct CmParamSet *paramSet, bool isCopy)
                 return CMR_ERROR_INVALID_ARGUMENT;
             }
             if (isCopy && memcpy_s((uint8_t *)paramSet + offset, size - offset,
-                paramSet->params[i].blob.data, paramSet->params[i].blob.size)) {
+                paramSet->params[i].blob.data, paramSet->params[i].blob.size) != EOK) {
                 CM_LOG_E("FreshParamSet copy param blob failed!");
                 return CMR_ERROR_INVALID_OPERATION;
             }
@@ -220,10 +218,7 @@ int32_t CmGetParamSet(const struct CmParamSet *inParamSet, uint32_t inParamSetSi
         CM_LOG_E("malloc from param set failed!");
         return CMR_ERROR_MALLOC_FAIL;
     }
-
-    if (memcpy_s(buf, size, inParamSet, size) != EOK) {
-        return CMR_ERROR_INVALID_OPERATION;
-    }
+    (void)memcpy_s(buf, size, inParamSet, size);
 
     ret = FreshParamSet(buf, false);
     if (ret != CM_SUCCESS) {

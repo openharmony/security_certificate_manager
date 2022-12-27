@@ -13,28 +13,30 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <pthread.h>
-#include "securec.h"
-#include "cert_manager.h"
-#include "cm_log.h"
-#include "cert_manager_mem.h"
 #include "cert_manager_status.h"
-#include "cert_manager_type.h"
+
+#include <pthread.h>
+
+#include "securec.h"
+
+#include "cert_manager.h"
+#include "cert_manager_crypto_operation.h"
 #include "cert_manager_file.h"
 #include "cert_manager_file_operator.h"
-#include "cert_manager_util.h"
+#include "cert_manager_key_operation.h"
+#include "cert_manager_mem.h"
+#include "cm_log.h"
 #include "cm_type.h"
-#include "hks_type.h"
-#include "hks_api.h"
 #include "rbtree.h"
 
 #define HEADER_LEN (4 + CM_INTEGRITY_TAG_LEN + CM_INTEGRITY_SALT_LEN)
 #define APPLICATION_TRUSTED_STORE      2
 #define ENCODED_INT_COUNT              3
 
-#define MAX_NAME_DIGEST_LEN            9
+#define MAX_NAME_DIGEST_LEN            64
+#define RB_TREE_KEY_LEN                4
+
+#define MAX_STATUS_TREE_MALLOC_SIZE    (5 * 1024 * 1024)   /* max 5M tree file size */
 
 #ifdef __cplusplus
 extern "C" {
@@ -70,7 +72,7 @@ struct CertEnableStatus {
     uint32_t status;
 };
 
-struct treeNode {
+struct TreeNode {
     uint32_t store;
     bool *found;
     RbTreeKey key;
@@ -78,9 +80,12 @@ struct treeNode {
 
 static int32_t Ikhmac(uint8_t *data, uint32_t len, uint8_t *mac)
 {
-    struct CmBlob dataBlob = { .size = len, .data = data};
-    struct CmMutableBlob macBlob = { .size = CM_INTEGRITY_TAG_LEN, .data = mac};
-    return CertManagerHmac(CM_INTEGRITY_KEY_URI, &dataBlob, &macBlob);
+    struct CmBlob dataBlob = { .size = len, .data = data };
+    struct CmBlob macBlob = { .size = CM_INTEGRITY_TAG_LEN, .data = mac };
+
+    char aliasData[] = CM_INTEGRITY_KEY_URI;
+    struct CmBlob alias = { strlen(aliasData), (uint8_t *)aliasData };
+    return CmKeyOpCalcMac(&alias, &dataBlob, &macBlob);
 }
 
 static void FreeStatus(struct CertStatus *cs)
@@ -164,6 +169,17 @@ static int EncodeStatus(RbTreeValue value, uint8_t *buf, uint32_t *size)
     return CMR_OK;
 }
 
+static void DecodeFreeStatus(RbTreeValue *value)
+{
+    if (value == NULL || *value == NULL) {
+        return;
+    }
+
+    /* value is used internally, it can ensure that the type conversion is safe */
+    FreeStatus((struct CertStatus *)*value);
+    *value = NULL;
+}
+
 static int DecodeStatus(RbTreeValue *value, const uint8_t *buf, uint32_t size)
 {
     /* each cert status struct is encoded as (userId | uid | status | fileName)
@@ -225,7 +241,7 @@ static int32_t ReadFile(const char *file, uint8_t **bufptr, uint32_t *size)
 
     sz = CertManagerFileSize(CERT_STATUS_DIR, file);
     if (sz == 0) {
-        CM_LOG_I("Status file not found. Skip loading from %s/%s\n", CERT_STATUS_DIR, file);
+        CM_LOG_I("Status file not found\n");
         goto finally;
     }
 
@@ -290,7 +306,7 @@ static int32_t LoadTreeStatus(struct RbTree *tree, pthread_rwlock_t *treeLock, u
     dataLen -= CM_INTEGRITY_SALT_LEN;
     if (dataLen > 0) {
         pthread_rwlock_wrlock(treeLock);
-        rc = RbTreeDecode(tree, DecodeStatus, data, dataLen);
+        rc = RbTreeDecode(tree, DecodeStatus, DecodeFreeStatus, data, dataLen);
         pthread_rwlock_unlock(treeLock);
 
         if (rc != CMR_OK) {
@@ -336,41 +352,42 @@ static int32_t LoadStatus(uint32_t store)
 
 static int32_t EncodeTree(struct RbTree *tree, uint8_t **bufptr, uint32_t *size)
 {
-    int32_t rc = CMR_OK;
-    uint8_t *buf = NULL;
     uint32_t sz = 0;
-
-    TRY_FUNC(RbTreeEncode(tree, EncodeStatus, NULL, &sz), rc);
-    CM_LOG_D("%u bytes required to encode the status tree.\n", sz);
+    int32_t rc = RbTreeEncode(tree, EncodeStatus, NULL, &sz);
+    if (rc != CM_SUCCESS) {
+        CM_LOG_E("get rbtree encode length failed, ret = %d", rc);
+        return rc;
+    }
+    if (sz > MAX_STATUS_TREE_MALLOC_SIZE) {
+        CM_LOG_E("invalid encode tree size[%u]", sz);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
 
     sz += HEADER_LEN;
-
-    buf = CMMalloc(sz);
+    uint8_t *buf = (uint8_t *)CMMalloc(sz);
     if (buf == NULL) {
-        CM_LOG_W("Failed to allocate memory.\n");
+        CM_LOG_E("Failed to allocate memory.\n");
         return CMR_ERROR_MALLOC_FAIL;
     }
-    ASSERT_FUNC(memset_s(buf, sz, 0, sz));
+    (void)memset_s(buf, sz, 0, sz);
 
     ENCODE_UINT32(buf, VERSION_1);
 
     uint8_t *salt = buf + sizeof(uint32_t) + CM_INTEGRITY_TAG_LEN;
-
-    /* generate random salt */
-    struct HksBlob r = { .size = CM_INTEGRITY_SALT_LEN, .data = salt };
-    (void) HksGenerateRandom(NULL, &r);
+    struct CmBlob r = { CM_INTEGRITY_SALT_LEN, salt };
+    (void)CmGetRandom(&r); /* ignore retcode */
 
     uint8_t *data = buf + HEADER_LEN;
     uint32_t dataLen = sz - HEADER_LEN;
-    TRY_FUNC(RbTreeEncode(tree, EncodeStatus, data, &dataLen), rc);
-
-finally:
-    if (rc != CMR_OK) {
+    rc = RbTreeEncode(tree, EncodeStatus, data, &dataLen);
+    if (rc != CM_SUCCESS) {
+        CM_LOG_E("encode status tree failed, ret = %d", rc);
         FREE_PTR(buf);
-    } else {
-        *bufptr = buf;
-        *size = sz;
+        return rc;
     }
+
+    *bufptr = buf;
+    *size = sz;
     return rc;
 }
 
@@ -418,11 +435,42 @@ finally:
     return rc;
 }
 
+static void FreeTreeNodeValue(RbTreeKey key, RbTreeValue value, const void *context)
+{
+    (void)key;
+    (void)context;
+    if (value != NULL) {
+        /* value is used internally, it can ensure that the type conversion is safe */
+        FreeStatus((struct CertStatus *)value);
+    }
+}
+
+static void DestroyTree(uint32_t store)
+{
+    int storeIndex = GetStoreIndex(store);
+    if (storeIndex < 0) {
+        return;
+    }
+    struct RbTree *tree = &g_trees[storeIndex];
+    pthread_rwlock_t *treeLock = &g_treeLocks[storeIndex];
+
+    pthread_rwlock_wrlock(treeLock);
+    RbTreeDestroyEx(tree, FreeTreeNodeValue);
+    pthread_rwlock_unlock(treeLock);
+}
+
+static void DestroyStatusTree(void)
+{
+    DestroyTree(CM_SYSTEM_TRUSTED_STORE);
+    DestroyTree(CM_USER_TRUSTED_STORE);
+    DestroyTree(CM_PRI_CREDENTIAL_STORE);
+}
+
 int32_t CertManagerStatusInit(void)
 {
     int rc = CMR_OK;
     if (CmMakeDir(CERT_STATUS_DIR) == CMR_ERROR_MAKE_DIR_FAIL) {
-        CM_LOG_E("Failed to create folder %s\n", CERT_STATUS_DIR);
+        CM_LOG_E("Failed to create folder\n");
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
 
@@ -431,37 +479,56 @@ int32_t CertManagerStatusInit(void)
         TRY_FUNC(RbTreeNew(&g_trees[i]), rc);
     }
 
-    TRY_FUNC(CertManagerGenerateHmacKey(CM_INTEGRITY_KEY_URI), rc);
+    char aliasData[] = CM_INTEGRITY_KEY_URI;
+    struct CmBlob alias = { strlen(aliasData), (uint8_t *)aliasData };
+    TRY_FUNC(CmKeyOpGenMacKeyIfNotExist(&alias), rc);
     TRY_FUNC(LoadStatus(CM_SYSTEM_TRUSTED_STORE), rc);
     TRY_FUNC(LoadStatus(CM_USER_TRUSTED_STORE), rc);
     TRY_FUNC(LoadStatus(CM_PRI_CREDENTIAL_STORE), rc);
 
 finally:
+    if (rc != CM_SUCCESS) {
+        DestroyStatusTree();
+    }
     pthread_rwlock_unlock(&g_statusLock);
     return rc;
 }
 
-inline static RbTreeKey GetRbTreeKeyFromName(char *name)
+static RbTreeKey GetRbTreeKeyFromName(const char *name)
 {
     /* use the first 4 bytes of file name (exluding the first bit) as the key */
-    return DECODE_UINT32(name) & 0x7fffffff;
+    uint32_t len = strlen(name);
+    if (len == 0) {
+        return 0;
+    }
+
+    len = (len < RB_TREE_KEY_LEN) ? len : RB_TREE_KEY_LEN;
+    uint8_t temp[RB_TREE_KEY_LEN] = {0};
+    if (memcpy_s(temp, RB_TREE_KEY_LEN, name, len) != EOK) {
+        return 0;
+    }
+
+    return DECODE_UINT32(temp) & 0x7fffffff;
 }
 
-static RbTreeKey GetRbTreeKey(uint32_t store, char *fn)
+static RbTreeKey GetRbTreeKeyFromNameBlob(const struct CmBlob *name)
 {
-    uint8_t buff[MAX_NAME_DIGEST_LEN];
-    RbTreeKey key;
-    struct CmMutableBlob nameDigest = { sizeof(buff), buff };
+    /* name size is ensured bigger than 4; use the first 4 bytes of file name (exluding the first bit) as the key */
+    return DECODE_UINT32(name->data) & 0x7fffffff;
+}
+
+static RbTreeKey GetRbTreeKey(uint32_t store, const char *fn)
+{
     if (store == CM_SYSTEM_TRUSTED_STORE) {
-        key = GetRbTreeKeyFromName(fn);
-    } else {
-        int32_t ret = NameHashFromUri(fn, &nameDigest);
-        if (ret!= CMR_OK) {
-            return ret;
-        }
-        key = GetRbTreeKeyFromName((char *)nameDigest.data);
+        return GetRbTreeKeyFromName(fn);
     }
-    return key;
+
+    uint8_t tempBuf[MAX_NAME_DIGEST_LEN] = {0};
+    struct CmBlob nameDigest = { sizeof(tempBuf), tempBuf };
+    struct CmBlob certName = { (uint32_t)strlen(fn) + 1, (uint8_t *)fn };
+    (void)CmGetHash(&certName, &nameDigest); /* ignore return code: nameDigest is 0 */
+
+    return GetRbTreeKeyFromNameBlob(&nameDigest);
 }
 
 static uint32_t GetCertStatusNode(const struct RbTreeNode *node)
@@ -479,7 +546,7 @@ static uint32_t GetCertStatusNode(const struct RbTreeNode *node)
 }
 
 static int32_t SetCertStatusNode(const struct CmContext *ctx, struct RbTree *tree,
-    struct RbTreeNode *node, char *name, uint32_t status)
+    struct RbTreeNode *node, const char *name, uint32_t status)
 {
     if (node != NULL) {
         /* found a matching node */
@@ -521,7 +588,7 @@ static int32_t SetCertStatusNode(const struct CmContext *ctx, struct RbTree *tre
 }
 
 static int32_t SetUserCertStatusNode(const struct CertStatus *valInfo, struct RbTree *tree,
-    struct RbTreeNode *node, char *name, uint32_t store)
+    struct RbTreeNode *node, const char *name, uint32_t store)
 {
     uint32_t status = valInfo->status;
 
@@ -595,7 +662,7 @@ static bool StatusMatch(const struct CmContext *context, const struct CertStatus
 }
 
 static int32_t CertManagerFindMatchedFile(const struct CmContext *context, struct RbTreeNode **treeNode,
-    struct RbTree *tree, struct treeNode tempPara, char *fn)
+    struct RbTree *tree, struct TreeNode tempPara, const char *fn)
 {
     uint32_t store = tempPara.store;
     bool *found = tempPara.found;
@@ -630,7 +697,7 @@ static int32_t CertManagerFindMatchedFile(const struct CmContext *context, struc
 }
 
 static int32_t CertManagerStatus(const struct CmContext *context, struct RbTree *tree,
-    struct CertEnableStatus certStatus, uint32_t store, char *fn)
+    struct CertEnableStatus certStatus, uint32_t store, const char *fn)
 {
     int rc = CMR_OK;
     bool found = false;
@@ -648,7 +715,7 @@ static int32_t CertManagerStatus(const struct CmContext *context, struct RbTree 
     }
 
     /* furthrt check if the actual file name matched. */
-    struct treeNode tempPara = {store, &found, key};
+    struct TreeNode tempPara = {store, &found, key};
     rc = CertManagerFindMatchedFile(context, &node, tree, tempPara, fn);
     if (rc != CMR_OK) {
         CM_LOG_W("Failed to search file name");
@@ -685,7 +752,7 @@ static int32_t CertManagerCheckStorePermission(const struct CmContext *context, 
         if (!statusOnly) {
             CM_LOG_E("Storege type %u should be read on;y\n", store);
             return CMR_ERROR_NOT_PERMITTED;
-        } else if (CMR_OK != CertManagerIsCallerPrivileged(context)) {
+        } else if (CertManagerIsCallerPrivileged(context) != CMR_OK) {
             CM_LOG_W("Only privileged caller can change status in system stores.\n");
             return CMR_ERROR_NOT_PERMITTED;
         }
@@ -694,7 +761,7 @@ static int32_t CertManagerCheckStorePermission(const struct CmContext *context, 
         return CMR_ERROR_NOT_SUPPORTED;
     } else if (store == CM_USER_TRUSTED_STORE) {
         /* only priviled callers can update the user store */
-        if (CMR_OK != CertManagerIsCallerPrivileged(context)) {
+        if (CertManagerIsCallerPrivileged(context) != CMR_OK) {
             CM_LOG_W("Only privileged caller can modify user stores.\n");
             return CMR_ERROR_NOT_PERMITTED;
         }
@@ -754,28 +821,12 @@ static int32_t CertManagerStatusFile(const struct CmContext *context, struct Cer
     return CMR_OK;
 }
 
-static int32_t CertStatus(const struct CmContext *context, const struct CmBlob *certificate,
-    uint32_t store, uint32_t status, uint32_t *stp)
-{
-    char fnBuf[CERT_MAX_PATH_LEN] = {0};
-    struct CmMutableBlob fileName = { sizeof(fnBuf), (uint8_t *) fnBuf };
-    char pathBuf[CERT_MAX_PATH_LEN] = {0};
-    struct CmMutableBlob path = { sizeof(pathBuf), (uint8_t *) pathBuf };
-    ASSERT_FUNC(CertManagerFindCertFileName(context, certificate, store, &path, &fileName));
-    struct CertFile certFile = {0, 0};
-
-    certFile.path = &(CM_BLOB(&path));
-    certFile.fileName = &(CM_BLOB(&fileName));
-
-    return CertManagerStatusFile(context, certFile, store, status, stp);
-}
-
 int32_t SetcertStatus(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, uint32_t status, uint32_t *stp)
 {
     char pathBuf[CERT_MAX_PATH_LEN] = {0};
     struct CmMutableBlob path = { sizeof(pathBuf), (uint8_t *) pathBuf };
-    struct CertFile certFile = {0, 0};
+    struct CertFile certFile = { 0, 0 };
     int32_t ret = CertManagerFindCertFileNameByUri(context, certUri, store, &path);
     if (ret != CMR_OK) {
         CM_LOG_E("CertManagerFindCertFileNameByUri error = %d", ret);
@@ -785,22 +836,6 @@ int32_t SetcertStatus(const struct CmContext *context, const struct CmBlob *cert
     certFile.fileName = &(CM_BLOB(certUri));
 
     return CertManagerStatusFile(context, certFile, store, status, stp);
-}
-
-int32_t CertManagerSetCertificatesStatus(const struct CmContext *context, const struct CmBlob *certUri,
-    uint32_t store, uint32_t status)
-{
-    if (CmCheckBlob(certUri) != CM_SUCCESS) {
-        CM_LOG_E("input params invalid");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    return SetcertStatus(context, certUri, store, status, NULL);
-}
-
-int32_t CertManagerGetCertificatesStatus(const struct CmContext *context, const struct CmBlob *certificate,
-    uint32_t store, uint32_t *status)
-{
-    return CertStatus(context, certificate, store, CERT_STATUS_INVALID, status);
 }
 
 int32_t CmSetStatusEnable(const struct CmContext *context, struct CmMutableBlob *pathBlob,
@@ -813,12 +848,12 @@ int32_t CmSetStatusEnable(const struct CmContext *context, struct CmMutableBlob 
     return CertManagerStatusFile(context, certFile, store, CERT_STATUS_ENANLED, NULL);
 }
 
-int32_t CmGetCertStatus(const struct CmContext *context, struct CertFilePath *certFilePath,
+int32_t CmGetCertStatus(const struct CmContext *context, struct CertFileInfo *cFile,
     uint32_t store, uint32_t *status)
 {
-    struct CertFile certFile = { 0, 0 };
-    certFile.path = &(certFilePath->path);
-    certFile.fileName = &(certFilePath->fileName);
+    struct CertFile certFile = { NULL, NULL };
+    certFile.path = &(cFile->path);
+    certFile.fileName = &(cFile->fileName);
 
     return CertManagerStatusFile(context, certFile, store, CERT_STATUS_INVALID, status);
 }

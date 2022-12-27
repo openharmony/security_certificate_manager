@@ -16,40 +16,18 @@
 #ifndef CM_FILE_OPERATOR_H
 #define CM_FILE_OPERATOR_H
 
-#include "cert_manager_type.h"
-
-#define CM_PROCESS_INFO_LEN    128
-#define CM_MAX_FILE_NAME_LEN   512
-#define CM_MAX_DIRENT_FILE_LEN 256
-
-#define CM_KEY_STORE_KEY_PATH        "key"
-#define CM_KEY_STORE_ROOT_KEY_PATH   "info"
-#define CM_KEY_STORE_CERTCHAIN_PATH  "certchain"
-
-#ifdef _STORAGE_LITE_
-    #define CM_KEY_STORE_PATH                CM_CONFIG_KEY_STORE_PATH
-#else
-    #ifdef L2_STANDARD
-        #define CM_KEY_STORE_PATH            "/data/data/maindata"
-        #define CM_KEY_STORE_BAK_PATH        "/data/data/bakdata"
-    #else
-        #define CM_KEY_STORE_PATH            "/storage/maindata"
-        #define CM_KEY_STORE_BAK_PATH        "/storage/bakdata"
-    #endif
-#endif
-
-struct CmFileDirentInfo {
-    char fileName[CM_MAX_DIRENT_FILE_LEN]; /* point to dirent->d_name */
-};
-
-enum CmStoragePathType {
-    CM_STORAGE_MAIN_PATH,
-    CM_STORAGE_BACKUP_PATH,
-};
+#include "cm_type.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define CM_MAX_FILE_NAME_LEN   512
+#define CM_MAX_DIRENT_FILE_LEN 256
+
+struct CmFileDirentInfo {
+    char fileName[CM_MAX_DIRENT_FILE_LEN]; /* point to dirent->d_name */
+};
 
 uint32_t CmFileRead(const char *path, const char *fileName, uint32_t offset, uint8_t *buf, uint32_t len);
 
@@ -74,6 +52,9 @@ int32_t CmIsDirExist(const char *path);
 int32_t CmUserIdLayerGetFileCountAndNames(const char *path, struct CmBlob *fileNames,
     const uint32_t arraySize, uint32_t *fileCount);
 
+int32_t CmUidLayerGetFileCountAndNames(const char *path, struct CmBlob *fileNames,
+    const uint32_t arraySize, uint32_t *fileCount);
+
 int32_t CmGetSubDir(void *dirp, struct CmFileDirentInfo *direntInfo);
 
 int32_t CmDirRemove(const char *path);
@@ -83,3 +64,4 @@ int32_t CmDirRemove(const char *path);
 #endif
 
 #endif /* CM_FILE_OPERATOR_H */
+

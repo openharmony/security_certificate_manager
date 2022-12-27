@@ -18,13 +18,13 @@
 #include <openssl/evp.h>
 #include <openssl/x509.h>
 
+#include "securec.h"
+
 #include "cm_cert_data.h"
 #include "cm_module_cert_data.h"
 #include "cm_pfx.h"
 #include "cm_type.h"
 #include "cm_x509.h"
-
-#include "securec.h"
 
 using namespace testing::ext;
 namespace {

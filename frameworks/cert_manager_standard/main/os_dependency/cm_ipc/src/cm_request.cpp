@@ -14,18 +14,20 @@
  */
 
 #include "cm_request.h"
-#include "cm_load_sa.h"
-#include <securec.h>
-#include "iservice_registry.h"
-#include "cm_log.h"
+
 #include <chrono>
-#include <thread>
 #include <string>
+#include <thread>
+
+#include "securec.h"
+
+#include "cm_load_sa.h"
+#include "cm_log.h"
+
+#include "iservice_registry.h"
 
 using namespace std;
 using namespace OHOS;
-
-#define MAX_SA_BOOT_DELAY_TIME 30
 
 static int32_t CmLoadSystemAbility();
 
@@ -33,6 +35,7 @@ static sptr<IRemoteObject> cmProxy;
 
 namespace {
     constexpr int SA_ID_KEYSTORE_SERVICE = 3512;
+    constexpr uint32_t MAX_SA_BOOT_DELAY_TIME = 30;
     const std::u16string SA_KEYSTORE_SERVICE_DESCRIPTOR = u"ohos.security.cm.service";
     int32_t g_isLoadSystemAbility = CmLoadSystemAbility();
     sptr<OnDemandLoadCertManagerCallback> loadCallBack = nullptr;
@@ -61,10 +64,10 @@ static int32_t CmLoadSystemAbility()
     int32_t ret = saManager->LoadSystemAbility(SA_ID_KEYSTORE_SERVICE, loadCallBack);
     if (ret != ERR_OK) {
         CM_LOG_E("systemAbilityId:%d load failed,result code:%d", SA_ID_KEYSTORE_SERVICE, ret);
-        return CM_SUCCESS;
+        return CM_FAILURE;
     }
 
-    return ret;
+    return CM_SUCCESS;
 }
 
 static int32_t CmReadRequestReply(MessageParcel &reply, struct CmBlob *outBlob)
@@ -91,7 +94,7 @@ static int32_t CmReadRequestReply(MessageParcel &reply, struct CmBlob *outBlob)
         return CMR_ERROR_NULL_POINTER;
     }
     if (outBlob->size < outLen) {
-        CM_LOG_E("outBlob->size smaller than outLen.outBlob.siza[%d]", outBlob->size);
+        CM_LOG_E("outBlob size[%u] smaller than outLen[%u]", outBlob->size, outLen);
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
     if (memcpy_s(outBlob->data, outBlob->size, outData, outLen) != EOK) {
@@ -106,7 +109,7 @@ int32_t SendRequest(enum CmMessage type, const struct CmBlob *inBlob,
 {
     uint32_t i = 0;
     if (CmLoadSystemAbility() != CM_SUCCESS) {
-        CM_LOG_E("LoadSystemAbility success.");
+        CM_LOG_E("LoadSystemAbility failed.");
         return CMR_ERROR_INVALID_OPERATION;
     }
 
@@ -120,16 +123,9 @@ int32_t SendRequest(enum CmMessage type, const struct CmBlob *inBlob,
         return CMR_ERROR_NULL_POINTER;
     }
 
-    enum CmSendType sendType = CM_SEND_TYPE_SYNC;
-
     MessageParcel data;
     MessageParcel reply;
-    MessageOption option;
-    if (sendType == CM_SEND_TYPE_SYNC) {
-        option = MessageOption::TF_SYNC;
-    } else {
-        option = MessageOption::TF_ASYNC;
-    }
+    MessageOption option = MessageOption::TF_SYNC;
 
     data.WriteInterfaceToken(SA_KEYSTORE_SERVICE_DESCRIPTOR);
     if (outBlob == nullptr) {
@@ -138,7 +134,7 @@ int32_t SendRequest(enum CmMessage type, const struct CmBlob *inBlob,
         data.WriteUint32(outBlob->size);
     }
     data.WriteUint32(inBlob->size);
-    data.WriteBuffer(inBlob->data, (size_t)inBlob->size);
+    data.WriteBuffer(inBlob->data, static_cast<size_t>(inBlob->size));
 
     int error = cmProxy->SendRequest(type, data, reply, option);
     if (error != 0) {

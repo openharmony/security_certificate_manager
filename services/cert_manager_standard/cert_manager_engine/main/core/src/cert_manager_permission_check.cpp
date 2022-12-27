@@ -20,12 +20,14 @@
 
 #include "cm_log.h"
 
+using namespace OHOS::Security::AccessToken;
+
 static bool HasPermission(const std::string &permissionName)
 {
-    OHOS::Security::AccessToken::AccessTokenID tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
+    AccessTokenID tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
 
-    int result = OHOS::Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, permissionName);
-    if (result == OHOS::Security::AccessToken::PERMISSION_GRANTED) {
+    int result = AccessTokenKit::VerifyAccessToken(tokenId, permissionName);
+    if (result == PERMISSION_GRANTED) {
         return true;
     }
 
@@ -40,6 +42,19 @@ bool CmHasPrivilegedPermission(void)
 bool CmHasCommonPermission(void)
 {
     return HasPermission("ohos.permission.ACCESS_CERT_MANAGER");
+}
+
+bool CmIsSystemApp(void)
+{
+    return true;
+}
+
+bool CmIsSystemAppByStoreType(const uint32_t store)
+{
+    if (store == CM_CREDENTIAL_STORE) { /* only care about public credential */
+        return CmIsSystemApp();
+    }
+    return true;
 }
 
 bool CmPermissionCheck(const uint32_t store)

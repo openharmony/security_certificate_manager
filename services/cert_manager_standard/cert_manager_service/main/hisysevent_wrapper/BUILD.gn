@@ -24,19 +24,20 @@ ohos_static_library("libcert_manager_hisysevent_wrapper_static") {
   include_dirs = [
     "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common/include",
     "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency/cm_ipc/include",
+    "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_engine/main/core/include",
   ]
   sources = [
-    "src/hisysevent_wrapper.cpp",
     "src/cm_report_wrapper.c",
+    "src/hisysevent_wrapper.cpp",
   ]
   cflags = [
     "-Wall",
     "-Werror",
   ]
   defines = [
-  "L2_STANDARD",
-  "_CM_LOG_ENABLE_",
-]
+    "L2_STANDARD",
+    "_CM_LOG_ENABLE_",
+  ]
   external_deps = [ "hisysevent_native:libhisysevent" ]
   complete_static_lib = true
 }

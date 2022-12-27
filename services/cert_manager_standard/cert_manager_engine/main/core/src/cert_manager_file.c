@@ -13,19 +13,14 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "securec.h"
-#include "cert_manager.h"
 #include "cert_manager_file.h"
+
+#include "securec.h"
+
+#include "cert_manager_file_operator.h"
 #include "cert_manager_mem.h"
-#include "cert_manager_type.h"
 #include "cm_log.h"
 #include "cm_type.h"
-#include "cert_manager_file_operator.h"
-
-#define MAX_LEN_URI          64
 
 inline uint32_t CertManagerFileSize(const char *path, const char *fileName)
 {
@@ -40,12 +35,12 @@ inline uint32_t CertManagerFileRead(const char *path, const char *fileName, uint
 inline int32_t CertManagerFileWrite(const char *path, const char *fileName,
     uint32_t offset, const uint8_t *buf, uint32_t len)
 {
-    return CM_ERROR(CmFileWrite(path, fileName, offset, buf, len));
+    return CmFileWrite(path, fileName, offset, buf, len);
 }
 
 inline int32_t CertManagerFileRemove(const char *path, const char *fileName)
 {
-    return CM_ERROR(CmFileRemove(path, fileName));
+    return CmFileRemove(path, fileName);
 }
 
 static int32_t GetNumberOfFiles(const char *path)
@@ -65,109 +60,125 @@ static int32_t GetNumberOfFiles(const char *path)
     return count;
 }
 
-static int32_t MallocFileNames(struct CmMutableBlob *fileNames, const char *path, struct CmMutableBlob **fNames,
-    uint32_t *fileCount)
+void FreeFileNames(struct CmMutableBlob *fNames, uint32_t fileCount)
 {
-    struct CmMutableBlob *tmp = NULL;
-    int32_t fileNums = GetNumberOfFiles(path);
-    if (fileNums < 0) {
-        CM_LOG_E("Failed to obtain number of files from: path = %s", path);
-        return -1;
+    if (fNames == NULL) {
+        return ;
     }
 
-    *fileCount = (uint32_t)fileNums;
-
-    tmp = (struct CmMutableBlob *)CMMalloc(sizeof(struct CmMutableBlob) * fileNums);
-    if (tmp == NULL) {
-        CM_LOG_E("Failed to allocate memory for file names");
-        return -1;
-    }
-
-    for (uint32_t i = 0; i < (uint32_t)fileNums; i++) {
-        tmp[i].data = NULL;
-        tmp[i].size = 0;
-    }
-    fileNames->data = (uint8_t *)tmp;
-    fileNames->size = (uint32_t)fileNums;
-    *fNames = tmp;
-
-    return 0;
-}
-
-static void FreeFileNames(struct CmMutableBlob *fNames, uint32_t endIndex)
-{
-    uint32_t i;
-    for (i = 0; i < endIndex; i++) {
-        if (fNames[i].data != NULL) {
-            if (memset_s(fNames[i].data, fNames[i].size, 0, fNames[i].size) != EOK) {
-                return;
-            }
-            CMFree(fNames[i].data);
-            fNames[i].data = NULL;
-            fNames[i].size = 0;
-        }
+    for (uint32_t i = 0; i < fileCount; i++) {
+        fNames[i].size = 0;
+        CM_FREE_PTR(fNames[i].data);
     }
     CMFree(fNames);
 }
 
-int32_t CertManagerGetFilenames(struct CmMutableBlob *fileNames, const char *path, struct CmBlob *uri)
+static int32_t MallocFileNames(struct CmMutableBlob **fNames, const char *path, uint32_t *fileCount)
 {
-    uint32_t i = 0, fileCount = 0;
-    struct CmMutableBlob *fNames = NULL;
-
-    if ((fileNames == NULL) || (path == NULL)) {
-        CM_LOG_E("Bad parameters: path = %s", path);
-        return -1;
+    int32_t fileNums = GetNumberOfFiles(path);
+    if (fileNums == 0) {
+        CM_LOG_I("dir is empty");
+        return CM_SUCCESS;
     }
 
-    if (MallocFileNames(fileNames, path, &fNames, &fileCount) != 0) {
-        CM_LOG_E("Failed to malloc memory for files name");
-        return -1;
+    if (fileNums < 0) {
+        CM_LOG_E("Failed to obtain number of files from: path");
+        return CM_FAILURE;
     }
 
+    if (fileNums > MAX_COUNT_CERTIFICATE) {
+        CM_LOG_E("cert count %d beyond MAX", fileNums);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    uint32_t bufSize = sizeof(struct CmMutableBlob) * fileNums;
+    struct CmMutableBlob *temp = (struct CmMutableBlob *)CMMalloc(bufSize);
+    if (temp == NULL) {
+        CM_LOG_E("Failed to allocate memory for file names");
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    (void)memset_s(temp, bufSize, 0, bufSize);
+
+    *fNames = temp;
+    *fileCount = (uint32_t)fileNums;
+
+    return CM_SUCCESS;
+}
+
+static int32_t GetFileNames(const char *path, struct CmMutableBlob *fNames, uint32_t fileCount)
+{
     void *d = CmOpenDir(path);
     if (d == NULL) {
-        CM_LOG_E("Failed to open directory: %s", path);
-        goto err;
+        CM_LOG_E("Failed to open directory");
+        return CM_FAILURE;
     }
 
+    int32_t ret = CM_SUCCESS;
+    uint32_t i = 0;
     struct CmFileDirentInfo dire = {0};
     while (CmGetDirFile(d, &dire) == CMR_OK) {
-        fNames[i].size = strlen(dire.fileName) + 1; /* include '\0' at end */
-        fNames[i].data = (uint8_t *) strdup(dire.fileName);
-
-        uri[i].size = MAX_LEN_URI;
-        uri[i].data = (uint8_t *)CMMalloc(MAX_LEN_URI);
-        if (uri[i].data == NULL) {
-            goto err;
-        }
-        if (memset_s(uri[i].data, MAX_LEN_URI, 0, MAX_LEN_URI) != EOK) {
-            goto err;
+        /* get fileCount files first, verify in follow-up process, no need return err code */
+        if (i >= fileCount) {
+            CM_LOG_I("only get %u certfiles", fileCount);
+            break;
         }
 
-        uri[i].size = fNames[i].size;
-        if (memcpy_s(uri[i].data, MAX_LEN_URI, fNames[i].data, fNames[i].size) != EOK) {
-            goto err;
+        uint32_t nameSize = strlen(dire.fileName) + 1; /* include '\0' at end */
+        fNames[i].data = (uint8_t *)CMMalloc(nameSize); /* uniformly free memory by caller */
+        if (fNames[i].data == NULL) {
+            CM_LOG_E("malloc file name data failed");
+            ret = CMR_ERROR_MALLOC_FAIL;
+            break;
         }
+
+        fNames[i].size = nameSize;
+        (void)memset_s(fNames[i].data, nameSize, 0, nameSize);
+        if (sprintf_s((char *)fNames[i].data, nameSize, "%s", dire.fileName) < 0) {
+            CM_LOG_E("copy file name failed");
+            ret = CM_FAILURE;
+            break;
+        }
+
         i++;
     }
 
+    (void) CmCloseDir(d);
     if (i != fileCount) {
-        goto err;
+        CM_LOG_E("get certfiles no enough");
+        ret = CM_FAILURE;
     }
 
-    (void) CmCloseDir(d);
-
-    return fileCount;
-err:
-    (void) CmCloseDir(d);
-    FreeFileNames(fNames, i);
-    CmFreeFileNameUri(uri, MAX_COUNT_CERTIFICATE);
-
-    return -1;
+    return ret;
 }
 
-uint32_t GetNumberOfDirs(const char *userIdPath)
+int32_t CertManagerGetFilenames(struct CmMutableBlob *fileNames, const char *path)
+{
+    if ((fileNames == NULL) || (path == NULL)) {
+        CM_LOG_E("invalid parameters");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    uint32_t fileCount = 0;
+    struct CmMutableBlob *fNames = NULL;
+    int32_t ret = MallocFileNames(&fNames, path, &fileCount);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to malloc memory for files name");
+        return ret;
+    }
+
+    ret = GetFileNames(path, fNames, fileCount);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get file name failed");
+        FreeFileNames(fNames, fileCount);
+        return ret;
+    }
+
+    fileNames->data = (uint8_t *)fNames;
+    fileNames->size = fileCount;
+    return ret;
+}
+
+int32_t GetNumberOfDirs(const char *userIdPath)
 {
     void *dir = CmOpenDir(userIdPath);
     if (dir == NULL) {
@@ -175,7 +186,7 @@ uint32_t GetNumberOfDirs(const char *userIdPath)
         return CM_FAILURE;
     }
 
-    uint32_t fileCount = 0;
+    int32_t fileCount = 0;
     struct CmFileDirentInfo dire = {{0}};
     while (CmGetSubDir(dir, &dire) == CMR_OK) {
         fileCount++;

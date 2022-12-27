@@ -17,6 +17,7 @@ ohos_shared_library("certmanager") {
   sanitize = {
     cfi = true
     debug = false
+    blocklist = "//base/security/certificate_manager/cfi_blocklist.txt"
   }
   defines = [
     "L2_STANDARD",

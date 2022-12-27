@@ -13,27 +13,21 @@
  * limitations under the License.
  */
 
-#ifndef CM_IPC_SERIALIZATION_H
-#define CM_IPC_SERIALIZATION_H
+#ifndef CERT_MANGAGER_APP_CERT_PROCESS_H
+#define CERT_MANGAGER_APP_CERT_PROCESS_H
 
-#include "cm_type_inner.h"
+#include "cm_type.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int32_t CmTrustCertificateListUnpack(const struct CmBlob *srcData, struct CmContext *cmContext, uint32_t *store);
-
-int32_t CmTrustCertificateInfoUnpack(const struct CmBlob *srcData, struct CmContext *cmContext,
-    struct CmBlob *uriBlob, uint32_t *store);
-
-int32_t CmCertificateStatusUnpack(const struct CmBlob *srcData, struct CmContext *cmContext,
-    struct CmBlob *uriBlob, uint32_t *store, uint32_t* status);
-
-int32_t CmParamSetToParams(const struct CmParamSet *paramSet, struct CmParamOut *outParams, uint32_t cnt);
+int32_t CmInstallAppCertPro(const struct CmContext *context, struct CmAppCertInfo *appCertInfo,
+    const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* CERT_MANGAGER_APP_CERT_PROCESS_H */
+
