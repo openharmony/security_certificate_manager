@@ -41,10 +41,9 @@ void DeleteInstallAppCertAsyncContext(napi_env env, InstallAppCertAsyncContext &
 napi_value InstallAppCertParseParams(
     napi_env env, napi_callback_info info, InstallAppCertAsyncContext context);
 
-napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext context);
+napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext asyncContext);
 
 napi_value CMNapiInstallAppCertCommon(napi_env env, napi_callback_info info, uint32_t store);
-
 }  // namespace CertManagerNapi
 
 #endif  // CM_NAPI_INSTALL_APP_CERT_COMMON_H

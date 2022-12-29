@@ -18,13 +18,13 @@
 #include <openssl/evp.h>
 #include <openssl/x509.h>
 
-#include "cm_cert_data.h"
+#include "securec.h"
+
+#include "cm_cert_data_part1_rsa.h"
 #include "cm_module_cert_data.h"
 #include "cm_pfx.h"
 #include "cm_type.h"
 #include "cm_x509.h"
-
-#include "securec.h"
 
 using namespace testing::ext;
 namespace {
@@ -421,7 +421,7 @@ HWTEST_F(CmCertParseTest, CmCertParseTest023, TestSize.Level0)
     struct AppCert appCert;
     (void)memset_s(&appCert, sizeof(struct AppCert), 0, sizeof(struct AppCert));
     EVP_PKEY *pkey = nullptr;
-    struct CmBlob certInfo = { sizeof(g_rsaP12Certinfo), const_cast<uint8_t *>(g_rsaP12Certinfo) };
+    struct CmBlob certInfo = { sizeof(g_rsa2048P12CertInfo), const_cast<uint8_t *>(g_rsa2048P12CertInfo) };
 
     int32_t ret = CmParsePkcs12Cert(&certInfo, reinterpret_cast<char *>(const_cast<uint8_t *>(g_certPwd)),
         &pkey, &appCert);
@@ -460,7 +460,7 @@ HWTEST_F(CmCertParseTest, CmCertParseTest025, TestSize.Level0)
     struct AppCert appCert;
     (void)memset_s(&appCert, sizeof(struct AppCert), 0, sizeof(struct AppCert));
     EVP_PKEY *pkey = nullptr;
-    struct CmBlob certInfo = { sizeof(g_rsaP12Certinfo), nullptr };
+    struct CmBlob certInfo = { sizeof(g_rsa2048P12CertInfo), nullptr };
 
     int32_t ret = CmParsePkcs12Cert(&certInfo, reinterpret_cast<char *>(const_cast<uint8_t *>(g_certPwd)),
         &pkey, &appCert);
@@ -480,7 +480,7 @@ HWTEST_F(CmCertParseTest, CmCertParseTest026, TestSize.Level0)
     struct AppCert appCert;
     (void)memset_s(&appCert, sizeof(struct AppCert), 0, sizeof(struct AppCert));
     EVP_PKEY *pkey = nullptr;
-    struct CmBlob certInfo = { MAX_LEN_CERTIFICATE_CHAIN + 1, const_cast<uint8_t *>(g_rsaP12Certinfo) };
+    struct CmBlob certInfo = { MAX_LEN_CERTIFICATE_CHAIN + 1, const_cast<uint8_t *>(g_rsa2048P12CertInfo) };
 
     int32_t ret = CmParsePkcs12Cert(&certInfo, reinterpret_cast<char *>(const_cast<uint8_t *>(g_certPwd)),
         &pkey, &appCert);
@@ -521,7 +521,7 @@ HWTEST_F(CmCertParseTest, CmCertParseTest028, TestSize.Level0)
     struct AppCert appCert;
     (void)memset_s(&appCert, sizeof(struct AppCert), 0, sizeof(struct AppCert));
     EVP_PKEY *pkey = nullptr;
-    struct CmBlob certInfo = { sizeof(g_rsaP12Certinfo), const_cast<uint8_t *>(g_rsaP12Certinfo) };
+    struct CmBlob certInfo = { sizeof(g_rsa2048P12CertInfo), const_cast<uint8_t *>(g_rsa2048P12CertInfo) };
     char tempPwd[] = "this is for test error123";
 
     int32_t ret = CmParsePkcs12Cert(&certInfo, tempPwd, &pkey, &appCert);

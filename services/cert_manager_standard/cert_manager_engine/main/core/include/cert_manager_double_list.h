@@ -18,14 +18,14 @@
 
 #include "cm_type.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct DoubleList {
     struct DoubleList *prev;
     struct DoubleList *next;
 };
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void CmInitList(struct DoubleList *listNode);
 

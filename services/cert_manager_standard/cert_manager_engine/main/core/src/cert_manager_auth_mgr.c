@@ -15,6 +15,8 @@
 
 #include "cert_manager_auth_mgr.h"
 
+#include "securec.h"
+
 #include "cert_manager_auth_list_mgr.h"
 #include "cert_manager_key_operation.h"
 #include "cert_manager_mem.h"
@@ -22,12 +24,6 @@
 #include "cert_manager_uri.h"
 #include "cm_log.h"
 
-#include "hks_api.h"
-#include "hks_type.h"
-
-#include "securec.h"
-
-#define MAX_UINT32_LEN 16
 #define MAC_SHA256_LEN 32
 
 #define NUMBER_9_IN_DECIMAL 9
@@ -129,41 +125,6 @@ static int32_t UintToString(uint32_t input, char *out, uint32_t outLen)
     return CM_SUCCESS;
 }
 
-static int32_t ConstructUri(const struct CMUri *uriObj, struct CmBlob *outUri)
-{
-    uint32_t outLen = 0;
-    int32_t ret = CertManagerUriEncode(NULL, &outLen, uriObj);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("get uriObj len failed, ret = %d", ret);
-        return ret;
-    }
-
-    if ((outLen == 0) || (outLen > MAX_OUT_BLOB_SIZE)) {
-        CM_LOG_E("invalid outLen[%u]", outLen);
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-
-    char *data = (char *)CMMalloc(outLen);
-    if (data == NULL) {
-        CM_LOG_E("malloc uri buf failed");
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-    (void)memset_s(data, outLen, 0, outLen);
-    outUri->size = outLen; /* include 1 byte: the terminator('\0')  */
-
-    ret = CertManagerUriEncode(data, &outLen, uriObj); /* outLen not include '\0' */
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("encord uri failed");
-        outUri->size = 0;
-        CMFree(data);
-        return ret;
-    }
-
-    CM_LOG_I("urilen = %u, uir:%s", outLen, data);
-    outUri->data = (uint8_t *)data;
-    return CM_SUCCESS;
-}
-
 static int32_t ConstructToBeAuthedUri(const struct CMUri *uriObj, uint32_t clientUid, struct CmBlob *toBeAuthedUri)
 {
     struct CMUri uri;
@@ -180,7 +141,7 @@ static int32_t ConstructToBeAuthedUri(const struct CMUri *uriObj, uint32_t clien
     uri.clientUser = NULL;
     uri.mac = NULL;
 
-    return ConstructUri(&uri, toBeAuthedUri);
+    return CmConstructUri(&uri, toBeAuthedUri);
 }
 
 static int32_t ConstructMacKeyUri(const struct CMUri *uriObj, uint32_t clientUid, struct CmBlob *macKeyUri)
@@ -200,7 +161,7 @@ static int32_t ConstructMacKeyUri(const struct CMUri *uriObj, uint32_t clientUid
     uri.clientUser = NULL;
     uri.mac = NULL;
 
-    return ConstructUri(&uri, macKeyUri);
+    return CmConstructUri(&uri, macKeyUri);
 }
 
 static int32_t ConstructCommonUri(const struct CMUri *uriObj, struct CmBlob *commonUri)
@@ -213,7 +174,7 @@ static int32_t ConstructCommonUri(const struct CMUri *uriObj, struct CmBlob *com
     uri.clientUser = NULL;
     uri.mac = NULL;
 
-    return ConstructUri(&uri, commonUri);
+    return CmConstructUri(&uri, commonUri);
 }
 static int32_t CalcUriMac(const struct CMUri *uriObj, uint32_t clientUid, struct CmBlob *mac, bool isNeedGenKey)
 {
@@ -229,7 +190,7 @@ static int32_t CalcUriMac(const struct CMUri *uriObj, uint32_t clientUid, struct
             break;
         }
 
-        /* construc mac key URI */
+        /* construct mac key URI */
         ret = ConstructMacKeyUri(uriObj, clientUid, &macKeyUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("construct mac key uri, ret = %d", ret);
@@ -262,19 +223,19 @@ static int32_t DeleteMacKey(const struct CMUri *uriObj, uint32_t clientUid)
     int32_t ret;
 
     do {
-        /* construc mac key URI */
+        /* construct mac key URI */
         ret = ConstructMacKeyUri(uriObj, clientUid, &macKeyUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("construct mac key uri, ret = %d", ret);
             break;
         }
 
-        struct HksBlob keyAlias = { macKeyUri.size, macKeyUri.data };
-        ret = HksDeleteKey(&keyAlias, NULL);
-        if ((ret != HKS_SUCCESS) && (ret != HKS_ERROR_NOT_EXIST)) {
+        ret = CmKeyOpDeleteKey(&macKeyUri);
+        if (ret != CM_SUCCESS) {
             CM_LOG_E("delete mac key failed, ret = %d", ret);
             break;
         }
+
         ret = CM_SUCCESS; /* ret is success if key not exist */
     } while (0);
 
@@ -314,7 +275,7 @@ static int32_t ConstructAuthUri(const struct CMUri *uriObj, uint32_t clientUid, 
     uri.clientUser = NULL;
     uri.mac = macHex;
 
-    ret = ConstructUri(&uri, authUri);
+    ret = CmConstructUri(&uri, authUri);
     CMFree(macHex);
     return ret;
 }

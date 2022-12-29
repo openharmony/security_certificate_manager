@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef CM_CRYPTO_CHECK_H
-#define CM_CRYPTO_CHECK_H
+#ifndef CM_IPC_SERVICE_SERIALIZATION_H
+#define CM_IPC_SERVICE_SERIALIZATION_H
 
 #include "cm_type_inner.h"
 
@@ -24,20 +24,20 @@ extern "C" {
 
 int32_t CopyUint32ToBuffer(uint32_t value, const struct CmBlob *destBlob, uint32_t *destOffset);
 
-int32_t GetUint32FromBuffer(uint32_t *value, const struct CmBlob *srcBlob, uint32_t *srcOffset);
-
-int32_t CmGetBlobFromBuffer(struct CmBlob *blob, const struct CmBlob *srcBlob, uint32_t *srcOffset);
-
 int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlob, uint32_t *destOffset);
 
-int32_t CheckCertificateListPara(const struct CmBlob *inBlob, const struct CmBlob *outBlob,
-    const struct CmContext *cmContext, const uint32_t store, const struct CertList *certificateList);
+int32_t CmParamSetToParams(const struct CmParamSet *paramSet, struct CmParamOut *outParams, uint32_t cnt);
 
-int32_t CheckCertificateInfoPara(const struct CmBlob *inBlob, const struct CmBlob *outBlob,
-    const struct CmContext *cmContext, const uint32_t store, const struct CertInfo *certificateInfo);
+int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store,
+    const struct CmMutableBlob *certFileList, struct CmBlob *certificateList);
+
+int32_t CmServiceGetCertInfoPack(const uint32_t store, const struct CmBlob *certificateData,
+    uint32_t status, const struct CmBlob *certUri, struct CmBlob *certificateInfo);
+
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* CM_IPC_SERVICE_SERIALIZATION_H */
+

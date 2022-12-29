@@ -77,7 +77,7 @@ static napi_value SetCertStatusParseParams(
     napi_env env, napi_callback_info info, SetCertStatusAsyncContext context)
 {
     size_t argc = CM_NAPI_SET_CERT_STATUS_MAX_ARGS;
-    napi_value argv[CM_NAPI_SET_CERT_STATUS_MAX_ARGS] = {0};
+    napi_value argv[CM_NAPI_SET_CERT_STATUS_MAX_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc < CM_NAPI_SET_CERT_STATUS_MIN_ARGS) {
@@ -90,7 +90,7 @@ static napi_value SetCertStatusParseParams(
     napi_value result = ParseCmContext(env, argv[index], context->cmContext);
     if (result == nullptr) {
         ThrowParamsError(env, PARAM_ERROR, "get context type error");
-        CM_LOG_E("could not get cert manager context");
+        CM_LOG_E("get context failed");
         return nullptr;
     }
 
@@ -129,7 +129,7 @@ static void SetCertStatusExecute(napi_env env, void *data)
 {
     SetCertStatusAsyncContext context = static_cast<SetCertStatusAsyncContext>(data);
     if (context->store == CM_SYSTEM_TRUSTED_STORE) {
-        context->result = CmSetCertStatus(context->cmContext, context->certUri, context->store,
+        context->result = CmSetCertStatus(context->certUri, context->store,
             context->status);
     } else if (context->store == CM_USER_TRUSTED_STORE) {
         context->result = CmSetUserCertStatus(context->certUri, context->store, context->status);
@@ -141,13 +141,13 @@ static void SetCertStatusExecute(napi_env env, void *data)
 static void SetCertStatusComplete(napi_env env, napi_status status, void *data)
 {
     SetCertStatusAsyncContext context = static_cast<SetCertStatusAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         NAPI_CALL_RETURN_VOID(env, napi_get_boolean(env, true, &result[1]));
     } else {
-        const char *errorMessage = "set cert status error";
-        result[0] = GenerateBusinessError(env, context->result, errorMessage);
+        const char *errorMsg = "set cert status error";
+        result[0] = GenerateBusinessError(env, context->result, errorMsg);
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     if (context->deferred != nullptr) {

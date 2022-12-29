@@ -26,7 +26,8 @@ constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M
 constexpr int RESULT_ARG_NUMBER = 2;
 }  // namespace
 
-napi_value getCmContextAttribute(napi_env env, napi_value object, const char *type, int maxSize, char *&srcData)
+static napi_value GetCmContextAttribute(napi_env env, napi_value object, const char *type, int maxSize,
+    char *&srcData)
 {
     napi_value typeValue = nullptr;
     napi_status  status = napi_get_named_property(env, object, type, &typeValue);
@@ -44,14 +45,14 @@ napi_value getCmContextAttribute(napi_env env, napi_value object, const char *ty
         return nullptr;
     }
 
-    if ((int)length > maxSize) {
+    if (static_cast<int>(length) > maxSize) {
         CM_LOG_E("input param length too large");
         return nullptr;
     }
 
     srcData = static_cast<char *>(CmMalloc(length + 1));
     if (srcData == nullptr) {
-        napi_throw_error(env, NULL, "could not alloc memory");
+        napi_throw_error(env, nullptr, "could not alloc memory");
         CM_LOG_E("could not alloc memory");
         return nullptr;
     }
@@ -61,6 +62,7 @@ napi_value getCmContextAttribute(napi_env env, napi_value object, const char *ty
     status = napi_get_value_string_utf8(env, typeValue, srcData, length + 1, &result);
     if (status != napi_ok) {
         CmFree(srcData);
+        srcData = nullptr;
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("could not get string");
         return nullptr;
@@ -75,31 +77,39 @@ napi_value ParseCmContext(napi_env env, napi_value object, CmContext *&cmContext
     char *uidData = nullptr;
     char *packageNameData = nullptr;
 
-    napi_value userIdStatus = getCmContextAttribute(env, object,
-        CM_CONTEXT_PROPERTY_USERID.c_str(), CM_MAX_DATA_LEN, userIdData);
-    napi_value uidStatus = getCmContextAttribute(env, object,
-        CM_CONTEXT_PROPERTY_UID.c_str(), CM_MAX_DATA_LEN, uidData);
-    napi_value packageNameStatus = getCmContextAttribute(env, object,
-        CM_CONTEXT_PROPERTY_PACKAGENAME.c_str(), CM_MAX_DATA_LEN, packageNameData);
-    if (userIdStatus == nullptr || uidStatus == nullptr || packageNameStatus == nullptr) {
-        return nullptr;
-    }
+    int32_t ret = CM_SUCCESS;
+    do {
+        napi_value userIdStatus = GetCmContextAttribute(env, object,
+            CM_CONTEXT_PROPERTY_USERID.c_str(), CM_MAX_DATA_LEN, userIdData);
+        napi_value uidStatus = GetCmContextAttribute(env, object,
+            CM_CONTEXT_PROPERTY_UID.c_str(), CM_MAX_DATA_LEN, uidData);
+        napi_value packageNameStatus = GetCmContextAttribute(env, object,
+            CM_CONTEXT_PROPERTY_PACKAGENAME.c_str(), CM_MAX_DATA_LEN, packageNameData);
+        if (userIdStatus == nullptr || uidStatus == nullptr || packageNameStatus == nullptr) {
+            CM_LOG_E("get userid or uid or packName failed");
+            ret = CMR_ERROR;
+            break;
+        }
 
-    cmContext = static_cast<CmContext *>(CmMalloc(sizeof(CmContext)));
-    if (cmContext == nullptr) {
-        CmFree(userIdData);
-        CmFree(uidData);
-        CmFree(packageNameData);
-        napi_throw_error(env, NULL, "could not alloc memory");
-        CM_LOG_E("could not alloc memory");
-        return nullptr;
-    }
+        cmContext = static_cast<CmContext *>(CmMalloc(sizeof(CmContext)));
+        if (cmContext == nullptr) {
+            CM_LOG_E("could not alloc memory");
+            ret = CMR_ERROR_MALLOC_FAIL;
+            break;
+        }
 
-    cmContext->userId = (uint32_t)atoi(userIdData);
-    cmContext->uid = (uint32_t)atoi(uidData);
-    if (strncpy_s(cmContext->packageName, sizeof(cmContext->packageName),
-        packageNameData, strlen(packageNameData)) != EOK) {
-        CM_LOG_E("copy packageName failed");
+        cmContext->userId = static_cast<uint32_t>(atoi(userIdData));
+        cmContext->uid = static_cast<uint32_t>(atoi(uidData));
+        if (strcpy_s(cmContext->packageName, sizeof(cmContext->packageName), packageNameData) != EOK) {
+            CM_LOG_E("copy package name failed");
+            ret = CMR_ERROR_INVALID_OPERATION;
+            break;
+        }
+    } while (0);
+    CM_FREE_PTR(userIdData);
+    CM_FREE_PTR(uidData);
+    CM_FREE_PTR(packageNameData);
+    if (ret != CM_SUCCESS) {
         return nullptr;
     }
     return GetInt32(env, 0);
@@ -156,7 +166,7 @@ napi_value ParseString(napi_env env, napi_value object, CmBlob *&certUri)
 
     char *data = static_cast<char *>(CmMalloc(length + 1));
     if (data == nullptr) {
-        napi_throw_error(env, NULL, "could not alloc memory");
+        napi_throw_error(env, nullptr, "could not alloc memory");
         CM_LOG_E("could not alloc memory");
         return nullptr;
     }
@@ -174,12 +184,12 @@ napi_value ParseString(napi_env env, napi_value object, CmBlob *&certUri)
     certUri = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
     if (certUri == nullptr) {
         CmFree(data);
-        napi_throw_error(env, NULL, "could not alloc memory");
+        napi_throw_error(env, nullptr, "could not alloc memory");
         CM_LOG_E("could not alloc memory");
         return nullptr;
     }
-    certUri->data = (uint8_t *)data;
-    certUri->size = (uint32_t)((length + 1) & UINT32_MAX);
+    certUri->data = reinterpret_cast<uint8_t *>(data);
+    certUri->size = static_cast<uint32_t>((length + 1) & UINT32_MAX);
 
     return GetInt32(env, 0);
 }
@@ -192,7 +202,8 @@ napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob)
     size_t offset = 0;
     void *rawData = nullptr;
     NAPI_CALL(
-        env, napi_get_typedarray_info(env, object, &arrayType, &length, (void **)&rawData, &arrayBuffer, &offset));
+        env, napi_get_typedarray_info(env, object, &arrayType, &length,
+        static_cast<void **>(&rawData), &arrayBuffer, &offset));
     NAPI_ASSERT(env, arrayType == napi_uint8_array, "Param is not uint8 array");
 
     if (length > CM_MAX_DATA_LEN) {
@@ -214,7 +225,7 @@ napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob)
     if (memcpy_s(arrayBlob.data, length, rawData, length) != EOK) {
         return nullptr;
     }
-    arrayBlob.size = (uint32_t)(length);
+    arrayBlob.size = static_cast<uint32_t>(length);
 
     return GetInt32(env, 0);
 }
@@ -248,12 +259,9 @@ static napi_value GenerateAarrayBuffer(napi_env env, uint8_t *data, uint32_t siz
     if (buffer == nullptr) {
         return nullptr;
     }
+    (void)memcpy_s(buffer, size, data, size);
 
     napi_value outBuffer = nullptr;
-    if (memcpy_s(buffer, size, data, size) != EOK) {
-        return nullptr;
-    }
-
     napi_status status = napi_create_external_arraybuffer(
         env, buffer, size, [](napi_env env, void *data, void *hint) { CmFree(data); }, nullptr, &outBuffer);
     if (status == napi_ok) {
@@ -336,56 +344,47 @@ napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo)
     }
     napi_value result = nullptr;
     NAPI_CALL(env, napi_create_object(env, &result));
-    napi_value uri = nullptr;
-    napi_value certAlias = nullptr;
-    napi_value status = nullptr;
-    napi_value issuerName = nullptr;
-    napi_value subjectName = nullptr;
-    napi_value serial = nullptr;
-    napi_value notBefore = nullptr;
-    napi_value notAfter = nullptr;
-    napi_value fingerprintSha256 = nullptr;
-    napi_value certInfoBlob = nullptr;
-    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->uri), NAPI_AUTO_LENGTH, &uri));
+
+    struct CertInfoValue cInfVal = { nullptr };
+    NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->uri),
+        NAPI_AUTO_LENGTH, &cInfVal.uri));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->certAlias),
-        NAPI_AUTO_LENGTH, &certAlias));
-
-    NAPI_CALL(env, napi_get_boolean(env, certInfo->status, &status));
+        NAPI_AUTO_LENGTH, &cInfVal.certAlias));
+    NAPI_CALL(env, napi_get_boolean(env, certInfo->status, &cInfVal.status));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->issuerName),
-        NAPI_AUTO_LENGTH, &issuerName));
+        NAPI_AUTO_LENGTH, &cInfVal.issuerName));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->subjectName),
-        NAPI_AUTO_LENGTH, &subjectName));
+        NAPI_AUTO_LENGTH, &cInfVal.subjectName));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->serial),
-        NAPI_AUTO_LENGTH, &serial));
-
+        NAPI_AUTO_LENGTH, &cInfVal.serial));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->notBefore),
-        NAPI_AUTO_LENGTH, &notBefore));
+        NAPI_AUTO_LENGTH, &cInfVal.notBefore));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->notAfter),
-        NAPI_AUTO_LENGTH, &notAfter));
-
+        NAPI_AUTO_LENGTH, &cInfVal.notAfter));
     NAPI_CALL(env, napi_create_string_latin1(env, static_cast<const char *>(certInfo->fingerprintSha256),
-        NAPI_AUTO_LENGTH, &fingerprintSha256));
+        NAPI_AUTO_LENGTH, &cInfVal.fingerprintSha256));
 
     napi_value certBuffer = GenerateAarrayBuffer(env, certInfo->certInfo.data, certInfo->certInfo.size);
     if (certBuffer != nullptr) {
         NAPI_CALL(env, napi_create_typedarray(env, napi_uint8_array, certInfo->certInfo.size,
-            certBuffer, 0, &certInfoBlob));
+            certBuffer, 0, &cInfVal.certInfoBlob));
     }
 
-    napi_value element = nullptr;
-    NAPI_CALL(env, napi_create_object(env, &element));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_URI.c_str(), uri));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_CERTALIAS.c_str(), certAlias));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_STATUS.c_str(), status));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_ISSUERNAME.c_str(), issuerName));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_SUBJECTNAME.c_str(), subjectName));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_SERIAL.c_str(), serial));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_BEFORE.c_str(), notBefore));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_AFTER.c_str(), notAfter));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_FINGERSHA256.c_str(), fingerprintSha256));
-    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_CERTINFO.c_str(), certInfoBlob));
+    napi_value elem = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &elem));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_URI.c_str(), cInfVal.uri));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_CERTALIAS.c_str(), cInfVal.certAlias));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_STATUS.c_str(), cInfVal.status));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_ISSUERNAME.c_str(), cInfVal.issuerName));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_SUBJECTNAME.c_str(), cInfVal.subjectName));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_SERIAL.c_str(), cInfVal.serial));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_BEFORE.c_str(), cInfVal.notBefore));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_AFTER.c_str(), cInfVal.notAfter));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_FINGERSHA256.c_str(),
+        cInfVal.fingerprintSha256));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_CERTINFO.c_str(), cInfVal.certInfoBlob));
 
-    return element;
+    return elem;
 }
 
 int32_t TranformErrorCode(int32_t errorCode)
@@ -399,10 +398,13 @@ int32_t TranformErrorCode(int32_t errorCode)
     if (errorCode == CMR_ERROR_NOT_PERMITTED) {
         return NO_PERMISSION;
     }
+    if (errorCode == CMR_ERROR_NOT_SYSTEMP_APP) {
+        return NOT_SYSTEM_APP;
+    }
     return INNER_FAILURE;
 }
 
-napi_value GenerateBusinessError(napi_env env, int32_t errorCode, const char *errorMessage)
+napi_value GenerateBusinessError(napi_env env, int32_t errorCode, const char *errorMsg)
 {
     napi_value businessError = nullptr;
     NAPI_CALL(env, napi_create_object(env, &businessError));
@@ -412,7 +414,7 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode, const char *er
     NAPI_CALL(env, napi_create_int32(env, outCode, &code));
     NAPI_CALL(env, napi_set_named_property(env, businessError, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
     napi_value message = nullptr;
-    NAPI_CALL(env, napi_create_string_utf8(env, errorMessage, NAPI_AUTO_LENGTH, &message));
+    NAPI_CALL(env, napi_create_string_utf8(env, errorMsg, NAPI_AUTO_LENGTH, &message));
     NAPI_CALL(env, napi_set_named_property(env, businessError, BUSINESS_ERROR_PROPERTY_MESSAGE.c_str(), message));
     return businessError;
 }
@@ -532,28 +534,28 @@ void FreeCmContext(CmContext *&context)
 
 void FreeCertList(CertList *&certList)
 {
-    if (certList == NULL || certList->certAbstract == NULL) {
+    if (certList == nullptr || certList->certAbstract == nullptr) {
         return;
     }
 
     FreeCertAbstract(certList->certAbstract);
-    certList->certAbstract = NULL;
+    certList->certAbstract = nullptr;
 
     CmFree(certList);
-    certList = NULL;
+    certList = nullptr;
 }
 
 void FreeCredentialList(CredentialList *&credentialList)
 {
-    if (credentialList == NULL || credentialList->credentialAbstract == NULL) {
+    if (credentialList == nullptr || credentialList->credentialAbstract == nullptr) {
         return;
     }
 
     FreeCredentialAbstract(credentialList->credentialAbstract);
-    credentialList->credentialAbstract = NULL;
+    credentialList->credentialAbstract = nullptr;
 
     CmFree(credentialList);
-    credentialList = NULL;
+    credentialList = nullptr;
 }
 
 void FreeCertInfo(CertInfo *&certInfo)

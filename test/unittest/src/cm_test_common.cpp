@@ -13,34 +13,22 @@
  * limitations under the License.
  */
 
-#include <limits.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
-#include <gtest/gtest.h>
+#include "cm_test_common.h"
 
 #include "cert_manager_api.h"
 
+#include "cm_cert_data_ecc.h"
+#include "cm_cert_data_ed25519.h"
+#include "cm_cert_data_part1_rsa.h"
+#include "cm_cert_data_part2_rsa.h"
 #include "cm_mem.h"
-#include "cm_test_common.h"
 #include "cm_test_log.h"
-
-#include "cm_cert_data.h"
 
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 
-#define EOK  (0)
-
-using namespace testing::ext;
 namespace CertmanagerTest {
-#ifndef errno_t
-typedef int errno_t;
-#endif
-
 void SetATPermission(void)
 {
     const char **perms = new const char *[2]; // 2 permissions
@@ -59,21 +47,25 @@ void SetATPermission(void)
     auto tokenId = GetAccessTokenId(&infoInstance);
     SetSelfTokenID(tokenId);
     OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+    delete[] perms;
 }
 
-uint32_t InitCertList(struct CertList **certlist)
+int32_t InitCertInfo(struct CertInfo *certInfo)
 {
-    *certlist = static_cast<struct CertList *>(CmMalloc(sizeof(struct CertList)));
-    if (*certlist == nullptr) {
+    if (certInfo == nullptr) {
         return CMR_ERROR_MALLOC_FAIL;
     }
-    (*certlist)->certAbstract = nullptr;
-    (*certlist)->certsCount = 0;
+
+    certInfo->certInfo.data =  static_cast<uint8_t *>(CmMalloc(MAX_LEN_CERTIFICATE));
+    if (certInfo->certInfo.data  == NULL) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certInfo->certInfo.size = MAX_LEN_CERTIFICATE;
 
     return CM_SUCCESS;
 }
 
-uint32_t InitUserCertList(struct CertList **cList)
+int32_t InitCertList(struct CertList **cList)
 {
     *cList = static_cast<struct CertList *>(CmMalloc(sizeof(struct CertList)));
     if (*cList == nullptr) {
@@ -91,7 +83,7 @@ uint32_t InitUserCertList(struct CertList **cList)
     return CM_SUCCESS;
 }
 
-uint32_t InitUserCertInfo(struct CertInfo **cInfo)
+int32_t InitUserCertInfo(struct CertInfo **cInfo)
 {
     *cInfo = static_cast<struct CertInfo *>(CmMalloc(sizeof(struct CertInfo)));
     if (*cInfo == nullptr) {
@@ -105,20 +97,6 @@ uint32_t InitUserCertInfo(struct CertInfo **cInfo)
     }
     (*cInfo)->certInfo.size = MAX_LEN_CERTIFICATE;
 
-    return CM_SUCCESS;
-}
-
-uint32_t InitUserContext(struct CmContext* userCtx, const uint32_t userid, const uint32_t uid, const char *pktname)
-{
-    if (pktname == nullptr || userCtx  == nullptr) {
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    userCtx->userId = userid;
-    userCtx->uid = uid;
-    errno_t ret = strcpy_s(userCtx->packageName, MAX_LEN_PACKGE_NAME, pktname);
-    if (ret != EOK) {
-        return CM_FAILURE;
-    }
     return CM_SUCCESS;
 }
 
@@ -148,7 +126,17 @@ void FreeCMBlobData(struct CmBlob *blob)
     blob->size = 0;
 }
 
-bool CompareCert(const struct CertAbstract *firstCert, const struct CertAbstract *secondCert)
+void FreeCertInfo(struct CertInfo *cInfo)
+{
+    if (cInfo == nullptr || (cInfo->certInfo).data == nullptr) {
+        return;
+    }
+
+    FreeCMBlobData(&(cInfo->certInfo));
+    CmFree(cInfo);
+}
+
+static bool CompareCert(const struct CertAbstract *firstCert, const struct CertAbstract *secondCert)
 {
     if (firstCert == nullptr || secondCert == nullptr) {
         CM_TEST_LOG_E("cert invalid parameter");
@@ -220,6 +208,15 @@ bool CompareCertInfo(const struct CertInfo *firstCert, const struct CertInfo *se
             (strcmp(firstCert->fingerprintSha256, secondCert->fingerprintSha256) == 0));
 }
 
+bool CompareCertData(const struct CmBlob *firstData, const struct CmBlob *secondData)
+{
+    if (firstData == nullptr || secondData == nullptr) {
+        return false;
+    }
+    return ((firstData->size == secondData->size) &&
+            (memcmp(firstData->data, secondData->data, static_cast<int32_t>(firstData->size)) == 0));
+}
+
 std::string DumpCertInfo(const struct CertInfo *certInfo)
 {
     if (certInfo == nullptr) {
@@ -247,81 +244,74 @@ bool CompareCredential(const struct Credential *firstCredential, const struct Cr
             (strcmp(firstCredential->alias, secondCredential->alias) == 0) &&
             (strcmp(firstCredential->keyUri, secondCredential->keyUri) == 0) &&
             (firstCredential->certNum == secondCredential->certNum) &&
-            (firstCredential->keyNum == secondCredential->keyNum));
-}
-
-int32_t IsFileExist(const char *fileName)
-{
-    if (access(fileName, F_OK) != 0) {
-        CM_TEST_LOG_E("file not exist, fileName %s", fileName);
-        return -1;
-    }
-
-    return 0;
-}
-
-uint32_t FileRead(const char *fileName, uint32_t offset, uint8_t *buf, uint32_t len)
-{
-    (void)offset;
-    if (IsFileExist(fileName) != 0) {
-        return 0;
-    }
-
-    char filePath[PATH_MAX + 1] = {0};
-    (void)realpath(fileName, filePath);
-    if (strstr(filePath, "../") != nullptr) {
-        CM_TEST_LOG_E("invalid filePath, path %s", filePath);
-        return 0;
-    }
-
-    FILE *fp = fopen(filePath, "rb");
-    if (fp == nullptr) {
-        CM_TEST_LOG_E("failed to open file");
-        return 0;
-    }
-
-    uint32_t size = fread(buf, 1, len, fp);
-    if (fclose(fp) < 0) {
-        CM_TEST_LOG_E("failed to close file");
-        return 0;
-    }
-
-    return size;
-}
-
-uint32_t FileSize(const char *fileName)
-{
-    if (IsFileExist(fileName) != 0) {
-        return 0;
-    }
-
-    struct stat fileStat;
-    (void)memset_s(&fileStat, sizeof(fileStat), 0, sizeof(fileStat));
-    if (stat(fileName, &fileStat) != 0) {
-        CM_TEST_LOG_E("file stat fail.");
-        return 0;
-    }
-
-    return fileStat.st_size;
+            (firstCredential->keyNum == secondCredential->keyNum) &&
+            (firstCredential->credData.size == secondCredential->credData.size));
 }
 
 int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t store)
 {
     struct CmBlob appCert = { 0, NULL };
-    if (alg == CERT_KEY_ALG_RSA) {
-        appCert.size = sizeof(g_rsaP12Certinfo);
-        appCert.data = (uint8_t *)g_rsaP12Certinfo;
-    } else if (alg == CERT_KEY_ALG_ECC) {
-        appCert.size = sizeof(g_eccP12Certinfo);
-        appCert.data = (uint8_t *)g_eccP12Certinfo;
-    } else {
-        return CMR_ERROR_INVALID_ARGUMENT;
+    switch (alg) {
+        case CERT_KEY_ALG_RSA:
+            appCert.size = sizeof(g_rsa2048P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_rsa2048P12CertInfo);
+            break;
+        case CERT_KEY_ALG_ECC:
+            appCert.size = sizeof(g_eccP256P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_eccP256P12CertInfo);
+            break;
+        case CERT_KEY_ALG_RSA_512:
+            appCert.size = sizeof(g_rsa512P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_rsa512P12CertInfo);
+            break;
+        case CERT_KEY_ALG_RSA_1024:
+            appCert.size = sizeof(g_rsa1024P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_rsa1024P12CertInfo);
+            break;
+        case CERT_KEY_ALG_RSA_3072:
+            appCert.size = sizeof(g_rsa3072P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_rsa3072P12CertInfo);
+            break;
+        case CERT_KEY_ALG_RSA_4096:
+            appCert.size = sizeof(g_rsa4096P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_rsa4096P12CertInfo);
+            break;
+        case CERT_KEY_ALG_ECC_P224:
+            appCert.size = sizeof(g_eccP224P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_eccP224P12CertInfo);
+            break;
+        case CERT_KEY_ALG_ECC_P384:
+            appCert.size = sizeof(g_eccP384P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_eccP384P12CertInfo);
+            break;
+        case CERT_KEY_ALG_ECC_P521:
+            appCert.size = sizeof(g_eccP521P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_eccP521P12CertInfo);
+            break;
+        case CERT_KEY_ALG_ED25519:
+            appCert.size = sizeof(g_ed25519P12CertInfo);
+            appCert.data = const_cast<uint8_t *>(g_ed25519P12CertInfo);
+            break;
+        default:
+            return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    struct CmBlob appCertPwd = { sizeof(g_certPwd), (uint8_t *)g_certPwd };
-    uint8_t uriData[100] = {0};
+    struct CmBlob appCertPwd = { sizeof(g_certPwd), const_cast<uint8_t *>(g_certPwd) };
+    uint8_t uriData[MAX_LEN_URI] = {0};
     struct CmBlob keyUri = { sizeof(uriData), uriData };
     return CmInstallAppCert(&appCert, &appCertPwd, alias, store, &keyUri);
 }
-}
 
+bool FindCertAbstract(const struct CertAbstract *abstract, const struct CertList *cList)
+{
+    if (abstract == NULL || cList == NULL || cList->certsCount == 0) {
+        return false;
+    }
+    for (uint32_t i = 0; i < cList->certsCount; ++i) {
+        if (CompareCert(abstract, &(cList->certAbstract[i]))) {
+            return true;
+        }
+    }
+    return false;
+}
+}

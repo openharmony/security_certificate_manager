@@ -21,26 +21,30 @@
 
 #include  <string>
 
-#define CERT_KEY_ALG_RSA 1
-#define CERT_KEY_ALG_ECC 2
-
 #define PERFORMACE_COUNT 1000
 
 #define DELIMITER "$$$"
 #define ENDOF  "\n"
 
+constexpr uint32_t CERT_KEY_ALG_RSA = 1;
+constexpr uint32_t CERT_KEY_ALG_ECC = 2;
+constexpr uint32_t CERT_KEY_ALG_RSA_512 = 3;
+constexpr uint32_t CERT_KEY_ALG_RSA_1024 = 4;
+constexpr uint32_t CERT_KEY_ALG_RSA_3072 = 5;
+constexpr uint32_t CERT_KEY_ALG_RSA_4096 = 6;
+constexpr uint32_t CERT_KEY_ALG_ECC_P224 = 7;
+constexpr uint32_t CERT_KEY_ALG_ECC_P384 = 8;
+constexpr uint32_t CERT_KEY_ALG_ECC_P521 = 9;
+constexpr uint32_t CERT_KEY_ALG_ED25519 = 10;
+
 namespace CertmanagerTest {
 void FreeCMBlobData(struct CmBlob *blob);
 
-uint32_t InitCertList(struct CertList **certlist);
-
 void FreeCertList(struct CertList *certList);
 
-uint32_t InitUserContext(struct CmContext* userCtx, const uint32_t userid, const uint32_t uid, const char *pktname);
-
-bool CompareCert(const struct CertAbstract *firstCert, const struct CertAbstract *secondCert);
-
 bool CompareCertInfo(const struct CertInfo *firstCert, const struct CertInfo *secondCert);
+
+bool CompareCertData(const struct CmBlob *firstData, const struct CmBlob *secondData);
 
 bool CompareCredential(const struct Credential *firstCredential, const struct Credential *secondCredential);
 
@@ -54,9 +58,14 @@ std::string DumpCertList(struct CertList *certList);
 
 void SetATPermission(void);
 
-uint32_t InitUserCertList(struct CertList **cList);
+int32_t InitCertList(struct CertList **cList);
 
-uint32_t InitUserCertInfo(struct CertInfo **cInfo);
+int32_t InitUserCertInfo(struct CertInfo **cInfo);
 
+int32_t InitCertInfo(struct CertInfo *certInfo);
+
+bool FindCertAbstract(const struct CertAbstract *abstract, const struct CertList *cList);
+
+void FreeCertInfo(struct CertInfo *cInfo);
 }
 #endif /* CM_TEST_COMMON_H */

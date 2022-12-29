@@ -16,10 +16,10 @@
 #ifndef CERT_MANAGER_STATUS_H
 #define CERT_MANAGER_STATUS_H
 
-#include "cert_manager_type.h"
 #include "cert_manager_mem.h"
 
 #include "rbtree.h"
+
 #include "cm_type.h"
 
 #define  CERT_STATUS_ENANLED           ((uint32_t) 0)
@@ -78,26 +78,15 @@ struct CertStatus {
     char *fileName;
 };
 
-int32_t CertManagerSetCertificatesStatus(
-    const struct CmContext *context,
-    const struct CmBlob *certUri,
-    uint32_t store,
-    uint32_t status);
-
-int32_t CertManagerGetCertificatesStatus(
-    const struct CmContext *context,
-    const struct CmBlob *certificate,
-    uint32_t store,
-    uint32_t *status);
-
 int32_t CertManagerStatusInit(void);
+
 int32_t SetcertStatus(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, uint32_t status, uint32_t *stp);
 
 int32_t CmSetStatusEnable(const struct CmContext *context, struct CmMutableBlob *pathBlob,
     const struct CmBlob *certUri, uint32_t store);
 
-int32_t CmGetCertStatus(const struct CmContext *context, struct CertFilePath *certFilePath,
+int32_t CmGetCertStatus(const struct CmContext *context, struct CertFileInfo *cFile,
     uint32_t store, uint32_t *status);
 
 #ifdef __cplusplus

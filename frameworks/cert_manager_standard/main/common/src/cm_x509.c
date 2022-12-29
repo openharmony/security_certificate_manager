@@ -13,14 +13,18 @@
  * limitations under the License.
  */
 
+#include "cm_x509.h"
+
+#include <openssl/asn1.h>
 #include <openssl/bio.h>
+#include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
-#include <openssl/err.h>
-#include <openssl/asn1.h>
+
 #include <string.h>
+
 #include "securec.h"
-#include "cm_x509.h"
+
 #include "cm_log.h"
 
 typedef X509_NAME *(FUNC)(const X509 *);
@@ -146,8 +150,7 @@ int32_t GetX509SubjectNameLongFormat(const X509 *x509cert, char *outBuf, uint32_
         if (length < 0) {
             return length;
         }
-        if (snprintf_s(outBuf + offset, NAME_LONGFORMAT_MAX_SIZE - offset,
-            NAME_LONGFORMAT_MAX_SIZE - offset - 1, "%s=%s%c",
+        if (snprintf_s(outBuf + offset, outBufMaxSize - offset, outBufMaxSize - offset - 1, "%s=%s%c",
             subjectNameList[j], subjectName, (char)(((j + 1) == sizeList) ? '\0' : ',')) < 0) {
             return CMR_ERROR_INVALID_OPERATION;
         }
@@ -171,8 +174,7 @@ int32_t GetX509IssueNameLongFormat(const X509 *x509cert, char *outBuf, uint32_t 
         if (length < 0) {
             return length;
         }
-        if (snprintf_s(outBuf + offset, NAME_LONGFORMAT_MAX_SIZE - offset,
-            NAME_LONGFORMAT_MAX_SIZE - offset - 1, "%s=%s%c",
+        if (snprintf_s(outBuf + offset, outBufMaxSize - offset, outBufMaxSize - offset - 1, "%s=%s%c",
             issueNameList[j], issueName, (char)(((j + 1) == sizeList) ? '\0' : ',')) < 0) {
             return CMR_ERROR_INVALID_OPERATION;
         }
@@ -217,7 +219,7 @@ static int32_t GetX509TimeFormat(TIME_FUNC fuc, const X509 *x509cert, char *outB
 
     struct DataTime dataTime;
     int32_t ret = GetX509Time(fuc, x509cert, &dataTime);
-    if (CM_SUCCESS != ret) {
+    if (ret != CM_SUCCESS) {
         return ret;
     }
 

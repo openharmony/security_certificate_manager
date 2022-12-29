@@ -42,9 +42,5 @@ ohos_unittest("cm_module_test") {
     "//third_party/openssl:libcrypto_shared",
   ]
   defines = [ "_CM_LOG_ENABLE_" ]
-}
-
-group("cm_coverage_test") {
-  testonly = true
-  deps = [ ":cm_module_test" ]
+  external_deps = [ "c_utils:utils" ]
 }

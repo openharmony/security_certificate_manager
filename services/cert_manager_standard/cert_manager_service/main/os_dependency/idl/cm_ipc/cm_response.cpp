@@ -35,13 +35,13 @@ void CmSendResponse(const struct CmContext *context, int32_t result, const struc
         CM_LOG_E("SendResponse NULL Pointer");
         return;
     }
-    MessageParcel *reply = (MessageParcel *)context;
+    MessageParcel *reply = reinterpret_cast<MessageParcel *>(const_cast<CmContext *>(context));
     reply->WriteInt32(result);
     if (response == nullptr) {
         reply->WriteUint32(0);
     } else {
         reply->WriteUint32(response->size);
-        reply->WriteBuffer(response->data, (size_t)response->size);
+        reply->WriteBuffer(response->data, static_cast<size_t>(response->size));
         CM_LOG_I("CmSendResponse before result = %d, size = %u", result, response->size);
     }
 }
@@ -60,7 +60,7 @@ int32_t CmGetProcessInfoForIPC(struct CmContext *cmContext)
     CM_LOG_I("CmGetProcessInfoForIPC callingUid = %d, userId = %d", callingUid, userId);
 
     cmContext->uid = (uint32_t)callingUid;
-    cmContext->userId = (uint32_t)userId;
+    cmContext->userId = static_cast<uint32_t>(userId);
 
     return CM_SUCCESS;
 }

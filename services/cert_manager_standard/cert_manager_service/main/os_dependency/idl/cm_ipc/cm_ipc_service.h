@@ -22,17 +22,14 @@
 extern "C" {
 #endif
 
-struct CertParam {
-    uint8_t *aliasBuff;
-    uint8_t *passWdBuff;
-    struct CmContext *cmContext;
-};
+void CmIpcServiceGetCertificateList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
 
-void CmIpcServiceGetCertificateList(const struct CmBlob *srcData, const struct CmContext *context);
+void CmIpcServiceGetCertificateInfo(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
 
-void CmIpcServiceGetCertificateInfo(const struct CmBlob *srcData, const struct CmContext *context);
-
-void CmIpcServiceSetCertStatus(const struct CmBlob *srcData, const struct CmContext *context);
+void CmIpcServiceSetCertStatus(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
 
 void CmIpcServiceInstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context);
@@ -90,7 +87,6 @@ void CmIpcServiceUninstallUserCert(const struct CmBlob *paramSetBlob, struct CmB
 
 void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context);
-
 
 #ifdef __cplusplus
 }
