@@ -65,7 +65,7 @@ static napi_value UninstallAllAppCertParseParams(
     napi_env env, napi_callback_info info, UninstallAllAppCertAsyncContext context)
 {
     size_t argc = CM_NAPI_UNINSTALL_ALL_APP_CERT_MAX_ARGS;
-    napi_value argv[CM_NAPI_UNINSTALL_ALL_APP_CERT_MAX_ARGS] = {0};
+    napi_value argv[CM_NAPI_UNINSTALL_ALL_APP_CERT_MAX_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_UNINSTALL_ALL_APP_CERT_MIN_ARGS) && (argc != CM_NAPI_UNINSTALL_ALL_APP_CERT_MAX_ARGS)) {
@@ -83,10 +83,10 @@ static napi_value UninstallAllAppCertParseParams(
     return GetInt32(env, 0);
 }
 
-static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCertAsyncContext context)
+static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCertAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
-    GenerateNapiPromise(env, context->callback, &context->deferred, &promise);
+    GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "UninstallAllAppCertAsyncWork", NAPI_AUTO_LENGTH, &resourceName));
@@ -101,13 +101,13 @@ static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCert
         },
         [](napi_env env, napi_status status, void *data) {
             UninstallAllAppCertAsyncContext context = static_cast<UninstallAllAppCertAsyncContext>(data);
-            napi_value result[RESULT_NUMBER] = {0};
+            napi_value result[RESULT_NUMBER] = { nullptr };
             if (context->result == CM_SUCCESS) {
                 NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
                 NAPI_CALL_RETURN_VOID(env, napi_get_boolean(env, true, &result[1]));
             } else {
-                const char *errorMessage = "uninstall all app cert error";
-                result[0] = GenerateBusinessError(env, context->result, errorMessage);
+                const char *errorMsg = "uninstall all app cert error";
+                result[0] = GenerateBusinessError(env, context->result, errorMsg);
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
             if (context->deferred != nullptr) {
@@ -117,13 +117,13 @@ static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCert
             }
             DeleteUninstallAllAppCertAsyncContext(env, context);
         },
-        static_cast<void *>(context),
-        &context->asyncWork));
+        static_cast<void *>(asyncContext),
+        &asyncContext->asyncWork));
 
-    napi_status status = napi_queue_async_work(env, context->asyncWork);
+    napi_status status = napi_queue_async_work(env, asyncContext->asyncWork);
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
-        DeleteUninstallAllAppCertAsyncContext(env, context);
+        DeleteUninstallAllAppCertAsyncContext(env, asyncContext);
         CM_LOG_E("could not queue async work");
         return nullptr;
     }

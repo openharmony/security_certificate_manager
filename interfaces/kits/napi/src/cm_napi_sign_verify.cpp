@@ -111,6 +111,8 @@ static napi_value ParseSpec(napi_env env, napi_value object, CmSignatureSpec *&s
         return nullptr;
     }
     spec->purpose = purposeValue;
+    spec->padding = CM_PADDING_PSS;
+    spec->digest = CM_DIGEST_SHA256;
 
     return GetInt32(env, 0);
 }
@@ -136,7 +138,7 @@ static napi_value GetBlob(napi_env env, napi_value object, CmBlob *&blob)
 static napi_value ParseCMInitParams(napi_env env, napi_callback_info info, SignVerifyAsyncContext context)
 {
     size_t argc = CM_NAPI_INIT_ARGS_CNT;
-    napi_value argv[CM_NAPI_INIT_ARGS_CNT] = {0};
+    napi_value argv[CM_NAPI_INIT_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_INIT_ARGS_CNT) && (argc != (CM_NAPI_INIT_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
@@ -177,7 +179,7 @@ static napi_value ParseCMInitParams(napi_env env, napi_callback_info info, SignV
 static napi_value ParseCMUpdateParams(napi_env env, napi_callback_info info, SignVerifyAsyncContext context)
 {
     size_t argc = CM_NAPI_UPDATE_ARGS_CNT;
-    napi_value argv[CM_NAPI_UPDATE_ARGS_CNT] = {0};
+    napi_value argv[CM_NAPI_UPDATE_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_UPDATE_ARGS_CNT) && (argc != (CM_NAPI_UPDATE_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
@@ -290,8 +292,8 @@ static napi_value ProcessFinishTwoParam(napi_env env, napi_value *argv, SignVeri
 
         context->callback = GetCallback(env, argv[curIndex]); /* return if arg 2 is callback */
         if (context->callback == nullptr) {
-            ThrowParamsError(env, PARAM_ERROR, "get callback type error");
-            CM_LOG_E("get callback function failed when using finish function");
+            ThrowParamsError(env, PARAM_ERROR, "sign: get callback type error");
+            CM_LOG_E("arg2 is callback: get sign callback function failed when using finish function");
             return nullptr;
         }
         return GetInt32(env, 0);
@@ -334,8 +336,8 @@ static napi_value ProcessFinishThreeParam(napi_env env, napi_value *argv, SignVe
 
     context->callback = GetCallback(env, argv[curIndex]);
     if (context->callback == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "get callback type error");
-        CM_LOG_E("get callback function failed when using finish function");
+        ThrowParamsError(env, PARAM_ERROR, "verify: get callback type error");
+        CM_LOG_E("get verify callback function failed when using finish function");
         return nullptr;
     }
 
@@ -345,7 +347,7 @@ static napi_value ProcessFinishThreeParam(napi_env env, napi_value *argv, SignVe
 static napi_value ParseCMFinishParams(napi_env env, napi_callback_info info, SignVerifyAsyncContext context)
 {
     size_t argc = CM_NAPI_FINISH_ARGS_CNT;
-    napi_value argv[CM_NAPI_FINISH_ARGS_CNT] = {0};
+    napi_value argv[CM_NAPI_FINISH_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_FINISH_ARGS_CNT) && (argc != (CM_NAPI_FINISH_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT)) &&
@@ -376,7 +378,7 @@ static napi_value ParseCMFinishParams(napi_env env, napi_callback_info info, Sig
 static napi_value ParseCMAbortParams(napi_env env, napi_callback_info info, SignVerifyAsyncContext context)
 {
     size_t argc = CM_NAPI_ABORT_ARGS_CNT;
-    napi_value argv[CM_NAPI_ABORT_ARGS_CNT] = {0};
+    napi_value argv[CM_NAPI_ABORT_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_ABORT_ARGS_CNT) && (argc != (CM_NAPI_ABORT_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
@@ -429,23 +431,23 @@ static void InitExecute(napi_env env, void *data)
     context->errCode = CmInit(context->authUri, context->spec, context->handle);
 }
 
-napi_value GenerateAarrayBuffer(napi_env env, uint8_t *data, uint32_t size)
+static napi_value GenerateArrayBuffer(napi_env env, uint8_t *data, uint32_t size)
 {
-    uint8_t *buffer = static_cast<uint8_t *>(CmMalloc(size));
-    if (buffer == nullptr) {
+    uint8_t *tempBuf = static_cast<uint8_t *>(CmMalloc(size));
+    if (tempBuf == nullptr) {
+        CM_LOG_E("malloc outbuf failed");
         return nullptr;
     }
+    (void)memcpy_s(tempBuf, size, data, size);
 
     napi_value outBuffer = nullptr;
-    (void)memcpy_s(buffer, size, data, size);
-
     napi_status status = napi_create_external_arraybuffer(
-        env, buffer, size, [](napi_env env, void *data, void *hint) { CmFree(data); }, nullptr, &outBuffer);
+        env, tempBuf, size, [](napi_env env, void *data, void *hint) { CmFree(data); }, nullptr, &outBuffer);
     if (status == napi_ok) {
-        // free by finalize callback
-        buffer = nullptr;
+        tempBuf = nullptr; /* free by finalize callback */
     } else {
-        CmFree(buffer);
+        CM_LOG_E("create external array buffer failed");
+        CM_FREE_PTR(tempBuf);
         GET_AND_THROW_LAST_ERROR((env));
     }
 
@@ -458,7 +460,7 @@ static napi_value ConvertResultHandle(napi_env env, const CmBlob *handle)
     NAPI_CALL(env, napi_create_object(env, &result));
 
     napi_value handleNapi = nullptr;
-    napi_value handleBuf = GenerateAarrayBuffer(env, handle->data, handle->size);
+    napi_value handleBuf = GenerateArrayBuffer(env, handle->data, handle->size);
     if (handleBuf != nullptr) {
         NAPI_CALL(env, napi_create_typedarray(env, napi_uint8_array, handle->size, handleBuf, 0, &handleNapi));
     } else {
@@ -472,13 +474,12 @@ static napi_value ConvertResultHandle(napi_env env, const CmBlob *handle)
 static void InitComplete(napi_env env, napi_status status, void *data)
 {
     SignVerifyAsyncContext context = static_cast<SignVerifyAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultHandle(env, context->handle);
     } else {
-        const char *errMsg = "init failed";
-        result[0] = GenerateBusinessError(env, context->errCode, errMsg);
+        result[0] = GenerateBusinessError(env, context->errCode, "init failed");
         napi_get_undefined(env, &result[1]);
     }
 
@@ -499,13 +500,12 @@ static void UpdateExecute(napi_env env, void *data)
 static void UpdateOrAbortComplete(napi_env env, napi_status status, void *data)
 {
     SignVerifyAsyncContext context = static_cast<SignVerifyAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         napi_get_boolean(env, true, &result[1]);
     } else {
-        const char *errMsg = "process failed";
-        result[0] = GenerateBusinessError(env, context->errCode, errMsg);
+        result[0] = GenerateBusinessError(env, context->errCode, "update or abort process failed");
         napi_get_undefined(env, &result[1]);
     }
 
@@ -537,7 +537,7 @@ static napi_value ConvertResultSignature(napi_env env, bool isSign, const CmBlob
 
     napi_value signResultNapi = nullptr;
     if (isSign) {
-        napi_value signBuf = GenerateAarrayBuffer(env, sign->data, sign->size);
+        napi_value signBuf = GenerateArrayBuffer(env, sign->data, sign->size);
         if (signBuf != nullptr) {
             NAPI_CALL(env, napi_create_typedarray(env, napi_uint8_array, sign->size, signBuf, 0, &signResultNapi));
         } else {
@@ -554,13 +554,12 @@ static napi_value ConvertResultSignature(napi_env env, bool isSign, const CmBlob
 static void FinishComplete(napi_env env, napi_status status, void *data)
 {
     SignVerifyAsyncContext context = static_cast<SignVerifyAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultSignature(env, context->isSign, context->signature);
     } else {
-        const char *errMsg = "finish failed";
-        result[0] = GenerateBusinessError(env, context->errCode, errMsg);
+        result[0] = GenerateBusinessError(env, context->errCode, "finish failed");
         napi_get_undefined(env, &result[1]);
     }
 

@@ -22,7 +22,6 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
-
 static constexpr uint32_t DEFAULT_AUTH_URI_LEN = 256;
 static constexpr uint32_t INVALID_AUTH_URI_LEN = 100;
 static constexpr uint32_t DEFAULT_APP_ID = 1000;
@@ -378,7 +377,7 @@ HWTEST_F(CmGrantTest, CmGrantTestPerformance016, TestSize.Level1)
     struct CmBlob authUri = { DEFAULT_AUTH_URI_LEN, authUriData };
     uint32_t appId = DEFAULT_APP_ID;
 
-    for (uint32_t i = 0; i < 1000; ++i) {
+    for (uint32_t i = 0; i < PERFORMACE_COUNT; ++i) {
         ret = CmGrantAppCertificate(&keyUri, appId, &authUri);
         EXPECT_EQ(ret, CM_SUCCESS) << "CmGrantAppCertificate failed, retcode:" << ret;
 

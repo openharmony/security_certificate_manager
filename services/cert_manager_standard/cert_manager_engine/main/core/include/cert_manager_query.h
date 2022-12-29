@@ -22,13 +22,14 @@
 extern "C" {
 #endif
 
-int32_t CmGetCertData(const char *fName, const char *path, struct CmBlob *certData);
+int32_t CmGetCertPathList(const struct CmContext *context, uint32_t store, struct CmMutableBlob *pathList);
 
-int32_t CmGetCertPathList(const struct CmContext *context, uint32_t store, struct CmMutableBlob *certPathList);
+int32_t CmGetSysCertPathList(const struct CmContext *context, struct CmMutableBlob *pathList);
 
-int32_t CreateCertFileList(const struct CmMutableBlob *certPathList, struct CmMutableBlob *certFileList);
+int32_t CreateCertFileList(const struct CmMutableBlob *pathList, struct CmMutableBlob *certFileList);
 
-int32_t CmGetCertAlias(const char *uri, struct CmBlob *certAlias);
+int32_t CmGetCertAlias(const uint32_t store, const char *uri, const struct CmBlob *certData,
+    struct CmBlob *alias);
 
 int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
     const struct CmMutableBlob *certFileList, struct CertBlob *certBlob, uint32_t *status);
@@ -37,9 +38,9 @@ void CmFreeCertBlob(struct CertBlob *certBlob);
 
 int32_t CmGetMatchedCertIndex(const struct CmMutableBlob *certFileList, const struct CmBlob *certUri);
 
-void CmFreeCertFiles(struct CmMutableBlob *certFiles);
+void CmFreeCertFiles(struct CertFileInfo *cFileList, uint32_t certCount);
 
-void CmFreeCertPaths(struct CmMutableBlob *certPaths);
+void CmFreePathList(struct CmMutableBlob *pList, uint32_t pathCount);
 #ifdef __cplusplus
 }
 #endif

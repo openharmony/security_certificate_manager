@@ -15,16 +15,15 @@
 
 #include "cert_manager_auth_list_mgr.h"
 
+#include "securec.h"
+
 #include "cert_manager.h"
 #include "cert_manager_file_operator.h"
 #include "cert_manager_mem.h"
 #include "cert_manager_storage.h"
 #include "cert_manager_uri.h"
-
 #include "cm_log.h"
 #include "cm_type.h"
-
-#include "securec.h"
 
 #define MAX_PATH_LEN                        512
 #define MAX_AUTH_COUNT                      256
@@ -503,7 +502,7 @@ int32_t CmCheckCredentialExist(const struct CmContext *context, const struct CmB
 
     char *fileName = (char *)uri->data;
     ret = CmIsFileExist(uidPath, fileName);
-    if (ret != HKS_SUCCESS) {
+    if (ret != CM_SUCCESS) {
         CM_LOG_E("Credential file not exist.");
     }
     return ret;

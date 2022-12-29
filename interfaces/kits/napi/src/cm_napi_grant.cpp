@@ -78,10 +78,14 @@ static napi_value ParseString2Uint32(napi_env env, napi_value object, uint32_t &
     napi_value result = ParseString(env, object, blob);
     if (result == nullptr) {
         CM_LOG_E("parse string to blob failed");
+        if (blob != nullptr) {
+            CM_FREE_PTR(blob->data);
+            CmFree(blob);
+        }
         return nullptr;
     }
 
-    value = (uint32_t)atoi((char *)blob->data);
+    value = static_cast<uint32_t>(atoi(reinterpret_cast<char *>(blob->data)));
     CM_FREE_PTR(blob->data);
     CM_FREE_PTR(blob);
     return GetInt32(env, 0);
@@ -90,7 +94,7 @@ static napi_value ParseString2Uint32(napi_env env, napi_value object, uint32_t &
 static napi_value ParseGrantUidParams(napi_env env, napi_callback_info info, GrantAsyncContext context)
 {
     size_t argc = CM_NAPI_GRANT_ARGS_CNT;
-    napi_value argv[CM_NAPI_GRANT_ARGS_CNT] = {0};
+    napi_value argv[CM_NAPI_GRANT_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_GRANT_ARGS_CNT) && (argc != (CM_NAPI_GRANT_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
@@ -136,7 +140,7 @@ static napi_value ParseRemoveUidParams(napi_env env, napi_callback_info info, Gr
 static napi_value ParseIsAuthedParams(napi_env env, napi_callback_info info, GrantAsyncContext context)
 {
     size_t argc = CM_NAPI_IS_AUTHED_ARGS_CNT;
-    napi_value argv[CM_NAPI_IS_AUTHED_ARGS_CNT] = {0};
+    napi_value argv[CM_NAPI_IS_AUTHED_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_IS_AUTHED_ARGS_CNT) && (argc != (CM_NAPI_IS_AUTHED_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
@@ -201,8 +205,8 @@ static napi_value ConvertResultAuthUri(napi_env env, const CmBlob *authUri)
     NAPI_CALL(env, napi_create_object(env, &result));
 
     napi_value authUriNapi = nullptr;
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)authUri->data, NAPI_AUTO_LENGTH,
-        &authUriNapi));
+    NAPI_CALL(env, napi_create_string_latin1(env,
+        reinterpret_cast<const char *>(authUri->data), NAPI_AUTO_LENGTH, &authUriNapi));
     NAPI_CALL(env, napi_set_named_property(env, result, "uri", authUriNapi));
 
     return result;
@@ -211,13 +215,12 @@ static napi_value ConvertResultAuthUri(napi_env env, const CmBlob *authUri)
 static void GrantUidComplete(napi_env env, napi_status status, void *data)
 {
     GrantAsyncContext context = static_cast<GrantAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultAuthUri(env, context->authUri);
     } else {
-        const char *errMsg = "grant uid failed";
-        result[0] = GenerateBusinessError(env, context->errCode, errMsg);
+        result[0] = GenerateBusinessError(env, context->errCode, "grant uid failed");
         napi_get_undefined(env, &result[1]);
     }
 
@@ -238,13 +241,12 @@ static void RemoveUidExecute(napi_env env, void *data)
 static void RemoveOrIsAuthedComplete(napi_env env, napi_status status, void *data)
 {
     GrantAsyncContext context = static_cast<GrantAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         napi_get_boolean(env, true, &result[1]);
     } else {
-        const char *errMsg = "process failed";
-        result[0] = GenerateBusinessError(env, context->errCode, errMsg);
+        result[0] = GenerateBusinessError(env, context->errCode, "remove or check is authed process failed");
         napi_get_undefined(env, &result[1]);
     }
 
@@ -313,13 +315,12 @@ static napi_value ConvertResultAuthList(napi_env env, const CmAppUidList *appUid
 static void GetUidListComplete(napi_env env, napi_status status, void *data)
 {
     GrantAsyncContext context = static_cast<GrantAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultAuthList(env, context->uidList);
     } else {
-        const char *errMsg = "get authed uid list failed";
-        result[0] = GenerateBusinessError(env, context->errCode, errMsg);
+        result[0] = GenerateBusinessError(env, context->errCode, "get authed uid list failed");
         napi_get_undefined(env, &result[1]);
     }
 

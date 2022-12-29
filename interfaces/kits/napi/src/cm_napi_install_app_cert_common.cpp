@@ -72,7 +72,7 @@ napi_value InstallAppCertParseParams(
     napi_env env, napi_callback_info info, InstallAppCertAsyncContext context)
 {
     size_t argc = CM_NAPI_INSTALL_APP_CERT_MAX_ARGS;
-    napi_value argv[CM_NAPI_INSTALL_APP_CERT_MAX_ARGS] = {0};
+    napi_value argv[CM_NAPI_INSTALL_APP_CERT_MAX_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc < CM_NAPI_INSTALL_APP_CERT_MIN_ARGS) {
@@ -128,13 +128,13 @@ napi_value InstallAppCertParseParams(
 static void InitKeyUri(struct CmBlob *&keyUri)
 {
     keyUri = static_cast<struct CmBlob *>(CmMalloc(sizeof(struct CmBlob)));
-    if (keyUri == NULL) {
+    if (keyUri == nullptr) {
         CM_LOG_E("malloc keyUri buffer failed");
         return;
     }
 
     keyUri->data = static_cast<uint8_t *>(CmMalloc(MAX_LEN_URI));
-    if (keyUri->data == NULL) {
+    if (keyUri->data == nullptr) {
         CM_LOG_E("malloc keyUri->data buffer failed");
         return;
     }
@@ -149,7 +149,8 @@ static napi_value InstallAppCertWriteResult(napi_env env, InstallAppCertAsyncCon
     NAPI_CALL(env, napi_create_object(env, &result));
 
     napi_value keyUri = nullptr;
-    NAPI_CALL(env, napi_create_string_latin1(env, (char *)context->keyUri->data, NAPI_AUTO_LENGTH, &keyUri));
+    NAPI_CALL(env, napi_create_string_latin1(env, reinterpret_cast<char *>(context->keyUri->data),
+        NAPI_AUTO_LENGTH, &keyUri));
     if (keyUri != nullptr) {
         napi_set_named_property(env, result, CM_CERT_PROPERTY_URI.c_str(), keyUri);
     } else {
@@ -158,10 +159,10 @@ static napi_value InstallAppCertWriteResult(napi_env env, InstallAppCertAsyncCon
     return result;
 }
 
-napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext context)
+napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
-    GenerateNapiPromise(env, context->callback, &context->deferred, &promise);
+    GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "InstallAppCertAsyncWork", NAPI_AUTO_LENGTH, &resourceName));
@@ -178,13 +179,13 @@ napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext cont
         },
         [](napi_env env, napi_status status, void *data) {
             InstallAppCertAsyncContext context = static_cast<InstallAppCertAsyncContext>(data);
-            napi_value result[RESULT_NUMBER] = {0};
+            napi_value result[RESULT_NUMBER] = { nullptr };
             if (context->result == CM_SUCCESS) {
                 NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
                 result[1] = InstallAppCertWriteResult(env, context);
             } else {
-                const char *errorMessage = "install app cert error";
-                result[0] = GenerateBusinessError(env, context->result, errorMessage);
+                const char *errorMsg = "install app cert error";
+                result[0] = GenerateBusinessError(env, context->result, errorMsg);
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
             if (context->deferred != nullptr) {
@@ -194,13 +195,13 @@ napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext cont
             }
             DeleteInstallAppCertAsyncContext(env, context);
         },
-        static_cast<void *>(context),
-        &context->asyncWork));
+        static_cast<void *>(asyncContext),
+        &asyncContext->asyncWork));
 
-    napi_status status = napi_queue_async_work(env, context->asyncWork);
+    napi_status status = napi_queue_async_work(env, asyncContext->asyncWork);
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
-        DeleteInstallAppCertAsyncContext(env, context);
+        DeleteInstallAppCertAsyncContext(env, asyncContext);
         CM_LOG_E("could not queue async work");
         return nullptr;
     }
@@ -231,5 +232,4 @@ napi_value CMNapiInstallAppCertCommon(napi_env env, napi_callback_info info, uin
     }
     return result;
 }
-
 }  // namespace CertManagerNapi

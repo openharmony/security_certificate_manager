@@ -33,7 +33,6 @@ struct GetAppCertInfoAsyncContextT {
 using GetAppCertInfoAsyncContext = GetAppCertInfoAsyncContextT *;
 
 namespace CMNapi {
-
 GetAppCertInfoAsyncContext CreateGetAppCertInfoAsyncContext();
 
 void DeleteGetAppCertInfoAsyncContext(napi_env env, GetAppCertInfoAsyncContext &context);
@@ -43,10 +42,9 @@ napi_value GetAppCertInfoParseParams(
 
 napi_value GetAppCertInfoWriteResult(napi_env env, GetAppCertInfoAsyncContext context);
 
-napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext context);
+napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext asyncContext);
 
 napi_value CMNapiGetAppCertInfoCommon(napi_env env, napi_callback_info info, uint32_t store);
-
 }  // namespace CertManagerNapi
 
 #endif  // CM_NAPI_GET_APP_CERT_INFO_COMMON_H

@@ -135,7 +135,7 @@ static napi_value ParseCertInfo(napi_env env, napi_value object, UserCertAsyncCo
 static napi_value ParseInstallUserCertParams(napi_env env, napi_callback_info info, UserCertAsyncContext context)
 {
     size_t argc = CM_NAPI_USER_INSTALL_ARGS_CNT;
-    napi_value argv[CM_NAPI_USER_INSTALL_ARGS_CNT] = {0};
+    napi_value argv[CM_NAPI_USER_INSTALL_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_USER_INSTALL_ARGS_CNT) &&
@@ -169,7 +169,7 @@ static napi_value ParseInstallUserCertParams(napi_env env, napi_callback_info in
 static napi_value ParseUninstallUserCertParams(napi_env env, napi_callback_info info, UserCertAsyncContext context)
 {
     size_t argc = CM_NAPI_USER_UNINSTALL_ARGS_CNT;
-    napi_value argv[CM_NAPI_USER_UNINSTALL_ARGS_CNT] = {0};
+    napi_value argv[CM_NAPI_USER_UNINSTALL_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_USER_UNINSTALL_ARGS_CNT) &&
@@ -203,7 +203,7 @@ static napi_value ParseUninstallUserCertParams(napi_env env, napi_callback_info 
 static napi_value ParseUninstallAllUserCertParams(napi_env env, napi_callback_info info, UserCertAsyncContext context)
 {
     size_t argc = CM_NAPI_USER_UNINSTALL_ALL_ARGS_CNT;
-    napi_value argv[CM_NAPI_USER_UNINSTALL_ALL_ARGS_CNT] = {0};
+    napi_value argv[CM_NAPI_USER_UNINSTALL_ALL_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_USER_UNINSTALL_ALL_ARGS_CNT) &&
@@ -255,7 +255,8 @@ static napi_value ConvertResultCertUri(napi_env env, const CmBlob *certUri)
     NAPI_CALL(env, napi_create_object(env, &result));
 
     napi_value certUriNapi = nullptr;
-    NAPI_CALL(env, napi_create_string_latin1(env, (const char *)certUri->data, NAPI_AUTO_LENGTH, &certUriNapi));
+    NAPI_CALL(env, napi_create_string_latin1(env, reinterpret_cast<const char *>(certUri->data),
+        NAPI_AUTO_LENGTH, &certUriNapi));
     NAPI_CALL(env, napi_set_named_property(env, result, "uri", certUriNapi));
 
     return result;
@@ -264,13 +265,12 @@ static napi_value ConvertResultCertUri(napi_env env, const CmBlob *certUri)
 static void InstallUserCertComplete(napi_env env, napi_status status, void *data)
 {
     UserCertAsyncContext context = static_cast<UserCertAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultCertUri(env, context->certUri);
     } else {
-        const char *errMsg = "install user cert failed";
-        result[0] = GenerateBusinessError(env, context->errCode, errMsg);
+        result[0] = GenerateBusinessError(env, context->errCode, "install user cert failed");
         napi_get_undefined(env, &result[1]);
     }
 
@@ -315,13 +315,12 @@ static void UninstallUserCertExecute(napi_env env, void *data)
 static void UninstallComplete(napi_env env, napi_status status, void *data)
 {
     UserCertAsyncContext context = static_cast<UserCertAsyncContext>(data);
-    napi_value result[RESULT_NUMBER] = {0};
+    napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         napi_get_boolean(env, true, &result[1]);
     } else {
-        const char *errMsg = "uninstall failed";
-        result[0] = GenerateBusinessError(env, context->errCode, errMsg);
+        result[0] = GenerateBusinessError(env, context->errCode, "uninstall failed");
         napi_get_undefined(env, &result[1]);
     }
 

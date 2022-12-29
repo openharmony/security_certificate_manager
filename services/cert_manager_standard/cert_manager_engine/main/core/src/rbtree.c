@@ -13,23 +13,12 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include "securec.h"
-#include "cert_manager_util.h"
-#include "cert_manager_mem.h"
-#include "cert_manager_status.h"
-#include "cm_log.h"
 #include "rbtree.h"
 
-#define RC_OK CMR_OK
-#define RC_ERROR CMR_ERROR
-#define RC_MEM_ERROR CMR_ERROR_MALLOC_FAIL
-#define RC_NOT_FOUND CMR_ERROR_NOT_FOUND
-#define RC_BUFFER_TOO_SMALL CMR_ERROR_BUFFER_TOO_SMALL
-#define RC_INSUFFICIENT_DATA CMR_ERROR_BUFFER_TOO_SMALL
+#include "securec.h"
+
+#include "cert_manager_mem.h"
+#include "cm_log.h"
 
 /* void orintRbTree(struct RbTree *t)
    Implementation of a red-black tree, with serialization
@@ -58,7 +47,7 @@ struct EncoderContext {
     uint8_t *buf;
     uint32_t off;
     uint32_t len;
-    int status;
+    int32_t status;
     RbTreeValueEncoder enc;
 };
 
@@ -67,7 +56,7 @@ RbTreeKey RbTreeNodeKey(const struct RbTreeNode *n)
     return n == NULL ? 0 : KEY(n);
 }
 
-static int NewNode(struct RbTreeNode **nptr, RbTreeKey key, RbTreeValue value)
+static int32_t NewNode(struct RbTreeNode **nptr, RbTreeKey key, RbTreeValue value)
 {
     struct RbTreeNode *n = CMMalloc(sizeof(struct RbTreeNode));
     if (n == NULL) {
@@ -79,18 +68,25 @@ static int NewNode(struct RbTreeNode **nptr, RbTreeKey key, RbTreeValue value)
     n->p = NULL;
     n->left = NULL;
     n->right = NULL;
-    return CMR_OK;
+    return CM_SUCCESS;
 }
 
-int RbTreeNew(struct RbTree *t)
+int32_t RbTreeNew(struct RbTree *t)
 {
-    ASSERT_ARGS(t);
+    if (t == NULL) {
+        CM_LOG_E("input param is invaild");
+        return CM_FAILURE;
+    }
 
-    ASSERT_FUNC(NewNode(&(t->nil), 0, NULL));
+    int32_t ret = NewNode(&(t->nil), 0, NULL);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("create new code failed");
+        return ret;
+    }
     SET_BLACK(t->nil);
     t->root = t->nil;
 
-    return CMR_OK;
+    return ret;
 }
 
 static void LeftRotate(struct RbTree *t, struct RbTreeNode *x)
@@ -190,12 +186,19 @@ static void InsertFixUp(struct RbTree *t, struct RbTreeNode *z)
     SET_BLACK(t->root);
 }
 
-int RbTreeInsert(struct RbTree *t, RbTreeKey key, const RbTreeValue value)
+int32_t RbTreeInsert(struct RbTree *t, RbTreeKey key, const RbTreeValue value)
 {
-    ASSERT_ARGS(t);
+    if (t == NULL) {
+        CM_LOG_E("input param is invaild");
+        return CM_FAILURE;
+    }
 
     struct RbTreeNode *z = NULL;
-    ASSERT_FUNC(NewNode(&z, key, value));
+    int32_t ret = NewNode(&z, key, value);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("create new code failed");
+        return ret;
+    }
 
     struct RbTreeNode *y = t->nil;
     struct RbTreeNode *x = t->root;
@@ -224,7 +227,7 @@ int RbTreeInsert(struct RbTree *t, RbTreeKey key, const RbTreeValue value)
 
     InsertFixUp(t, z);
 
-    return CMR_OK;
+    return ret;
 }
 
 static void Transplant(struct RbTree *t, struct RbTreeNode *u, struct RbTreeNode *v)
@@ -322,9 +325,12 @@ static void DeleteFixUp(struct RbTree *t, struct RbTreeNode *x)
     SET_BLACK(x);
 }
 
-int RbTreeDelete(struct RbTree *t, struct RbTreeNode *z)
+int32_t RbTreeDelete(struct RbTree *t, struct RbTreeNode *z)
 {
-    ASSERT_ARGS(t);
+    if (t == NULL) {
+        CM_LOG_E("input param is invaild");
+        return CM_FAILURE;
+    }
     struct RbTreeNode *x = NULL;
     struct RbTreeNode *y = z;
     RbTreeKey yColor = COLOR(y);
@@ -355,20 +361,23 @@ int RbTreeDelete(struct RbTree *t, struct RbTreeNode *z)
         DeleteFixUp(t, x);
     }
     CMFree(z);
-    return CMR_OK;
+    return CM_SUCCESS;
 }
 
-int RbTreeFindNode(struct RbTreeNode **np, RbTreeKey key, const struct RbTree *t)
+int32_t RbTreeFindNode(struct RbTreeNode **nodePtr, RbTreeKey key, const struct RbTree *tree)
 {
-    ASSERT_ARGS(t && np);
+    if (tree == NULL || nodePtr == NULL) {
+        CM_LOG_E("input param is invaild");
+        return CM_FAILURE;
+    }
 
-    *np = NULL;
+    *nodePtr = NULL;
 
-    struct RbTreeNode *n = t->root;
-    while (n != t->nil) {
+    struct RbTreeNode *n = tree->root;
+    while (n != tree->nil) {
         if (KEY(n) == key) {
-            *np = n;
-            return CMR_OK;
+            *nodePtr = n;
+            return CM_SUCCESS;
         } else if (key < KEY(n)) {
             n = n->left;
         } else {
@@ -411,57 +420,35 @@ static void TraversePostOrder(const struct RbTree *t, const struct RbTreeNode *x
     handler(KEY(x), x->value, context);
 }
 
-static void Destroy(struct RbTree *t, struct RbTreeNode *x)
-{
-    if (x != t->nil) {
-        Destroy(t, x->left);
-        x->left = t->nil;
-        Destroy(t, x->right);
-        x->right = t->nil;
-        CMFree(x);
-    }
-}
-
-static int RbTreeDestroy(struct RbTree *t)
-{
-    ASSERT_ARGS(t);
-    Destroy(t, t->root);
-    CMFree(t->nil);
-
-    t->nil = NULL;
-    t->root = NULL;
-    return RC_OK;
-}
-
-int RbTreeDestroyEx(struct RbTree *t, RbTreeNodeHandler handler, const void *context)
-{
-    ASSERT_ARGS(t && handler);
-    TraverseInOrder(t, t->root, handler, context);
-    return RbTreeDestroy(t);
-}
-
 static void Encoder(RbTreeKey key, RbTreeValue value, const void *context)
 {
-    struct EncoderContext *ctx = (struct EncoderContext *) context;
-    if (ctx->status != CMR_OK) {
-        /* already failed. do not continue */
-        CM_LOG_W("already failed: %d\n", ctx->status);
+    struct EncoderContext *ctx = (struct EncoderContext *)context;
+    if (ctx->status != CM_SUCCESS) {
+        CM_LOG_E("already failed: %d", ctx->status); /* already failed. do not continue */
         return;
     }
-    uint32_t keySize = sizeof(RbTreeKey);
-    uint32_t valueSize = 0;
 
-    /* get value size */
-    int rc = ctx->enc(value, NULL, &valueSize);
-    if (rc != CMR_OK) {
-        CM_LOG_W("value encoder get length failed: %d\n", rc);
+    uint32_t valueSize = 0;
+    int rc = ctx->enc(value, NULL, &valueSize); /* get value size */
+    if (rc != CM_SUCCESS) {
+        CM_LOG_E("value encoder get length failed: %d", rc);
         ctx->status = rc;
+        return;
+    }
+
+    uint32_t keySize = sizeof(RbTreeKey);
+    if (valueSize > (UINT32_MAX - keySize - sizeof(uint32_t))) {
+        ctx->status = CMR_ERROR_INVALID_ARGUMENT;
         return;
     }
 
     /* each code is encoded ad (key | encoded_value_len | encoded_value)
        encoded_value_len is uint32_t. */
     uint32_t sz = keySize + sizeof(uint32_t) + valueSize;
+    if (sz > (UINT32_MAX - ctx->off)) {
+        ctx->status = CMR_ERROR_INVALID_ARGUMENT;
+        return;
+    }
 
     /* if buffer is provided, do the actual encoding */
     if (ctx->buf != NULL) {
@@ -470,17 +457,19 @@ static void Encoder(RbTreeKey key, RbTreeValue value, const void *context)
             return;
         }
         uint8_t *buf = ctx->buf + ctx->off;
-        if (memcpy_s(buf, ctx->len, &key, keySize) != EOK) {
+        if (memcpy_s(buf, ctx->len - ctx->off, &key, keySize) != EOK) {
+            ctx->status = CMR_ERROR_INVALID_ARGUMENT;
             return;
         }
         buf += keySize;
-        if (memcpy_s(buf, ctx->len, &valueSize, sizeof(uint32_t)) != EOK) {
+        if (memcpy_s(buf, ctx->len - ctx->off - keySize, &valueSize, sizeof(uint32_t)) != EOK) {
+            ctx->status = CMR_ERROR_INVALID_ARGUMENT;
             return;
         }
         buf += sizeof(uint32_t);
         rc = ctx->enc(value, buf, &valueSize);
-        if (rc != CMR_OK) {
-            CM_LOG_W("value encoder encoding failed: %d\n", rc);
+        if (rc != CM_SUCCESS) {
+            CM_LOG_E("value encoder encoding failed: %d", rc);
             ctx->status = rc;
             return;
         }
@@ -489,30 +478,36 @@ static void Encoder(RbTreeKey key, RbTreeValue value, const void *context)
     ctx->off += sz;
 }
 
-
-int RbTreeEncode(const struct RbTree *t, RbTreeValueEncoder enc, uint8_t *buf, uint32_t *size)
+int32_t RbTreeEncode(const struct RbTree *t, RbTreeValueEncoder enc, uint8_t *buf, uint32_t *size)
 {
-    ASSERT_ARGS(t && t->root && enc && size);
+    if (t == NULL || t->root == NULL || enc == NULL || size == NULL) {
+        CM_LOG_E("input param is invaild");
+        return CM_FAILURE;
+    }
 
     struct EncoderContext ctx = {
         .buf = buf,
         .off = 0,
         .len = *size,
-        .status = CMR_OK,
+        .status = CM_SUCCESS,
         .enc = enc,
     };
 
     TraverseInOrder(t, t->root, Encoder, &ctx);
-    if (ctx.status != CMR_OK) {
+    if (ctx.status != CM_SUCCESS) {
         return ctx.status;
     }
     *size = ctx.off;
-    return CMR_OK;
+    return CM_SUCCESS;
 }
 
-int RbTreeDecode(struct RbTree *t, RbTreeValueDecoder dec, uint8_t *buf, uint32_t size)
+int32_t RbTreeDecode(struct RbTree *t, RbTreeValueDecoder dec, RbTreeValueFree freeFunc,
+    uint8_t *buf, uint32_t size)
 {
-    ASSERT_ARGS(t && t->root && dec && size);
+    if (t == NULL || t->root == NULL || dec == NULL || freeFunc == NULL || buf == NULL || size == 0) {
+        CM_LOG_E("input param is invaild");
+        return CM_FAILURE;
+    }
 
     uint32_t off = 0;
     while (off < size) {
@@ -521,7 +516,7 @@ int RbTreeDecode(struct RbTree *t, RbTreeValueDecoder dec, uint8_t *buf, uint32_
 
         if (remaining < headerSize) {
             /* something is wrong */
-            return RC_INSUFFICIENT_DATA;
+            return CMR_ERROR_BUFFER_TOO_SMALL;
         }
 
         uint8_t *s = buf + off;
@@ -540,22 +535,56 @@ int RbTreeDecode(struct RbTree *t, RbTreeValueDecoder dec, uint8_t *buf, uint32_
 
         uint32_t sz = headerSize + valueSize;
         if (remaining < sz) {
-            return RC_INSUFFICIENT_DATA;
+            return CMR_ERROR_BUFFER_TOO_SMALL;
         }
 
         RbTreeValue value = NULL;
         int rc = dec(&value, s, valueSize);
-        if (rc != CMR_OK) {
+        if (rc != CM_SUCCESS) {
             return rc;
         }
 
         rc = RbTreeInsert(t, key, value);
-        if (rc != CMR_OK) {
+        if (rc != CM_SUCCESS) {
+            freeFunc(&value);
             return rc;
         }
         off += sz;
     }
-    return CMR_OK;
+    return CM_SUCCESS;
+}
+
+static void TraverseDestroy(struct RbTree *t, struct RbTreeNode *x)
+{
+    if (x != t->nil) {
+        TraverseDestroy(t, x->left);
+        x->left = t->nil;
+        TraverseDestroy(t, x->right);
+        x->right = t->nil;
+        CMFree(x);
+    }
+}
+
+static void RbTreeDestroy(struct RbTree *t)
+{
+    if (t == NULL) {
+        return;
+    }
+
+    TraverseDestroy(t, t->root);
+    CMFree(t->nil);
+    t->nil = NULL;
+    t->root = NULL;
+}
+
+void RbTreeDestroyEx(struct RbTree *t, RbTreeNodeHandler freeFunc)
+{
+    if ((t == NULL) || (freeFunc == NULL)) {
+        return;
+    }
+
+    TraverseInOrder(t, t->root, freeFunc, NULL);
+    RbTreeDestroy(t);
 }
 
 #ifdef __cplusplus

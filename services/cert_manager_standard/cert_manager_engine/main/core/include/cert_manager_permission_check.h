@@ -26,6 +26,10 @@ bool CmHasPrivilegedPermission(void);
 
 bool CmHasCommonPermission(void);
 
+bool CmIsSystemApp(void);
+
+bool CmIsSystemAppByStoreType(const uint32_t store);
+
 bool CmPermissionCheck(const uint32_t store);
 
 #ifdef __cplusplus

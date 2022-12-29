@@ -21,11 +21,6 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
-static const uint32_t CM_CONTEXT_UID = 3000;
-static const uint32_t CM_CONTEXT_UID2 = 3001;
-static const uint32_t CM_CONTEXT_USERID = 1000;
-static const uint32_t CM_CONTEXT_USERID2 = 2000;
-
 struct CertStatusExpectResult {
     char uri[MAX_LEN_URI];
     bool inparamStatus;
@@ -45,18 +40,14 @@ struct CertStatusExpectResult g_expectList[] = {
 };
 
 class CmSetCertStatusTest : public testing::Test {
-    public:
-        static void SetUpTestCase(void);
+public:
+    static void SetUpTestCase(void);
 
-        static void TearDownTestCase(void);
+    static void TearDownTestCase(void);
 
-        void SetUp();
+    void SetUp();
 
-        void TearDown();
-
-    public:
-        struct CmContext firstUserCtx;
-        struct CmContext secondUserCtx;
+    void TearDown();
 };
 
 void CmSetCertStatusTest::SetUpTestCase(void)
@@ -70,8 +61,6 @@ void CmSetCertStatusTest::TearDownTestCase(void)
 
 void CmSetCertStatusTest::SetUp()
 {
-    InitUserContext(&firstUserCtx, CM_CONTEXT_USERID, CM_CONTEXT_UID, "com.hap.test");
-    InitUserContext(&secondUserCtx, CM_CONTEXT_USERID2, CM_CONTEXT_UID2, "com.hap.test2");
 }
 
 void CmSetCertStatusTest::TearDown()
@@ -86,13 +75,12 @@ void CmSetCertStatusTest::TearDown()
  */
 HWTEST_F(CmSetCertStatusTest, SimpleSetCertStatus001, TestSize.Level0)
 {
-    struct CmBlob uriBlob = {strlen(g_expectList[0].uri), (uint8_t *)(g_expectList[0].uri)};
+    struct CmBlob uriBlob = {strlen(g_expectList[0].uri) + 1, (uint8_t *)(g_expectList[0].uri)};
 
-    int32_t ret = CmSetCertStatus(&firstUserCtx,
-		&uriBlob, CM_SYSTEM_TRUSTED_STORE, g_expectList[0].inparamStatus);
+    int32_t ret = CmSetCertStatus(&uriBlob, CM_SYSTEM_TRUSTED_STORE, g_expectList[0].inparamStatus);
     EXPECT_EQ(ret, CM_SUCCESS) << "SimpleSetCertStatus failed,retcode:" << ret;
 
-    ret = CmSetCertStatus(&firstUserCtx, &uriBlob, CM_SYSTEM_TRUSTED_STORE, true);
+    ret = CmSetCertStatus(&uriBlob, CM_SYSTEM_TRUSTED_STORE, true);
     EXPECT_EQ(ret, CM_SUCCESS) << "SimpleSetCertStatus true failed,retcode:" << ret;
 }
 
@@ -106,23 +94,24 @@ HWTEST_F(CmSetCertStatusTest, SetCertStatusAndQueryStatus002, TestSize.Level0)
 {
     uint32_t size = sizeof(g_expectList) / sizeof(g_expectList[0]);
     for (uint32_t i = 0; i < size; ++i) {
-        struct CmBlob uriBlob = {strlen(g_expectList[i].uri), (uint8_t *)(g_expectList[i].uri)};
+        struct CmBlob uriBlob = {strlen(g_expectList[i].uri) + 1, (uint8_t *)(g_expectList[i].uri)};
 
-        int32_t ret = CmSetCertStatus(&firstUserCtx,
-            &uriBlob, CM_SYSTEM_TRUSTED_STORE, g_expectList[i].inparamStatus);
+        int32_t ret = CmSetCertStatus(&uriBlob, CM_SYSTEM_TRUSTED_STORE, g_expectList[i].inparamStatus);
         EXPECT_EQ(ret, CM_SUCCESS) << " SetCertStatusAndQueryStatus, CmSetCertStatus failed,retcode: " << ret;
 
         struct CertInfo certDetailInfo;
-        (void)memset_s(&certDetailInfo, sizeof(certDetailInfo), 0, sizeof(certDetailInfo));
+        (void)memset_s(&certDetailInfo, sizeof(struct CertInfo), 0, sizeof(struct CertInfo));
+        ret = InitCertInfo(&certDetailInfo);
+        EXPECT_EQ(ret, CM_SUCCESS) << "CmGetCertInfo malloc faild, retcode:" << ret;
 
-        ret = CmGetCertInfo(&firstUserCtx, &uriBlob, CM_SYSTEM_TRUSTED_STORE, &certDetailInfo);
+        ret = CmGetCertInfo(&uriBlob, CM_SYSTEM_TRUSTED_STORE, &certDetailInfo);
         EXPECT_EQ(ret, CM_SUCCESS) << "SetCertStatusAndQueryStatus,CmGetCertInfo failed,retcode: " << ret;
-        uint32_t uStatus = (g_expectList[i].expectStatus == certDetailInfo.status) ? 1 : 0;
+        int32_t status = (g_expectList[i].expectStatus == certDetailInfo.status) ? 1 : 0;
 
-        EXPECT_EQ(uStatus, 1) << "SetCertStatusAndQueryStatus fail, cert info: " << DumpCertInfo(&certDetailInfo);
+        EXPECT_EQ(status, 1) << "SetCertStatusAndQueryStatus faild, cert info: " << DumpCertInfo(&certDetailInfo);
         FreeCMBlobData(&(certDetailInfo.certInfo));
 
-        ret = CmSetCertStatus(&firstUserCtx, &uriBlob, CM_SYSTEM_TRUSTED_STORE, true);
+        ret = CmSetCertStatus(&uriBlob, CM_SYSTEM_TRUSTED_STORE, true);
         EXPECT_EQ(ret, CM_SUCCESS) << " SetCertStatusAndQueryStatus, CmSetCertStatus failed,retcode: " << ret;
     }
 }
@@ -139,23 +128,23 @@ HWTEST_F(CmSetCertStatusTest, SetAllCertStatus003, TestSize.Level0)
 
     ASSERT_TRUE(InitCertList(&certlist) == CM_SUCCESS);
     // CA trusted list
-    int32_t ret = CmGetCertList(&secondUserCtx, CM_SYSTEM_TRUSTED_STORE, certlist);
+    int32_t ret = CmGetCertList(CM_SYSTEM_TRUSTED_STORE, certlist);
 
     EXPECT_EQ(ret, CM_SUCCESS) << "SetAllCertStatus,CmGetCertList failed,retcode:" << ret;
 
     for (uint32_t i = 0; i < certlist->certsCount; ++i) {
         struct CertAbstract *ptr = &(certlist->certAbstract[i]);
         ASSERT_TRUE(NULL != ptr);
-        struct CmBlob uriBlob = {strlen(ptr->uri), (uint8_t *)(ptr->uri)};
-        ret = CmSetCertStatus(&secondUserCtx, &uriBlob, CM_SYSTEM_TRUSTED_STORE, false);
+        struct CmBlob uriBlob = {strlen(ptr->uri) + 1, (uint8_t *)(ptr->uri)};
+        ret = CmSetCertStatus(&uriBlob, CM_SYSTEM_TRUSTED_STORE, false);
         EXPECT_EQ(ret, CM_SUCCESS);
     }
 
     for (uint32_t i = 0; i < certlist->certsCount; ++i) {
         struct CertAbstract *ptr2 = &(certlist->certAbstract[i]);
         ASSERT_TRUE(NULL != ptr2);
-        struct CmBlob uriBlob2 = {strlen(ptr2->uri), (uint8_t *)(ptr2->uri)};
-        ret = CmSetCertStatus(&firstUserCtx, &uriBlob2, CM_SYSTEM_TRUSTED_STORE, true);
+        struct CmBlob uriBlob2 = {strlen(ptr2->uri) + 1, (uint8_t *)(ptr2->uri)};
+        ret = CmSetCertStatus(&uriBlob2, CM_SYSTEM_TRUSTED_STORE, true);
         EXPECT_EQ(ret, CM_SUCCESS);
     }
     FreeCertList(certlist);
@@ -169,17 +158,15 @@ HWTEST_F(CmSetCertStatusTest, SetAllCertStatus003, TestSize.Level0)
  */
 HWTEST_F(CmSetCertStatusTest, ExceptionSetStatus004, TestSize.Level0)
 {
-    struct CmBlob uriBlob = {strlen(g_expectList[1].uri), (uint8_t *)(g_expectList[1].uri)};
-    EXPECT_EQ(CmSetCertStatus(NULL, &uriBlob, CM_SYSTEM_TRUSTED_STORE, true),
-        CMR_ERROR_NULL_POINTER);
-    EXPECT_EQ(CmSetCertStatus(&secondUserCtx, NULL, CM_SYSTEM_TRUSTED_STORE, true),
+    struct CmBlob uriBlob = {strlen(g_expectList[1].uri) + 1, (uint8_t *)(g_expectList[1].uri)};
+    EXPECT_EQ(CmSetCertStatus(NULL, CM_SYSTEM_TRUSTED_STORE, true),
         CMR_ERROR_NULL_POINTER);
 
-    EXPECT_EQ(CmSetCertStatus(&firstUserCtx, &uriBlob, 10, true), CM_FAILURE);
+    EXPECT_EQ(CmSetCertStatus(&uriBlob, 10, true), CMR_ERROR_INVALID_ARGUMENT);
 
     const char *invalidUri = "INVALIDXXXX";
-    struct CmBlob invalidUriBlob = {strlen(invalidUri), (uint8_t *)invalidUri};
-    EXPECT_EQ(CmSetCertStatus(&firstUserCtx, &invalidUriBlob, CM_SYSTEM_TRUSTED_STORE, true),
+    struct CmBlob invalidUriBlob = {strlen(invalidUri) + 1, (uint8_t *)invalidUri};
+    EXPECT_EQ(CmSetCertStatus(&invalidUriBlob, CM_SYSTEM_TRUSTED_STORE, true),
         CMR_ERROR_NOT_FOUND);
 }
 }
