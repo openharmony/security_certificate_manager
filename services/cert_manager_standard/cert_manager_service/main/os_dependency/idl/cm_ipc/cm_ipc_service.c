@@ -471,7 +471,16 @@ void CmIpcServiceGetAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob
 static int32_t CopyCertificateInfoToBuffer(const struct CmBlob *certBlob,
     const struct CmBlob *certificateInfo, uint32_t *offset)
 {
+    if (certBlob->size < (sizeof(struct AppCert) - MAX_LEN_CERTIFICATE_CHAIN)) {
+        CM_LOG_E("certInfo size[%u] invalid", certBlob->size);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     struct AppCert *appCert = (struct AppCert *)certBlob->data;
+    if ((certBlob->size - (sizeof(struct AppCert) - MAX_LEN_CERTIFICATE_CHAIN)) < appCert->certSize) {
+        CM_LOG_E("certInfo data size[%u] invalid, certSize[%u]", certBlob->size, appCert->certSize);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
 
     int32_t ret = CopyUint32ToBuffer(appCert->certCount, certificateInfo, offset);
     if (ret != CM_SUCCESS) {
