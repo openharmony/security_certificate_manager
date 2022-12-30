@@ -245,7 +245,7 @@ HWTEST_F(CmInitTest, CmInitTest010, TestSize.Level0)
     struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
 
     int32_t ret = CmInit(&g_rsaKeyUri, &spec, &handle);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(ret, CMR_ERROR_KEY_OPERATION_FAILED);
 }
 
 /**

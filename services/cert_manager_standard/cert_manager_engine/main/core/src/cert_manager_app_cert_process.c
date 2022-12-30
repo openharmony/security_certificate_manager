@@ -247,8 +247,6 @@ static int32_t ImportRsaKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri)
         struct CmKeyProperties props = {
             .algType = HKS_ALG_RSA,
             .keySize = keySize,
-            .padding = HKS_PADDING_PSS,
-            .digest = CM_DIGEST_SHA256,
             .purpose = CM_KEY_PURPOSE_SIGN | CM_KEY_PURPOSE_VERIFY,
         };
 
@@ -287,7 +285,6 @@ static int32_t ImportEccKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri)
         const struct CmKeyProperties props = {
             .algType = HKS_ALG_ECC,
             .keySize = keyLen,
-            .digest = CM_DIGEST_SHA256,
             .purpose = CM_KEY_PURPOSE_SIGN | CM_KEY_PURPOSE_VERIFY,
         };
 
@@ -317,7 +314,6 @@ static int32_t ImportEd25519Key(const EVP_PKEY *priKey, const struct CmBlob *key
     struct CmKeyProperties props = {
         .algType = HKS_ALG_ED25519,
         .keySize = HKS_CURVE25519_KEY_SIZE_256,
-        .digest = CM_DIGEST_SHA512,
         .purpose = CM_KEY_PURPOSE_SIGN | CM_KEY_PURPOSE_VERIFY,
     };
     ret = CmKeyOpImportKey(keyUri, &props, &keyPair);
