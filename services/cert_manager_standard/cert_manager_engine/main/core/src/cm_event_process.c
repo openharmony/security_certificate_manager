@@ -112,7 +112,7 @@ static int32_t GetNextLayerPath(const char *path, const char *name, char *outPat
     if (strncpy_s(outPath, outPathLen, path, strlen(path)) != EOK) {
         return CMR_ERROR_INVALID_OPERATION;
     }
-    if (outPath[outPathLen - 1] != '/') {
+    if (outPath[strlen(outPath) - 1] != '/') {
         if (strncat_s(outPath, outPathLen, "/", strlen("/")) != EOK) {
             return CMR_ERROR_INVALID_OPERATION;
         }
@@ -187,7 +187,6 @@ static int32_t CmTraversalUidLayerDir(const struct CmContext *context, const cha
     const uint32_t store, bool isSameUid)
 {
     int32_t ret = CM_SUCCESS;
-    char uidPath[CM_MAX_FILE_NAME_LEN] = {0};
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
         CM_LOG_I("Dir is not exist");
@@ -202,6 +201,7 @@ static int32_t CmTraversalUidLayerDir(const struct CmContext *context, const cha
 
     struct dirent *dire = readdir(dir);
     while (dire != NULL) {
+        char uidPath[CM_MAX_FILE_NAME_LEN] = {0};
         if (GetNextLayerPath(path, dire->d_name, uidPath, sizeof(uidPath)) != CM_SUCCESS) {
             closedir(dir);
             return CMR_ERROR_INVALID_OPERATION;
@@ -249,7 +249,6 @@ static int32_t CmTraversalUserIdLayerDir(struct CmContext *context, const char *
 {
     bool isUserDeleteEvent = (context->uid == INVALID_VALUE);
     int32_t ret = CM_SUCCESS;
-    char userIdPath[CM_MAX_FILE_NAME_LEN] = {0};
 
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
@@ -265,6 +264,7 @@ static int32_t CmTraversalUserIdLayerDir(struct CmContext *context, const char *
 
     struct dirent *dire = readdir(dir);
     while (dire != NULL) {
+        char userIdPath[CM_MAX_FILE_NAME_LEN] = {0};
         if (GetNextLayerPath(path, dire->d_name, userIdPath, sizeof(userIdPath)) != CM_SUCCESS) {
             closedir(dir);
             return CMR_ERROR_INVALID_OPERATION;
@@ -290,8 +290,6 @@ static int32_t CmTraversalUserIdLayerDir(struct CmContext *context, const char *
 static int32_t CmTraversalDir(struct CmContext *context, const char *path, const uint32_t store)
 {
     int32_t ret = CM_SUCCESS;
-    char deletePath[CM_MAX_FILE_NAME_LEN] = { 0 };
-
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
         CM_LOG_I("Root dir is not exist");
@@ -306,6 +304,7 @@ static int32_t CmTraversalDir(struct CmContext *context, const char *path, const
 
     struct dirent *dire = readdir(dir);
     while (dire != NULL) {
+        char deletePath[CM_MAX_FILE_NAME_LEN] = { 0 };
         if (GetNextLayerPath(path, dire->d_name, deletePath, sizeof(deletePath)) != CM_SUCCESS) {
             closedir(dir);
             return CMR_ERROR_INVALID_OPERATION;
