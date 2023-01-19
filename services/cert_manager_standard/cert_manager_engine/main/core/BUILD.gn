@@ -23,6 +23,7 @@ ohos_static_library("cert_manager_engine_core_standard") {
   defines = [
     "L2_STANDARD",
     "_CM_LOG_ENABLE_",
+    "OPENSSL_SUPPRESS_DEPRECATED",
   ]
   include_dirs = [
     "../../../../../interfaces/innerkits/cert_manager_standard/main/include",
