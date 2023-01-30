@@ -17,6 +17,7 @@
 
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -134,26 +135,6 @@ static uint32_t FileSize(const char *fileName)
     return (uint32_t)fileStat.st_size;
 }
 
-static int32_t FileFlush(FILE *fp)
-{
-    if (fflush(fp) < 0) {
-        CM_LOG_E("fflush file fail");
-        return CMR_ERROR_WRITE_FILE_FAIL;
-    }
-
-    int fd = fileno(fp);
-    if (fd < 0) {
-        CM_LOG_E("fileno file fail");
-        return CMR_ERROR_WRITE_FILE_FAIL;
-    }
-
-    if (fsync(fd) < 0) {
-        CM_LOG_E("sync file fail");
-        return CMR_ERROR_WRITE_FILE_FAIL;
-    }
-    return CM_SUCCESS;
-}
-
 static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *buf, uint32_t len)
 {
     (void)offset;
@@ -167,36 +148,24 @@ static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *b
         return CMR_ERROR_NOT_EXIST;
     }
 
-    /* caller function ensures that the folder exists */
-    FILE *fp = fopen(filePath, "wb+");
-    if (fp == NULL) {
-        CM_LOG_E("open file fail");
+    int32_t fd = open(filePath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    if (fd < 0) {
+        CM_LOG_E("open file failed, errno = 0x%x", errno);
         return CMR_ERROR_OPEN_FILE_FAIL;
     }
 
-    if (chmod(filePath, S_IRUSR | S_IWUSR) < 0) {
-        CM_LOG_E("chmod file fail.");
-        fclose(fp);
-        return CMR_ERROR_OPEN_FILE_FAIL;
-    }
-
-    uint32_t size = fwrite(buf, 1, len, fp);
-    if (size != len) {
-        CM_LOG_E("write file size fail.");
-        fclose(fp);
+    int32_t size = write(fd, buf, len);
+    if (size < 0) {
+        CM_LOG_E("write file failed, errno = 0x%x", errno);
+        close(fd);
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
-
-    if (FileFlush(fp) != CM_SUCCESS) {
-        fclose(fp);
+    if (fsync(fd) < 0) {
+        CM_LOG_E("sync file failed");
+        close(fd);
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
-
-    if (fclose(fp) < 0) {
-        CM_LOG_E("failed to close file");
-        return CMR_ERROR_CLOSE_FILE_FAIL;
-    }
-
+    close(fd);
     return CMR_OK;
 }
 
