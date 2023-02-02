@@ -25,7 +25,6 @@ ohos_static_library("libcm_service_idl_standard_static") {
     "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_service/main/os_dependency/idl/cm_passthrough",
     "//third_party/json/include",
     "//commonlibrary/c_utils/base/include",
-    "//base/security/huks/interfaces/inner_api/huks_standard/main/include",
     "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency/cm_ipc/include",
     "//third_party/openssl/include",
     "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_service/main/hisysevent_wrapper/include",
@@ -48,6 +47,7 @@ ohos_static_library("libcm_service_idl_standard_static") {
   ]
   external_deps = [
     "c_utils:utils",
+    "huks:libhukssdk",
     "ipc:ipc_core",
     "os_account:os_account_innerkits",
   ]
