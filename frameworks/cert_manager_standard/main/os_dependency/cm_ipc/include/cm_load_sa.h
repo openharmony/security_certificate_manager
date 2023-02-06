@@ -16,16 +16,20 @@
 #ifndef CM_LOAD_SA_H
 #define CM_LOAD_SA_H
 
-#include<string>
+#include <future>
+#include <string>
+#include "iremote_object.h"
 #include "system_ability_load_callback_stub.h"
 
 class OnDemandLoadCertManagerCallback : public OHOS::SystemAbilityLoadCallbackStub {
-private:
-    std::string servers;
 public:
     OnDemandLoadCertManagerCallback(std::string servers);
     void OnLoadSystemAbilitySuccess(int32_t systemAbilityId, const OHOS::sptr<IRemoteObject>& remoteObject) override;
     void OnLoadSystemAbilityFail(int32_t systemAbilityId) override;
+    OHOS::sptr<IRemoteObject> Promise(void);
+private:
+    std::string servers;
+    std::promise<OHOS::sptr<IRemoteObject>> promise_;
 };
 
 #endif /* CM_LOAD_SA_H */

@@ -29,45 +29,39 @@
 using namespace std;
 using namespace OHOS;
 
-static int32_t CmLoadSystemAbility();
-
-static sptr<IRemoteObject> cmProxy;
-
 namespace {
     constexpr int SA_ID_KEYSTORE_SERVICE = 3512;
     constexpr uint32_t MAX_SA_BOOT_DELAY_TIME = 30;
     const std::u16string SA_KEYSTORE_SERVICE_DESCRIPTOR = u"ohos.security.cm.service";
-    int32_t g_isLoadSystemAbility = CmLoadSystemAbility();
-    sptr<OnDemandLoadCertManagerCallback> loadCallBack = nullptr;
 }
 
-static int32_t CmLoadSystemAbility()
+static sptr<IRemoteObject> CmLoadSystemAbility(void)
 {
-    if (cmProxy != nullptr) {
-        CM_LOG_D("GetCmProxy cmProxy already exist.");
-        return CM_SUCCESS;
-    }
-
-    sptr<ISystemAbilityManager> saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (saManager == nullptr) {
         CM_LOG_E("GetCmProxy registry is null");
-        return CM_FAILURE;
+        return {};
+    }
+
+    auto object = saManager->GetSystemAbility(SA_ID_KEYSTORE_SERVICE);
+    if (object != nullptr) {
+        return object;
     }
 
     string servers = "CertManager";
-    loadCallBack = new OnDemandLoadCertManagerCallback(servers);
+    sptr<OnDemandLoadCertManagerCallback> loadCallBack = new (std::nothrow)OnDemandLoadCertManagerCallback(servers);
     if (loadCallBack == nullptr) {
         CM_LOG_E("new OnDemandLoadCertManagerCallback failed");
-        return CM_FAILURE;
+        return {};
     }
 
     int32_t ret = saManager->LoadSystemAbility(SA_ID_KEYSTORE_SERVICE, loadCallBack);
     if (ret != ERR_OK) {
         CM_LOG_E("systemAbilityId:%d load failed,result code:%d", SA_ID_KEYSTORE_SERVICE, ret);
-        return CM_FAILURE;
+        return {};
     }
 
-    return CM_SUCCESS;
+    return loadCallBack->Promise();
 }
 
 static int32_t CmReadRequestReply(MessageParcel &reply, struct CmBlob *outBlob)
@@ -108,16 +102,14 @@ int32_t SendRequest(enum CmMessage type, const struct CmBlob *inBlob,
     struct CmBlob *outBlob)
 {
     uint32_t i = 0;
-    if (CmLoadSystemAbility() != CM_SUCCESS) {
-        CM_LOG_E("LoadSystemAbility failed.");
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-
+    sptr<IRemoteObject> cmProxy = CmLoadSystemAbility();
     while ((cmProxy == nullptr) && i < MAX_SA_BOOT_DELAY_TIME) {
+        CM_LOG_E("cmProxy is nullptr, i = %u", i);
         std::this_thread::sleep_for(std::chrono::milliseconds(100)); /* 100 is time */
         i++;
     }
 
+    cmProxy = CmLoadSystemAbility();
     if (cmProxy == nullptr) {
         CM_LOG_E("Certtificate manager Proxy is null.");
         return CMR_ERROR_NULL_POINTER;
@@ -145,15 +137,19 @@ int32_t SendRequest(enum CmMessage type, const struct CmBlob *inBlob,
 }
 
 void OnDemandLoadCertManagerCallback::OnLoadSystemAbilitySuccess(int32_t systemAbilityId,
-    const sptr<IRemoteObject>& remoteObject)
+    const sptr<IRemoteObject> &remoteObject)
 {
-    cmProxy = remoteObject;
     CM_LOG_I("OnLoadSystemAbility Success systemAbilityId: %d, IRemoteObject result:%s",
         systemAbilityId, ((remoteObject != nullptr) ? "succeed" : "failed"));
+    promise_.set_value(remoteObject);
 }
 
 void OnDemandLoadCertManagerCallback::OnLoadSystemAbilityFail(int32_t systemAbilityId)
 {
-    cmProxy = nullptr;
     CM_LOG_E("OnLoadSystemAbility Fail systemAbilityId: %d", systemAbilityId);
+}
+
+sptr<IRemoteObject> OnDemandLoadCertManagerCallback::Promise(void)
+{
+    return promise_.get_future().get();
 }
