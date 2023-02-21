@@ -30,9 +30,8 @@ ohos_shared_library("cert_manager_engine_core_standard") {
     "_CM_LOG_ENABLE_",
   ]
   include_dirs = [
+    "../../../../../interfaces/innerkits/cert_manager_standard/main/include",
     "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_engine/main/core/include",
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common/include",
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency/log",
     "//third_party/openssl/include",
   ]
   cflags = [

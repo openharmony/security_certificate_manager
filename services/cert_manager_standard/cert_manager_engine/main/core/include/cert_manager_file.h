@@ -16,7 +16,6 @@
 #ifndef CERT_MANAGER_FILE_H
 #define CERT_MANAGER_FILE_H
 
-#include "cert_manager_file.h"
 #include "cm_type.h"
 
 #ifdef _cplusplus
