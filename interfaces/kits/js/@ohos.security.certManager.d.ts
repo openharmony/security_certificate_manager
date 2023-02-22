@@ -29,8 +29,8 @@ declare namespace CertificateManager {
      * @param context Indicates the context of the calling interface application.
      * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function getSystemTrustedCertificateList(context: CMContext, callback: AsyncCallback<CMResult>) : void;
-    function getSystemTrustedCertificateList(context: CMContext) : Promise<CMResult>;
+    function getSystemTrustedCertificateList(callback: AsyncCallback<CMResult>) : void;
+    function getSystemTrustedCertificateList() : Promise<CMResult>;
 
     /**
      * Get the detail of system root certificate.
@@ -40,8 +40,8 @@ declare namespace CertificateManager {
      * @param certUri Indicates the certificate's name.
      * @permission ohos.permission.ACCESS_CERT_MANAGER
      */
-    function getSystemTrustedCertificate(context: CMContext, certUri: string, callback: AsyncCallback<CMResult>) : void;
-    function getSystemTrustedCertificate(context: CMContext, certUri: string) : Promise<CMResult>;
+    function getSystemTrustedCertificate(certUri: string, callback: AsyncCallback<CMResult>) : void;
+    function getSystemTrustedCertificate(certUri: string) : Promise<CMResult>;
 
     /**
      * Set the status of root certificates.
@@ -54,8 +54,8 @@ declare namespace CertificateManager {
      * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
      * @systemapi Hide this for inner system use
      */
-    function setCertificateStatus(context: CMContext, certUri: string, store: number, status: boolean, callback: AsyncCallback<boolean>) : void;
-    function setCertificateStatus(context: CMContext, certUri: string, store: number, status: boolean) : Promise<boolean>;
+    function setCertificateStatus(certUri: string, store: number, status: boolean, callback: AsyncCallback<boolean>) : void;
+    function setCertificateStatus(certUri: string, store: number, status: boolean) : Promise<boolean>;
 
     /**
      * Install the user root certificate.
@@ -317,12 +317,6 @@ declare namespace CertificateManager {
      */
     function abort(handle: Uint8Array, callback: AsyncCallback<boolean>) : void;
     function abort(handle: Uint8Array) : Promise<boolean>;
-
-    export interface CMContext {
-        userId: string;
-        uid: string;
-        packageName: string;
-    }
 
     export interface CertInfo {
         uri: string;

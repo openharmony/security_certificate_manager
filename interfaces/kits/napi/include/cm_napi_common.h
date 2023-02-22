@@ -28,10 +28,6 @@
 #define NAPI_ASSERT_FUNC(f) if (CM_SUCCESS != (f)) { CM_LOG_W("Failed: %s\n", #f); return; }
 
 namespace CMNapi {
-static const std::string CM_CONTEXT_PROPERTY_USERID = "userId";
-static const std::string CM_CONTEXT_PROPERTY_UID = "uid";
-static const std::string CM_CONTEXT_PROPERTY_PACKAGENAME = "packageName";
-
 static const std::string CM_CERT_PROPERTY_URI = "uri";
 static const std::string CM_CERT_PROPERTY_TYPE = "type";
 static const std::string CM_CERT_PROPERTY_CREDENTIAL_ALIAS = "alias";
@@ -64,7 +60,6 @@ static const int32_t RESULT_NUMBER = 2;
 static const uint32_t APPLICATION_CERTIFICATE_STORE = 0;
 static const uint32_t APPLICATION_PRIVATE_CERTIFICATE_STORE = 3;
 
-napi_value ParseCmContext(napi_env env, napi_value object, CmContext *&cmContext);
 napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store);
 napi_value ParseBoolean(napi_env env, napi_value object, bool &status);
 napi_value ParseString(napi_env env, napi_value object, CmBlob *&certUri);
