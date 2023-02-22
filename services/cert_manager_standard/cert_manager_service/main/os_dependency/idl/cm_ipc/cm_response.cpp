@@ -24,7 +24,6 @@
 
 #include "cm_log.h"
 #include "cm_mem.h"
-#include "cm_type_inner.h"
 #include "os_account_manager.h"
 
 using namespace OHOS;

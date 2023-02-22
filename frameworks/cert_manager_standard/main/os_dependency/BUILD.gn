@@ -28,6 +28,7 @@ ohos_static_library("libcert_manager_os_dependency_standard_static") {
     "log",
     "//commonlibrary/c_utils/base/include",
     "//utils/system/safwk/native/include",
+    "../../../../interfaces/innerkits/cert_manager_standard/main/include",
   ]
   defines = [
     "L2_STANDARD",

@@ -21,7 +21,10 @@ ohos_static_library("libcert_manager_fuzz_test_common_static") {
   subsystem_name = "security"
   part_name = "certificate_manager"
   public_configs = [ ":cert_manager_config" ]
-  include_dirs = [ "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common/include" ]
+  include_dirs = [
+    "../../../frameworks/cert_manager_standard/main/common/include",
+    "../../../interfaces/innerkits/cert_manager_standard/main/include",
+  ]
   sources = [ "src/cm_fuzz_test_common.cpp" ]
   cflags_cc = [
     "-Wall",
@@ -31,7 +34,6 @@ ohos_static_library("libcert_manager_fuzz_test_common_static") {
     "L2_STANDARD",
     "_CM_LOG_ENABLE_",
   ]
-  deps = [ "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static" ]
   external_deps = [ "c_utils:utils" ]
   complete_static_lib = true
 }

@@ -26,15 +26,14 @@ ohos_static_library("libcert_manager_service_os_dependency_standard_static") {
     "//commonlibrary/c_utils/base/include",
     "//utils/system/safwk/native/include",
     "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_engine/main/core/include",
+    "../../../../../interfaces/innerkits/cert_manager_standard/main/include",
   ]
 
   defines = [
     "L2_STANDARD",
     "_CM_LOG_ENABLE_",
   ]
-  sources = [
-      "sa/cm_sa.cpp"
-  ]
+  sources = [ "sa/cm_sa.cpp" ]
   deps = [
     "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
     "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_os_dependency_standard_static",
@@ -54,11 +53,10 @@ ohos_static_library("libcert_manager_service_os_dependency_standard_static") {
     external_deps += [
       "ability_base:want",
       "bundle_framework:appexecfwk_base",
+      "c_utils:utils",
       "common_event_service:cesfwk_innerkits",
       "os_account:os_account_innerkits",
-      "c_utils:utils"
     ]
-
   }
 
   cflags_cc = [
