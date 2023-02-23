@@ -242,12 +242,13 @@ void CertManagerService::OnStart()
         return;
     }
 
-    if (!Init()) {
+    if (CertManagerInitialize() != CMR_OK) {
         CM_LOG_E("Failed to init CertManagerService");
         return;
     }
+    CM_LOG_I("CertManager init success");
 
-    if (CertManagerInitialize() != CMR_OK) {
+    if (!Init()) {
         CM_LOG_E("Failed to init CertManagerService");
         return;
     }
