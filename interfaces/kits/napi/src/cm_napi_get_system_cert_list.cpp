@@ -25,10 +25,8 @@
 
 namespace CMNapi {
 namespace {
-constexpr int CM_NAPI_GET_SYSTEM_CERT_LIST_MIN_ARGS = 1;
-constexpr int CM_NAPI_GET_SYSTEM_CERT_LIST_MAX_ARGS = 2;
-constexpr int CM_NAPI_GET_USER_CERT_LIST_MIN_ARGS = 0;
-constexpr int CM_NAPI_GET_USER_CERT_LIST_MAX_ARGS = 1;
+constexpr int CM_NAPI_GET_CERT_LIST_MIN_ARGS = 0;
+constexpr int CM_NAPI_GET_CERT_LIST_MAX_ARGS = 1;
 }  // namespace
 
 struct GetCertListAsyncContextT {
@@ -37,7 +35,6 @@ struct GetCertListAsyncContextT {
     napi_ref callback = nullptr;
 
     int32_t result = 0;
-    struct CmContext *cmContext = nullptr;
     uint32_t store = 0;
     struct CertList *certificateList = nullptr;
 };
@@ -62,10 +59,6 @@ static void DeleteGetCertListAsyncContext(napi_env env, GetCertListAsyncContext 
 
     DeleteNapiContext(env, context->asyncWork, context->callback);
 
-    if (context->cmContext != nullptr) {
-        FreeCmContext(context->cmContext);
-    }
-
     if (context->certificateList != nullptr) {
         FreeCertList(context->certificateList);
     }
@@ -74,47 +67,17 @@ static void DeleteGetCertListAsyncContext(napi_env env, GetCertListAsyncContext 
     context = nullptr;
 }
 
-static napi_value GetCertListParseParams(
-    napi_env env, napi_callback_info info, GetCertListAsyncContext context)
+static napi_value GetCertListParseParams(    napi_env env, napi_callback_info info,
+    GetCertListAsyncContext context, uint32_t store)
 {
-    size_t argc = CM_NAPI_GET_SYSTEM_CERT_LIST_MAX_ARGS;
-    napi_value argv[CM_NAPI_GET_SYSTEM_CERT_LIST_MAX_ARGS] = { nullptr };
+    size_t argc = CM_NAPI_GET_CERT_LIST_MAX_ARGS;
+    napi_value argv[CM_NAPI_GET_CERT_LIST_MAX_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
-    if (argc < CM_NAPI_GET_SYSTEM_CERT_LIST_MIN_ARGS) {
-        ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
-        CM_LOG_E("Missing parameter");
-        return nullptr;
-    }
-
-    size_t index = 0;
-    napi_value result = ParseCmContext(env, argv[index], context->cmContext);
-    if (result == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "get context type error");
-        CM_LOG_E("could not get cert manager context");
-        return nullptr;
-    }
-
-    index++;
-    if (index < argc) {
-        context->callback = GetCallback(env, argv[index]);
-    }
-
-    context->store = CM_SYSTEM_TRUSTED_STORE;
-    return GetInt32(env, 0);
-}
-
-static napi_value GetUserTrustedCertListParseParams(
-    napi_env env, napi_callback_info info, GetCertListAsyncContext context)
-{
-    size_t argc = CM_NAPI_GET_USER_CERT_LIST_MAX_ARGS;
-    napi_value argv[CM_NAPI_GET_USER_CERT_LIST_MAX_ARGS] = { nullptr };
-    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-
-    if ((argc != CM_NAPI_GET_USER_CERT_LIST_MIN_ARGS) &&
-        (argc != CM_NAPI_GET_USER_CERT_LIST_MAX_ARGS)) {
-        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid when getting user trusted certificate list");
-        CM_LOG_E("arguments count is not expected when getting user trusted certificate list");
+    if ((argc != CM_NAPI_GET_CERT_LIST_MIN_ARGS) &&
+        (argc != CM_NAPI_GET_CERT_LIST_MAX_ARGS)) {
+        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid when getting trusted certificate list");
+        CM_LOG_E("arguments count is not expected when getting trusted certificate list");
         return nullptr;
     }
 
@@ -123,12 +86,12 @@ static napi_value GetUserTrustedCertListParseParams(
         context->callback = GetCallback(env, argv[index]);
         if (context->callback == nullptr) {
             ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
-            CM_LOG_E("get callback function failed when getting user trusted certificate list");
+            CM_LOG_E("get callback function failed when getting trusted certificate list");
             return nullptr;
         }
     }
 
-    context->store = CM_USER_TRUSTED_STORE;
+    context->store = store;
     return GetInt32(env, 0);
 }
 
@@ -230,7 +193,7 @@ napi_value CMNapiGetSystemCertList(napi_env env, napi_callback_info info)
         CM_LOG_E("could not create context");
         return nullptr;
     }
-    napi_value result = GetCertListParseParams(env, info, context);
+    napi_value result = GetCertListParseParams(env, info, context, CM_SYSTEM_TRUSTED_STORE);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
         DeleteGetCertListAsyncContext(env, context);
@@ -253,7 +216,7 @@ napi_value CMNapiGetUserTrustedCertList(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    napi_value result = GetUserTrustedCertListParseParams(env, info, context);
+    napi_value result = GetCertListParseParams(env, info, context, CM_USER_TRUSTED_STORE);
     if (result == nullptr) {
         CM_LOG_E("could not parse user trusted cert list params");
         DeleteGetCertListAsyncContext(env, context);

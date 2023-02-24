@@ -25,8 +25,8 @@
 
 namespace CMNapi {
 namespace {
-constexpr int CM_NAPI_SET_CERT_STATUS_MIN_ARGS = 4;
-constexpr int CM_NAPI_SET_CERT_STATUS_MAX_ARGS = 5;
+constexpr int CM_NAPI_SET_CERT_STATUS_MIN_ARGS = 3;
+constexpr int CM_NAPI_SET_CERT_STATUS_MAX_ARGS = 4;
 }  // namespace
 
 struct SetCertStatusAsyncContextT {
@@ -35,7 +35,6 @@ struct SetCertStatusAsyncContextT {
     napi_ref callback = nullptr;
 
     int32_t result = 0;
-    struct CmContext *cmContext = nullptr;
     struct CmBlob *certUri = nullptr;
     uint32_t store = 0;
     bool status = false;
@@ -65,10 +64,6 @@ static void DeleteSetCertStatusAsyncContext(napi_env env, SetCertStatusAsyncCont
         FreeCmBlob(context->certUri);
     }
 
-    if (context->cmContext != nullptr) {
-        FreeCmContext(context->cmContext);
-    }
-
     CmFree(context);
     context = nullptr;
 }
@@ -87,15 +82,7 @@ static napi_value SetCertStatusParseParams(
     }
 
     size_t index = 0;
-    napi_value result = ParseCmContext(env, argv[index], context->cmContext);
-    if (result == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "get context type error");
-        CM_LOG_E("get context failed");
-        return nullptr;
-    }
-
-    index++;
-    result = ParseString(env, argv[index], context->certUri);
+    napi_value result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
         ThrowParamsError(env, PARAM_ERROR, "get certUri type error");
         CM_LOG_E("could not get cert uri when set cert status");
