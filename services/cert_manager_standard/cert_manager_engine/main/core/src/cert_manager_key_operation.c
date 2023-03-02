@@ -286,6 +286,19 @@ static int32_t AddParamsToParamSet(const struct CmBlob *commonUri, const struct 
             CM_LOG_E("add params failed");
             break;
         }
+
+        /* In the case of RSA PSS-Padding, set the salt length to the digest length */
+        if ((keySpec.algType == HKS_ALG_RSA) && (inputKeyProp.padding == HKS_PADDING_PSS)) {
+            struct HksParam saltLenParam = {
+                .tag = HKS_TAG_RSA_PSS_SALT_LEN_TYPE,
+                .uint32Param = HKS_RSA_PSS_SALTLEN_DIGEST
+            };
+            ret = HksAddParams(paramSet, &saltLenParam, 1);
+            if (ret != HKS_SUCCESS) {
+                CM_LOG_E("add saltLen tag failed");
+                break;
+            }
+        }
     } while (0);
 
     CM_FREE_PTR(outParamSet);
