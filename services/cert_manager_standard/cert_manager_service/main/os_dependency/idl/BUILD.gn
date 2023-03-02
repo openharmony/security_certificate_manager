@@ -23,10 +23,9 @@ ohos_static_library("libcm_service_idl_standard_static") {
   public_configs = [ ":cert_manager_config" ]
   include_dirs = [
     "//third_party/json/include",
-    "//commonlibrary/c_utils/base/include",
     "//third_party/openssl/include",
-    "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_service/main/hisysevent_wrapper/include",
     "../../../../../../interfaces/innerkits/cert_manager_standard/main/include",
+    "../../../../cert_manager_engine/main/core/include",
   ]
   defines = [
     "L2_STANDARD",
@@ -38,10 +37,9 @@ ohos_static_library("libcm_service_idl_standard_static") {
     "cm_ipc/cm_response.cpp",
   ]
   deps = [
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_os_dependency_standard_static",
-    "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_engine/main/core:cert_manager_engine_core_standard",
-    "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_service/main/hisysevent_wrapper:libcert_manager_hisysevent_wrapper_static",
+    "../../../../../../frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
+    "../../../../../../frameworks/cert_manager_standard/main/os_dependency:libcert_manager_log_mem_static",
+    "../../hisysevent_wrapper:libcert_manager_hisysevent_wrapper_static",
     "//third_party/openssl:libcrypto_shared",
   ]
   external_deps = [

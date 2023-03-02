@@ -13,25 +13,19 @@
 
 import("//build/ohos.gni")
 
-config("cert_manager_config") {
+config("cert_manager_engine_core_config") {
   include_dirs = [ "include" ]
 }
-ohos_shared_library("cert_manager_engine_core_standard") {
-  sanitize = {
-    cfi = true
-    debug = false
-    blocklist = "//base/security/certificate_manager/cfi_blocklist.txt"
-  }
+ohos_static_library("cert_manager_engine_core_standard") {
   subsystem_name = "security"
   part_name = "certificate_manager"
-  public_configs = [ ":cert_manager_config" ]
+  public_configs = [ ":cert_manager_engine_core_config" ]
   defines = [
     "L2_STANDARD",
     "_CM_LOG_ENABLE_",
   ]
   include_dirs = [
     "../../../../../interfaces/innerkits/cert_manager_standard/main/include",
-    "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_engine/main/core/include",
     "//third_party/openssl/include",
   ]
   cflags = [
@@ -62,7 +56,8 @@ ohos_shared_library("cert_manager_engine_core_standard") {
   ]
 
   deps = [
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
+    "../../../../../frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
+    "../../../../../frameworks/cert_manager_standard/main/os_dependency:libcert_manager_log_mem_static",
     "//base/security/crypto_framework/frameworks:crypto_framework_lib",
     "//third_party/openssl:libcrypto_shared",
   ]

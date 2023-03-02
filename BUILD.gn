@@ -196,9 +196,7 @@ group("cert_manager_type_fwk") {
 group("cert_manager_typer_services") {
   if (os_level == "standard") {
     deps = [
-      "//base/security/certificate_manager/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
       "//base/security/certificate_manager/services/cert_manager_standard:cert_manager_service",
-      "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_engine/main/core:cert_manager_engine_core_standard",
       "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_service/main/os_dependency/sa/sa_profile:cert_manager_sa_profile",
     ]
   } else if (os_level == "small") {
