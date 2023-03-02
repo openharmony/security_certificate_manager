@@ -576,7 +576,7 @@ HWTEST_F(CmFinishTest, CmFinishTest028, TestSize.Level0)
 */
 HWTEST_F(CmFinishTest, CmFinishTest029, TestSize.Level0)
 {
-    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA256 };
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA224 };
     TestSignVerify(CERT_KEY_ALG_RSA_512, true, &spec);
 }
 
