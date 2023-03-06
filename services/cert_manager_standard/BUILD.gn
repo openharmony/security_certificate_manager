@@ -34,7 +34,8 @@ ohos_shared_library("cert_manager_service") {
   ]
   deps = [
     ":cert_manager_service.rc",
-    "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_service/main:libcert_manager_service_standard_static",
+    "cert_manager_engine/main/core:cert_manager_engine_core_standard",
+    "cert_manager_service/main/os_dependency:libcert_manager_service_os_dependency_standard_static",
   ]
   external_deps = [
     "hiviewdfx_hilog_native:libhilog",

@@ -16,8 +16,9 @@ import("//build/ohos.gni")
 group("cert_manager_standard_frameworks") {
   if (os_level == "standard") {
     public_deps = [
-      "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_os_dependency_standard_static",    
-      "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
+      "common:libcert_manager_common_standard_static",
+      "os_dependency:libcert_manager_ipc_client_static",
+      "os_dependency:libcert_manager_log_mem_static",
     ]
   }
 }

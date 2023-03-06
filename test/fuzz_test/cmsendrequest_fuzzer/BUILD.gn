@@ -44,7 +44,6 @@ ohos_fuzztest("CmSendRequestFuzzTest") {
     "//base/security/access_token/interfaces/innerkits/accesstoken:libaccesstoken_sdk",
     "//base/security/access_token/interfaces/innerkits/nativetoken:libnativetoken",
     "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_os_dependency_standard_static",
     "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
     "//base/security/certificate_manager/test/fuzz_test/fuzz_test_common:libcert_manager_fuzz_test_common_static",
   ]

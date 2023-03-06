@@ -13,23 +13,47 @@
 
 import("//build/ohos.gni")
 
-config("cert_manager_config") {
-  include_dirs = [
-    "include",
-    "cm_ipc/include",
-  ]
+config("cert_manager_log_mem_config") {
+  include_dirs = [ "../common/include" ]
 }
 
-ohos_static_library("libcert_manager_os_dependency_standard_static") {
+ohos_static_library("libcert_manager_log_mem_static") {
   subsystem_name = "security"
   part_name = "certificate_manager"
-  public_configs = [ ":cert_manager_config" ]
-  include_dirs = [
-    "log",
-    "//commonlibrary/c_utils/base/include",
-    "//utils/system/safwk/native/include",
-    "../../../../interfaces/innerkits/cert_manager_standard/main/include",
+  public_configs = [ ":cert_manager_log_mem_config" ]
+  include_dirs =
+      [ "../../../../interfaces/innerkits/cert_manager_standard/main/include" ]
+  defines = [
+    "L2_STANDARD",
+    "_CM_LOG_ENABLE_",
   ]
+  sources = [
+    "./log/cm_log.c",
+    "./posix/cm_mem.c",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hiviewdfx_hilog_native:libhilog",
+  ]
+  cflags = [
+    "-DHILOG_ENABLE",
+    "-Wall",
+    "-Werror",
+  ]
+  complete_static_lib = true
+}
+
+config("cert_manager_ipc_client_config") {
+  include_dirs = [ "cm_ipc/include" ]
+}
+
+ohos_static_library("libcert_manager_ipc_client_static") {
+  subsystem_name = "security"
+  part_name = "certificate_manager"
+  public_configs = [ ":cert_manager_ipc_client_config" ]
+  include_dirs =
+      [ "../../../../interfaces/innerkits/cert_manager_standard/main/include" ]
   defines = [
     "L2_STANDARD",
     "_CM_LOG_ENABLE_",
@@ -39,14 +63,13 @@ ohos_static_library("libcert_manager_os_dependency_standard_static") {
     "./cm_ipc/src/cm_ipc_client_serialization.c",
     "./cm_ipc/src/cm_load_sa.cpp",
     "./cm_ipc/src/cm_request.cpp",
-    "./log/cm_log.c",
-    "./posix/cm_mem.c",
   ]
   deps = [
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
+    ":libcert_manager_log_mem_static",
     "//third_party/openssl:libcrypto_shared",
   ]
   external_deps = [
+    "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "samgr:samgr_proxy",

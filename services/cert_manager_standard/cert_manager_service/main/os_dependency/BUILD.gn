@@ -13,19 +13,12 @@
 
 import("//build/ohos.gni")
 
-config("cert_manager_config") {
-  include_dirs = [ "service" ]
-}
-
 ohos_static_library("libcert_manager_service_os_dependency_standard_static") {
   subsystem_name = "security"
   part_name = "certificate_manager"
-  public_configs = [ ":cert_manager_config" ]
   include_dirs = [
     "//third_party/json/include",
-    "//commonlibrary/c_utils/base/include",
-    "//utils/system/safwk/native/include",
-    "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_engine/main/core/include",
+    "../../../cert_manager_engine/main/core/include",
     "../../../../../interfaces/innerkits/cert_manager_standard/main/include",
   ]
 
@@ -35,12 +28,13 @@ ohos_static_library("libcert_manager_service_os_dependency_standard_static") {
   ]
   sources = [ "sa/cm_sa.cpp" ]
   deps = [
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_os_dependency_standard_static",
+    "../../../../../frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
+    "../../../../../frameworks/cert_manager_standard/main/os_dependency:libcert_manager_log_mem_static",
+    "idl:libcm_service_idl_standard_static",
   ]
-  public_deps = [ "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_service/main/os_dependency/idl:libcm_service_idl_standard_static" ]
 
   external_deps = [
+    "c_utils:utils",
     "hiviewdfx_hilog_native:libhilog",
     "ipc:ipc_core",
     "safwk:system_ability_fwk",
@@ -53,7 +47,6 @@ ohos_static_library("libcert_manager_service_os_dependency_standard_static") {
     external_deps += [
       "ability_base:want",
       "bundle_framework:appexecfwk_base",
-      "c_utils:utils",
       "common_event_service:cesfwk_innerkits",
       "os_account:os_account_innerkits",
     ]
