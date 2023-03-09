@@ -107,8 +107,8 @@ static int32_t GetAndCheckUriObj(struct CMUri *uriObj, const struct CmBlob *uri)
 static int32_t CheckCallerIsProducer(const struct CmContext *context, const struct CMUri *uriObj)
 {
     /* check caller is Producer: user and app has been checked not null */
-    uint32_t userId = atoi(uriObj->user);
-    uint32_t uid = atoi(uriObj->app);
+    uint32_t userId = (uint32_t)atoi(uriObj->user);
+    uint32_t uid = (uint32_t)atoi(uriObj->app);
     if ((userId == context->userId) && (uid == context->uid)) {
         CM_LOG_I("caller is producer.");
         return CM_SUCCESS;
@@ -454,7 +454,7 @@ static int32_t CheckIsAuthorizedApp(const struct CMUri *uriObj)
     /* calc uri mac */
     uint8_t macData[MAC_SHA256_LEN] = {0};
     struct CmBlob mac = { sizeof(macData), macData };
-    uint32_t clientUid = atoi(uriObj->clientApp);
+    uint32_t clientUid = (uint32_t)atoi(uriObj->clientApp);
     ret = CalcUriMac(uriObj, clientUid, &mac, false);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("calc uri mac failed, ret = %d", ret);
@@ -657,7 +657,7 @@ static int32_t CheckCommonPermission(const struct CmContext *context, const stru
         return CMR_ERROR_PERMISSION_DENIED;
     }
 
-    uint32_t clientUid = atoi(uriObj->clientApp);
+    uint32_t clientUid = (uint32_t)atoi(uriObj->clientApp);
     if (clientUid != context->uid) {
         CM_LOG_E("caller uid not match client uid");
         return CMR_ERROR_PERMISSION_DENIED;

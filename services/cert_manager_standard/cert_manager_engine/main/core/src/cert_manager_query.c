@@ -115,7 +115,7 @@ static int32_t CreateCertPathList(const char *useridPath, struct CmMutableBlob *
         return CM_FAILURE;
     }
 
-    uint32_t arraySize = sizeof(struct CmMutableBlob) * uidCount;
+    uint32_t arraySize = sizeof(struct CmMutableBlob) * (uint32_t)uidCount;
     struct CmMutableBlob *cPathList = (struct CmMutableBlob *)CMMalloc(arraySize);
     if (cPathList == NULL) {
         CM_LOG_E("malloc cPathList failed");
