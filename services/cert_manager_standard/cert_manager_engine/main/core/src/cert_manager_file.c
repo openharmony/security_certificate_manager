@@ -91,7 +91,7 @@ static int32_t MallocFileNames(struct CmMutableBlob **fNames, const char *path, 
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    uint32_t bufSize = sizeof(struct CmMutableBlob) * fileNums;
+    uint32_t bufSize = sizeof(struct CmMutableBlob) * (uint32_t)fileNums;
     struct CmMutableBlob *temp = (struct CmMutableBlob *)CMMalloc(bufSize);
     if (temp == NULL) {
         CM_LOG_E("Failed to allocate memory for file names");

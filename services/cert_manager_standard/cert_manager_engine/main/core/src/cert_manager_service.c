@@ -414,8 +414,6 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
 static int32_t CmComparisonCallerIdWithUri(const struct CmContext *context,
     const struct CmBlob *certUri)
 {
-    uint32_t userId;
-    uint32_t uid;
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
     if (CheckUri(certUri) != CM_SUCCESS) {
@@ -434,14 +432,14 @@ static int32_t CmComparisonCallerIdWithUri(const struct CmContext *context,
         (void)CertManagerFreeUri(&uriObj);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    userId = atoi(uriObj.user);
+    uint32_t userId = (uint32_t)atoi(uriObj.user);
 
     if (uriObj.app == NULL) {
         CM_LOG_E("uri app invalid");
         (void)CertManagerFreeUri(&uriObj);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    uid = atoi(uriObj.app);
+    uint32_t uid = (uint32_t)atoi(uriObj.app);
     if ((context->userId == userId) && (context->uid == uid)) {
         ret = CM_SUCCESS;
     } else {
