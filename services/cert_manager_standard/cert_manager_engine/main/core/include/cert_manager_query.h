@@ -36,7 +36,7 @@ int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
 
 void CmFreeCertBlob(struct CertBlob *certBlob);
 
-int32_t CmGetMatchedCertIndex(const struct CmMutableBlob *certFileList, const struct CmBlob *certUri);
+uint32_t CmGetMatchedCertIndex(const struct CmMutableBlob *certFileList, const struct CmBlob *certUri);
 
 void CmFreeCertFiles(struct CertFileInfo *cFileList, uint32_t certCount);
 
