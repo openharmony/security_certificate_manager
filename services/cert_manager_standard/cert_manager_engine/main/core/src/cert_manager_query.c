@@ -512,7 +512,7 @@ void CmFreeCertBlob(struct CertBlob *certBlob)
     }
 }
 
-int32_t CmGetMatchedCertIndex(const struct CmMutableBlob *certFileList, const struct CmBlob *certUri)
+uint32_t CmGetMatchedCertIndex(const struct CmMutableBlob *certFileList, const struct CmBlob *certUri)
 {
     if (certFileList->size == 0) {
         CM_LOG_I("no cert file  exist");
