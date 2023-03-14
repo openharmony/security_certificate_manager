@@ -56,7 +56,6 @@ static int32_t GetCertificateList(enum CmMessage type, const uint32_t store,
 {
     int32_t ret;
     struct CmBlob outBlob = { 0, NULL };
-    const struct CmContext context = {0};
     struct CmBlob parcelBlob = { 0, NULL };
     struct CmParamSet *sendParamSet = NULL;
     struct CmParam params[] = {
@@ -82,7 +81,7 @@ static int32_t GetCertificateList(enum CmMessage type, const uint32_t store,
             break;
         }
 
-        ret = CmCertificateListUnpackFromService(&outBlob, false, &context, certificateList);
+        ret = CmCertificateListUnpackFromService(&outBlob, certificateList);
     } while (0);
     CmFreeParamSet(&sendParamSet);
     CM_FREE_BLOB(outBlob);
@@ -821,7 +820,6 @@ static int32_t GetUserCertList(enum CmMessage type, const uint32_t store,
     int32_t ret = CM_SUCCESS;
     struct CmBlob outBlob = {0, NULL};
     struct CmBlob parcelBlob = {0, NULL};
-    const struct CmContext context = {0};
     struct CmParamSet *sendParamSet = NULL;
     struct CmParam params[] = {
         { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = store },
@@ -846,7 +844,7 @@ static int32_t GetUserCertList(enum CmMessage type, const uint32_t store,
             break;
         }
 
-        ret = CmCertificateListUnpackFromService(&outBlob, false, &context, certificateList);
+        ret = CmCertificateListUnpackFromService(&outBlob, certificateList);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("getcertlist unpack from service failed");
             break;

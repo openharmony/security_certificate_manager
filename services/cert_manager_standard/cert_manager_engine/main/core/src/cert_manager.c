@@ -62,7 +62,8 @@ int32_t CertManagerInitialize(void)
 static int32_t GetFilePath(const struct CmContext *context, uint32_t store, char *pathPtr,
     char *suffix, uint32_t *suffixLen)
 {
-    int32_t ret, retVal;
+    int32_t ret;
+    int32_t retVal;
     if (suffix == NULL || suffixLen == NULL) {
         CM_LOG_E("NULL pointer failure");
         return CMR_ERROR_NULL_POINTER;
@@ -305,7 +306,7 @@ int32_t CmGetUri(const char *filePath, struct CmBlob *uriBlob)
 static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const uint32_t store)
 {
     uint32_t fileCount = 0;
-    int32_t retCode, ret = CM_SUCCESS;
+    int32_t ret = CM_SUCCESS;
     char pathBuf[CERT_MAX_PATH_LEN] = {0};
     char uriBuf[MAX_LEN_URI] = {0};
     struct CmBlob fileNames[MAX_COUNT_CERTIFICATE];
@@ -340,7 +341,7 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
                 continue;
             }
 
-            retCode = CmKeyOpDeleteKey(&uriBlob);
+            int32_t retCode = CmKeyOpDeleteKey(&uriBlob);
             if (retCode != CM_SUCCESS) { /* ignore the return of deleteKey */
                 CM_LOG_I("App key %u remove failed ret: %d", i, retCode);
             }
