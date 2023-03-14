@@ -72,16 +72,13 @@ static int32_t CmCertListGetCertCount(const struct CmBlob *outData, struct CertL
     return CM_SUCCESS;
 }
 
-int32_t CmCertificateListUnpackFromService(const struct CmBlob *outData, bool needEncode,
-    const struct CmContext *context, struct CertList *certificateList)
+int32_t CmCertificateListUnpackFromService(const struct CmBlob *outData, struct CertList *certificateList)
 {
-    uint32_t offset = 0, status = 0;
-    struct CmBlob blob = {0};
-    if ((outData == NULL) || (context == NULL) || (certificateList == NULL) ||
-        (outData->data == NULL) || (certificateList->certAbstract == NULL)) {
+    if (CmCheckBlob(outData) != CM_SUCCESS || (certificateList == NULL) || (certificateList->certAbstract == NULL)) {
         return CMR_ERROR_NULL_POINTER;
     }
 
+    uint32_t offset = 0;
     int32_t ret = CmCertListGetCertCount(outData, certificateList, &offset);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get Cert list count failed");
@@ -89,9 +86,10 @@ int32_t CmCertificateListUnpackFromService(const struct CmBlob *outData, bool ne
     }
 
     for (uint32_t i = 0; i < certificateList->certsCount; i++) {
+        struct CmBlob blob = { 0, NULL };
         ret = CmGetBlobFromBuffer(&blob, outData, &offset);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Get subjectNameBlob FromBuffer");
+            CM_LOG_E("Get subjectNameBlob FromBuffer failed");
             return ret;
         }
         if (memcpy_s(certificateList->certAbstract[i].subjectName, MAX_LEN_SUBJECT_NAME, blob.data, blob.size) != EOK) {
@@ -99,16 +97,17 @@ int32_t CmCertificateListUnpackFromService(const struct CmBlob *outData, bool ne
             return CMR_ERROR_INVALID_OPERATION;
         }
 
+        uint32_t status = 0;
         ret = GetUint32FromBuffer(&status, outData, &offset);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("copy status failed");
+            CM_LOG_E("get status failed");
             return ret;
         }
         certificateList->certAbstract[i].status = (status >= 1) ? false : true;
 
         ret = CmGetBlobFromBuffer(&blob, outData, &offset);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("copy uri failed");
+            CM_LOG_E("get uri failed");
             return ret;
         }
         if (memcpy_s(certificateList->certAbstract[i].uri, MAX_LEN_URI, blob.data, blob.size) != EOK) {
@@ -118,7 +117,7 @@ int32_t CmCertificateListUnpackFromService(const struct CmBlob *outData, bool ne
 
         ret = CmGetBlobFromBuffer(&blob, outData, &offset);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("copy certAlias failed");
+            CM_LOG_E("get certAlias failed");
             return ret;
         }
         if (memcpy_s(certificateList->certAbstract[i].certAlias, MAX_LEN_CERT_ALIAS, blob.data, blob.size) != EOK) {

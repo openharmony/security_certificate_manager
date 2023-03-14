@@ -287,10 +287,9 @@ HWTEST_F(CmLogTest, CmIpcClientTest008, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest009, TestSize.Level0)
 {
-    struct CmContext context = { 0, 0, {0} };
     struct CertAbstract abstract = { {0}, {0}, false, {0} };
     struct CertList certificateList = { 1, &abstract };
-    int32_t ret = CmCertificateListUnpackFromService(nullptr, true, &context, &certificateList); /* outData invalid */
+    int32_t ret = CmCertificateListUnpackFromService(nullptr, &certificateList); /* outData invalid */
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -302,11 +301,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest009, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest010, TestSize.Level0)
 {
-    struct CmBlob outData = { 0, nullptr }; /* outData data invalid */
-    struct CmContext context = { 0, 0, {0} };
+    struct CmBlob outData = { 1, nullptr }; /* outData data invalid */
     struct CertAbstract abstract = { {0}, {0}, false, {0} };
     struct CertList certificateList = { 1, &abstract };
-    int32_t ret = CmCertificateListUnpackFromService(&outData, true, &context, &certificateList);
+    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -318,11 +316,11 @@ HWTEST_F(CmLogTest, CmIpcClientTest010, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest011, TestSize.Level0)
 {
-    uint8_t outDataBuf[] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
-    struct CmBlob outData = { sizeof(outDataBuf), outDataBuf };
+    uint8_t outDataBuf[] = { 0xaa };
+    struct CmBlob outData = { 0, outDataBuf }; /* outData size invalid */
     struct CertAbstract abstract = { {0}, {0}, false, {0} };
     struct CertList certificateList = { 1, &abstract };
-    int32_t ret = CmCertificateListUnpackFromService(&outData, true, nullptr, &certificateList); /* context invalid */
+    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -336,8 +334,7 @@ HWTEST_F(CmLogTest, CmIpcClientTest012, TestSize.Level0)
 {
     uint8_t outDataBuf[] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
     struct CmBlob outData = { sizeof(outDataBuf), outDataBuf };
-    struct CmContext context = { 0, 0, {0} };
-    int32_t ret = CmCertificateListUnpackFromService(&outData, true, &context, nullptr); /* certificateList invalid */
+    int32_t ret = CmCertificateListUnpackFromService(&outData, nullptr); /* certificateList invalid */
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -351,9 +348,8 @@ HWTEST_F(CmLogTest, CmIpcClientTest013, TestSize.Level0)
 {
     uint8_t outDataBuf[] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
     struct CmBlob outData = { sizeof(outDataBuf), outDataBuf };
-    struct CmContext context = { 0, 0, {0} };
     struct CertList certificateList = { 0, nullptr };
-    int32_t ret = CmCertificateListUnpackFromService(&outData, true, &context, &certificateList); /* abstract invalid */
+    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList); /* abstract invalid */
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -365,7 +361,6 @@ HWTEST_F(CmLogTest, CmIpcClientTest013, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest014, TestSize.Level0)
 {
-    struct CmContext context = { 0, 0, {0} };
     struct CertAbstract abstract = { {0}, {0}, false, {0} };
     struct CertList certificateList = { 1, &abstract };
 
@@ -377,7 +372,7 @@ HWTEST_F(CmLogTest, CmIpcClientTest014, TestSize.Level0)
     if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
         return;
     }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, true, &context, &certificateList);
+    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -389,7 +384,6 @@ HWTEST_F(CmLogTest, CmIpcClientTest014, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest015, TestSize.Level0)
 {
-    struct CmContext context = { 0, 0, {0} };
     struct CertAbstract abstract = { {0}, {0}, false, {0} };
     struct CertList certificateList = { 1, &abstract };
 
@@ -401,7 +395,7 @@ HWTEST_F(CmLogTest, CmIpcClientTest015, TestSize.Level0)
     if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
         return;
     }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, true, &context, &certificateList);
+    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -413,7 +407,6 @@ HWTEST_F(CmLogTest, CmIpcClientTest015, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest016, TestSize.Level0)
 {
-    struct CmContext context = { 0, 0, {0} };
     struct CertAbstract abstract = { {0}, {0}, false, {0} };
     struct CertList certificateList = { 1, &abstract };
 
@@ -425,7 +418,7 @@ HWTEST_F(CmLogTest, CmIpcClientTest016, TestSize.Level0)
     if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
         return;
     }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, true, &context, &certificateList);
+    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -437,7 +430,6 @@ HWTEST_F(CmLogTest, CmIpcClientTest016, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest017, TestSize.Level0)
 {
-    struct CmContext context = { 0, 0, {0} };
     struct CertAbstract abstract = { {0}, {0}, false, {0} };
     struct CertList certificateList = { 1, &abstract };
 
@@ -451,7 +443,7 @@ HWTEST_F(CmLogTest, CmIpcClientTest017, TestSize.Level0)
     if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
         return;
     }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, true, &context, &certificateList);
+    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -463,7 +455,6 @@ HWTEST_F(CmLogTest, CmIpcClientTest017, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest018, TestSize.Level0)
 {
-    struct CmContext context = { 0, 0, {0} };
     struct CertAbstract abstract = { {0}, {0}, false, {0} };
     struct CertList certificateList = { 1, &abstract };
 
@@ -477,7 +468,7 @@ HWTEST_F(CmLogTest, CmIpcClientTest018, TestSize.Level0)
     if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
         return;
     }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, true, &context, &certificateList);
+    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -489,7 +480,6 @@ HWTEST_F(CmLogTest, CmIpcClientTest018, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest019, TestSize.Level0)
 {
-    struct CmContext context = { 0, 0, {0} };
     struct CertAbstract abstract = { {0}, {0}, false, {0} };
     struct CertList certificateList = { 1, &abstract };
 
@@ -504,7 +494,7 @@ HWTEST_F(CmLogTest, CmIpcClientTest019, TestSize.Level0)
         return;
     }
 
-    int32_t ret = CmCertificateListUnpackFromService(&outData, true, &context, &certificateList);
+    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -516,7 +506,6 @@ HWTEST_F(CmLogTest, CmIpcClientTest019, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest020, TestSize.Level0)
 {
-    struct CmContext context = { 0, 0, {0} };
     struct CertAbstract abstract = { {0}, {0}, false, {0} };
     struct CertList certificateList = { 1, &abstract };
 
@@ -530,7 +519,7 @@ HWTEST_F(CmLogTest, CmIpcClientTest020, TestSize.Level0)
     if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
         return;
     }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, true, &context, &certificateList);
+    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -542,7 +531,6 @@ HWTEST_F(CmLogTest, CmIpcClientTest020, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest021, TestSize.Level0)
 {
-    struct CmContext context = { 0, 0, {0} };
     struct CertAbstract abstract = { {0}, {0}, false, {0} };
     struct CertList certificateList = { 1, &abstract };
 
@@ -556,7 +544,7 @@ HWTEST_F(CmLogTest, CmIpcClientTest021, TestSize.Level0)
     if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
         return;
     }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, true, &context, &certificateList);
+    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -568,7 +556,6 @@ HWTEST_F(CmLogTest, CmIpcClientTest021, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest022, TestSize.Level0)
 {
-    struct CmContext context = { 0, 0, {0} };
     struct CertAbstract abstract = { {0}, {0}, false, {0} };
     struct CertList certificateList = { 1, &abstract };
 
@@ -582,7 +569,7 @@ HWTEST_F(CmLogTest, CmIpcClientTest022, TestSize.Level0)
     if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
         return;
     }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, true, &context, &certificateList);
+    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 

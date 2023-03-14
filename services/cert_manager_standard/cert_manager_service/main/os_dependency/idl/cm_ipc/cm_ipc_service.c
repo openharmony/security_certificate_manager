@@ -425,7 +425,8 @@ void CmIpcServiceGetAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob
 {
     int32_t ret;
     (void)outData;
-    uint32_t store, fileCount = 0;
+    uint32_t store;
+    uint32_t fileCount = 0;
     struct CmContext cmContext = {0};
     struct CmBlob certificateList = { 0, NULL };
     struct CmBlob fileNames[MAX_COUNT_CERTIFICATE];
@@ -580,7 +581,9 @@ void CmIpcServiceGetAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *ou
     int32_t ret;
     (void)outData;
     uint32_t store;
-    struct CmBlob keyUri = { 0, NULL }, certificateInfo = { 0, NULL }, certBlob = { 0, NULL };
+    struct CmBlob keyUri = { 0, NULL };
+    struct CmBlob certificateInfo = { 0, NULL };
+    struct CmBlob certBlob = { 0, NULL };
     struct CmContext cmContext = {0};
     struct CmParamSet *paramSet = NULL;
     struct CmParamOut params[] = {
