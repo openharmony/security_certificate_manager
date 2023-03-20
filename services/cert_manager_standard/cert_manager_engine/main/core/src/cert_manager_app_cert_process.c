@@ -230,7 +230,7 @@ static int32_t ImportRsaKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri)
     struct CmBlob keyPair = { 0, NULL };
     int32_t ret;
     do {
-        RSA *rsa = EVP_PKEY_get0_RSA((EVP_PKEY *)priKey);
+        const RSA *rsa = EVP_PKEY_get0_RSA((EVP_PKEY *)priKey);
         if (rsa == NULL) {
             CM_LOG_E("EVP_PKEY_get1_RSA error %s", ERR_reason_error_string(ERR_get_error()));
             ret = CM_FAILURE;
@@ -268,7 +268,7 @@ static int32_t ImportEccKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri)
     struct CmBlob keyPair = { 0, NULL };
     int32_t ret;
     do {
-        EC_KEY *eccKey = EVP_PKEY_get0_EC_KEY((EVP_PKEY *)priKey);
+        const EC_KEY *eccKey = EVP_PKEY_get0_EC_KEY((EVP_PKEY *)priKey);
         if (eccKey == NULL) {
             CM_LOG_E("EVP_PKEY_get0_EC_KEY faild");
             ret = CM_FAILURE;
