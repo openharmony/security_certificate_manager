@@ -43,7 +43,7 @@ static sptr<IRemoteObject> CmLoadSystemAbility(void)
         return {};
     }
 
-    auto object = saManager->GetSystemAbility(SA_ID_KEYSTORE_SERVICE);
+    auto object = saManager->CheckSystemAbility(SA_ID_KEYSTORE_SERVICE);
     if (object != nullptr) {
         return object;
     }
@@ -147,6 +147,7 @@ void OnDemandLoadCertManagerCallback::OnLoadSystemAbilitySuccess(int32_t systemA
 void OnDemandLoadCertManagerCallback::OnLoadSystemAbilityFail(int32_t systemAbilityId)
 {
     CM_LOG_E("OnLoadSystemAbility Fail systemAbilityId: %d", systemAbilityId);
+    promise_.set_value(nullptr);
 }
 
 sptr<IRemoteObject> OnDemandLoadCertManagerCallback::Promise(void)
