@@ -44,7 +44,7 @@ static const std::string CM_CERT_PROPERTY_BEFORE = "notBefore";
 static const std::string CM_CERT_PROPERTY_AFTER = "notAfter";
 static const std::string CM_CERT_PROPERTY_FINGERSHA1 = "fingerprintSha1";
 static const std::string CM_CERT_PROPERTY_FINGERSHA256 = "fingerprintSha256";
-static const std::string CM_CERT_PROPERTY_CERTINFO = "certInfo";
+static const std::string CM_CERT_PROPERTY_CERT_DATA = "cert";
 static const std::string CM_CERT_PROPERTY_STATUS = "status";
 
 static const std::string BUSINESS_ERROR_PROPERTY_CODE = "code";
