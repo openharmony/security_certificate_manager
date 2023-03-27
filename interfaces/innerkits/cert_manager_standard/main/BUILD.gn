@@ -21,8 +21,11 @@ if (os_level == "standard") {
   ohos_shared_library("cert_manager_sdk") {
     sanitize = {
       cfi = true
+      cfi_cross_dso = true
+      boundary_sanitize = true
       debug = false
-      blocklist = "//base/security/certificate_manager/cfi_blocklist.txt"
+      integer_overflow = true
+      ubsan = true
     }
     subsystem_name = "security"
     part_name = "certificate_manager"

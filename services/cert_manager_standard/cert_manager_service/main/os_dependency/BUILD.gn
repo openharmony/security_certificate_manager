@@ -16,6 +16,12 @@ import("//build/ohos.gni")
 ohos_static_library("libcert_manager_service_os_dependency_standard_static") {
   subsystem_name = "security"
   part_name = "certificate_manager"
+  sanitize = {
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
   include_dirs = [
     "//third_party/json/include",
     "../../../cert_manager_engine/main/core/include",
