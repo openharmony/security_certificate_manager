@@ -382,7 +382,7 @@ napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo)
     NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_AFTER.c_str(), cInfVal.notAfter));
     NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_FINGERSHA256.c_str(),
         cInfVal.fingerprintSha256));
-    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_CERTINFO.c_str(), cInfVal.certInfoBlob));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_CERT_DATA.c_str(), cInfVal.certInfoBlob));
 
     return elem;
 }
