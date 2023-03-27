@@ -16,8 +16,11 @@ import("//build/ohos.gni")
 ohos_shared_library("certmanager") {
   sanitize = {
     cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
     debug = false
-    blocklist = "//base/security/certificate_manager/cfi_blocklist.txt"
+    integer_overflow = true
+    ubsan = true
   }
   defines = [
     "L2_STANDARD",
