@@ -35,7 +35,8 @@
           "system_ability_fwk",
           "samgr_proxy",
           "c_utils",
-          "hisysevent_native"
+          "hisysevent_native",
+          "eventhandler:libeventhandler"
         ],
         "third_party": [
           "openssl",

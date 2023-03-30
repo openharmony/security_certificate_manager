@@ -32,13 +32,14 @@
 namespace OHOS {
 namespace Security {
 namespace CertManager {
-REGISTER_SYSTEM_ABILITY_BY_ID(CertManagerService, SA_ID_KEYSTORE_SERVICE, true);
+const bool REGISTER_RESULT = SystemAbility::MakeAndRegisterAbility(&CertManagerService::GetInstance());
 
-std::mutex CertManagerService::instanceLock;
-sptr<CertManagerService> CertManagerService::instance;
 const uint32_t MAX_MALLOC_LEN = 1 * 1024 * 1024; /* max malloc size 1 MB */
 const uint32_t MAX_DELAY_TIMES = 100;
 const uint32_t DELAY_INTERVAL = 200000; /* delay 200ms waiting for system event */
+
+const std::string TASK_ID = "unload";
+const uint32_t DELAY_TIME = 180000; /* delay 180000ms to unload SA */
 
 using CmIpcHandlerFuncProc = void (*)(const struct CmBlob *msg, const CmContext *context);
 
@@ -138,8 +139,8 @@ static int32_t ProcessMessage(uint32_t code, uint32_t outSize, const struct CmBl
     return NO_ERROR;
 }
 
-CertManagerService::CertManagerService(int saId, bool runOnCreate = true)
-    : SystemAbility(saId, runOnCreate), registerToService_(false), runningState_(STATE_NOT_START)
+CertManagerService::CertManagerService()
+    : SystemAbility(SA_ID_KEYSTORE_SERVICE, true), registerToService_(false), runningState_(STATE_NOT_START)
 {
     CM_LOG_D("CertManagerService");
 }
@@ -149,27 +150,22 @@ CertManagerService::~CertManagerService()
     CM_LOG_D("~CertManagerService");
 }
 
-sptr<CertManagerService> CertManagerService::GetInstance()
-{
-    std::lock_guard<std::mutex> autoLock(instanceLock);
-    if (instance == nullptr) {
-        instance = new (std::nothrow) CertManagerService(SA_ID_KEYSTORE_SERVICE, true);
-    }
-
-    return instance;
-}
-
 bool CertManagerService::Init()
 {
     CM_LOG_I("CertManagerService::Init Ready to init");
 
     if (!registerToService_) {
-        sptr<CertManagerService> ptrInstance = CertManagerService::GetInstance();
-        if (ptrInstance == nullptr) {
-            CM_LOG_E("CertManagerService::Init GetInstance Failed");
-            return false;
+        if (unloadHandler == nullptr) {
+            auto runner = AppExecFwk::EventRunner::Create("unload");
+            unloadHandler = std::make_shared<AppExecFwk::EventHandler>(runner);
+            if (unloadHandler == nullptr) {
+                CM_LOG_E("CertManagerService::Init unloadHandler Failed");
+                return false;
+            }
         }
-        if (!Publish(ptrInstance)) {
+
+        DelayUnload();
+        if (!Publish(this)) {
             CM_LOG_E("CertManagerService::Init Publish Failed");
             return false;
         }
@@ -198,6 +194,7 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
 
+    DelayUnload();
     uint32_t outSize = static_cast<uint32_t>(data.ReadUint32());
     struct CmBlob srcData = { 0, nullptr };
     srcData.size = static_cast<uint32_t>(data.ReadUint32());
@@ -233,7 +230,7 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     return NO_ERROR;
 }
 
-void CertManagerService::OnStart()
+void CertManagerService::OnStart(const std::unordered_map<std::string, std::string>& startReason)
 {
     CM_LOG_I("CertManagerService OnStart");
 
@@ -275,6 +272,34 @@ void CertManagerService::OnStop()
     CM_LOG_I("CertManagerService Service OnStop");
     runningState_ = STATE_NOT_START;
     registerToService_ = false;
+}
+
+void CertManagerService::DelayUnload()
+{
+    CM_LOG_I("dalay unload certmanager SA begin");
+    auto unloadTask = []() {
+        CM_LOG_I("do unload task");
+        auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        if (saManager == nullptr) {
+            CM_LOG_E("Failed to get saManager");
+            return;
+        }
+
+        int32_t ret = saManager->UnloadSystemAbility(SA_ID_KEYSTORE_SERVICE);
+        if (ret != ERR_OK) {
+            CM_LOG_E("Failed to remove system ability");
+            return;
+        }
+    };
+
+    unloadHandler->RemoveTask(TASK_ID);
+    unloadHandler->PostTask(unloadTask, TASK_ID, DELAY_TIME);
+}
+
+CertManagerService& CertManagerService::GetInstance()
+{
+    static auto instance = new CertManagerService();
+    return *instance;
 }
 } // namespace CertManager
 } // namespace Security

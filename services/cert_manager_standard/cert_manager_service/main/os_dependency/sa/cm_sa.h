@@ -16,6 +16,8 @@
 #ifndef CM_SA_H
 #define CM_SA_H
 
+#include "event_handler.h"
+#include "event_runner.h"
 #include "iremote_broker.h"
 #include "iremote_stub.h"
 #include "nocopyable.h"
@@ -77,27 +79,26 @@ class CertManagerService : public SystemAbility, public IRemoteStub<ICertManager
 
 public:
     DISALLOW_COPY_AND_MOVE(CertManagerService);
-    CertManagerService(int saId, bool runOnCreate);
+    CertManagerService();
     virtual ~CertManagerService();
 
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
 
-    static sptr<CertManagerService> GetInstance();
+    void DelayUnload();
+    static CertManagerService& GetInstance();
 
 protected:
-    void OnStart() override;
+    void OnStart(const std::unordered_map<std::string, std::string>& startReason) override;
     void OnStop() override;
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
 private:
-    CertManagerService();
     bool Init();
 
     bool registerToService_;
     ServiceRunningState runningState_;
-    static std::mutex instanceLock;
-    static sptr<CertManagerService> instance;
+    std::shared_ptr<AppExecFwk::EventHandler> unloadHandler;
 };
 } // namespace CertManager
 } // namespace Security
