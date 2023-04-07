@@ -66,15 +66,15 @@ static int32_t CmTraversalDirActionCredential(const char *filePath, const char *
 static int32_t CmTraversalDirActionUserCa(const struct CmContext *context, const char *filePath, const char *fileName,
     const uint32_t store)
 {
-    uint32_t status = CERT_STATUS_ENABLED;
-    struct CmBlob certUri = { strlen(fileName), (uint8_t *)fileName };
     int32_t ret = remove(filePath);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("User cert delete faild, ret: %d", ret);
         return ret;
     }
 
-    ret = SetcertStatus(context, &certUri, store, status, NULL);
+    struct CmBlob certUri = { strlen(fileName) + 1, (uint8_t *)fileName }; /* include '\0' at end. */
+    struct CmMutableBlob pathBlob = { strlen(filePath) + 1, (uint8_t *)filePath };
+    ret = CmSetStatusEnable(context, &pathBlob, &certUri, store);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("User set status faild, ret: %d", ret);
         return ret;
@@ -223,7 +223,7 @@ static int32_t CmTraversalUidLayerDir(const struct CmContext *context, const cha
     return ret;
 }
 
-static int32_t TraversalUserIdLayerDir(struct CmContext *context, const char *userIdPath, const char *direName,
+static int32_t TraversalUserIdLayerDir(const struct CmContext *context, const char *userIdPath, const char *direName,
     const uint32_t store, bool isUserDeleteEvent)
 {
     uint32_t uid = (uint32_t)atoi(direName);
@@ -231,8 +231,8 @@ static int32_t TraversalUserIdLayerDir(struct CmContext *context, const char *us
 
     int32_t ret = CM_SUCCESS;
     if (isUserDeleteEvent) { /* user delete event */
-        context->uid = uid;
-        ret = CmTraversalUidLayerDir(context, userIdPath, store, true);
+        struct CmContext userContext = { context->userId, uid, {0} };
+        ret = CmTraversalUidLayerDir(&userContext, userIdPath, store, true);
     } else { /* package delete event */
         if (uid == context->uid) {
             ret = CmTraversalUidLayerDir(context, userIdPath, store, true);
@@ -245,7 +245,7 @@ static int32_t TraversalUserIdLayerDir(struct CmContext *context, const char *us
     return ret;
 }
 
-static int32_t CmTraversalUserIdLayerDir(struct CmContext *context, const char *path, const uint32_t store)
+static int32_t CmTraversalUserIdLayerDir(const struct CmContext *context, const char *path, const uint32_t store)
 {
     bool isUserDeleteEvent = (context->uid == INVALID_VALUE);
     int32_t ret = CM_SUCCESS;
@@ -287,7 +287,7 @@ static int32_t CmTraversalUserIdLayerDir(struct CmContext *context, const char *
     return ret;
 }
 
-static int32_t CmTraversalDir(struct CmContext *context, const char *path, const uint32_t store)
+static int32_t CmTraversalDir(const struct CmContext *context, const char *path, const uint32_t store)
 {
     int32_t ret = CM_SUCCESS;
     /* do nothing when dir is not exist */
@@ -338,7 +338,7 @@ static void RemoveSessionInfo(const struct CmContext *context)
     }
 }
 
-int32_t CmDeleteProcessInfo(struct CmContext *context)
+int32_t CmDeleteProcessInfo(const struct CmContext *context)
 {
     RemoveSessionInfo(context);
 
