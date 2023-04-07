@@ -88,7 +88,7 @@ public:
     static CertManagerService& GetInstance();
 
 protected:
-    void OnStart(const std::unordered_map<std::string, std::string>& startReason) override;
+    void OnStart() override;
     void OnStop() override;
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;

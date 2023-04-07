@@ -230,7 +230,7 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     return NO_ERROR;
 }
 
-void CertManagerService::OnStart(const std::unordered_map<std::string, std::string>& startReason)
+void CertManagerService::OnStart()
 {
     CM_LOG_I("CertManagerService OnStart");
 
