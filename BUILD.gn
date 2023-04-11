@@ -15,6 +15,7 @@ group("cert_manager_sdk_test") {
   testonly = true
   if (os_level == "standard") {
     deps = [
+      "./test:multi_thread_test",
       "//base/security/certificate_manager/test:module_test",
       "//base/security/certificate_manager/test:permission_test",
       "//base/security/certificate_manager/test:unittest",
