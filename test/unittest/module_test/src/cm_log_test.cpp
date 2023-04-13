@@ -160,35 +160,20 @@ static int32_t ConstructCertBuf(const struct CertInfoLen *input, struct CmBlob *
 }
 
 /**
-* @tc.name: CmLogTest001
-* @tc.desc: Test Log Warn
+* @tc.name: CmIpcClientTest004
+* @tc.desc: TestIpcClient: GetUint32FromBuffer
 * @tc.type: FUNC
 * @tc.require: AR000H0MIA /SR000H09NA
 */
-HWTEST_F(CmLogTest, CmLogTest001, TestSize.Level0)
+HWTEST_F(CmLogTest, CmIpcClientTest004, TestSize.Level0)
 {
+    /* Test Log Warn */
     CM_LOG_W("this is test for log");
-}
 
-/**
-* @tc.name: CmLogTest002
-* @tc.desc: Test Log ID INVALID
-* @tc.type: FUNC
-* @tc.require: AR000H0MIA /SR000H09NA
-*/
-HWTEST_F(CmLogTest, CmLogTest002, TestSize.Level0)
-{
+    /* Test Log ID INVALID */
     CmLog(CM_LOG_LEVEL_D + 1, __func__, __LINE__, "this is test for default branch");
-}
 
-/**
-* @tc.name: CmLogTest003
-* @tc.desc: Test Log info length more than 512
-* @tc.type: FUNC
-* @tc.require: AR000H0MIA /SR000H09NA
-*/
-HWTEST_F(CmLogTest, CmLogTest003, TestSize.Level0)
-{
+    /* Test Log info length more than 512 */
     CM_LOG_W("MoreThan512Bytes................................................"
         "................................................................"
         "................................................................"
@@ -197,16 +182,7 @@ HWTEST_F(CmLogTest, CmLogTest003, TestSize.Level0)
         "................................................................"
         "................................................................"
         "..................................................................");
-}
 
-/**
-* @tc.name: CmIpcClientTest004
-* @tc.desc: TestIpcClient: GetUint32FromBuffer
-* @tc.type: FUNC
-* @tc.require: AR000H0MIA /SR000H09NA
-*/
-HWTEST_F(CmLogTest, CmIpcClientTest004, TestSize.Level0)
-{
     uint8_t srcData[] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 };
     struct CmBlob srcBlob = { sizeof(srcData), srcData };
     uint32_t value = 0;

@@ -321,17 +321,6 @@ HWTEST_F(CmParamTest, CmParamTest015, TestSize.Level0)
 }
 
 /**
-* @tc.name: CmParamTest016
-* @tc.desc: test CmFreeParamSet paramSet is nullptr
-* @tc.type: FUNC
-* @tc.require: AR000H0MIA /SR000H09NA
-*/
-HWTEST_F(CmParamTest, CmParamTest016, TestSize.Level0)
-{
-    CmFreeParamSet(nullptr);
-}
-
-/**
 * @tc.name: CmParamTest017
 * @tc.desc: test CmBuildParamSet paramSet is nullptr
 * @tc.type: FUNC
@@ -341,6 +330,9 @@ HWTEST_F(CmParamTest, CmParamTest017, TestSize.Level0)
 {
     int32_t ret = CmBuildParamSet(nullptr);
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
+
+    /* test CmFreeParamSet paramSet is nullptr */
+    CmFreeParamSet(nullptr);
 }
 
 /**
