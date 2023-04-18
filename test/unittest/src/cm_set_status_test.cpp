@@ -29,13 +29,13 @@ struct CertStatusExpectResult {
 
 struct CertStatusExpectResult g_expectList[] = {
     {
-        {"2add47b6.0"}, false, false
+        {"1d3472b9.0"}, false, false
     },
     {
-        {"85cde254.0"}, false, false
+        {"4bfab552.0"}, false, false
     },
     {
-        {"3c860d51.0"}, true, true
+        {"4f316efb.0"}, true, true
     }
 };
 

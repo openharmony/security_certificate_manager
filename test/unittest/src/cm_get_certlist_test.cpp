@@ -31,7 +31,7 @@ struct CertAbstractResult {
 struct CertAbstractResult g_listexpectResult[] = {
     {
         {
-            "2add47b6.0",
+            "1d3472b9.0",
             "GlobalSign",
             true, "CN=GlobalSign,OU=GlobalSign ECC Root CA - R5,O=GlobalSign"
         },
@@ -39,7 +39,7 @@ struct CertAbstractResult g_listexpectResult[] = {
     },
     {
         {
-            "85cde254.0",
+            "4bfab552.0",
             "Starfield Technologies, Inc.",
             true,
             "CN=Starfield Root Certificate Authority - G2,OU=,O=Starfield Technologies, Inc."
@@ -48,7 +48,7 @@ struct CertAbstractResult g_listexpectResult[] = {
     },
     {
         {
-            "3c860d51.0",
+            "4f316efb.0",
             "SwissSign AG",
             true,
             "CN=SwissSign Gold CA - G2,OU=,O=SwissSign AG"

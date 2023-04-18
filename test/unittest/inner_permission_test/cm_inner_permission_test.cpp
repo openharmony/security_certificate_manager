@@ -101,7 +101,7 @@ HWTEST_F(CmInnerPermissionTest, CmInnerPermissionTest002, TestSize.Level0)
     int32_t ret = InitCertInfo(&info);
     ASSERT_EQ(ret, CM_SUCCESS);
 
-    uint8_t uriData[] = "b7db1890.0";
+    uint8_t uriData[] = "b7a5b843.0";
     struct CmBlob uri = { sizeof(uriData), uriData };
     ret = CmGetCertInfo(&uri, CM_SYSTEM_TRUSTED_STORE, &info);
     EXPECT_EQ(ret, CM_SUCCESS);

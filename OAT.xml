@@ -56,8 +56,10 @@
             <filefilter name="defaultFilter" desc="Files not to check">
             </filefilter>
             <filefilter name="defaultPolicyFilter" desc="Filters for compatibility，license header policies">
+                <filteritem type="filepath" name="config/systemCertificates/.*" desc="system certificate files"/>
             </filefilter>
             <filefilter name="copyrightPolicyFilter" desc="Filters for copyright header policies">
+                <filteritem type="filepath" name="config/systemCertificates/.*" desc="system certificate files"/>
             </filefilter>
             <filefilter name="licenseFileNamePolicyFilter" desc="Filters for LICENSE file policies">
             </filefilter>
