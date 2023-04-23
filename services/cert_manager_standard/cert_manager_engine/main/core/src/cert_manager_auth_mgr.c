@@ -15,6 +15,8 @@
 
 #include "cert_manager_auth_mgr.h"
 
+#include <pthread.h>
+
 #include "securec.h"
 
 #include "cert_manager_auth_list_mgr.h"
@@ -30,6 +32,8 @@
 #define BYTE_TO_HEX_OPER_LENGTH 2
 #define OUT_OF_HEX 16
 #define DEC 10
+
+static pthread_mutex_t g_authMgrLock = PTHREAD_MUTEX_INITIALIZER;
 
 static char HexToChar(uint8_t hex)
 {
@@ -322,9 +326,11 @@ static int32_t GenerateAuthUri(const struct CMUri *uriObj, uint32_t clientUid, s
 int32_t CmAuthGrantAppCertificate(const struct CmContext *context, const struct CmBlob *keyUri,
     uint32_t appUid, struct CmBlob *authUri)
 {
+    pthread_mutex_lock(&g_authMgrLock);
     int32_t ret = CmCheckCredentialExist(context, keyUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("credential not exist when grant auth, ret = %d", ret);
+        pthread_mutex_unlock(&g_authMgrLock);
         return ret;
     }
 
@@ -333,6 +339,7 @@ int32_t CmAuthGrantAppCertificate(const struct CmContext *context, const struct 
     ret = GetAndCheckUriObj(&uriObj, keyUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uri decode failed, ret = %d", ret);
+        pthread_mutex_unlock(&g_authMgrLock);
         return ret;
     }
 
@@ -358,6 +365,7 @@ int32_t CmAuthGrantAppCertificate(const struct CmContext *context, const struct 
         }
     } while (0);
 
+    pthread_mutex_unlock(&g_authMgrLock);
     if (ret != CM_SUCCESS) {
         (void)CmAuthRemoveGrantedApp(context, keyUri, appUid); /* clear auth info */
     }
@@ -368,11 +376,13 @@ int32_t CmAuthGrantAppCertificate(const struct CmContext *context, const struct 
 int32_t CmAuthGetAuthorizedAppList(const struct CmContext *context, const struct CmBlob *keyUri,
     struct CmAppUidList *appUidList)
 {
+    pthread_mutex_lock(&g_authMgrLock);
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
     int32_t ret = GetAndCheckUriObj(&uriObj, keyUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uri decode failed, ret = %d", ret);
+        pthread_mutex_unlock(&g_authMgrLock);
         return ret;
     }
 
@@ -409,6 +419,7 @@ int32_t CmAuthGetAuthorizedAppList(const struct CmContext *context, const struct
 
     CM_FREE_PTR(tempAppUidList.appUid);
     (void)CertManagerFreeUri(&uriObj);
+    pthread_mutex_unlock(&g_authMgrLock);
     return ret;
 }
 
@@ -492,11 +503,13 @@ int32_t CmAuthIsAuthorizedApp(const struct CmContext *context, const struct CmBl
 
 int32_t CmAuthRemoveGrantedApp(const struct CmContext *context, const struct CmBlob *keyUri, uint32_t appUid)
 {
+    pthread_mutex_lock(&g_authMgrLock);
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
     int32_t ret = GetAndCheckUriObj(&uriObj, keyUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uri decode failed, ret = %d", ret);
+        pthread_mutex_unlock(&g_authMgrLock);
         return ret;
     }
 
@@ -527,6 +540,7 @@ int32_t CmAuthRemoveGrantedApp(const struct CmContext *context, const struct CmB
     } while (0);
 
     (void)CertManagerFreeUri(&uriObj);
+    pthread_mutex_unlock(&g_authMgrLock);
     return ret;
 }
 
@@ -557,6 +571,7 @@ static int32_t DeleteAuthInfo(uint32_t userId, const struct CmBlob *uri, const s
 /* clear auth info when delete public credential */
 int32_t CmAuthDeleteAuthInfo(const struct CmContext *context, const struct CmBlob *uri)
 {
+    pthread_mutex_lock(&g_authMgrLock);
     struct CmAppUidList appUidList = { 0, NULL };
     int32_t ret;
     do {
@@ -584,12 +599,14 @@ int32_t CmAuthDeleteAuthInfo(const struct CmContext *context, const struct CmBlo
     } while (0);
 
     CM_FREE_PTR(appUidList.appUid);
+    pthread_mutex_unlock(&g_authMgrLock);
     return ret;
 }
 
 /* clear auth info when delete user */
 int32_t CmAuthDeleteAuthInfoByUserId(uint32_t userId, const struct CmBlob *uri)
 {
+    pthread_mutex_lock(&g_authMgrLock);
     struct CmAppUidList appUidList = { 0, NULL };
     int32_t ret;
     do {
@@ -613,20 +630,24 @@ int32_t CmAuthDeleteAuthInfoByUserId(uint32_t userId, const struct CmBlob *uri)
     } while (0);
 
     CM_FREE_PTR(appUidList.appUid);
+    pthread_mutex_unlock(&g_authMgrLock);
     return ret;
 }
 
 /* clear auth info when delete application */
 int32_t CmAuthDeleteAuthInfoByUid(uint32_t userId, uint32_t targetUid, const struct CmBlob *uri)
 {
+    pthread_mutex_lock(&g_authMgrLock);
     bool isInAuthList = false;
     int32_t ret = CmCheckIsAuthUidExistByUserId(userId, targetUid, uri, &isInAuthList);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("check is in auth list failed, ret = %d", ret);
+        pthread_mutex_unlock(&g_authMgrLock);
         return ret;
     }
 
     if (!isInAuthList) {
+        pthread_mutex_unlock(&g_authMgrLock);
         return CM_SUCCESS;
     }
 
@@ -635,6 +656,7 @@ int32_t CmAuthDeleteAuthInfoByUid(uint32_t userId, uint32_t targetUid, const str
     ret = DeleteAuthInfo(userId, uri, &appUidList);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("delete mac key info failed, ret = %d", ret);
+        pthread_mutex_unlock(&g_authMgrLock);
         return ret;
     }
 
@@ -642,6 +664,7 @@ int32_t CmAuthDeleteAuthInfoByUid(uint32_t userId, uint32_t targetUid, const str
     if (ret != CM_SUCCESS) {
         CM_LOG_E("remove auth uid by user id failed, ret = %d", ret);
     }
+    pthread_mutex_unlock(&g_authMgrLock);
     return ret;
 }
 
