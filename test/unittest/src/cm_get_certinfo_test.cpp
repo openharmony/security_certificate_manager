@@ -29,7 +29,7 @@ struct CertInfoResult {
 struct CertInfoResult g_listCertInfoexpectResult[] = {
     {
         {
-            "2add47b6.0",
+            "1d3472b9.0",
             "GlobalSign",
             true,
             "CN=GlobalSign,OU=GlobalSign ECC Root CA - R5,O=GlobalSign",
@@ -43,7 +43,7 @@ struct CertInfoResult g_listCertInfoexpectResult[] = {
     },
     {
         {
-            "85cde254.0",
+            "4bfab552.0",
             "Starfield Technologies, Inc.",
             true,
             "CN=Starfield Root Certificate Authority - G2,OU=,O=Starfield Technologies, Inc.",
@@ -57,7 +57,7 @@ struct CertInfoResult g_listCertInfoexpectResult[] = {
     },
     {
         {
-            "3c860d51.0",
+            "4f316efb.0",
             "SwissSign AG",
             true,
             "CN=SwissSign Gold CA - G2,OU=,O=SwissSign AG",
@@ -71,7 +71,7 @@ struct CertInfoResult g_listCertInfoexpectResult[] = {
     },
     {
         {
-            "b0f3e76e.0",
+            "5ad8a5d6.0",
             "GlobalSign nv-sa",
             true,
             "CN=GlobalSign Root CA,OU=Root CA,O=GlobalSign nv-sa",
@@ -85,7 +85,7 @@ struct CertInfoResult g_listCertInfoexpectResult[] = {
     },
     {
         {
-            "869fbf79.0",
+            "4b718d9b.0",
             "eMudhra Inc",
             true,
             "CN=emSign ECC Root CA - C3,OU=emSign PKI,O=eMudhra Inc",
