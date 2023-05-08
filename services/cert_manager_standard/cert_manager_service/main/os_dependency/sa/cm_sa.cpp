@@ -158,10 +158,6 @@ bool CertManagerService::Init()
         if (unloadHandler == nullptr) {
             auto runner = AppExecFwk::EventRunner::Create("unload");
             unloadHandler = std::make_shared<AppExecFwk::EventHandler>(runner);
-            if (unloadHandler == nullptr) {
-                CM_LOG_E("CertManagerService::Init unloadHandler Failed");
-                return false;
-            }
         }
 
         DelayUnload();
