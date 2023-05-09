@@ -30,17 +30,21 @@
       "ram": "500KB",
       "deps": {
         "components": [
-          "libhilog",
-          "ipc_core",
-          "system_ability_fwk",
-          "samgr_proxy",
+          "ability_base",
+          "access_token",
+          "bundle_framework",
+          "common_event_service",
+          "crypto_framework",
           "c_utils",
+          "eventhandler",
           "hisysevent_native",
-          "eventhandler:libeventhandler"
-        ],
-        "third_party": [
-          "openssl",
-          "bounds_checking_function"
+          "hiviewdfx_hilog_native",
+          "huks",
+          "ipc",
+          "napi",
+          "os_account",
+          "safwk",
+          "samgr"
         ]
       },
       "build": {
