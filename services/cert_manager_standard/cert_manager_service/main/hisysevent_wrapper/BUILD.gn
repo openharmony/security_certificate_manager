@@ -28,9 +28,9 @@ ohos_static_library("libcert_manager_hisysevent_wrapper_static") {
     ubsan = true
   }
   include_dirs = [
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common/include",
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency/cm_ipc/include",
-    "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_engine/main/core/include",
+    "../../../../../frameworks/cert_manager_standard/main/common/include",
+    "../../../../../frameworks/cert_manager_standard/main/os_dependency/cm_ipc/include",
+    "../../../../../services/cert_manager_standard/cert_manager_engine/main/core/include",
     "../../../../../interfaces/innerkits/cert_manager_standard/main/include",
   ]
   sources = [

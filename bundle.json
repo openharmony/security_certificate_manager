@@ -1,7 +1,7 @@
 {
-    "name": "@ohos/cert_manager",
+    "name": "@ohos/certificate_manager",
     "description": "The provider of certificate manangement capbility, which belongs to security subsystem",
-    "version": "3.1",
+    "version": "4.0",
     "license": "Apache License 2.0",
     "publishAs": "code-segment",
     "segment": {
@@ -27,7 +27,7 @@
         "//base/security/certificate_manager/hisysevent.yaml"
       ],
       "rom": "5000KB",
-      "ram": "500kB",
+      "ram": "500KB",
       "deps": {
         "components": [
           "libhilog",

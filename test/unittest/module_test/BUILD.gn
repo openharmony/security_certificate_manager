@@ -35,8 +35,8 @@ ohos_unittest("cm_module_test") {
   ]
   cflags = cflags_cc
   deps = [
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
-    "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+    "../../../frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
+    "../../../interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
     "//third_party/bounds_checking_function:libsec_static",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",

@@ -43,7 +43,7 @@ if (os_level == "standard") {
       "-Wall",
       "-Werror",
     ]
-    deps = [ "//base/security/certificate_manager/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks" ]
+    deps = [ "../../../../frameworks/cert_manager_standard/main:cert_manager_standard_frameworks" ]
 
     external_deps = [ "hiviewdfx_hilog_native:libhilog" ]
   }

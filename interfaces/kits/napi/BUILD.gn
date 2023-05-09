@@ -29,7 +29,7 @@ ohos_shared_library("certmanager") {
   ]
 
   include_dirs = [
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common/include",
+    "../../../frameworks/cert_manager_standard/main/common/include",
     "include",
   ]
 
