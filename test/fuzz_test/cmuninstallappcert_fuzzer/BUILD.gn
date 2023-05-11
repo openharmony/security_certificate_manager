@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+# Copyright (c) 2022 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -19,11 +19,14 @@ module_output_path = "cert_manager_standard/cert_manager_standard_test"
 ##############################fuzztest##########################################
 ohos_fuzztest("CmUninstallAppCertFuzzTest") {
   module_out_path = module_output_path
-  fuzz_config_file = "../../../test/fuzz_test/cmuninstallappcert_fuzzer"
+  fuzz_config_file = "//base/security/certificate_manager/test/fuzz_test/cmuninstallappcert_fuzzer"
 
   include_dirs = [
-    "../../../frameworks/cert_manager_standard/main/common/include",
-    "../../../test/unittest/include",
+    "//base/security/access_token/interfaces/innerkits/token_setproc/include",
+    "//base/security/access_token/interfaces/innerkits/nativetoken/include",
+    "//base/security/access_token/interfaces/innerkits/accesstoken/include",
+    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common/include",
+    "//base/security/certificate_manager/test/unittest/include",
   ]
   cflags = [
     "-g",
@@ -32,19 +35,17 @@ ohos_fuzztest("CmUninstallAppCertFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
   sources = [
-    "../../../test/unittest/src/cm_test_common.cpp",
+    "//base/security/certificate_manager/test/unittest/src/cm_test_common.cpp",
     "cmuninstallappcert_fuzzer.cpp",
   ]
   deps = [
-    "../../../interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
-    "../../../test/fuzz_test/fuzz_test_common:libcert_manager_fuzz_test_common_static",
+    "//base/security/access_token/interfaces/innerkits/accesstoken:libaccesstoken_sdk",
+    "//base/security/access_token/interfaces/innerkits/nativetoken:libnativetoken",
+    "//base/security/access_token/interfaces/innerkits/token_setproc:libtoken_setproc",
+    "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+    "//base/security/certificate_manager/test/fuzz_test/fuzz_test_common:libcert_manager_fuzz_test_common_static",
   ]
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
-    "c_utils:utils",
-  ]
+  external_deps = [ "c_utils:utils" ]
 }
 
 ###############################################################################

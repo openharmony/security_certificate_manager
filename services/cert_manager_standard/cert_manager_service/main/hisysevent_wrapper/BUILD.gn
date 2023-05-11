@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Huawei Device Co., Ltd.
+# Copyright (C) 2022 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -28,9 +28,9 @@ ohos_static_library("libcert_manager_hisysevent_wrapper_static") {
     ubsan = true
   }
   include_dirs = [
-    "../../../../../frameworks/cert_manager_standard/main/common/include",
-    "../../../../../frameworks/cert_manager_standard/main/os_dependency/cm_ipc/include",
-    "../../../../../services/cert_manager_standard/cert_manager_engine/main/core/include",
+    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common/include",
+    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/os_dependency/cm_ipc/include",
+    "//base/security/certificate_manager/services/cert_manager_standard/cert_manager_engine/main/core/include",
     "../../../../../interfaces/innerkits/cert_manager_standard/main/include",
   ]
   sources = [
