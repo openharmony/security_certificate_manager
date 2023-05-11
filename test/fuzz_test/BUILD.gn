@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2023 Huawei Device Co., Ltd.
+# Copyright (C) 2022 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,27 +18,27 @@ group("fuzztest") {
   testonly = true
   if (os_level == "standard") {
     deps = [
-      "./cmabort_fuzzer:fuzztest",
-      "./cmfinish_fuzzer:fuzztest",
-      "./cmgetappcert_fuzzer:fuzztest",
-      "./cmgetappcertlist_fuzzer:fuzztest",
-      "./cmgetauthorizedapplist_fuzzer:fuzztest",
-      "./cmgetcertinfo_fuzzer:fuzztest",
-      "./cmgetcertlist_fuzzer:fuzztest",
-      "./cmgetusercertinfo_fuzzer:fuzztest",
-      "./cmgetusercertlist_fuzzer:fuzztest",
-      "./cmgrantappcertificate_fuzzer:fuzztest",
-      "./cminit_fuzzer:fuzztest",
-      "./cminstallappcert_fuzzer:fuzztest",
-      "./cminstallusertrustedcert_fuzzer:fuzztest",
-      "./cmisauthorizedapp_fuzzer:fuzztest",
-      "./cmremovegrantedapp_fuzzer:fuzztest",
-      "./cmsendrequest_fuzzer:fuzztest",
-      "./cmsetcertstatus_fuzzer:fuzztest",
-      "./cmsetusercertstatus_fuzzer:fuzztest",
-      "./cmuninstallappcert_fuzzer:fuzztest",
-      "./cmuninstallusertrustedcert_fuzzer:fuzztest",
-      "./cmupdate_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmabort_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmfinish_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmgetappcert_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmgetappcertlist_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmgetauthorizedapplist_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmgetcertinfo_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmgetcertlist_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmgetusercertinfo_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmgetusercertlist_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmgrantappcertificate_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cminit_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cminstallappcert_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cminstallusertrustedcert_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmisauthorizedapp_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmremovegrantedapp_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmsendrequest_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmsetcertstatus_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmsetusercertstatus_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmuninstallappcert_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmuninstallusertrustedcert_fuzzer:fuzztest",
+      "//base/security/certificate_manager/test/fuzz_test/cmupdate_fuzzer:fuzztest",
     ]
   }
 }
