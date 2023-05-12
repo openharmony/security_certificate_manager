@@ -1,4 +1,4 @@
-# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Copyright (c) 2022-2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -35,8 +35,8 @@ ohos_unittest("cm_module_test") {
   ]
   cflags = cflags_cc
   deps = [
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
-    "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+    "../../../frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
+    "../../../interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
     "//third_party/bounds_checking_function:libsec_static",
     "//third_party/googletest:gtest_main",
     "//third_party/openssl:libcrypto_shared",
