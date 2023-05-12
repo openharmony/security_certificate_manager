@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -77,7 +77,7 @@ namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
         uint32_t minSize = sizeof(enum CmMessage) + sizeof(struct CmParamSet) + sizeof(struct CmBlob);
-        uint8_t *myData;
+        uint8_t *myData = nullptr;
         if (!CopyMyData(data, size, minSize, &myData)) {
             return false;
         }
@@ -85,14 +85,15 @@ namespace OHOS {
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
 
-        enum CmMessage type = static_cast<enum CmMessage>(*(reinterpret_cast<uint32_t *>(myData)));
+        enum CmMessage type;
+        (void)memcpy_s(&type, sizeof(enum CmMessage), myData, sizeof(enum CmMessage));
         type = static_cast<enum CmMessage>(
             static_cast<uint32_t>(type) % static_cast<uint32_t>(CM_MSG_MAX - CM_MSG_BASE) +
             static_cast<uint32_t>(CM_MSG_BASE));
         offset += sizeof(uint32_t);
         remainSize -= sizeof(uint32_t);
 
-        struct CmParamSet *sendParamSet = NULL;
+        struct CmParamSet *sendParamSet = nullptr;
         if (ConstructParamSet(myData, &remainSize, &offset, &sendParamSet) == false) {
             CmFree(myData);
             return false;

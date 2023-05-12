@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,7 @@ namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
         uint32_t minSize = sizeof(struct CmBlob) + sizeof(struct CmAppUidList);
-        uint8_t *myData;
+        uint8_t *myData = nullptr;
         if (!CopyMyData(data, size, minSize, &myData)) {
             return false;
         }
@@ -32,13 +32,13 @@ namespace OHOS {
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
 
-        struct CmBlob authorUri = {0, NULL};
+        struct CmBlob authorUri = {0, nullptr};
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &authorUri)) {
             CmFree(myData);
             return false;
         }
 
-        struct CmAppUidList appUidList = {0, NULL};
+        struct CmAppUidList appUidList = {0, nullptr};
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &(appUidList.appUidCount))) {
             CmFree(myData);
             return false;

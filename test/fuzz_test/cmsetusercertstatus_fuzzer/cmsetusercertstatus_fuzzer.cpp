@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,7 @@ namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
         uint32_t minSize = sizeof(uint32_t) + sizeof(struct CertList) + sizeof(bool);
-        uint8_t *myData;
+        uint8_t *myData = nullptr;
         if (!CopyMyData(data, size, minSize, &myData)) {
             return false;
         }
@@ -48,7 +48,8 @@ namespace OHOS {
             CmFree(myData);
             return false;
         }
-        bool status = *(reinterpret_cast<bool *>(myData + offset));
+        bool status;
+        (void)memcpy_s(&status, sizeof(bool), myData + offset, sizeof(bool));
 
         CertmanagerTest::SetATPermission();
         (void)CmSetUserCertStatus(&setUserUri, userStore, status);
