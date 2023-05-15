@@ -32,7 +32,7 @@ namespace OHOS {
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
 
-        struct CmBlob grantKeyUri = {0, nullptr};
+        struct CmBlob grantKeyUri = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &grantKeyUri)) {
             CmFree(myData);
             return false;

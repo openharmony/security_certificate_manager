@@ -33,19 +33,19 @@ namespace OHOS {
 
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
-        struct CmBlob userCert = {0, nullptr};
+        struct CmBlob userCert = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &userCert)) {
             CmFree(myData);
             return false;
         }
 
-        struct CmBlob certAlias = {0, nullptr};
+        struct CmBlob certAlias = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &certAlias)) {
             CmFree(myData);
             return false;
         }
 
-        struct CmBlob certUri = {0, nullptr};
+        struct CmBlob certUri = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &certUri)) {
             CmFree(myData);
             return false;

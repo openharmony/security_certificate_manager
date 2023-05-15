@@ -34,7 +34,7 @@ namespace OHOS {
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
 
-        struct CmBlob authUri = {0, nullptr};
+        struct CmBlob authUri = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &authUri)) {
             CmFree(myData);
             return false;
@@ -49,7 +49,7 @@ namespace OHOS {
         remainSize -= sizeof(struct CmSignatureSpec);
         offset += sizeof(struct CmSignatureSpec);
 
-        struct CmBlob handle = {0, nullptr};
+        struct CmBlob handle = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &handle)) {
             CmFree(myData);
             return false;

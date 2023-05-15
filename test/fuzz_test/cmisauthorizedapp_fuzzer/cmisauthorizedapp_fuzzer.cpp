@@ -32,7 +32,7 @@ namespace OHOS {
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
 
-        struct CmBlob authAppUri = {0, nullptr};
+        struct CmBlob authAppUri = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &authAppUri)) {
             CmFree(myData);
             return false;

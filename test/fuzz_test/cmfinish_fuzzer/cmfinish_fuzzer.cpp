@@ -34,19 +34,19 @@ namespace OHOS {
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
 
-        struct CmBlob fiHandle = {0, nullptr};
+        struct CmBlob fiHandle = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &fiHandle)) {
             CmFree(myData);
             return false;
         }
 
-        struct CmBlob inData = {0, nullptr};
+        struct CmBlob inData = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &inData)) {
             CmFree(myData);
             return false;
         }
 
-        struct CmBlob outData = {0, nullptr};
+        struct CmBlob outData = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &outData)) {
             CmFree(myData);
             return false;

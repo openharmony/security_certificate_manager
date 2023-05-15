@@ -32,13 +32,13 @@ namespace OHOS {
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
 
-        struct CmBlob authorUri = {0, nullptr};
+        struct CmBlob authorUri = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &authorUri)) {
             CmFree(myData);
             return false;
         }
 
-        struct CmAppUidList appUidList = {0, nullptr};
+        struct CmAppUidList appUidList = { 0, nullptr };
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &(appUidList.appUidCount))) {
             CmFree(myData);
             return false;
