@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,7 +26,7 @@ namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
         uint32_t minSize = CM_INIT_BLOB_NUM * sizeof(struct CmBlob) + sizeof(struct CmSignatureSpec);
-        uint8_t *myData;
+        uint8_t *myData = nullptr;
         if (!CopyMyData(data, size, minSize, &myData)) {
             return false;
         }
@@ -34,21 +34,22 @@ namespace OHOS {
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
 
-        struct CmBlob authUri = {0, NULL};
+        struct CmBlob authUri = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &authUri)) {
             CmFree(myData);
             return false;
         }
 
-        if (remainSize <  sizeof(struct CmSignatureSpec)) {
+        if (remainSize < sizeof(struct CmSignatureSpec)) {
             CmFree(myData);
             return false;
         }
-        struct CmSignatureSpec spec = *(reinterpret_cast<struct CmSignatureSpec *>(myData + offset));
+        struct CmSignatureSpec spec;
+        (void)memcpy_s(&spec, sizeof(struct CmSignatureSpec), myData + offset, sizeof(struct CmSignatureSpec));
         remainSize -= sizeof(struct CmSignatureSpec);
         offset += sizeof(struct CmSignatureSpec);
 
-        struct CmBlob handle = {0, NULL};
+        struct CmBlob handle = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &handle)) {
             CmFree(myData);
             return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,26 +26,26 @@ namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
         uint32_t minSize = CM_BLOB_NUM * sizeof(struct CmBlob);
-        uint8_t *myData;
+        uint8_t *myData = nullptr;
         if (!CopyMyData(data, size, minSize, &myData)) {
             return false;
         }
 
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
-        struct CmBlob userCert = {0, NULL};
+        struct CmBlob userCert = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &userCert)) {
             CmFree(myData);
             return false;
         }
 
-        struct CmBlob certAlias = {0, NULL};
+        struct CmBlob certAlias = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &certAlias)) {
             CmFree(myData);
             return false;
         }
 
-        struct CmBlob certUri = {0, NULL};
+        struct CmBlob certUri = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &certUri)) {
             CmFree(myData);
             return false;
