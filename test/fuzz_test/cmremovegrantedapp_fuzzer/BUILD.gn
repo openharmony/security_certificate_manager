@@ -20,7 +20,7 @@ module_output_path = "cert_manager_standard/cert_manager_standard_test"
 ohos_fuzztest("CmRemoveGrantedAppFuzzTest") {
   module_out_path = module_output_path
 
-  #fuzz_config_file = "../../../test/fuzz_test/cmremovegrantedapp_fuzzer"
+  fuzz_config_file = "../../../test/fuzz_test/cmremovegrantedapp_fuzzer"
 
   include_dirs = [
     "../../../frameworks/cert_manager_standard/main/common/include",
