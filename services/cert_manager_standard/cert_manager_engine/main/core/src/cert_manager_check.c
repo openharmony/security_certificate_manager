@@ -110,7 +110,7 @@ static bool AppCertCheckBlobValid(const struct CmBlob *data)
 {
     for (uint32_t i = 0; i < data->size; i++) {
         if ((i > 0) && (data->data[i] == '\0')) { /* from index 1 has '\0' */
-            CM_LOG_E("data has string end character");
+            CM_LOG_I("data has string end character");
             return true;
         }
 
@@ -120,7 +120,8 @@ static bool AppCertCheckBlobValid(const struct CmBlob *data)
         }
     }
 
-    return true;
+    CM_LOG_E("data has no string end character");
+    return false;
 }
 
 static bool CmCheckMaxInstalledCertCount(const uint32_t store, const struct CmContext *cmContext)

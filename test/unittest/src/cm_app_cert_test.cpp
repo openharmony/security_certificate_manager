@@ -238,6 +238,45 @@ HWTEST_F(CmAppCertTest, AppCertInstallBaseEccTest005, TestSize.Level0)
 }
 
 /**
+ * @tc.name: AppCertInstallAbnormalTest005
+ * @tc.desc: Test CertManager Install app cert alias not include \0
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmAppCertTest, AppCertInstallAbnormalTest005, TestSize.Level0)
+{
+    uint8_t keyUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(keyUriBuf), keyUriBuf };
+
+    uint8_t aliasBuf[] = "keyB";
+    struct CmBlob certAlias = { sizeof(aliasBuf) - 1, aliasBuf }; /* not include '\0' */
+
+    int32_t ret = CmInstallAppCert(&g_eccAppCert, &g_appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "AppCertInstallAbnormalTest005 test failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: AppCertInstallBaseEccTest006
+ * @tc.desc: Test CertManager Install app cert pwd not include \0
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmAppCertTest, AppCertInstallAbnormalTest006, TestSize.Level0)
+{
+    uint8_t keyUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(keyUriBuf), keyUriBuf };
+
+    uint8_t aliasBuf[] = "keyC";
+    struct CmBlob certAlias = { sizeof(aliasBuf), aliasBuf };
+
+    uint8_t pwdBuf[] = "123";
+    struct CmBlob pwd = { sizeof(pwdBuf) - 1, pwdBuf }; /* not include '\0' */
+
+    int32_t ret = CmInstallAppCert(&g_eccAppCert, &pwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "AppCertInstallAbnormalTest006 test failed, retcode:" << ret;
+}
+
+/**
  * @tc.name: CmGetAppCertBaseTest001
  * @tc.desc: Test CertManager get app cert interface base function
  * @tc.type: FUNC
