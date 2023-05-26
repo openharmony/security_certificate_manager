@@ -55,14 +55,13 @@ ohos_shared_library("certmanager") {
 
   external_deps = [
     "c_utils:utils",
-    "certificate_manager:cert_manager_sdk",
     "napi:ace_napi",
   ]
   cflags_cc = [
     "-Wall",
     "-Werror",
   ]
-  deps = []
+  deps = [ "../../innerkits/cert_manager_standard/main:cert_manager_sdk" ]
 
   relative_install_dir = "module/security"
   subsystem_name = "security"

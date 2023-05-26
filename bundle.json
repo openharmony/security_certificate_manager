@@ -45,6 +45,9 @@
           "os_account",
           "safwk",
           "samgr"
+        ],
+        "third_party": [
+          "thirdparty_openssl"
         ]
       },
       "build": {
