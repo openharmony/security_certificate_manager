@@ -15,7 +15,6 @@
 
 #include "cmsendrequest_fuzzer.h"
 
-#include "cm_ipc_client_serialization.h"
 #include "cm_ipc_msg_code.h"
 #include "cm_fuzz_test_common.h"
 #include "cm_param.h"
@@ -24,56 +23,6 @@
 
 using namespace CmFuzzTest;
 namespace OHOS {
-    const uint32_t CMPARAM_BUFFER_TYPE_COUNT = 4;
-    const uint32_t CMPARAM_UINT32_TYPE_COUNT = 4;
-    const uint32_t CMPARAM_BOOL_TYPE_COUNT = 2;
-
-    bool ConstructParamSet(uint8_t* myData, uint32_t *remainSize, uint32_t *offset, struct CmParamSet **paramSetOut)
-    {
-        struct CmParam params[] = {
-            { .tag = CM_TAG_PARAM0_BUFFER, .blob = { 0, nullptr } },
-            { .tag = CM_TAG_PARAM1_BUFFER, .blob = { 0, nullptr } },
-            { .tag = CM_TAG_PARAM2_BUFFER, .blob = { 0, nullptr } },
-            { .tag = CM_TAG_PARAM3_BUFFER, .blob = { 0, nullptr } },
-            { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = 0 },
-            { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = 0 },
-            { .tag = CM_TAG_PARAM2_UINT32, .uint32Param = 0 },
-            { .tag = CM_TAG_PARAM3_UINT32, .uint32Param = 0 },
-            { .tag = CM_TAG_PARAM0_BOOL, .boolParam = false },
-            { .tag = CM_TAG_PARAM1_BOOL, .boolParam = false },
-        };
-
-        uint32_t pos = 0;
-        for (uint32_t i = 0; i < CMPARAM_BUFFER_TYPE_COUNT; i++) {
-            if (!GetCmBlobFromBuffer(myData, remainSize, offset, &(params[pos].blob))) {
-                return false;
-            }
-            pos++;
-        }
-
-        for (uint32_t i = 0; i < CMPARAM_UINT32_TYPE_COUNT; i++) {
-            if (!GetUintFromBuffer(myData, remainSize, offset, &(params[pos].uint32Param))) {
-                return false;
-            }
-            pos++;
-        }
-
-        for (uint32_t i = 0; i < CMPARAM_BOOL_TYPE_COUNT; i++) {
-            uint32_t tmp;
-            if (!GetUintFromBuffer(myData, remainSize, offset, &tmp)) {
-                return false;
-            }
-            params[pos].boolParam = (tmp % CMPARAM_BOOL_TYPE_COUNT == 0 ? true : false);
-            pos++;
-        }
-
-        if (CmParamsToParamSet(params, sizeof(params) / sizeof(params[0]), paramSetOut) != CM_SUCCESS) {
-            return false;
-        }
-
-        return true;
-    }
-
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
         uint32_t minSize = sizeof(enum CmMessage) + sizeof(struct CmParamSet) + sizeof(struct CmBlob);
@@ -94,7 +43,7 @@ namespace OHOS {
         remainSize -= sizeof(uint32_t);
 
         struct CmParamSet *sendParamSet = nullptr;
-        if (ConstructParamSet(myData, &remainSize, &offset, &sendParamSet) == false) {
+        if (ConstructParamSet(myData, &remainSize, &offset, type, &sendParamSet) == false) {
             CmFree(myData);
             return false;
         }

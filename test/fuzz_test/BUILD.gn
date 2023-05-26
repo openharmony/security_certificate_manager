@@ -40,5 +40,30 @@ group("fuzztest") {
       "./cmuninstallusertrustedcert_fuzzer:fuzztest",
       "./cmupdate_fuzzer:fuzztest",
     ]
+
+    deps += [
+      "./cmipcserviceabort_fuzzer:fuzztest",
+      "./cmipcservicefinish_fuzzer:fuzztest",
+      "./cmipcservicegetappcert_fuzzer:fuzztest",
+      "./cmipcservicegetappcertlist_fuzzer:fuzztest",
+      "./cmipcservicegetauthorizedapplist_fuzzer:fuzztest",
+      "./cmipcservicegetcertificateinfo_fuzzer:fuzztest",
+      "./cmipcservicegetcertificatelist_fuzzer:fuzztest",
+      "./cmipcservicegetusercertinfo_fuzzer:fuzztest",
+      "./cmipcservicegetusercertlist_fuzzer:fuzztest",
+      "./cmipcservicegrantappcertificate_fuzzer:fuzztest",
+      "./cmipcserviceinit_fuzzer:fuzztest",
+      "./cmipcserviceinstallappcert_fuzzer:fuzztest",
+      "./cmipcserviceinstallusercert_fuzzer:fuzztest",
+      "./cmipcserviceisauthorizedapp_fuzzer:fuzztest",
+      "./cmipcserviceremovegrantedapp_fuzzer:fuzztest",
+      "./cmipcservicesetcertstatus_fuzzer:fuzztest",
+      "./cmipcservicesetusercertstatus_fuzzer:fuzztest",
+      "./cmipcserviceuninstallallappcert_fuzzer:fuzztest",
+      "./cmipcserviceuninstallallusercert_fuzzer:fuzztest",
+      "./cmipcserviceuninstallappcert_fuzzer:fuzztest",
+      "./cmipcserviceuninstallusercert_fuzzer:fuzztest",
+      "./cmipcserviceupdate_fuzzer:fuzztest",
+    ]
   }
 }
