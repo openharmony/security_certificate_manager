@@ -64,7 +64,6 @@ ohos_static_library("cert_manager_engine_core_standard") {
   ]
 
   deps = [
-    "../../../../../../crypto_framework/frameworks:crypto_framework_lib",
     "../../../../../frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
     "../../../../../frameworks/cert_manager_standard/main/os_dependency:libcert_manager_log_mem_static",
     "//third_party/openssl:libcrypto_shared",
