@@ -47,7 +47,7 @@
           "samgr"
         ],
         "third_party": [
-          "thirdparty_openssl"
+          "openssl"
         ]
       },
       "build": {
