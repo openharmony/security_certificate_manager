@@ -205,6 +205,22 @@ HWTEST_F(CmRemoveGrantTest, CmRemoveGrantTest008, TestSize.Level0)
 }
 
 /**
+ * @tc.name: CmRemoveGrantTest0081
+ * @tc.desc: Test CmRemoveGrantTest keyUri data invalid
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MIA /SR000H09NA
+ */
+HWTEST_F(CmRemoveGrantTest, CmRemoveGrantTest0081, TestSize.Level0)
+{
+    /* keyUri data invalid */
+    uint8_t uriData[] = "oh:t=%;o=%1;u=%22;a=%3";
+    struct CmBlob keyUri = { sizeof(uriData), uriData };
+    uint32_t appId = 0;
+    int32_t ret = CmRemoveGrantedApp(&keyUri, appId);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+}
+
+/**
  * @tc.name: CmRemoveGrantTest009
  * @tc.desc: Test CmRemoveGrantTest remove while keyUri not exist
  * @tc.type: FUNC

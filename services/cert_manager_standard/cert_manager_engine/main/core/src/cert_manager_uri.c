@@ -361,9 +361,13 @@ static char *DecodeValue(const char *s, uint32_t off, uint32_t len)
     for (uint32_t i = off; i < off + len; i++, bufOff++) {
         if (s[i] != '%') {
             buf[bufOff] = s[i];
-        } else {
+        } else if ((i + 2) < (off + len)) { /* 2 is to be accessed byte count */
             buf[bufOff] = HexDecode2(s[i + 1], s[i + 2]); /* 2 is array index */
             i += 2; /* 2 is array index */
+        } else {
+            CM_LOG_E("path has special character, but len is invalid");
+            free(buf);
+            return NULL;
         }
     }
     char *ret = strndup(buf, bufOff);
@@ -497,6 +501,11 @@ int32_t CertManagerUriDecode(struct CMUri *uri, const char *encoded)
     uri->type = CM_URI_TYPE_INVALID;
 
     uint32_t len = strlen(encoded);
+    if (len > MAX_AUTH_LEN_URI) {
+        CM_LOG_E("invalid uri len[%u]", len);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     uint32_t off = 0;
     if (len < strlen(SCHEME) || memcmp(encoded, SCHEME, strlen(SCHEME))) {
         CM_LOG_E("Scheme mismatch. Not a cert manager URI");
