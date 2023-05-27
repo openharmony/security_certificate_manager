@@ -16,7 +16,9 @@
 #ifndef CM_FUZZ_TEST_COMMON_H
 #define CM_FUZZ_TEST_COMMON_H
 
+#include "cm_ipc_msg_code.h"
 #include "cm_mem.h"
+#include "cm_param.h"
 #include "cm_type.h"
 #include "securec.h"
 
@@ -30,5 +32,11 @@ bool GetCertListFromBuffer(uint8_t *srcData, uint32_t *remSize, uint32_t *offset
 bool GetCertInfoFromBuffer(uint8_t *srcData, uint32_t *remSize, uint32_t *offset, struct CertInfo *outInfo);
 
 bool CopyMyData(const uint8_t *data, const size_t size, const uint32_t minSize, uint8_t **myData);
+
+bool ConstructParamSet(uint8_t *srcData, uint32_t *remainSize, uint32_t *offset, enum CmMessage code,
+    struct CmParamSet **paramSetOut);
+
+bool IpcServiceApiFuzzerTest(const uint8_t *data, const size_t size, enum CmMessage code, bool isParamsetToBlob,
+    void (*ipcServiceApi)(const struct CmBlob *, struct CmBlob *, const struct CmContext *));
 } // namespace CmFuzzTest
 #endif /* CM_FUZZ_TEST_COMMON_H */
