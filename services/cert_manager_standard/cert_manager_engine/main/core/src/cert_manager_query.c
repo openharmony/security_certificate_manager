@@ -371,6 +371,11 @@ static int32_t GetUserCertAlias(const char *uri, struct CmBlob *alias)
         CM_LOG_E("uri decode failed, ret = %d", ret);
         return ret;
     }
+    if (certUri.object == NULL) {
+        CM_LOG_E("uri's object is invalid after decode");
+        (void)CertManagerFreeUri(&certUri);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
 
     uint32_t objectSize = strlen(certUri.object) + 1;
     if (memcpy_s(alias->data, alias->size, (uint8_t *)certUri.object, objectSize) != EOK) {

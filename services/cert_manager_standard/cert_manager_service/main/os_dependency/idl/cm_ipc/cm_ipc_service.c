@@ -317,6 +317,11 @@ static int32_t GetAppCertInfo(const struct CmBlob *keyUri, struct CmBlob *certTy
             CM_LOG_E("CertManagerUriDecode failed");
             break;
         }
+        if ((uri.type >= TYPE_COUNT) || (uri.object == NULL)) {
+            CM_LOG_E("uri's type[%u] or object is invalid after decode", uri.type);
+            ret = CMR_ERROR;
+            break;
+        }
 
         if (memcpy_s(certType->data, certType->size, g_types[uri.type], strlen(g_types[uri.type]) + 1) != EOK) {
             CM_LOG_E("Failed to copy certType->data");
