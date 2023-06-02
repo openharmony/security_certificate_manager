@@ -82,14 +82,14 @@ public:
     CertManagerService();
     virtual ~CertManagerService();
 
+    void OnStart() override;
+    void OnStop() override;
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
 
     void DelayUnload();
     static CertManagerService& GetInstance();
 
 protected:
-    void OnStart() override;
-    void OnStop() override;
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
