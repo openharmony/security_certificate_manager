@@ -64,6 +64,7 @@ group("fuzztest") {
       "./cmipcserviceuninstallappcert_fuzzer:fuzztest",
       "./cmipcserviceuninstallusercert_fuzzer:fuzztest",
       "./cmipcserviceupdate_fuzzer:fuzztest",
+      "./cmonremoterequest_fuzzer:fuzztest",
     ]
   }
 }
