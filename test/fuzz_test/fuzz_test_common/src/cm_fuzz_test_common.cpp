@@ -102,7 +102,7 @@ constexpr uint32_t PARAM_COUNT_THREE = 3;
 constexpr uint32_t PARAM_COUNT_FOUR = 4;
 
 struct CmFuzzerCodeParams {
-    enum CmMessage code;
+    CertManagerInterfaceCode code;
     uint32_t paramCnt;
     struct CmParam params[PARAM_COUNT_FOUR];
 };
@@ -257,8 +257,8 @@ constexpr struct CmFuzzerCodeParams g_codeParams[] = {
     },
 };
 
-bool ConstructParamSet(uint8_t *srcData, uint32_t *remainSize, uint32_t *offset, enum CmMessage code,
-    struct CmParamSet **paramSetOut)
+bool ConstructParamSet(uint8_t *srcData, uint32_t *remainSize,
+    uint32_t *offset, CertManagerInterfaceCode code, struct CmParamSet **paramSetOut)
 {
     struct CmParam params[PARAM_COUNT_FOUR] = {};
     uint32_t paramCnt = 0;
@@ -302,8 +302,8 @@ bool ConstructParamSet(uint8_t *srcData, uint32_t *remainSize, uint32_t *offset,
     return true;
 }
 
-bool IpcServiceApiFuzzerTest(const uint8_t *data, const size_t size, enum CmMessage code, bool isParamsetToBlob,
-    void (*ipcServiceApi)(const struct CmBlob *, struct CmBlob *, const struct CmContext *))
+bool IpcServiceApiFuzzerTest(const uint8_t *data, const size_t size, CertManagerInterfaceCode code,
+    bool isParamsetToBlob, void (*ipcServiceApi)(const struct CmBlob *, struct CmBlob *, const struct CmContext *))
 {
     uint32_t minSize = sizeof(struct CmBlob) + sizeof(struct CmBlob);
     uint8_t *myData = nullptr;

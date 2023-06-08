@@ -24,7 +24,8 @@ namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
         CertmanagerTest::SetATPermission();
-        if (!IpcServiceApiFuzzerTest(data, size, CM_MSG_CHECK_IS_AUTHED_APP, false, CmIpcServiceIsAuthorizedApp)) {
+        if (!IpcServiceApiFuzzerTest(data, size, CM_MSG_CHECK_IS_AUTHED_APP,
+            false, CmIpcServiceIsAuthorizedApp)) {
             return false;
         }
 

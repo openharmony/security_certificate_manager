@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -51,7 +51,7 @@ static int32_t GetCertListInitOutData(struct CmBlob *outListBlob)
     return CM_SUCCESS;
 }
 
-static int32_t GetCertificateList(enum CmMessage type, const uint32_t store,
+static int32_t GetCertificateList(enum CertManagerInterfaceCode type, const uint32_t store,
     struct CertList *certificateList)
 {
     int32_t ret;
@@ -108,7 +108,7 @@ static int32_t GetCertInfoInitOutData(struct CmBlob *outInfoBlob)
     return CM_SUCCESS;
 }
 
-static int32_t GetCertificateInfo(enum CmMessage type, const struct CmBlob *certUri,
+static int32_t GetCertificateInfo(enum CertManagerInterfaceCode type, const struct CmBlob *certUri,
     const uint32_t store, struct CertInfo *certificateInfo)
 {
     int32_t ret = CM_SUCCESS;
@@ -156,7 +156,7 @@ int32_t CmClientGetCertInfo(const struct CmBlob *certUri, const uint32_t store,
     return GetCertificateInfo(CM_MSG_GET_CERTIFICATE_INFO, certUri, store, certificateInfo);
 }
 
-static int32_t SetCertificateStatus(enum CmMessage type, const struct CmBlob *certUri,
+static int32_t SetCertificateStatus(enum CertManagerInterfaceCode type, const struct CmBlob *certUri,
     const uint32_t store, const uint32_t status)
 {
     int32_t ret = CM_SUCCESS;
@@ -235,7 +235,8 @@ int32_t CmClientInstallAppCert(const struct CmBlob *appCert, const struct CmBlob
     return InstallAppCert(appCert, appCertPwd, certAlias, store, keyUri);
 }
 
-static int32_t UninstallAppCert(enum CmMessage type, const struct CmBlob *keyUri, const uint32_t store)
+static int32_t UninstallAppCert(enum CertManagerInterfaceCode type, const struct CmBlob *keyUri,
+    const uint32_t store)
 {
     int32_t ret;
     struct CmParamSet *sendParamSet = NULL;
@@ -275,7 +276,7 @@ int32_t CmClientUninstallAppCert(const struct CmBlob *keyUri, const uint32_t sto
     return UninstallAppCert(CM_MSG_UNINSTALL_APP_CERTIFICATE, keyUri, store);
 }
 
-int32_t CmClientUninstallAllAppCert(enum CmMessage type)
+int32_t CmClientUninstallAllAppCert(enum CertManagerInterfaceCode type)
 {
     int32_t ret;
     char tempBuff[] = "uninstall all app cert";
@@ -379,7 +380,8 @@ static int32_t CmAppCertListUnpackFromService(const struct CmBlob *outData,
     return CM_SUCCESS;
 }
 
-static int32_t GetAppCertList(enum CmMessage type, const uint32_t store, struct CredentialList *certificateList)
+static int32_t GetAppCertList(enum CertManagerInterfaceCode type, const uint32_t store,
+    struct CredentialList *certificateList)
 {
     int32_t ret;
     struct CmBlob outBlob = { 0, NULL };
@@ -533,7 +535,7 @@ static int32_t CmAppCertInfoUnpackFromService(const struct CmBlob *outData, stru
     return CM_SUCCESS;
 }
 
-static int32_t GetAppCert(enum CmMessage type, const struct CmBlob *certUri, const uint32_t store,
+static int32_t GetAppCert(enum CertManagerInterfaceCode type, const struct CmBlob *certUri, const uint32_t store,
     struct Credential *certificate)
 {
     int32_t ret;
@@ -586,7 +588,7 @@ int32_t CmClientGetAppCert(const struct CmBlob *keyUri, const uint32_t store, st
     return GetAppCert(CM_MSG_GET_APP_CERTIFICATE, keyUri, store, certificate);
 }
 
-static int32_t ClientSerializationAndSend(enum CmMessage message, struct CmParam *params,
+static int32_t ClientSerializationAndSend(enum CertManagerInterfaceCode message, struct CmParam *params,
     uint32_t paramCount, struct CmBlob *outBlob)
 {
     struct CmParamSet *sendParamSet = NULL;
@@ -814,7 +816,7 @@ int32_t CmClientAbort(const struct CmBlob *handle)
     return ret;
 }
 
-static int32_t GetUserCertList(enum CmMessage type, const uint32_t store,
+static int32_t GetUserCertList(enum CertManagerInterfaceCode type, const uint32_t store,
     struct CertList *certificateList)
 {
     int32_t ret = CM_SUCCESS;
@@ -861,7 +863,7 @@ int32_t CmClientGetUserCertList(const uint32_t store, struct CertList *certifica
     return GetUserCertList(CM_MSG_GET_USER_CERTIFICATE_LIST, store, certificateList);
 }
 
-static int32_t GetUserCertInfo(enum CmMessage type, const struct CmBlob *certUri,
+static int32_t GetUserCertInfo(enum CertManagerInterfaceCode type, const struct CmBlob *certUri,
     const uint32_t store, struct CertInfo *userCertInfo)
 {
     int32_t ret = CM_SUCCESS;
@@ -909,7 +911,7 @@ int32_t CmClientGetUserCertInfo(const struct CmBlob *certUri, const uint32_t sto
     return GetUserCertInfo(CM_MSG_GET_USER_CERTIFICATE_INFO, certUri, store, certificateInfo);
 }
 
-static int32_t SetUserCertStatus(enum CmMessage type, const struct CmBlob *certUri,
+static int32_t SetUserCertStatus(enum CertManagerInterfaceCode type, const struct CmBlob *certUri,
     const uint32_t store, const uint32_t status)
 {
     int32_t ret = CM_SUCCESS;
@@ -944,8 +946,8 @@ int32_t CmClientSetUserCertStatus(const struct CmBlob *certUri, const uint32_t s
     return SetUserCertStatus(CM_MSG_SET_USER_CERTIFICATE_STATUS, certUri, store, status);
 }
 
-static int32_t InstallUserCert(enum CmMessage type, const struct CmBlob *userCert, const struct CmBlob *certAlias,
-    struct CmBlob *certUri)
+static int32_t InstallUserCert(enum CertManagerInterfaceCode type, const struct CmBlob *userCert,
+    const struct CmBlob *certAlias, struct CmBlob *certUri)
 {
     int32_t ret = CM_SUCCESS;
     struct CmBlob parcelBlob = {0, NULL};
@@ -978,7 +980,7 @@ int32_t CmClientInstallUserTrustedCert(const struct CmBlob *userCert, const stru
     return InstallUserCert(CM_MSG_INSTALL_USER_CERTIFICATE, userCert, certAlias, certUri);
 }
 
-static int32_t UninstallUserCert(enum CmMessage type, const struct CmBlob *certUri)
+static int32_t UninstallUserCert(enum CertManagerInterfaceCode type, const struct CmBlob *certUri)
 {
     int32_t ret = CM_SUCCESS;
     struct CmBlob parcelBlob = {0, NULL};
@@ -1009,7 +1011,7 @@ int32_t CmClientUninstallUserTrustedCert(const struct CmBlob *certUri)
     return UninstallUserCert(CM_MSG_UNINSTALL_USER_CERTIFICATE, certUri);
 }
 
-static int32_t UninstallAllUserCert(enum CmMessage type)
+static int32_t UninstallAllUserCert(enum CertManagerInterfaceCode type)
 {
     int ret = CM_SUCCESS;
     uint8_t temp[4] = {0}; /* only use to construct parcelBlob */

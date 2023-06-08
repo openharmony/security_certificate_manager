@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -98,7 +98,7 @@ static int32_t CmReadRequestReply(MessageParcel &reply, struct CmBlob *outBlob)
     return CM_SUCCESS;
 }
 
-int32_t SendRequest(enum CmMessage type, const struct CmBlob *inBlob,
+int32_t SendRequest(enum CertManagerInterfaceCode type, const struct CmBlob *inBlob,
     struct CmBlob *outBlob)
 {
     uint32_t i = 0;
@@ -128,7 +128,7 @@ int32_t SendRequest(enum CmMessage type, const struct CmBlob *inBlob,
     data.WriteUint32(inBlob->size);
     data.WriteBuffer(inBlob->data, static_cast<size_t>(inBlob->size));
 
-    int error = cmProxy->SendRequest(type, data, reply, option);
+    int error = cmProxy->SendRequest(static_cast<uint32_t>(type), data, reply, option);
     if (error != 0) {
         CM_LOG_E("SendRequest error:%d", error);
         return error;

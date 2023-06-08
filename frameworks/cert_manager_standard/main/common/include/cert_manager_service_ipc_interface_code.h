@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,8 +20,9 @@
 extern "C" {
 #endif
 
-enum CmMessage {
-    CM_MSG_BASE = 0x3a400,
+/* SAID: 3512 */
+enum CertManagerInterfaceCode {
+    CM_MSG_BASE = 0,
 
     CM_MSG_GEN_KEY = CM_MSG_BASE,
     CM_MSG_GET_CERTIFICATE_LIST,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 #ifndef CM_REQUEST_H
 #define CM_REQUEST_H
 
-#include "cm_ipc_msg_code.h"
+#include "cert_manager_service_ipc_interface_code.h"
 #include "cm_type_inner.h"
 
 #ifdef __cplusplus
@@ -30,7 +30,7 @@ extern "C" {
  * @outBlob:     the output serialized data blob, can be null.
  */
 
-int32_t SendRequest(enum CmMessage type, const struct CmBlob *inBlob,
+int32_t SendRequest(enum CertManagerInterfaceCode type, const struct CmBlob *inBlob,
     struct CmBlob *outBlob);
 
 #ifdef __cplusplus

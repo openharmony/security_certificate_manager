@@ -24,7 +24,8 @@
 class OnDemandLoadCertManagerCallback : public OHOS::SystemAbilityLoadCallbackStub {
 public:
     OnDemandLoadCertManagerCallback(std::string servers);
-    void OnLoadSystemAbilitySuccess(int32_t systemAbilityId, const OHOS::sptr<IRemoteObject>& remoteObject) override;
+    void OnLoadSystemAbilitySuccess(int32_t systemAbilityId,
+        const OHOS::sptr<IRemoteObject>& remoteObject) override;
     void OnLoadSystemAbilityFail(int32_t systemAbilityId) override;
     OHOS::sptr<IRemoteObject> Promise(void);
 private:
