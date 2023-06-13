@@ -14,6 +14,9 @@
 use_crypto_lib = "openssl"
 non_rwlock_support = false
 
+# depend on the definition of huks security level in base/security/huks/build/config.gni
+deps_huks_security_level = "software"
+
 if (!defined(global_parts_info) ||
     defined(global_parts_info.account_os_account)) {
   has_os_account_part = true
