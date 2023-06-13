@@ -5,6 +5,7 @@
             "name": 3512,
             "libpath": "libcert_manager_service.z.so",
             "run-on-create": false,
+            "auto-restart": true,
             "distributed": false,
             "dump-level": 1
         }
