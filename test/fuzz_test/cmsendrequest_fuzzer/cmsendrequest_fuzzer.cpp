@@ -15,7 +15,6 @@
 
 #include "cmsendrequest_fuzzer.h"
 
-#include "cm_ipc_msg_code.h"
 #include "cm_fuzz_test_common.h"
 #include "cm_param.h"
 #include "cm_request.h"
@@ -25,7 +24,7 @@ using namespace CmFuzzTest;
 namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
-        uint32_t minSize = sizeof(enum CmMessage) + sizeof(struct CmParamSet) + sizeof(struct CmBlob);
+        uint32_t minSize = sizeof(CertManagerInterfaceCode) + sizeof(struct CmParamSet) + sizeof(struct CmBlob);
         uint8_t *myData = nullptr;
         if (!CopyMyData(data, size, minSize, &myData)) {
             return false;
@@ -34,10 +33,10 @@ namespace OHOS {
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
 
-        enum CmMessage type;
-        (void)memcpy_s(&type, sizeof(enum CmMessage), myData, sizeof(enum CmMessage));
-        type = static_cast<enum CmMessage>(
-            static_cast<uint32_t>(type) % static_cast<uint32_t>(CM_MSG_MAX - CM_MSG_BASE) +
+        CertManagerInterfaceCode type;
+        (void)memcpy_s(&type, sizeof(CertManagerInterfaceCode), myData, sizeof(CertManagerInterfaceCode));
+        type = static_cast<CertManagerInterfaceCode>(static_cast<uint32_t>(type) %
+            (static_cast<uint32_t>(CM_MSG_MAX) - static_cast<uint32_t>(CM_MSG_BASE)) +
             static_cast<uint32_t>(CM_MSG_BASE));
         offset += sizeof(uint32_t);
         remainSize -= sizeof(uint32_t);

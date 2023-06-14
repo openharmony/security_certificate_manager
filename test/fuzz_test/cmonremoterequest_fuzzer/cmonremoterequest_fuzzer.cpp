@@ -49,7 +49,8 @@ namespace OHOS {
             return false;
         }
         struct CmParamSet *paramSet = nullptr;
-        if (ConstructParamSet(myData, &remainSize, &offset, static_cast<enum CmMessage>(code), &paramSet) == false) {
+        if (ConstructParamSet(myData, &remainSize, &offset,
+            static_cast<CertManagerInterfaceCode>(code), &paramSet) == false) {
             CmFree(myData);
             return false;
         }
@@ -83,4 +84,3 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::DoSomethingInterestingWithMyAPI(data, size);
     return 0;
 }
-

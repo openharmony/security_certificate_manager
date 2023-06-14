@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -47,7 +47,7 @@ using CmIpcAppHandlerFuncProc = void (*)(const struct CmBlob *msg, struct CmBlob
     const CmContext *context);
 
 struct CmIpcPoint {
-    enum CmMessage msgId;
+    CertManagerInterfaceCode msgId;
     CmIpcAppHandlerFuncProc handler;
 };
 
@@ -114,7 +114,7 @@ static int32_t ProcessMessage(uint32_t code, uint32_t outSize, const struct CmBl
 {
     uint32_t size = sizeof(g_cmIpcHandler) / sizeof(g_cmIpcHandler[0]);
     for (uint32_t i = 0; i < size; ++i) {
-        if (code != g_cmIpcHandler[i].msgId) {
+        if (code != static_cast<uint32_t>(g_cmIpcHandler[i].msgId)) {
             continue;
         }
         struct CmBlob outData = { 0, nullptr };
@@ -186,7 +186,7 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
 
     CM_LOG_I("OnRemoteRequest code:%u", code);
     // check the code is valid
-    if (code < MSG_CODE_BASE || code >= MSG_CODE_MAX) {
+    if (code < static_cast<uint32_t>(CM_MSG_BASE) || code >= static_cast<uint32_t>(CM_MSG_MAX)) {
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
 
