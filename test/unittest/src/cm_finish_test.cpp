@@ -412,6 +412,7 @@ HWTEST_F(CmFinishTest, CmFinishTest015, TestSize.Level0)
     TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
 }
 
+#ifdef DEPS_HKS_UNTRUSTED_RUNNING_ENV
 /**
 * @tc.name: CmFinishTest016
 * @tc.desc: Test CmFinish normal case: caller is producer, rsa sign verify, pss, sha224
@@ -435,6 +436,7 @@ HWTEST_F(CmFinishTest, CmFinishTest017, TestSize.Level0)
     struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA1 };
     TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
 }
+#endif
 
 /**
 * @tc.name: CmFinishTest018
@@ -448,6 +450,7 @@ HWTEST_F(CmFinishTest, CmFinishTest018, TestSize.Level0)
     TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
 }
 
+#ifdef DEPS_HKS_UNTRUSTED_RUNNING_ENV
 /**
 * @tc.name: CmFinishTest019
 * @tc.desc: Test CmFinish normal case: caller is producer, rsa sign verify, pkcs1, md5
@@ -471,8 +474,9 @@ HWTEST_F(CmFinishTest, CmFinishTest020, TestSize.Level0)
     struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PKCS1_V1_5, CM_DIGEST_SHA224 };
     TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
 }
+#endif
 
-    /**
+/**
 * @tc.name: CmFinishTest021
 * @tc.desc: Test CmFinish normal case: caller is producer, rsa sign verify, pkcs1, sha256
 * @tc.type: FUNC
@@ -484,7 +488,7 @@ HWTEST_F(CmFinishTest, CmFinishTest021, TestSize.Level0)
     TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
 }
 
-    /**
+/**
 * @tc.name: CmFinishTest022
 * @tc.desc: Test CmFinish normal case: caller is producer, rsa sign verify, pkcs1, sha384
 * @tc.type: FUNC
@@ -508,6 +512,7 @@ HWTEST_F(CmFinishTest, CmFinishTest023, TestSize.Level0)
     TestSignVerify(CERT_KEY_ALG_RSA, true, &spec);
 }
 
+#ifdef DEPS_HKS_UNTRUSTED_RUNNING_ENV
 /**
 * @tc.name: CmFinishTest024
 * @tc.desc: Test CmFinish normal case: caller is producer, rsa sign verify, pkcs1, sha1
@@ -543,6 +548,7 @@ HWTEST_F(CmFinishTest, CmFinishTest026, TestSize.Level0)
     struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SHA224 };
     TestSignVerify(CERT_KEY_ALG_ECC, true, &spec);
 }
+#endif
 
 /**
 * @tc.name: CmFinishTest027
@@ -568,6 +574,7 @@ HWTEST_F(CmFinishTest, CmFinishTest028, TestSize.Level0)
     TestSignVerify(CERT_KEY_ALG_ECC, true, &spec);
 }
 
+#ifdef DEPS_HKS_UNTRUSTED_RUNNING_ENV
 /**
 * @tc.name: CmFinishTest029
 * @tc.desc: Test CmFinish normal case: caller is producer, rsa sign verify, 512
@@ -591,6 +598,7 @@ HWTEST_F(CmFinishTest, CmFinishTest030, TestSize.Level0)
     struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, CM_PADDING_PSS, CM_DIGEST_SHA384 };
     TestSignVerify(CERT_KEY_ALG_RSA_1024, true, &spec);
 }
+#endif
 
 /**
 * @tc.name: CmFinishTest031
@@ -616,6 +624,7 @@ HWTEST_F(CmFinishTest, CmFinishTest032, TestSize.Level0)
     TestSignVerify(CERT_KEY_ALG_RSA_4096, true, &spec);
 }
 
+#ifdef DEPS_HKS_UNTRUSTED_RUNNING_ENV
 /**
 * @tc.name: CmFinishTest033
 * @tc.desc: Test CmFinish normal case: caller is producer, ecc sign verify, P224
@@ -627,6 +636,7 @@ HWTEST_F(CmFinishTest, CmFinishTest033, TestSize.Level0)
     struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SHA256 };
     TestSignVerify(CERT_KEY_ALG_ECC_P224, true, &spec);
 }
+#endif
 
 /**
 * @tc.name: CmFinishTest034

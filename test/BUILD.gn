@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/test.gni")
+import("../cert_manager.gni")
 
 module_output_path = "cert_manager_standard/cert_manager_standard_test"
 
@@ -57,6 +58,11 @@ ohos_unittest("cm_sdk_test") {
     "c_utils:utils",
   ]
   resource_config_file = "./resource/certificate_manager/ohos_test.xml"
+
+  defines = []
+  if (deps_huks_security_level == "software") {
+    defines += [ "DEPS_HKS_UNTRUSTED_RUNNING_ENV" ]
+  }
 }
 
 group("unittest") {
