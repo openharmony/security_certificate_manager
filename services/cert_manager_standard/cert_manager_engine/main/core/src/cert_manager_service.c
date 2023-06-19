@@ -276,6 +276,103 @@ int32_t CmServiceAbort(const struct CmContext *context, const struct CmBlob *han
     return CmKeyOpProcess(SIGN_VERIFY_CMD_ABORT, context, handle, NULL, NULL);
 }
 
+static int32_t DeepCopyPath(const uint8_t *srcData, uint32_t srcLen, struct CmMutableBlob *dest)
+{
+    uint8_t *data = (uint8_t *)CMMalloc(srcLen);
+    if (data == NULL) {
+        CM_LOG_E("malloc failed");
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    (void)memcpy_s(data, srcLen, srcData, srcLen);
+
+    dest->data = data;
+    dest->size = srcLen;
+    return CM_SUCCESS;
+}
+
+static int32_t MergeUserPathList(const struct CmMutableBlob *callerPathList,
+    const struct CmMutableBlob *sysServicePathList, struct CmMutableBlob *pathList)
+{
+    uint32_t uidCount = callerPathList->size + sysServicePathList->size;
+    if (uidCount == 0) {
+        CM_LOG_I("caller and system service dir is empty");
+        return CM_SUCCESS;
+    }
+
+    if (uidCount > MAX_COUNT_CERTIFICATE) {
+        CM_LOG_E("uid count beyond MAX");
+        return CM_FAILURE;
+    }
+
+    uint32_t memSize = sizeof(struct CmMutableBlob) * uidCount;
+    struct CmMutableBlob *uidList = (struct CmMutableBlob *)CMMalloc(memSize);
+    if (uidList == NULL) {
+        CM_LOG_E("malloc uidList failed");
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    (void)memset_s(uidList, memSize, 0, memSize);
+
+    int32_t ret = CM_SUCCESS;
+    struct CmMutableBlob *callerPath = (struct CmMutableBlob *)callerPathList->data;
+    struct CmMutableBlob *sysServicePath = (struct CmMutableBlob *)sysServicePathList->data;
+    for (uint32_t i = 0; i < callerPathList->size; i++) {
+        ret = DeepCopyPath(callerPath[i].data, callerPath[i].size, &uidList[i]);
+        if (ret != CM_SUCCESS) {
+            return ret; /* uniformly free the memory in CmServiceGetCertList */
+        }
+    }
+    for (uint32_t i = 0; i < sysServicePathList->size; i++) {
+        ret = DeepCopyPath(sysServicePath[i].data, sysServicePath[i].size, &uidList[i + callerPathList->size]);
+        if (ret != CM_SUCCESS) {
+            return ret; /* uniformly free the memory in CmServiceGetCertList */
+        }
+    }
+
+    pathList->data = (uint8_t *)uidList;
+    pathList->size = uidCount;
+    return CM_SUCCESS;
+}
+
+static int32_t CmGetUserCertPathList(const struct CmContext *context, uint32_t store, struct CmMutableBlob *pathList)
+{
+    int32_t ret = CM_SUCCESS;
+    struct CmMutableBlob callerPathList = { 0, NULL };
+    struct CmMutableBlob sysServicePathList = { 0, NULL };
+
+    do {
+        /* user: caller */
+        ret = CmGetCertPathList(context, store, &callerPathList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get caller certPathList fail, ret = %d", ret);
+            break;
+        }
+
+        /* user: system service */
+        uint32_t sysServiceUserId = 0;
+        struct CmContext sysServiceContext = { sysServiceUserId, context->uid, {0} };
+        ret = CmGetCertPathList(&sysServiceContext, store, &sysServicePathList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get system service certPathList fail, ret = %d", ret);
+            break;
+        }
+
+        /* merge callerPathList and sysServicePathList */
+        ret = MergeUserPathList(&callerPathList, &sysServicePathList, pathList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("merge cert path list failed");
+            break;
+        }
+    } while (0);
+
+    if (callerPathList.data != NULL) {
+        CmFreePathList((struct CmMutableBlob *)callerPathList.data, callerPathList.size);
+    }
+    if (sysServicePathList.data != NULL) {
+        CmFreePathList((struct CmMutableBlob *)sysServicePathList.data, sysServicePathList.size);
+    }
+    return ret;
+}
+
 int32_t CmServiceGetCertList(const struct CmContext *context, uint32_t store, struct CmMutableBlob *certFileList)
 {
     int32_t ret = CM_SUCCESS;
@@ -283,8 +380,8 @@ int32_t CmServiceGetCertList(const struct CmContext *context, uint32_t store, st
 
     do {
         if (store == CM_USER_TRUSTED_STORE) {
-            /* get all uid path */
-            ret = CmGetCertPathList(context, store, &pathList);
+            /* get all uid path for caller and system service */
+            ret = CmGetUserCertPathList(context, store, &pathList);
             if (ret != CM_SUCCESS) {
                 CM_LOG_E("GetCertPathList fail, ret = %d", ret);
                 break;
