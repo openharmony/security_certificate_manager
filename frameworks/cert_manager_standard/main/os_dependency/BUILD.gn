@@ -40,7 +40,7 @@ ohos_static_library("libcert_manager_log_mem_static") {
 
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
   ]
   cflags = [
     "-DHILOG_ENABLE",
@@ -76,7 +76,7 @@ ohos_static_library("libcert_manager_ipc_client_static") {
   ]
   external_deps = [
     "c_utils:utils",
-    "hiviewdfx_hilog_native:libhilog",
+    "hilog:libhilog",
     "ipc:ipc_core",
     "samgr:samgr_proxy",
   ]

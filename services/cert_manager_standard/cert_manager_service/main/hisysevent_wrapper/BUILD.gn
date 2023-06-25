@@ -45,6 +45,6 @@ ohos_static_library("libcert_manager_hisysevent_wrapper_static") {
     "L2_STANDARD",
     "_CM_LOG_ENABLE_",
   ]
-  external_deps = [ "hisysevent_native:libhisysevent" ]
+  external_deps = [ "hisysevent:libhisysevent" ]
   complete_static_lib = true
 }
