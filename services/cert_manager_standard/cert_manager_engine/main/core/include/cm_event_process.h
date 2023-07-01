@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-#define INVALID_VALUE 0XFFFF
+#define INVALID_VALUE 0XFFFFFFFF
 
 int32_t CmDeleteProcessInfo(const struct CmContext *context);
 

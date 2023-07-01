@@ -53,7 +53,7 @@ public:
     CertManagerService();
     virtual ~CertManagerService();
 
-    void OnStart() override;
+    void OnStart(const SystemAbilityOnDemandReason& startReason) override;
     void OnStop() override;
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
 

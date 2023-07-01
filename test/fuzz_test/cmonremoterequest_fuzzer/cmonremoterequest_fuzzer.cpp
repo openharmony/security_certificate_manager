@@ -68,7 +68,8 @@ namespace OHOS {
         MessageParcel reply;
         MessageOption option;
         CertmanagerTest::SetATPermission();
-        (void)myService.OnStart();
+        SystemAbilityOnDemandReason reason;
+        (void)myService.OnStart(reason);
         (void)myService.OnRemoteRequest(code, messageData, reply, option);
 
         CmFree(myData);

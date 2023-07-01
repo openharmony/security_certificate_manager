@@ -25,6 +25,7 @@
 
 #include "cert_manager.h"
 #include "cm_event_observer.h"
+#include "cm_event_process.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_ipc_service.h"
@@ -40,6 +41,7 @@ const uint32_t DELAY_INTERVAL = 200000; /* delay 200ms waiting for system event 
 
 const std::string TASK_ID = "unload";
 const uint32_t DELAY_TIME = 180000; /* delay 180000ms to unload SA */
+const std::string USER_REMOVED_EVENT = "usual.event.USER_REMOVED";
 
 using CmIpcHandlerFuncProc = void (*)(const struct CmBlob *msg, const CmContext *context);
 
@@ -226,9 +228,9 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     return NO_ERROR;
 }
 
-void CertManagerService::OnStart()
+void CertManagerService::OnStart(const SystemAbilityOnDemandReason& startReason)
 {
-    CM_LOG_I("CertManagerService OnStart");
+    CM_LOG_I("CertManagerService OnStart startReason");
 
     if (runningState_ == STATE_RUNNING) {
         CM_LOG_I("CertManagerService has already Started");
@@ -244,6 +246,15 @@ void CertManagerService::OnStart()
     if (!Init()) {
         CM_LOG_E("Failed to init CertManagerService");
         return;
+    }
+
+    CM_LOG_I("certmanager start reason %s", startReason.GetName().c_str());
+    if (startReason.GetId() == OnDemandReasonId::COMMON_EVENT &&
+        startReason.GetName() == USER_REMOVED_EVENT) {
+        struct CmContext context = { 0, INVALID_VALUE, {0} };
+        context.userId = startReason.GetExtraData().GetCode();
+        CM_LOG_I("user remove event, userId = %u", context.userId);
+        CmDeleteProcessInfo(&context);
     }
 
     (void)AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);

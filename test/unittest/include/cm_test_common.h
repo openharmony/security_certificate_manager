@@ -21,7 +21,7 @@
 
 #include  <string>
 
-#define PERFORMACE_COUNT 1000
+#define PERFORMACE_COUNT 10
 
 #define DELIMITER "$$$"
 #define ENDOF  "\n"
