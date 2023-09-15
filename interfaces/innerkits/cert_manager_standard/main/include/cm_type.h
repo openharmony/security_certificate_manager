@@ -52,7 +52,7 @@ extern "C" {
 #define MAX_LEN_NOT_AFTER               32
 #define MAX_LEN_FINGER_PRINT_SHA256     128
 #define MAX_LEN_APP_CERT 20480
-#define MAX_LEN_APP_CERT_PASSWD 16
+#define MAX_LEN_APP_CERT_PASSWD 33   /* 32位密码 + 1位结束符 */
 
 #define CERT_MAX_PATH_LEN       256
 #define CM_ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))

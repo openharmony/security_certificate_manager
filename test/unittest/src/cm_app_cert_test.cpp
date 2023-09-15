@@ -18,6 +18,7 @@
 #include "cert_manager_api.h"
 #include "cm_cert_data_ecc.h"
 #include "cm_cert_data_part1_rsa.h"
+#include "cm_cert_data_part3_rsa.h"
 #include "cm_mem.h"
 #include "cm_test_common.h"
 
@@ -603,6 +604,80 @@ HWTEST_F(CmAppCertTest, AppCertUnInstallAllAppCertAbnormalTest002, TestSize.Leve
 {
     int32_t ret = CmUninstallAllAppCert();
     EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAllAppCertAbnormalTest002 test failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: AppCertInstallPwdTest001
+ * @tc.desc: Test CertManager Install app cert interface base function with 12 bytes special pwd, success
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmAppCertTest, AppCertInstallPwdTest001, TestSize.Level0)
+{
+    uint8_t appCertPwdBuf[] = "123456!@#$%^";
+    struct CmBlob appCertPwd = { sizeof(appCertPwdBuf), appCertPwdBuf };
+
+    const struct CmBlob appCert = { sizeof(g_rsa2048P12CertInfoPwd12),
+        const_cast<uint8_t *>(g_rsa2048P12CertInfoPwd12) };
+
+    char retUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+
+    uint8_t certAliasBuf[] = "keyA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    int32_t ret = CmInstallAppCert(&appCert, &appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertInstallPwdTest001 12 bytes sepcial pwd test failed, retcode:" << ret;
+
+    (void)CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
+}
+
+/**
+ * @tc.name: AppCertInstallPwdTest002
+ * @tc.desc: Test CertManager Install app cert interface base function with 32 bytes special pwd, success
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmAppCertTest, AppCertInstallPwdTest002, TestSize.Level0)
+{
+    uint8_t appCertPwdBuf[] = "1234567890!@#$%^&*()_+0987654321";
+    struct CmBlob appCertPwd = { sizeof(appCertPwdBuf), appCertPwdBuf };
+
+    const struct CmBlob appCert = { sizeof(g_rsa2048P12CertInfoPwd32),
+        const_cast<uint8_t *>(g_rsa2048P12CertInfoPwd32) };
+
+    char retUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+
+    uint8_t certAliasBuf[] = "keyA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    int32_t ret = CmInstallAppCert(&appCert, &appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertInstallPwdTest002 32 bytes sepcial pwd test failed, retcode:" << ret;
+
+    (void)CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
+}
+
+/**
+ * @tc.name: AppCertInstallPwdTest003
+ * @tc.desc: Test CertManager Install app cert interface base function with 33 bytes special pwd, failed
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmAppCertTest, AppCertInstallPwdTest003, TestSize.Level0)
+{
+    uint8_t appCertPwdBuf[] = "1234567890!@#$%^&*()_+0987654321~";
+    struct CmBlob appCertPwd = { sizeof(appCertPwdBuf), appCertPwdBuf };
+
+    const struct CmBlob appCert = { sizeof(g_rsa2048P12CertInfoPwd33),
+        const_cast<uint8_t *>(g_rsa2048P12CertInfoPwd33) };
+
+    char retUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+
+    uint8_t certAliasBuf[] = "keyA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    int32_t ret = CmInstallAppCert(&appCert, &appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << \
+        "AppCertInstallPwdTest003 33 bytes sepcial pwd test failed, retcode:" << ret;
 }
 } // end of namespace
 

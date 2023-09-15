@@ -170,7 +170,7 @@ int32_t CmServiceInstallAppCertCheck(const struct CmBlob *appCert, const struct 
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!AppCertCheckBlobValid(appCertPwd) || !AppCertCheckBlobValid(certAlias)) {
+    if ((CheckUri(appCertPwd) != CM_SUCCESS) || (!AppCertCheckBlobValid(certAlias))) {
         CM_LOG_E("CmInstallAppCertCheck blob data check fail");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
