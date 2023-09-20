@@ -14,6 +14,7 @@
 import("//build/ohos.gni")
 
 ohos_shared_library("certmanager") {
+  stack_protector_ret = true
   sanitize = {
     cfi = true
     cfi_cross_dso = true

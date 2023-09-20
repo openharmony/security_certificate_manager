@@ -21,10 +21,11 @@ ohos_prebuilt_etc("cert_manager_service.rc") {
 }
 
 ohos_shared_library("cert_manager_service") {
+  stack_protector_ret = true
   sanitize = {
-    boundary_sanitize = true
     cfi = true
     cfi_cross_dso = true
+    boundary_sanitize = true
     debug = false
     integer_overflow = true
     ubsan = true

@@ -21,7 +21,10 @@ ohos_static_library("libcert_manager_log_mem_static") {
   subsystem_name = "security"
   part_name = "certificate_manager"
   public_configs = [ ":cert_manager_log_mem_config" ]
+  stack_protector_ret = true
   sanitize = {
+    cfi = true
+    cfi_cross_dso = true
     boundary_sanitize = true
     debug = false
     integer_overflow = true
@@ -58,6 +61,15 @@ ohos_static_library("libcert_manager_ipc_client_static") {
   subsystem_name = "security"
   part_name = "certificate_manager"
   public_configs = [ ":cert_manager_ipc_client_config" ]
+  stack_protector_ret = true
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
   include_dirs =
       [ "../../../../interfaces/innerkits/cert_manager_standard/main/include" ]
   defines = [

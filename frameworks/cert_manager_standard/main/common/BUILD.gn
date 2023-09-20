@@ -20,7 +20,10 @@ config("cert_manager_config") {
 ohos_static_library("libcert_manager_common_standard_static") {
   subsystem_name = "security"
   part_name = "certificate_manager"
+  stack_protector_ret = true
   sanitize = {
+    cfi = true
+    cfi_cross_dso = true
     boundary_sanitize = true
     debug = false
     integer_overflow = true

@@ -21,7 +21,10 @@ ohos_static_library("libcm_service_idl_standard_static") {
   subsystem_name = "security"
   part_name = "certificate_manager"
   public_configs = [ ":cert_manager_config" ]
+  stack_protector_ret = true
   sanitize = {
+    cfi = true
+    cfi_cross_dso = true
     boundary_sanitize = true
     debug = false
     integer_overflow = true
