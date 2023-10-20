@@ -29,6 +29,7 @@
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_ipc_service.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace Security {
@@ -42,6 +43,8 @@ const uint32_t DELAY_INTERVAL = 200000; /* delay 200ms waiting for system event 
 const std::string TASK_ID = "unload";
 const uint32_t DELAY_TIME = 180000; /* delay 180000ms to unload SA */
 const std::string USER_REMOVED_EVENT = "usual.event.USER_REMOVED";
+
+constexpr int CM_IPC_THREAD_NUM = 32;
 
 using CmIpcHandlerFuncProc = void (*)(const struct CmBlob *msg, const CmContext *context);
 
@@ -257,6 +260,7 @@ void CertManagerService::OnStart(const SystemAbilityOnDemandReason& startReason)
         CmDeleteProcessInfo(&context);
     }
 
+    IPCSkeleton::SetMaxWorkThreadNum(CM_IPC_THREAD_NUM);
     (void)AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
 
     runningState_ = STATE_RUNNING;
