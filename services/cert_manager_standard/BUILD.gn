@@ -21,7 +21,7 @@ ohos_prebuilt_etc("cert_manager_service.rc") {
 }
 
 ohos_shared_library("cert_manager_service") {
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true

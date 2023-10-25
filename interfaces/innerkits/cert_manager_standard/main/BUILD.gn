@@ -19,7 +19,7 @@ config("cert_manager_config") {
 
 if (os_level == "standard") {
   ohos_shared_library("cert_manager_sdk") {
-    stack_protector_ret = true
+    branch_protector_ret = "pac_ret"
     sanitize = {
       cfi = true
       cfi_cross_dso = true
