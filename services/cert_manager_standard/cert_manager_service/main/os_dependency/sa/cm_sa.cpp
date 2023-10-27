@@ -131,6 +131,7 @@ static int32_t ProcessMessage(uint32_t code, uint32_t outSize, const struct CmBl
                 CM_LOG_E("Malloc outData failed.");
                 return HW_SYSTEM_ERROR;
             }
+            (void)memset_s(outData.data, outData.size, 0, outData.size);
         }
         g_cmIpcHandler[i].handler(static_cast<const struct CmBlob *>(&srcData), &outData,
             reinterpret_cast<const struct CmContext *>(&reply));

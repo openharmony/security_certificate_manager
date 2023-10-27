@@ -36,6 +36,10 @@ void CmSendResponse(const struct CmContext *context, int32_t result, const struc
     }
     MessageParcel *reply = reinterpret_cast<MessageParcel *>(const_cast<CmContext *>(context));
     reply->WriteInt32(result);
+    if (result != CM_SUCCESS) {
+        CM_LOG_E("SendResponse result is %d.", result);
+        return;
+    }
     if (response == nullptr) {
         reply->WriteUint32(0);
     } else {
