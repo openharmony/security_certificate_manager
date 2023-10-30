@@ -20,7 +20,7 @@ ohos_static_library("cert_manager_engine_core_standard") {
   subsystem_name = "security"
   part_name = "certificate_manager"
   public_configs = [ ":cert_manager_engine_core_config" ]
-  branch_protector_ret = "pac_ret"
+  stack_protector_ret = true
   sanitize = {
     cfi = true
     cfi_cross_dso = true
