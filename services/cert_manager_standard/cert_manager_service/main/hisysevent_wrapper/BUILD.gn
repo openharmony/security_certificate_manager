@@ -21,7 +21,7 @@ ohos_static_library("libcert_manager_hisysevent_wrapper_static") {
   subsystem_name = "security"
   part_name = "certificate_manager"
   public_configs = [ ":cert_manager_config" ]
-  stack_protector_ret = true
+  branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
     cfi_cross_dso = true
