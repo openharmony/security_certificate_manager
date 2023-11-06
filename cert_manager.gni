@@ -25,3 +25,10 @@ if (!defined(global_parts_info) ||
 } else {
   has_os_account_part = false
 }
+
+if (!defined(global_parts_info) ||
+    defined(global_parts_info.security_security_guard)) {
+  support_security_guard = true
+} else {
+  support_security_guard = false
+}

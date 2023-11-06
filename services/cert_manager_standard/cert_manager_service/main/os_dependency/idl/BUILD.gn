@@ -49,6 +49,7 @@ ohos_static_library("libcm_service_idl_standard_static") {
     "../../../../../../frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
     "../../../../../../frameworks/cert_manager_standard/main/os_dependency:libcert_manager_log_mem_static",
     "../../hisysevent_wrapper:libcert_manager_hisysevent_wrapper_static",
+    "../../security_guard_report:libcert_manager_sg_report_static",
     "//third_party/openssl:libcrypto_shared",
   ]
   external_deps = [
