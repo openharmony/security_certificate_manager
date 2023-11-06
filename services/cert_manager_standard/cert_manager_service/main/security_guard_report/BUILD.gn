@@ -50,7 +50,7 @@ ohos_static_library("libcert_manager_sg_report_static") {
   if (support_security_guard) {
     cflags += [ "-DSUPPORT_SECURITY_GUARD" ]
     cflags_cc = [ "-DSUPPORT_SECURITY_GUARD" ]
-    external_deps += [ "security_guard: libsg_collect_sdk" ]
+    external_deps += [ "security_guard:libsg_collect_sdk" ]
   }
   complete_static_lib = true
 }
