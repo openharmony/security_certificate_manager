@@ -31,6 +31,19 @@ struct CmReportSGInfo {
     bool status;
 };
 
+struct SGEventContent {
+    int32_t type;
+    int32_t subType;
+    char *caller;
+    char *objectInfo;
+    char *bootTime;
+    char *wallTime;
+    char *outcome;
+    char *sourceInfo;
+    char *targetInfo;
+    char *extra;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
