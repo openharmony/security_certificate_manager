@@ -275,9 +275,9 @@ static void InstallUserCertComplete(napi_env env, napi_status status, void *data
     }
 
     if (context->deferred != nullptr) {
-        GeneratePromise(env, context->deferred, context->errCode, result, sizeof(result));
+        GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     } else {
-        GenerateCallback(env, context->callback, result, sizeof(result));
+        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
     }
     FreeUserCertAsyncContext(env, context);
 }
@@ -325,9 +325,9 @@ static void UninstallComplete(napi_env env, napi_status status, void *data)
     }
 
     if (context->deferred != nullptr) {
-        GeneratePromise(env, context->deferred, context->errCode, result, sizeof(result));
+        GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     } else {
-        GenerateCallback(env, context->callback, result, sizeof(result));
+        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
     }
     FreeUserCertAsyncContext(env, context);
 }

@@ -65,7 +65,6 @@ extern "C" {
 
 #define CM_BITS_PER_BYTE 8
 #define CM_KEY_BYTES(keySize) (((keySize) + CM_BITS_PER_BYTE - 1) / CM_BITS_PER_BYTE)
-#define CM_ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
 #define MAX_OUT_BLOB_SIZE (5 * 1024 * 1024)
 
 #define CM_CREDENTIAL_STORE             0

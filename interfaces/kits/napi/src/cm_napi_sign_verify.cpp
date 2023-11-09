@@ -76,6 +76,126 @@ static void FreeSignVerifyAsyncContext(napi_env env, SignVerifyAsyncContext &con
     CM_FREE_PTR(context);
 }
 
+struct CmJSKeyPaddingCmKeyPaddingMap {
+    CmJSKeyPadding key;
+    CmKeyPadding retPadding;
+};
+
+const struct CmJSKeyPaddingCmKeyPaddingMap PADDING_MAP[] = {
+    { CM_JS_PADDING_NONE, CM_PADDING_NONE },
+    { CM_JS_PADDING_PSS, CM_PADDING_PSS },
+    { CM_JS_PADDING_PKCS1_V1_5, CM_PADDING_PKCS1_V1_5 },
+};
+
+struct CmJSKeyDigestCmKeyDigestMap {
+    CmJSKeyDigest key;
+    CmKeyDigest retDigest;
+};
+
+const struct CmJSKeyDigestCmKeyDigestMap DIGEST_MAP[] = {
+    { CM_JS_DIGEST_NONE, CM_DIGEST_NONE },
+    { CM_JS_DIGEST_MD5, CM_DIGEST_MD5 },
+    { CM_JS_DIGEST_SHA1, CM_DIGEST_SHA1 },
+    { CM_JS_DIGEST_SHA224, CM_DIGEST_SHA224 },
+    { CM_JS_DIGEST_SHA256, CM_DIGEST_SHA256 },
+    { CM_JS_DIGEST_SHA384, CM_DIGEST_SHA384 },
+    { CM_JS_DIGEST_SHA512, CM_DIGEST_SHA512 },
+};
+
+static napi_value GetPadding(napi_env env, napi_value object, uint32_t *paddingRet)
+{
+    napi_value padding = nullptr;
+    napi_status status = napi_get_named_property(env, object, "padding", &padding);
+    if (status != napi_ok || padding == nullptr) {
+        CM_LOG_E("get padding failed");
+        return nullptr;
+    }
+
+    napi_valuetype type = napi_undefined;
+    NAPI_CALL(env, napi_typeof(env, padding, &type));
+    if (type == napi_undefined) {
+        CM_LOG_I("padding is undefined, set padding value is default");
+        *paddingRet = CM_PADDING_PSS;
+        return GetInt32(env, 0);
+    }
+
+    if (type != napi_number) {
+        ThrowParamsError(env, PARAM_ERROR, "arguments invalid, type of param padding is not number");
+        CM_LOG_E("arguments invalid, type of param padding is not number");
+        return nullptr;
+    }
+
+    uint32_t paddingValue = 0;
+    status = napi_get_value_uint32(env, padding, &paddingValue);
+    if (status != napi_ok) {
+        CM_LOG_E("get padding value failed");
+        ThrowParamsError(env, PARAM_ERROR, "arguments invalid, get padding value failed");
+        return nullptr;
+    }
+
+    bool findFlag = false;
+    for (uint32_t i = 0; i < (sizeof(PADDING_MAP) / sizeof(PADDING_MAP[0])); i++) {
+        if (paddingValue == PADDING_MAP[i].key) {
+            *paddingRet = PADDING_MAP[i].retPadding;
+            findFlag = true;
+            break;
+        }
+    }
+    if (!findFlag) {
+        ThrowParamsError(env, PARAM_ERROR, "padding do not exist in PADDING_MAP");
+        CM_LOG_E("padding do not exist in PADDING_MAP.");
+        return nullptr;
+    }
+
+    return GetInt32(env, 0);
+}
+
+static napi_value GetDigest(napi_env env, napi_value object, uint32_t *digestRet)
+{
+    napi_value digest = nullptr;
+    napi_status status = napi_get_named_property(env, object, "digest", &digest);
+    if (status != napi_ok || digest == nullptr) {
+        CM_LOG_E("get digest failed");
+        return nullptr;
+    }
+    napi_valuetype type = napi_undefined;
+    NAPI_CALL(env, napi_typeof(env, digest, &type));
+    if (type == napi_undefined) {
+        CM_LOG_I("digest is undefined, set digest value is default");
+        *digestRet = CM_DIGEST_SHA256;
+        return GetInt32(env, 0);
+    }
+
+    if (type != napi_number) {
+        ThrowParamsError(env, PARAM_ERROR, "arguments invalid, type of param digest is not number");
+        CM_LOG_E("arguments invalid, type of param digest is not number.");
+        return nullptr;
+    }
+
+    uint32_t digestValue = 0;
+    status = napi_get_value_uint32(env, digest, &digestValue);
+    if (status != napi_ok) {
+        ThrowParamsError(env, PARAM_ERROR, "arguments invalid, get digest value failed");
+        CM_LOG_E("arguments invalid,get digest value failed.");
+        return nullptr;
+    }
+    bool findFlag = false;
+    for (uint32_t i = 0; i < (sizeof(DIGEST_MAP) / sizeof(DIGEST_MAP[0])); i++) {
+        if (digestValue == DIGEST_MAP[i].key) {
+            *digestRet = DIGEST_MAP[i].retDigest;
+            findFlag = true;
+            break;
+        }
+    }
+    if (!findFlag) {
+        ThrowParamsError(env, PARAM_ERROR, "digest do not exist in DIGEST_MAP");
+        CM_LOG_E("digest do not exist in DIGEST_MAP.");
+        return nullptr;
+    }
+
+    return GetInt32(env, 0);
+}
+
 static napi_value ParseSpec(napi_env env, napi_value object, CmSignatureSpec *&spec)
 {
     napi_valuetype type = napi_undefined;
@@ -111,8 +231,22 @@ static napi_value ParseSpec(napi_env env, napi_value object, CmSignatureSpec *&s
         return nullptr;
     }
     spec->purpose = purposeValue;
-    spec->padding = CM_PADDING_PSS;
-    spec->digest = CM_DIGEST_SHA256;
+
+    /* padding */
+    napi_value result = GetPadding(env, object, &spec->padding);
+    if (result == nullptr) {
+        CM_LOG_E("get padding failed when using GetPadding function");
+        CM_FREE_PTR(spec);
+        return nullptr;
+    }
+
+    /* digest */
+    result = GetDigest(env, object, &spec->digest);
+    if (result == nullptr) {
+        CM_LOG_E("get digest failed when using GetDigest function");
+        CM_FREE_PTR(spec);
+        return nullptr;
+    }
 
     return GetInt32(env, 0);
 }
@@ -484,9 +618,9 @@ static void InitComplete(napi_env env, napi_status status, void *data)
     }
 
     if (context->deferred != nullptr) {
-        GeneratePromise(env, context->deferred, context->errCode, result, sizeof(result));
+        GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     } else {
-        GenerateCallback(env, context->callback, result, sizeof(result));
+        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
     }
     FreeSignVerifyAsyncContext(env, context);
 }
@@ -503,16 +637,16 @@ static void UpdateOrAbortComplete(napi_env env, napi_status status, void *data)
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
-        napi_get_boolean(env, true, &result[1]);
+        napi_get_undefined(env, &result[1]);
     } else {
         result[0] = GenerateBusinessError(env, context->errCode, "update or abort process failed");
         napi_get_undefined(env, &result[1]);
     }
 
     if (context->deferred != nullptr) {
-        GeneratePromise(env, context->deferred, context->errCode, result, sizeof(result));
+        GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     } else {
-        GenerateCallback(env, context->callback, result, sizeof(result));
+        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
     }
     FreeSignVerifyAsyncContext(env, context);
 }
@@ -564,9 +698,9 @@ static void FinishComplete(napi_env env, napi_status status, void *data)
     }
 
     if (context->deferred != nullptr) {
-        GeneratePromise(env, context->deferred, context->errCode, result, sizeof(result));
+        GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     } else {
-        GenerateCallback(env, context->callback, result, sizeof(result));
+        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
     }
     FreeSignVerifyAsyncContext(env, context);
 }

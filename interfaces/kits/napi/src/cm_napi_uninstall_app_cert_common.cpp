@@ -112,16 +112,16 @@ napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext 
             napi_value result[RESULT_NUMBER] = { nullptr };
             if (context->result == CM_SUCCESS) {
                 NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
-                NAPI_CALL_RETURN_VOID(env, napi_get_boolean(env, true, &result[1]));
+                NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             } else {
                 const char *errorMsg = "uninstall app cert error";
                 result[0] = GenerateBusinessError(env, context->result, errorMsg);
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
             if (context->deferred != nullptr) {
-                GeneratePromise(env, context->deferred, context->result, result, sizeof(result));
+                GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
             } else {
-                GenerateCallback(env, context->callback, result, sizeof(result));
+                GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
             }
             DeleteUninstallAppCertAsyncContext(env, context);
         },

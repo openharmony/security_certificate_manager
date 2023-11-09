@@ -141,9 +141,9 @@ napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyn
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
             if (context->deferred != nullptr) {
-                GeneratePromise(env, context->deferred, context->result, result, sizeof(result));
+                GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
             } else {
-                GenerateCallback(env, context->callback, result, sizeof(result));
+                GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
             }
             DeleteGetAppCertListAsyncContext(env, context);
             CM_LOG_I("get app cert list end");
