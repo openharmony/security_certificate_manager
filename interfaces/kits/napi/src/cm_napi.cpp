@@ -40,12 +40,12 @@ namespace CMNapi {
 
     static void AddCMErrorCodePart(napi_env env, napi_value errorCode)
     {
-        AddInt32Property(env, errorCode, "SUCCESS", SUCCESS);
-        AddInt32Property(env, errorCode, "PARAM_ERROR", PARAM_ERROR);
-        AddInt32Property(env, errorCode, "FAILURE", INNER_FAILURE);
-        AddInt32Property(env, errorCode, "NO_PERMISSION", NO_PERMISSION);
-        AddInt32Property(env, errorCode, "NOT_FOUND", NOT_FOUND);
-        AddInt32Property(env, errorCode, "INVALID_CERT_FORMAT", INVALID_CERT_FORMAT);
+        AddInt32Property(env, errorCode, "CM_ERROR_NO_PERMISSION", HAS_NO_PERMISSION);
+        AddInt32Property(env, errorCode, "CM_ERROR_NOT_SYSTEM_APP", NOT_SYSTEM_APP);
+        AddInt32Property(env, errorCode, "CM_ERROR_INVALID_PARAMS", PARAM_ERROR);
+        AddInt32Property(env, errorCode, "CM_ERROR_GENERIC", INNER_FAILURE);
+        AddInt32Property(env, errorCode, "CM_ERROR_NO_FOUND", NOT_FOUND);
+        AddInt32Property(env, errorCode, "CM_ERROR_INCORRECT_FORMAT", INVALID_CERT_FORMAT);
     }
 
     static napi_value CreateCMErrorCode(napi_env env)
@@ -68,6 +68,32 @@ namespace CMNapi {
 
         return keyPurpose;
     }
+
+    static napi_value CreateCMKeyDigest(napi_env env)
+    {
+        napi_value keyDigest = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &keyDigest));
+
+        AddInt32Property(env, keyDigest, "CM_DIGEST_NONE", CM_JS_DIGEST_NONE);
+        AddInt32Property(env, keyDigest, "CM_DIGEST_MD5", CM_JS_DIGEST_MD5);
+        AddInt32Property(env, keyDigest, "CM_DIGEST_SHA1", CM_JS_DIGEST_SHA1);
+        AddInt32Property(env, keyDigest, "CM_DIGEST_SHA224", CM_JS_DIGEST_SHA224);
+        AddInt32Property(env, keyDigest, "CM_DIGEST_SHA256", CM_JS_DIGEST_SHA256);
+        AddInt32Property(env, keyDigest, "CM_DIGEST_SHA384", CM_JS_DIGEST_SHA384);
+        AddInt32Property(env, keyDigest, "CM_DIGEST_SHA512", CM_JS_DIGEST_SHA512);
+        return keyDigest;
+    }
+
+    static napi_value CreateCMKeyPadding(napi_env env)
+    {
+        napi_value keyPadding = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &keyPadding));
+
+        AddInt32Property(env, keyPadding, "CM_PADDING_NONE", CM_JS_PADDING_NONE);
+        AddInt32Property(env, keyPadding, "CM_PADDING_PSS", CM_JS_PADDING_PSS);
+        AddInt32Property(env, keyPadding, "CM_PADDING_PKCS1_V1_5", CM_JS_PADDING_PKCS1_V1_5);
+        return keyPadding;
+    }
 }  // namespace CertManagerNapi
 
 using namespace CMNapi;
@@ -78,6 +104,8 @@ extern "C" {
         napi_property_descriptor desc[] = {
             DECLARE_NAPI_PROPERTY("CMErrorCode", CreateCMErrorCode(env)),
             DECLARE_NAPI_PROPERTY("CmKeyPurpose", CreateCMKeyPurpose(env)),
+            DECLARE_NAPI_PROPERTY("CmKeyDigest", CreateCMKeyDigest(env)),
+            DECLARE_NAPI_PROPERTY("CmKeyPadding", CreateCMKeyPadding(env)),
 
             DECLARE_NAPI_FUNCTION("getSystemTrustedCertificateList", CMNapiGetSystemCertList),
             DECLARE_NAPI_FUNCTION("getSystemTrustedCertificate", CMNapiGetSystemCertInfo),
@@ -96,6 +124,7 @@ extern "C" {
             DECLARE_NAPI_FUNCTION("installPrivateCertificate", CMNapiInstallPrivateAppCert),
             DECLARE_NAPI_FUNCTION("uninstallPrivateCertificate", CMNapiUninstallPrivateAppCert),
             DECLARE_NAPI_FUNCTION("getPrivateCertificateList", CMNapiGetPrivateAppCertList),
+            DECLARE_NAPI_FUNCTION("getAllAppPrivateCertificates", CMNapiGetPrivateAppCertList),
             DECLARE_NAPI_FUNCTION("getPrivateCertificate", CMNapiGetPrivateAppCertInfo),
             DECLARE_NAPI_FUNCTION("grantAppCertificate", CMNapiGrantAppCertificate),
             DECLARE_NAPI_FUNCTION("isAuthorizedApp", CMNapiIsAuthorizedApp),

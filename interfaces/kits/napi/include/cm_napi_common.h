@@ -35,6 +35,7 @@ static const std::string CM_CERT_PROPERTY_KEY_URI = "keyUri";
 static const std::string CM_CERT_PROPERTY_KEY_NUM = "keyNum";
 static const std::string CM_CERT_PROPERTY_CERT_NUM = "certNum";
 static const std::string CM_CERT_PROPERTY_CREDENTIAL_DATA = "credData";
+static const std::string CM_CERT_PROPERTY_CREDENTIAL_DATA_NEW = "credentialData";
 
 static const std::string CM_CERT_PROPERTY_CERTALIAS = "certAlias";
 static const std::string CM_CERT_PROPERTY_ISSUERNAME = "issuerName";
@@ -46,6 +47,7 @@ static const std::string CM_CERT_PROPERTY_FINGERSHA1 = "fingerprintSha1";
 static const std::string CM_CERT_PROPERTY_FINGERSHA256 = "fingerprintSha256";
 static const std::string CM_CERT_PROPERTY_CERT_DATA = "cert";
 static const std::string CM_CERT_PROPERTY_STATUS = "status";
+static const std::string CM_CERT_PROPERTY_STATE = "state";
 
 static const std::string BUSINESS_ERROR_PROPERTY_CODE = "code";
 static const std::string BUSINESS_ERROR_PROPERTY_MESSAGE = "message";
@@ -82,7 +84,7 @@ void DeleteNapiContext(napi_env env, napi_async_work &asyncWork, napi_ref &callb
 
 void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
     napi_value *result, int32_t arrLength);
-void GenerateCallback(napi_env env, napi_ref callback, napi_value *result, int32_t arrLength);
+void GenerateCallback(napi_env env, napi_ref callback, napi_value *result, int32_t arrLength, int32_t ret);
 void GenerateNapiPromise(napi_env env, napi_ref callback, napi_deferred *deferred, napi_value *promise);
 
 inline napi_value GetNull(napi_env env)
@@ -146,12 +148,28 @@ void FreeCredential(Credential *&credential);
 
 enum ErrorCode {
     SUCCESS = 0,
+    HAS_NO_PERMISSION = 201,
     NOT_SYSTEM_APP = 202,
     PARAM_ERROR = 401,
     INNER_FAILURE = 17500001,
-    NO_PERMISSION = 17500002,
-    NOT_FOUND = 17500003,
-    INVALID_CERT_FORMAT = 17500004,
+    NOT_FOUND = 17500002,
+    INVALID_CERT_FORMAT = 17500003,
+};
+
+enum CmJSKeyDigest {
+    CM_JS_DIGEST_NONE = 0,
+    CM_JS_DIGEST_MD5 = 1,
+    CM_JS_DIGEST_SHA1 = 2,
+    CM_JS_DIGEST_SHA224 = 3,
+    CM_JS_DIGEST_SHA256 = 4,
+    CM_JS_DIGEST_SHA384 = 5,
+    CM_JS_DIGEST_SHA512 = 6,
+};
+
+enum CmJSKeyPadding {
+    CM_JS_PADDING_NONE = 0,
+    CM_JS_PADDING_PSS = 1,
+    CM_JS_PADDING_PKCS1_V1_5 = 2,
 };
 
 struct CertInfoValue {

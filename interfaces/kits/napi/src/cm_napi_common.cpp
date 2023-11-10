@@ -23,7 +23,6 @@
 namespace CMNapi {
 namespace {
 constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M
-constexpr int RESULT_ARG_NUMBER = 2;
 }  // namespace
 
 napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store)
@@ -211,6 +210,7 @@ napi_value GenerateCertAbstractArray(napi_env env, const struct CertAbstract *ce
         napi_set_named_property (env, element, CM_CERT_PROPERTY_URI.c_str(), uri);
         napi_set_named_property (env, element, CM_CERT_PROPERTY_CERTALIAS.c_str(), certAlias);
         napi_set_named_property (env, element, CM_CERT_PROPERTY_STATUS.c_str(), status);
+        napi_set_named_property (env, element, CM_CERT_PROPERTY_STATE.c_str(), status);
         napi_set_named_property (env, element, CM_CERT_PROPERTY_SUBJECTNAME.c_str(), subjectName);
 
         napi_set_element(env, array, i, element);
@@ -286,6 +286,8 @@ napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo)
     NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_URI.c_str(), cInfVal.uri));
     NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_CERTALIAS.c_str(), cInfVal.certAlias));
     NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_STATUS.c_str(), cInfVal.status));
+    NAPI_CALL(env, napi_set_named_property (env, elem, CM_CERT_PROPERTY_STATE.c_str(), cInfVal.status));
+
     NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_ISSUERNAME.c_str(), cInfVal.issuerName));
     NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_SUBJECTNAME.c_str(), cInfVal.subjectName));
     NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_SERIAL.c_str(), cInfVal.serial));
@@ -306,11 +308,14 @@ int32_t TranformErrorCode(int32_t errorCode)
     if (errorCode == CMR_ERROR_NOT_FOUND || errorCode == CMR_ERROR_NOT_EXIST) {
         return NOT_FOUND;
     }
-    if (errorCode == CMR_ERROR_NOT_PERMITTED) {
-        return NO_PERMISSION;
+    if (errorCode == CMR_ERROR_PERMISSION_DENIED) {
+        return HAS_NO_PERMISSION;
     }
     if (errorCode == CMR_ERROR_NOT_SYSTEMP_APP) {
         return NOT_SYSTEM_APP;
+    }
+    if (errorCode == CMR_ERROR_INVALID_ARGUMENT) {
+        return PARAM_ERROR;
     }
     return INNER_FAILURE;
 }
@@ -380,7 +385,7 @@ napi_value GenerateAppCertInfo(napi_env env, const struct Credential *credential
     NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_KEY_NUM.c_str(), keyNum));
 
     NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_CREDENTIAL_DATA.c_str(), credData));
-
+    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_CREDENTIAL_DATA_NEW.c_str(), credData));
     return element;
 }
 
@@ -397,15 +402,20 @@ void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
     }
 }
 
-void GenerateCallback(napi_env env, napi_ref callback, napi_value *result, int32_t arrLength)
+void GenerateCallback(napi_env env, napi_ref callback, napi_value *result, int32_t arrLength, int32_t ret)
 {
     napi_value func = nullptr;
     napi_value returnVal = nullptr;
     if (arrLength < RESULT_NUMBER) {
         return;
     }
+    napi_value businessError = (ret == CM_SUCCESS) ? nullptr : result[0];
+    napi_value params[RESULT_NUMBER] = { businessError, result[1] };
     NAPI_CALL_RETURN_VOID(env, napi_get_reference_value(env, callback, &func));
-    NAPI_CALL_RETURN_VOID(env, napi_call_function(env, nullptr, func, RESULT_ARG_NUMBER, result, &returnVal));
+
+    napi_value recv = nullptr;
+    napi_get_undefined(env, &recv);
+    NAPI_CALL_RETURN_VOID(env, napi_call_function(env, recv, func, RESULT_NUMBER, params, &returnVal));
 }
 
 void GenerateNapiPromise(napi_env env, napi_ref callback, napi_deferred *deferred, napi_value *promise)
