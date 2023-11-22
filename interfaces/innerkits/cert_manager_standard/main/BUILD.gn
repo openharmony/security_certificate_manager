@@ -29,7 +29,10 @@ if (os_level == "standard") {
       ubsan = true
     }
     subsystem_name = "security"
-    innerapi_tags = [ "platformsdk" ]
+    innerapi_tags = [
+      "platformsdk",
+      "chipsetsdk",
+    ]
     part_name = "certificate_manager"
     public_configs = [ ":cert_manager_config" ]
     defines = [

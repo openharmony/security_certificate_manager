@@ -89,7 +89,7 @@ ohos_static_library("libcert_manager_ipc_client_static") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
-    "ipc:ipc_core",
+    "ipc:ipc_single",
     "samgr:samgr_proxy",
   ]
   cflags_cc = [
