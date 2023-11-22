@@ -20,11 +20,6 @@
 #include "hilog/log.h"
 #include "cm_mem.h"
 
-#undef LOG_DOMAIN
-#undef LOG_TAG
-static const unsigned int LOG_DOMAIN = 0xD002F01;
-static const char* LOG_TAG = "CertManager";
-
 #define MAX_LOG_BUFF_LEN 512
 
 void CmLog(uint32_t logLevel, const char *funcName, uint32_t lineNo, const char *format, ...)
