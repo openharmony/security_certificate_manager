@@ -24,9 +24,9 @@ extern "C" {
 
 #ifdef _CM_LOG_ENABLE_
 #undef LOG_TAG
-#define LOG_TAG "CM"
+#define LOG_TAG "CertManager"
 #undef LOG_DOMAIN
-#define LOG_DOMAIN 0xD002F00 /* Security subsystem's domain id */
+#define LOG_DOMAIN 0xD002F09 /* CertManager's domain id */
 #endif
 
 enum CmLogLevel {
