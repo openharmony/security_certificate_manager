@@ -44,12 +44,22 @@ ohos_unittest("cm_sdk_test") {
     "-Werror",
   ]
   cflags = cflags_cc
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
   deps = [
     "../frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
     "../interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
     "//third_party/bounds_checking_function:libsec_static",
     "//third_party/googletest:gtest_main",
-    "//third_party/openssl:libcrypto_static",
+    "//third_party/openssl:libcrypto_shared",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
