@@ -75,7 +75,7 @@ void CmFillSGRecord(char *objectInfoJson, char *recordJson, int32_t recordJsonLe
 
 void CmReportSGRecord(const struct CmReportSGInfo *info)
 {
-    char *objectJson = (char *)CmMalloc(CM_INFO_JSON_MAX_LEN);
+    char *objectJson = static_cast<char *>(CmMalloc(CM_INFO_JSON_MAX_LEN));
     if (objectJson == NULL) {
         CM_LOG_E("objectJson malloc error");
         return;
@@ -83,7 +83,7 @@ void CmReportSGRecord(const struct CmReportSGInfo *info)
     (void)memset_s(objectJson, CM_INFO_JSON_MAX_LEN, 0, CM_INFO_JSON_MAX_LEN);
     InfoToJson(info, objectJson, CM_INFO_JSON_MAX_LEN);
 
-    char *recordJson = (char *)CmMalloc(SG_JSON_MAX_LEN);
+    char *recordJson = static_cast<char *>(CmMalloc(SG_JSON_MAX_LEN));
     if (recordJson == NULL) {
         CM_FREE_PTR(objectJson);
         CM_LOG_E("recordJson malloc error");
