@@ -73,7 +73,7 @@ static int32_t ConstructInfoName(const struct CmBlob *input, char **name)
     (void)strcpy_s(*name, nameLen, isNameValid ? (char *)input->data : CM_INVALID_NAME);
 
     if (isNameValid) {
-        AnonymousName(*name, nameLen);
+        AnonymousName(*name, nameLen - 1); /* nameLen is bigger than 1 and exclude end '\0' */
     }
     return CM_SUCCESS;
 }
