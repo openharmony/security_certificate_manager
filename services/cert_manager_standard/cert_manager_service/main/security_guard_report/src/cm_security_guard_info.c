@@ -70,6 +70,7 @@ static int32_t ConstructInfoName(const struct CmBlob *input, char **name)
     if (*name == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
     }
+    (void)memset_s(*name, nameLen, 0, nameLen); /* initialized to 0 to avoid that input does not end with '\0' */
     (void)strcpy_s(*name, nameLen, isNameValid ? (char *)input->data : CM_INVALID_NAME);
 
     if (isNameValid) {
