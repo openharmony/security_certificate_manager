@@ -33,9 +33,7 @@ enum ServiceRunningState {
     STATE_RUNNING
 };
 enum ResponseCode {
-    HW_NO_ERROR =  0,
-    HW_SYSTEM_ERROR = -1,
-    HW_PERMISSION_DENIED = -2,
+    CM_SYSTEM_ERROR = -1,
 };
 
 constexpr int SA_ID_KEYSTORE_SERVICE = 3512;
