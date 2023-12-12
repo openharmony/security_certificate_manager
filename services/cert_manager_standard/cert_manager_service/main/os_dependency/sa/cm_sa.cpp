@@ -127,12 +127,12 @@ static int32_t ProcessMessage(uint32_t code, uint32_t outSize, const struct CmBl
             outData.size = outSize;
             if (outData.size > MAX_MALLOC_LEN) {
                 CM_LOG_E("outData size is invalid, size:%u", outData.size);
-                return HW_SYSTEM_ERROR;
+                return CM_SYSTEM_ERROR;
             }
             outData.data = static_cast<uint8_t *>(CmMalloc(outData.size));
             if (outData.data == nullptr) {
                 CM_LOG_E("Malloc outData failed.");
-                return HW_SYSTEM_ERROR;
+                return CM_SYSTEM_ERROR;
             }
             (void)memset_s(outData.data, outData.size, 0, outData.size);
         }
@@ -187,7 +187,7 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
     if (descriptor != remoteDescriptor) {
         CM_LOG_E("descriptor is diff");
-        return HW_SYSTEM_ERROR;
+        return CM_SYSTEM_ERROR;
     }
 
     CM_LOG_I("OnRemoteRequest code:%u", code);
@@ -202,13 +202,13 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     srcData.size = static_cast<uint32_t>(data.ReadUint32());
     if (IsInvalidLength(srcData.size)) {
         CM_LOG_E("srcData size is invalid, size:%u", srcData.size);
-        return HW_SYSTEM_ERROR;
+        return CM_SYSTEM_ERROR;
     }
 
     srcData.data = static_cast<uint8_t *>(CmMalloc(srcData.size));
     if (srcData.data == nullptr) {
         CM_LOG_E("Malloc srcData failed.");
-        return HW_SYSTEM_ERROR;
+        return CM_SYSTEM_ERROR;
     }
     const uint8_t *pdata = data.ReadBuffer(static_cast<size_t>(srcData.size));
     if (pdata == nullptr) {
