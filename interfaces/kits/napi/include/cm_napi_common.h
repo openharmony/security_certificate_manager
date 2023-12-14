@@ -68,6 +68,7 @@ napi_value ParseString(napi_env env, napi_value object, CmBlob *&certUri);
 napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob);
 
 napi_ref GetCallback(napi_env env, napi_value object);
+int32_t GetCallback(napi_env env, napi_value object, napi_ref &callback);
 
 napi_value GenerateCertAbstractArray(
     napi_env env, const struct CertAbstract *certAbstract, const uint32_t certCount);

@@ -299,9 +299,9 @@ static napi_value ParseCMInitParams(napi_env env, napi_callback_info info, SignV
 
     index++;
     if (index < argc) {
-        context->callback = GetCallback(env, argv[index]);
-        if (context->callback == nullptr) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function failed when using init function");
             return nullptr;
         }
@@ -340,8 +340,8 @@ static napi_value ParseCMUpdateParams(napi_env env, napi_callback_info info, Sig
 
     index++;
     if (index < argc) {
-        context->callback = GetCallback(env, argv[index]);
-        if (context->callback == nullptr) {
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
             ThrowParamsError(env, PARAM_ERROR, "get callback type error");
             CM_LOG_E("get callback function failed when using update function");
             return nullptr;
@@ -424,12 +424,13 @@ static napi_value ProcessFinishTwoParam(napi_env env, napi_value *argv, SignVeri
             return nullptr;
         }
 
-        context->callback = GetCallback(env, argv[curIndex]); /* return if arg 2 is callback */
-        if (context->callback == nullptr) {
-            ThrowParamsError(env, PARAM_ERROR, "sign: get callback type error");
+        int32_t ret = GetCallback(env, argv[curIndex], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("arg2 is callback: get sign callback function failed when using finish function");
             return nullptr;
         }
+
         return GetInt32(env, 0);
     }
 
@@ -468,9 +469,9 @@ static napi_value ProcessFinishThreeParam(napi_env env, napi_value *argv, SignVe
         return nullptr; /* not possible */
     }
 
-    context->callback = GetCallback(env, argv[curIndex]);
-    if (context->callback == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "verify: get callback type error");
+    int32_t ret = GetCallback(env, argv[curIndex], context->callback);
+    if (ret != CM_SUCCESS) {
+        ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
         CM_LOG_E("get verify callback function failed when using finish function");
         return nullptr;
     }
@@ -531,9 +532,9 @@ static napi_value ParseCMAbortParams(napi_env env, napi_callback_info info, Sign
 
     index++;
     if (index < argc) {
-        context->callback = GetCallback(env, argv[index]);
-        if (context->callback == nullptr) {
-            ThrowParamsError(env, PARAM_ERROR, "get callback type error");
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowParamsError(env, PARAM_ERROR, "get callback type failed.");
             CM_LOG_E("get callback function failed when using abort function");
             return nullptr;
         }

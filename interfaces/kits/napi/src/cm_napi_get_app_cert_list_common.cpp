@@ -71,9 +71,9 @@ napi_value GetAppCertListParseParams(
 
     size_t index = 0;
     if (index < argc) {
-        context->callback = GetCallback(env, argv[index]);
-        if (context->callback == nullptr) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function faild when getting application certificate list");
             return nullptr;
         }

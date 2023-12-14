@@ -75,9 +75,9 @@ static napi_value SetCertStatusParseParams(
     napi_value argv[CM_NAPI_SET_CERT_STATUS_MAX_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
-    if (argc < CM_NAPI_SET_CERT_STATUS_MIN_ARGS) {
-        ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
-        CM_LOG_E("CertStatus Missing parameter");
+    if ((argc != CM_NAPI_SET_CERT_STATUS_MIN_ARGS) && (argc != CM_NAPI_SET_CERT_STATUS_MAX_ARGS)) {
+        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid.");
+        CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
     }
 
@@ -107,7 +107,12 @@ static napi_value SetCertStatusParseParams(
 
     index++;
     if (index < argc) {
-        context->callback = GetCallback(env, argv[index]);
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
+            CM_LOG_E("get callback function failed when set cert status function");
+            return nullptr;
+        }
     }
     return GetInt32(env, 0);
 }

@@ -77,7 +77,12 @@ static napi_value UninstallAllAppCertParseParams(
     size_t index = 0;
 
     if (index < argc) {
-        context->callback = GetCallback(env, argv[index]);
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
+            CM_LOG_E("get callback function failed when uninstall all app cert function");
+            return nullptr;
+        }
     }
 
     return GetInt32(env, 0);
