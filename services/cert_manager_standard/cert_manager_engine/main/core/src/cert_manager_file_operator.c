@@ -25,6 +25,8 @@
 #include "securec.h"
 
 #include "cert_manager_mem.h"
+#include "cert_manager_storage.h"
+#include "cert_manager_updateflag.h"
 #include "cm_log.h"
 
 static int32_t GetFileName(const char *path, const char *fileName, char *fullFileName, uint32_t fullFileNameLen)
@@ -135,20 +137,9 @@ static uint32_t FileSize(const char *fileName)
     return (uint32_t)fileStat.st_size;
 }
 
-static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *buf, uint32_t len)
+int32_t OpenWriteFile(const char *pathname, int32_t flags, mode_t mode, const uint8_t *buf, uint32_t len)
 {
-    (void)offset;
-    char filePath[PATH_MAX + 1] = {0};
-    if (memcpy_s(filePath, sizeof(filePath) - 1, fileName, strlen(fileName)) != EOK) {
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-    (void)realpath(fileName, filePath);
-    if (strstr(filePath, "../") != NULL) {
-        CM_LOG_E("invalid filePath");
-        return CMR_ERROR_NOT_EXIST;
-    }
-
-    int32_t fd = open(filePath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    int32_t fd = open(pathname, flags, mode);
     if (fd < 0) {
         CM_LOG_E("open file failed, errno = 0x%x", errno);
         return CMR_ERROR_OPEN_FILE_FAIL;
@@ -166,6 +157,49 @@ static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *b
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
     close(fd);
+    return CMR_OK;
+}
+
+static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *buf, uint32_t len)
+{
+    (void)offset;
+    char filePath[PATH_MAX + 1] = { 0 };
+    if (memcpy_s(filePath, sizeof(filePath) - 1, fileName, strlen(fileName)) != EOK) {
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+    (void)realpath(fileName, filePath);
+    if (strstr(filePath, "../") != NULL) {
+        CM_LOG_E("invalid filePath");
+        return CMR_ERROR_NOT_EXIST;
+    }
+    int32_t ret = OpenWriteFile(filePath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR, buf, len);
+    if (ret != CMR_OK) {
+        CM_LOG_E("open and write file failed, ret = %d", ret);
+        return ret;
+    }
+    return CMR_OK;
+}
+
+static int32_t UserBakupFileWrite(const char *fileName, uint32_t offset, const uint8_t *buf, uint32_t len)
+{
+    (void)offset;
+    char filePath[PATH_MAX + 1] = {0};
+    if (memcpy_s(filePath, sizeof(filePath) - 1, fileName, strlen(fileName)) != EOK) {
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+    (void)realpath(fileName, filePath);
+    if (strstr(filePath, "../") != NULL) {
+        CM_LOG_E("invalid filePath");
+        return CMR_ERROR_NOT_EXIST;
+    }
+
+    int32_t ret =
+        OpenWriteFile(filePath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, buf, len);
+    if (ret != CMR_OK) {
+        CM_LOG_E("open and write file failed, ret = %d", ret);
+        return ret;
+    }
+
     return CMR_OK;
 }
 
@@ -218,6 +252,29 @@ int32_t CmMakeDir(const char *path)
     }
 
     if (mkdir(path, S_IRWXU) == 0) {
+        return CMR_OK;
+    } else {
+        if (errno == EEXIST  || errno == EAGAIN) {
+            return CMR_ERROR_ALREADY_EXISTS;
+        } else {
+            return CMR_ERROR_MAKE_DIR_FAIL;
+        }
+    }
+}
+
+int32_t CmUserBakupMakeDir(const char *path, const mode_t *mode)
+{
+    mode_t modeTmp = S_IRWXU | S_IROTH | S_IXOTH; /* The default directory permission is 0705 */
+
+    if ((access(path, F_OK)) != -1) {
+        CM_LOG_I("path exist");
+        return CMR_OK;
+    }
+
+    if (mode != NULL) {
+        modeTmp = *mode;
+    }
+    if (mkdir(path, modeTmp) == 0) {
         return CMR_OK;
     } else {
         if (errno == EEXIST  || errno == EAGAIN) {
@@ -290,6 +347,23 @@ int32_t CmFileWrite(const char *path, const char *fileName, uint32_t offset, con
     }
 
     ret = FileWrite(fullFileName, offset, buf, len);
+    CM_FREE_PTR(fullFileName);
+    return ret;
+}
+
+int32_t CmUserBackupFileWrite(const char *path, const char *fileName, uint32_t offset, const uint8_t *buf, uint32_t len)
+{
+    if ((fileName == NULL) || (buf == NULL) || (len == 0)) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    char *fullFileName = NULL;
+    int32_t ret = GetFullFileName(path, fileName, &fullFileName);
+    if (ret != CMR_OK) {
+        return ret;
+    }
+
+    ret = UserBakupFileWrite(fullFileName, offset, buf, len);
     CM_FREE_PTR(fullFileName);
     return ret;
 }

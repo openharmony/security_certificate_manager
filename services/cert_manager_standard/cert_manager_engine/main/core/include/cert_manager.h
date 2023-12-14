@@ -50,9 +50,33 @@ int32_t CmGetUri(const char *filePath, struct CmBlob *uriBlob);
 int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *pathBlob,
     const struct CmBlob *userCert, const struct CmBlob *certAlias, struct CmBlob *certUri);
 
+int32_t CmStoreUserCert(const char *path, const struct CmBlob *userCert, const char *userCertName);
+
+int32_t CmGenerateSaConf(const char *userCertConfigPath, const char *userCertBakupDirPath, const char *userCertName);
+
 int32_t CmRemoveUserCert(struct CmMutableBlob *pathBlob, const struct CmBlob *certUri);
 
+int32_t CmRmUserCert(const char *usrCertConfigFilepath);
+
+int32_t CmRmSaConf(const char *usrCertConfigFilepath);
+
 int32_t CmRemoveAllUserCert(const struct CmContext *context, uint32_t store, const struct CmMutableBlob *pathList);
+
+/**
+ * @brief Delete the certificate backup file and configuration file
+ *
+ * If userCertConfigFilePath != NULL, the certificate is deleted based on userCertConfigFilePath. Otherwise, the
+ * certificate is deleted based on the path of the certificate configuration file created in context and certUri.
+ *
+ * @param context Context information
+ * @param certUri Certificate uri
+ * @param userCertConfigFilePath The certificate configuration file path
+ * @return int32_t result
+ * @retval 0 success
+ * @retval <0 failure
+ */
+int32_t CmRemoveBakeupUserCert(const struct CmContext *context, const struct CmBlob *certUri,
+                               const char *userCertConfigFilePath);
 
 #ifdef __cplusplus
 }

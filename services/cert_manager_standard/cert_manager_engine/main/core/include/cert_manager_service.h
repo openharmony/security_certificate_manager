@@ -16,6 +16,8 @@
 #ifndef CERT_MANAGER_SERVICE_H
 #define CERT_MANAGER_SERVICE_H
 
+#include <openssl/ossl_typ.h>
+
 #include "cm_type.h"
 
 #ifdef __cplusplus
@@ -54,6 +56,8 @@ int32_t CmServiceGetCertList(const struct CmContext *context, uint32_t store, st
 int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, struct CmBlob *certificateData, uint32_t *status);
 
+int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem);
+
 int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *userCert,
     const struct CmBlob *certAlias, struct CmBlob *certUri);
 
@@ -63,6 +67,9 @@ int32_t CmUninstallAllUserCert(const struct CmContext *context);
 
 int32_t CmServiceSetCertStatus(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, uint32_t status);
+
+int32_t CmSetStatusBakeupCert(
+    const struct CmContext *context, const struct CmBlob *certUri, uint32_t store, uint32_t status);
 
 #ifdef __cplusplus
 }

@@ -18,8 +18,8 @@
 
 #include "cm_type.h"
 
-#ifdef _cplusplus
-extern "C"
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 int32_t CertManagerGetFilenames(struct CmMutableBlob *fileNames, const char *path);
