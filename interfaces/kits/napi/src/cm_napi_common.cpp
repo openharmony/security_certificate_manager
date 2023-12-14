@@ -111,11 +111,13 @@ napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob)
     size_t length = 0;
     size_t offset = 0;
     void *rawData = nullptr;
-    NAPI_CALL(
-        env, napi_get_typedarray_info(env, object, &arrayType, &length,
-        static_cast<void **>(&rawData), &arrayBuffer, &offset));
-    NAPI_ASSERT(env, arrayType == napi_uint8_array, "Param is not uint8 array");
 
+    napi_status status = napi_get_typedarray_info(
+        env, object, &arrayType, &length, static_cast<void **>(&rawData), &arrayBuffer, &offset);
+    if (status != napi_ok) {
+        CM_LOG_E("the type of param is not uint8_array");
+        return nullptr;
+    }
     if (length > CM_MAX_DATA_LEN) {
         CM_LOG_E("Data is too large, length = %x", length);
         return nullptr;
@@ -133,6 +135,7 @@ napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob)
     }
     (void)memset_s(arrayBlob.data, length, 0, length);
     if (memcpy_s(arrayBlob.data, length, rawData, length) != EOK) {
+        CM_LOG_E("memcpy_s fail, length = %x", length);
         return nullptr;
     }
     arrayBlob.size = static_cast<uint32_t>(length);
@@ -161,6 +164,35 @@ napi_ref GetCallback(napi_env env, napi_value object)
         return nullptr;
     }
     return ref;
+}
+
+int32_t GetCallback(napi_env env, napi_value object, napi_ref &callback)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_status status = napi_typeof(env, object, &valueType);
+    if (status != napi_ok) {
+        CM_LOG_E("could not get object type");
+        return CM_FAILURE;
+    }
+
+    if (valueType == napi_null || valueType == napi_undefined) {
+        CM_LOG_I("callback is null or undefined, treat as promise");
+        return CM_SUCCESS;
+    }
+
+    if (valueType != napi_function) {
+        CM_LOG_E("invalid type, not function");
+        return CM_FAILURE;
+    }
+
+    napi_ref ref = nullptr;
+    status = napi_create_reference(env, object, 1, &ref);
+    if (status != napi_ok) {
+        CM_LOG_E("could not create reference");
+        return CM_FAILURE;
+    }
+    callback = ref;
+    return CM_SUCCESS;
 }
 
 static napi_value GenerateAarrayBuffer(napi_env env, uint8_t *data, uint32_t size)

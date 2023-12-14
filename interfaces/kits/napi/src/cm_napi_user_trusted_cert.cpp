@@ -155,9 +155,9 @@ static napi_value ParseInstallUserCertParams(napi_env env, napi_callback_info in
 
     index++;
     if (index < argc) {
-        context->callback = GetCallback(env, argv[index]);
-        if (context->callback == nullptr) {
-            ThrowParamsError(env, PARAM_ERROR, "get callback type error");
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function failed when install user cert");
             return nullptr;
         }
@@ -189,9 +189,9 @@ static napi_value ParseUninstallUserCertParams(napi_env env, napi_callback_info 
 
     index++;
     if (index < argc) {
-        context->callback = GetCallback(env, argv[index]);
-        if (context->callback == nullptr) {
-            ThrowParamsError(env, PARAM_ERROR, "get callback type error");
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function failed when uninstalling user cert");
             return nullptr;
         }
@@ -215,9 +215,9 @@ static napi_value ParseUninstallAllUserCertParams(napi_env env, napi_callback_in
 
     size_t index = 0;
     if (index < argc) {
-        context->callback = GetCallback(env, argv[index]);
-        if (context->callback == nullptr) {
-            ThrowParamsError(env, PARAM_ERROR, "get callback type error");
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function failed when uninstalling all user cert");
             return nullptr;
         }

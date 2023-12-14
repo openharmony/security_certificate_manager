@@ -121,9 +121,9 @@ static napi_value ParseGrantUidParams(napi_env env, napi_callback_info info, Gra
 
     index++;
     if (index < argc) {
-        context->callback = GetCallback(env, argv[index]);
-        if (context->callback == nullptr) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function failed when grant or remove uid");
             return nullptr;
         }
@@ -159,9 +159,9 @@ static napi_value ParseIsAuthedParams(napi_env env, napi_callback_info info, Gra
 
     index++;
     if (index < argc) {
-        context->callback = GetCallback(env, argv[index]);
-        if (context->callback == nullptr) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function failed when using isAuthed");
             return nullptr;
         }

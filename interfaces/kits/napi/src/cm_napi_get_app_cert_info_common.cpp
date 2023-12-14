@@ -67,9 +67,9 @@ napi_value GetAppCertInfoParseParams(
     napi_value argv[CM_NAPI_GET_APP_CERT_INFO_MAX_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
-    if (argc < CM_NAPI_GET_APP_CERT_INFO_MIN_ARGS) {
-        ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
-        CM_LOG_E("Missing parameter when getting application cert info");
+    if ((argc != CM_NAPI_GET_APP_CERT_INFO_MIN_ARGS) && (argc != CM_NAPI_GET_APP_CERT_INFO_MAX_ARGS)) {
+        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid.");
+        CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
     }
 
@@ -83,9 +83,9 @@ napi_value GetAppCertInfoParseParams(
 
     index++;
     if (index < argc) {
-        context->callback = GetCallback(env, argv[index]);
-        if (context->callback == nullptr) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback type error");
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function faild when getting application cert info");
             return nullptr;
         }
