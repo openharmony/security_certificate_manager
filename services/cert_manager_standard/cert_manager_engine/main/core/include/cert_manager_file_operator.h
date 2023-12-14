@@ -16,6 +16,7 @@
 #ifndef CM_FILE_OPERATOR_H
 #define CM_FILE_OPERATOR_H
 
+#include <sys/stat.h>
 #include "cm_type.h"
 
 #ifdef __cplusplus
@@ -33,6 +34,9 @@ uint32_t CmFileRead(const char *path, const char *fileName, uint32_t offset, uin
 
 int32_t CmFileWrite(const char *path, const char *fileName, uint32_t offset, const uint8_t *buf, uint32_t len);
 
+int32_t CmUserBackupFileWrite(
+    const char *path, const char *fileName, uint32_t offset, const uint8_t *buf, uint32_t len);
+
 int32_t CmFileRemove(const char *path, const char *fileName);
 
 uint32_t CmFileSize(const char *path, const char *fileName);
@@ -40,6 +44,18 @@ uint32_t CmFileSize(const char *path, const char *fileName);
 int32_t CmIsFileExist(const char *path, const char *fileName);
 
 int32_t CmMakeDir(const char *path);
+
+/**
+ * @brief Creating a directory related to certificate backup (directory permissions can be specified)
+ *
+ * @param[in] path Directory absolute path
+ * @param[in] mode When not NULL, the permissions specified by *mode are used when creating directory
+ * @return int32_t Create result
+ * @retval CMR_OK Creating a directory succeeded
+ * @retval CMR_ERROR_ALREADY_EXISTS Directory already exists
+ * @retval CMR_ERROR_MAKE_DIR_FAIL Failed to create a directory
+ */
+int32_t CmUserBakupMakeDir(const char *path, const mode_t *mode);
 
 void *CmOpenDir(const char *path);
 

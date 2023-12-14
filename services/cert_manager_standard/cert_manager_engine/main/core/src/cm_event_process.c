@@ -26,6 +26,7 @@
 #include "cert_manager_key_operation.h"
 #include "cert_manager_session_mgr.h"
 #include "cert_manager_status.h"
+#include "cert_manager_storage.h"
 #include "cm_log.h"
 #include "cm_type.h"
 
@@ -323,6 +324,127 @@ static int32_t CmTraversalDir(const struct CmContext *context, const char *path,
     return ret;
 }
 
+static int32_t CmTraversalBakeupUidDir(const char *certConfigUidDirPath)
+{
+    if (certConfigUidDirPath == NULL) {
+        CM_LOG_E("input params is invaild");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    uint32_t fileCounts = 0;
+    struct CmBlob fileNames[MAX_COUNT_CERTIFICATE] = { 0 };
+    /* Gets all files under the certConfigUidDirPath */
+    int32_t ret = CmUidLayerGetFileCountAndNames(certConfigUidDirPath, fileNames, sizeof(fileNames), &fileCounts);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get file count and names for the certConfigUidDirPath(%s), ret = %d", certConfigUidDirPath, ret);
+        return ret;
+    }
+
+    for (uint32_t i = 0; i < fileCounts; i++) {
+        struct CmBlob *certConfigFilePath = &fileNames[i];
+
+        /* Delete user cert bakeup and config file */
+        ret = CmRemoveBakeupUserCert(NULL, NULL, (const char *)certConfigFilePath->data);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmRemoveBakeupUserCert failed for the certConfigFilePath(%s)", certConfigFilePath->data);
+            continue;
+        }
+        CM_LOG_I("CmRemoveBakeupUserCert success, certConfigFilePath: %s", certConfigFilePath->data);
+    }
+
+    CmFreeFileNames(fileNames, fileCounts);
+
+    return CM_SUCCESS;
+}
+
+static int32_t CmTraversalBakeupUserIdDir(const char *certConfigUserIdDirPath)
+{
+    if (certConfigUserIdDirPath == NULL) {
+        CM_LOG_E("input params is invaild");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    DIR *dir = opendir(certConfigUserIdDirPath);
+    if (dir == NULL) {
+        CM_LOG_E("opendir certConfigUserIdDirPath(%s) failed", certConfigUserIdDirPath);
+        return CM_FAILURE;
+    }
+
+    int32_t ret = CM_SUCCESS;
+    struct dirent *dire = NULL;
+    /* Traverse the {configRootDir}/{userid} directory */
+    while ((dire = readdir(dir)) != NULL) {
+        if ((strcmp(dire->d_name, ".") == 0) || (strcmp(dire->d_name, "..") == 0)) {
+            continue;
+        }
+        char certConfigUidDirPath[CERT_MAX_PATH_LEN] = { 0 };
+        if (snprintf_s(certConfigUidDirPath, CERT_MAX_PATH_LEN, CERT_MAX_PATH_LEN - 1, "%s/%s", certConfigUserIdDirPath,
+                       dire->d_name) < 0) {
+            CM_LOG_E("Construct certConfigUidDirPath failed");
+            continue;
+        }
+        CM_LOG_I("Construct certConfigUidDirPath: %s", certConfigUidDirPath);
+
+        ret = CmTraversalBakeupUidDir(certConfigUidDirPath);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmTraversalBakeupUidDir(%s) failed, ret = %d", certConfigUidDirPath, ret);
+            continue;
+        }
+
+        /* Delete user cert config {configRootDir}/{userid}/{uid} directory */
+        ret = CmDirRemove(certConfigUidDirPath);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Remove user certConfigUidDirPath(%s) fail, ret = %d", certConfigUidDirPath, ret);
+            continue;
+        }
+        CM_LOG_E("Remove user certConfigUidDirPath(%s) SUCCESS", certConfigUidDirPath);
+    };
+
+    closedir(dir);
+    return CM_SUCCESS;
+}
+
+static int32_t CmTraversalBakeupUserCert(uint32_t userId)
+{
+    int32_t ret = CM_SUCCESS;
+    char certConfigUserIdDirPath[CERT_MAX_PATH_LEN] = { 0 };
+    ret = CmGetCertConfUserIdDir(userId, certConfigUserIdDirPath, CERT_MAX_PATH_LEN);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Construct certConfigUserIdDirPath(userId: %u) failed", userId);
+        return CM_FAILURE;
+    }
+
+    ret = CmTraversalBakeupUserIdDir(certConfigUserIdDirPath);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CmTraversalBakeupUserIdDir(%s) failed, ret = %d", certConfigUserIdDirPath, ret);
+        return CM_FAILURE;
+    }
+
+    /* Delete {configRootDir}/{userid} directory */
+    ret = CmDirRemove(certConfigUserIdDirPath);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Remove user certConfigUserIdDirPath(%s) fail, ret = %d", certConfigUserIdDirPath, ret);
+        return CMR_ERROR_REMOVE_FILE_FAIL;
+    }
+    CM_LOG_I("Remove user certConfigUserIdDirPath(%s) SUCCESS", certConfigUserIdDirPath);
+
+    /* Delete {bakeupRootDir}/{userid} directory */
+    char certBakeupUserIdDirPath[CERT_MAX_PATH_LEN] = { 0 };
+    ret = CmGetCertBackupDir(userId, certBakeupUserIdDirPath, CERT_MAX_PATH_LEN);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Construct certBakeupUserIdDirPath failed");
+        return CM_FAILURE;
+    }
+    ret = CmDirRemove(certBakeupUserIdDirPath);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Remove user certBakeupUserIdDirPath(%s) fail, ret = %d", certBakeupUserIdDirPath, ret);
+        return CMR_ERROR_REMOVE_FILE_FAIL;
+    }
+    CM_LOG_I("Remove user certBakeupUserIdDirPath(%s) SUCCESS", certBakeupUserIdDirPath);
+
+    return CM_SUCCESS;
+}
+
 static void RemoveSessionInfo(const struct CmContext *context)
 {
     bool isUserDeleteEvent = (context->uid == INVALID_VALUE);
@@ -342,10 +464,19 @@ int32_t CmDeleteProcessInfo(const struct CmContext *context)
 {
     RemoveSessionInfo(context);
 
-    /* Delete user ca */
-    int32_t ret = CmTraversalDir(context, USER_CA_STORE, CM_USER_TRUSTED_STORE);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("CmDeleteUserCa faild");
+    int32_t ret = CM_SUCCESS;
+    if (context->uid == INVALID_VALUE) { // user delete event
+        /* Delete user ca */
+        ret = CmTraversalDir(context, USER_CA_STORE, CM_USER_TRUSTED_STORE);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmDeleteUserCa faild");
+        }
+
+        /* Delete user ca bakeup and config */
+        ret = CmTraversalBakeupUserCert(context->userId);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Delete user ca bakeup and config file failed");
+        }
     }
 
     /* Delete private credentail */
@@ -359,5 +490,6 @@ int32_t CmDeleteProcessInfo(const struct CmContext *context)
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmDeletePublicCredential faild");
     }
+
     return ret;
 }

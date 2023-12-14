@@ -16,6 +16,9 @@
 #include "cert_manager_service.h"
 
 #include <openssl/x509.h>
+#include <openssl/x509v3.h>
+#include <openssl/bio.h>
+#include <openssl/pem.h>
 
 #include "securec.h"
 
@@ -34,6 +37,9 @@
 #include "cm_log.h"
 #include "cm_type.h"
 #include "cm_x509.h"
+
+#include "cert_manager_file_operator.h"
+#include "cert_manager_updateflag.h"
 
 static int32_t CheckPermission(bool needPriPermission, bool needCommonPermission)
 {
@@ -459,16 +465,56 @@ int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlo
     return ret;
 }
 
+int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem)
+{
+    int32_t ret = CM_SUCCESS;
+    char *pemCert = NULL;
+    long pemCertLen = 0;
+
+    BIO *bio = BIO_new(BIO_s_mem());
+    if (!bio) {
+        CM_LOG_E("BIO_new failed!");
+        return CM_FAILURE;
+    }
+
+    do {
+        if (PEM_write_bio_X509(bio, (X509 *)x509) == 0) {
+            CM_LOG_E("Error writing PEM");
+            ret = CM_FAILURE;
+            break;
+        }
+
+        pemCertLen = BIO_get_mem_data(bio, &pemCert);
+        if (pemCertLen <= 0) {
+            perror("Error getting PEM data");
+            ret = CM_FAILURE;
+            break;
+        }
+
+        userCertPem->data = (uint8_t *)CMMalloc(pemCertLen);
+        if (userCertPem->data == NULL) {
+            CM_LOG_E("CMMalloc buffer failed!");
+            ret = CMR_ERROR_MALLOC_FAIL;
+            break;
+        }
+        userCertPem->size = pemCertLen;
+        (void)memcpy_s(userCertPem->data, userCertPem->size, pemCert, pemCertLen);
+    } while (0);
+
+    BIO_free(bio);
+    return ret;
+}
+
 int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *userCert,
     const struct CmBlob *certAlias, struct CmBlob *certUri)
 {
-    if ((CmCheckBlob(userCert) != CM_SUCCESS) || (CmCheckBlob(certAlias) != CM_SUCCESS)) {
+    if ((CmCheckBlob(userCert) != CM_SUCCESS) || (CheckUri(certAlias) != CM_SUCCESS)) {
         CM_LOG_E("input params invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     int32_t ret = CM_SUCCESS;
-    uint8_t pathBuf[CERT_MAX_PATH_LEN] = {0};
+    uint8_t pathBuf[CERT_MAX_PATH_LEN] = { 0 };
     struct CmMutableBlob pathBlob = { sizeof(pathBuf), pathBuf };
     uint32_t store = CM_USER_TRUSTED_STORE;
     do {
@@ -486,11 +532,6 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
             break;
         }
 
-        if (CheckUri(certAlias) != CM_SUCCESS) {
-            CM_LOG_E("certalias no end");
-            ret = CMR_ERROR_INVALID_ARGUMENT;
-            break;
-        }
         ret = CmWriteUserCert(context, &pathBlob, userCert, certAlias, certUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CertManagerWriteUserCert fail");
@@ -501,6 +542,16 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
         ret = CmSetStatusEnable(context, &pathBlob, certUri, store);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CertManagerUpdateStatusFile fail");
+            ret = CM_FAILURE;
+            break;
+        }
+
+        ret = CmBakeupUserCert(context, certUri, userCert);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmBakeupUserCert fail");
+            if (CmRemoveUserCert(&pathBlob, certUri) != CM_SUCCESS) {
+                CM_LOG_E("CmBakeupUserCert fail and CmRemoveUserCert fail");
+            }
             ret = CM_FAILURE;
             break;
         }
@@ -547,6 +598,42 @@ static int32_t CmComparisonCallerIdWithUri(const struct CmContext *context,
     return ret;
 }
 
+int32_t CmRmUserCert(const char *usrCertConfigFilepath)
+{
+    int32_t ret = CM_SUCCESS;
+    uint8_t usrCertBakeupFilePath[CERT_MAX_PATH_LEN + 1] = { 0 };
+    uint32_t size = 0;
+
+    ret = CmIsFileExist(NULL, usrCertConfigFilepath);
+    if (ret != CMR_OK) {
+        return CM_SUCCESS;
+    }
+    size = CmFileRead(NULL, usrCertConfigFilepath, 0, usrCertBakeupFilePath, CERT_MAX_PATH_LEN);
+    if (size == 0) {
+        CM_LOG_E("CmFileRead read size 0 invalid ,fail");
+        return CM_FAILURE;
+    }
+    CM_LOG_I("CmFileRead read usrCertBakeupFilePath: %s", usrCertBakeupFilePath);
+
+    ret = CmFileRemove(NULL, (const char *)usrCertBakeupFilePath);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Remove cert bakeup file(%s) fail", usrCertBakeupFilePath);
+    }
+    CM_LOG_I("CmRmUserCert usrCertBakeupFilePath: %s success", usrCertBakeupFilePath);
+    return ret;
+}
+
+int32_t CmRmSaConf(const char *usrCertConfigFilepath)
+{
+    int32_t ret = CM_SUCCESS;
+
+    ret = CmFileRemove(NULL, usrCertConfigFilepath);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CmFileRemove fail");
+        return ret;
+    }
+    return ret;
+}
 
 int32_t CmUninstallUserCert(const struct CmContext *context, const struct CmBlob *certUri)
 {
@@ -580,6 +667,11 @@ int32_t CmUninstallUserCert(const struct CmContext *context, const struct CmBlob
             break;
         }
 
+        ret = CmRemoveBakeupUserCert(context, certUri, NULL);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmRemoveBakeupUserCert fail");
+            break;
+        }
         ret = CmSetStatusEnable(context, &pathBlob, certUri, store);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("UpdateStatusFile fail, ret = %d", ret);
@@ -621,3 +713,41 @@ int32_t CmServiceSetCertStatus(const struct CmContext *context, const struct CmB
     return SetcertStatus(context, certUri, store, status, NULL);
 }
 
+int32_t CmSetStatusBakeupCert(
+    const struct CmContext *context, const struct CmBlob *certUri, uint32_t store, uint32_t status)
+{
+    int32_t ret = CM_SUCCESS;
+
+    if (status == CERT_STATUS_ENANLED) {
+        bool needUpdate = false;
+        ret = IsCertNeedBakeup(context->userId, context->uid, certUri, &needUpdate);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Check cert is need update failed, ret = %d", ret);
+            return CMR_ERROR_INVALID_OPERATION;
+        } else if (needUpdate == false) {
+            /* No need to update */
+            return CM_SUCCESS;
+        }
+
+        struct CmBlob certificateData = { 0, NULL };
+        ret = CmReadCertData(store, context, certUri, &certificateData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmReadCertData failed, ret = %d", ret);
+            return CM_FAILURE;
+        }
+
+        ret = CmBakeupUserCert(context, certUri, &certificateData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmBakeupUserCert failed, ret = %d", ret);
+            ret = CM_FAILURE;
+        }
+        CM_FREE_BLOB(certificateData);
+    } else if (status == CERT_STATUS_DISABLED) {
+        ret = CmRemoveBakeupUserCert(context, certUri, NULL);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmRemoveBakeupUserCert fail, ret = %d", ret);
+        }
+    }
+
+    return ret;
+}

@@ -30,6 +30,7 @@
 #include "cm_mem.h"
 #include "cm_ipc_service.h"
 #include "ipc_skeleton.h"
+#include "cert_manager_updateflag.h"
 
 namespace OHOS {
 namespace Security {
@@ -266,6 +267,8 @@ void CertManagerService::OnStart(const SystemAbilityOnDemandReason& startReason)
 
     runningState_ = STATE_RUNNING;
     CM_LOG_I("CertManagerService start success.");
+
+    (void)CmBakeupAllSaUserCerts();
 }
 
 void CertManagerService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)

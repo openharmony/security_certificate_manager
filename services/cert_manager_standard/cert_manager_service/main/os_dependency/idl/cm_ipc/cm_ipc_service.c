@@ -34,6 +34,9 @@
 #include "cert_manager_service.h"
 #include "cert_manager_status.h"
 #include "cert_manager_uri.h"
+#include "cert_manager_updateflag.h"
+#include "cert_manager_storage.h"
+#include "cert_manager_file_operator.h"
 
 #define MAX_LEN_CERTIFICATE     8196
 #define INIT_INVALID_VALUE      0xFFFFFFFF
@@ -1045,9 +1048,9 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
     struct CmContext cmContext = {0};
     struct CmParamSet *paramSet = NULL;
     struct CmParamOut params[] = {
-        { .tag = CM_TAG_PARAM0_BUFFER, .blob = &certUri},
-        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store},
-        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &status},
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = &certUri },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &status },
     };
 
     do {
@@ -1071,6 +1074,11 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
         ret = CmServiceSetCertStatus(&cmContext, &certUri, store, status);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("set user cert status failed, ret = %d", ret);
+            break;
+        }
+        ret = CmSetStatusBakeupCert(&cmContext, &certUri, store, status);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmSetStatusBakeupCert failed, ret = %d", ret);
             break;
         }
     } while (0);

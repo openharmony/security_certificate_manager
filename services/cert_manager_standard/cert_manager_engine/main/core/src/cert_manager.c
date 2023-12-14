@@ -16,6 +16,7 @@
 #include "cert_manager.h"
 
 #include <unistd.h>
+#include <libgen.h>
 
 #include "cert_manager_auth_mgr.h"
 #include "cert_manager_file.h"
@@ -504,9 +505,67 @@ int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *p
     return ret;
 }
 
+int32_t CmStoreUserCert(const char *path, const struct CmBlob *userCert, const char *userCertName)
+{
+    int32_t ret = CM_SUCCESS;
+    if (CmUserBackupFileWrite(path, userCertName, 0, userCert->data, userCert->size) != CMR_OK) {
+        CM_LOG_E("Failed to write certificate");
+        ret = CMR_ERROR_WRITE_FILE_FAIL;
+    }
+    return ret;
+}
+
+int32_t CmGenerateSaConf(const char *userCertConfigPath, const char *userCertBakupDirPath, const char *userCertName)
+{
+    int32_t ret = CM_SUCCESS;
+    char userCertBakeupFilePath[CERT_MAX_PATH_LEN] = { 0 };
+
+    if (userCertBakupDirPath == NULL) {
+        if (snprintf_s(userCertBakeupFilePath, CERT_MAX_PATH_LEN, CERT_MAX_PATH_LEN - 1, "%s", userCertName) < 0) {
+            CM_LOG_E("construct userCertBakeupFilePath failed");
+            return CMR_ERROR_INVALID_OPERATION;
+        }
+    } else {
+        if (snprintf_s(userCertBakeupFilePath, CERT_MAX_PATH_LEN, CERT_MAX_PATH_LEN - 1, "%s/%s", userCertBakupDirPath,
+                       userCertName) < 0) {
+            CM_LOG_E("construct userCertBakeupFilePath failed");
+            return CMR_ERROR_INVALID_OPERATION;
+        }
+    }
+
+    if (CmFileWrite(NULL, userCertConfigPath, 0, (const uint8_t *)userCertBakeupFilePath,
+                    strlen(userCertBakeupFilePath)) != CMR_OK) {
+        CM_LOG_E("Failed to write saconf file content");
+        ret = CMR_ERROR_WRITE_FILE_FAIL;
+    }
+    return ret;
+}
+
 int32_t CmRemoveUserCert(struct CmMutableBlob *pathBlob, const struct CmBlob *certUri)
 {
     return CertManagerFileRemove((char *)pathBlob->data, (char *)certUri->data);
+}
+
+int32_t CmBakeupRemove(uint32_t userId, const char *path, const struct CmBlob *certUri)
+{
+    if (path == NULL) {
+        CM_LOG_E("input params is invaild");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    uint32_t uid = (uint32_t)atoi(basename((char *)path));
+    char userCertConfigFilePath[CERT_MAX_PATH_LEN] = { 0 };
+    int32_t ret = CmGetCertConfPath(userId, uid, certUri, userCertConfigFilePath, CERT_MAX_PATH_LEN);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get user cert config path failed ret=%s", ret);
+        return CM_FAILURE;
+    }
+
+    ret = CmRemoveBakeupUserCert(NULL, NULL, userCertConfigFilePath);
+    if (ret != CMR_OK) {
+        CM_LOG_E("User Cert remove config and bakeup file failed, ret: %d", ret);
+    }
+    return ret;
 }
 
 static int32_t RemoveAllUserCert(const struct CmContext *context, uint32_t store, const char* path)
@@ -514,7 +573,7 @@ static int32_t RemoveAllUserCert(const struct CmContext *context, uint32_t store
     ASSERT_ARGS(path);
     struct CmMutableBlob fileNames = { 0, NULL };
     struct CmMutableBlob pathBlob = { strlen(path) + 1, (uint8_t *)path }; /* include '\0' at end. */
-
+    struct CmBlob certUri = { 0, NULL };
     int32_t ret = CertManagerGetFilenames(&fileNames, path);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed obtain filenames from path");
@@ -523,6 +582,13 @@ static int32_t RemoveAllUserCert(const struct CmContext *context, uint32_t store
 
     struct CmMutableBlob *fNames = (struct CmMutableBlob *)fileNames.data;
     for (uint32_t i = 0; i < fileNames.size; i++) {
+        certUri.data = (uint8_t *)fNames[i].data;
+        certUri.size = fNames[i].size - 1;
+        ret = CmBakeupRemove(context->userId, path, &certUri);
+        if (ret != CMR_OK) {
+            CM_LOG_E("User Cert %u remove config and bakeup file failed, ret: %d", i, ret);
+            continue;
+        }
         ret = CertManagerFileRemove(path, (char *)fNames[i].data);
         if (ret != CMR_OK) {
             CM_LOG_E("User Cert %u remove failed, ret: %d", i, ret);
@@ -544,6 +610,28 @@ static int32_t RemoveAllUidDir(const char* path)
     return CM_ERROR(CmDirRemove(path));
 }
 
+static int32_t RemoveAllConfUidDir(uint32_t userId, const char *uidPath)
+{
+    if (uidPath == NULL) {
+        CM_LOG_E("input params is invaild");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    char configUidDirPath[CERT_MAX_PATH_LEN] = { 0 };
+    uint32_t uid = (uint32_t)atoi(basename((char *)uidPath));
+
+    uint32_t ret = CmGetCertConfUidDir(userId, uid, configUidDirPath, CERT_MAX_PATH_LEN);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get user cert config file UidDirPath failed, ret = %d", ret);
+        return CM_FAILURE;
+    }
+
+    ret = CmDirRemove(configUidDirPath);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Remove user cert config file configUidDirPath(%s) fail, ret = %d", configUidDirPath, ret);
+    }
+    return ret;
+}
+
 int32_t CmRemoveAllUserCert(const struct CmContext *context, uint32_t store, const struct CmMutableBlob *pathList)
 {
     ASSERT_ARGS(pathList && pathList->data && pathList->size);
@@ -561,8 +649,51 @@ int32_t CmRemoveAllUserCert(const struct CmContext *context, uint32_t store, con
             CM_LOG_E("Remove UidPath fail, ret = %d", ret);
             continue;
         }
+        ret = RemoveAllConfUidDir(context->userId, (char *)path[i].data);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Remove all config UidPath fail, ret = %d", ret);
+            continue;
+        }
     }
     return ret;
+}
+
+int32_t CmRemoveBakeupUserCert(const struct CmContext *context, const struct CmBlob *certUri,
+                               const char *userCertConfigFilePath)
+{
+    int32_t ret = CM_SUCCESS;
+    char userConfigFilePath[CERT_MAX_PATH_LEN] = { 0 };
+    char *userConfFilePath = NULL;
+
+    if (userCertConfigFilePath == NULL) {
+        if ((context == NULL) || (CmCheckBlob(certUri) != CM_SUCCESS)) {
+            CM_LOG_E("Invalid input arguments");
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+
+        ret = CmGetCertConfPath(context->userId, context->uid, certUri, userConfigFilePath, CERT_MAX_PATH_LEN);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmGetCertConfPath failed, ret = %d", ret);
+            return CM_FAILURE;
+        }
+        userConfFilePath = userConfigFilePath;
+    } else {
+        userConfFilePath = (char *)userCertConfigFilePath;
+    }
+
+    ret = CmRmUserCert(userConfFilePath);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("RmUserCertFile failed, config file path(%s), ret = %d", userConfFilePath, ret);
+        return CM_FAILURE;
+    }
+
+    ret = CmRmSaConf(userConfFilePath);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("RmSaConfFile(%s) fail, ret = %d", userConfFilePath, ret);
+        return CM_FAILURE;
+    }
+
+    return CM_SUCCESS;
 }
 
 #ifdef __cplusplus
