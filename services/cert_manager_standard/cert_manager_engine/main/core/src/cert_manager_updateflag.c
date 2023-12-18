@@ -205,15 +205,14 @@ static int32_t ConvertCertDataToPem(const struct CmBlob *userCertData, const X50
 
 int32_t CmConstructContextFromUri(const char *certUri, struct CmContext *context)
 {
-    int32_t ret = CM_SUCCESS;
-    struct CMUri cmUri = { 0 };
-
-    if ((NULL == certUri) || (NULL == context)) {
+    if ((certUri == NULL) || (context == NULL)) {
         CM_LOG_E("input params is invaild");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((ret = CertManagerUriDecode(&cmUri, certUri) != CM_SUCCESS)) {
+    struct CMUri cmUri = { 0 };
+    int32_t ret = CertManagerUriDecode(&cmUri, certUri);
+    if ((ret != CM_SUCCESS)) {
         CM_LOG_E("Failed to decode struct CMUri from certUri(%s), ret = %d", certUri, ret);
         return CMR_ERROR_INVALID_OPERATION;
     }
@@ -421,7 +420,6 @@ static int32_t UpdateUserCerts(uint32_t userId, const char *userIdPath)
 
 static int32_t UpdateAllUserCerts(void)
 {
-    int32_t ret = 0;
     DIR *dir = NULL;
     struct dirent *dire = NULL;
     uint32_t userId = 0;
@@ -452,7 +450,8 @@ static int32_t UpdateAllUserCerts(void)
 
         /* Updates all certificates for the specified user */
         userId = (uint32_t)atoi(dire->d_name);
-        if ((ret = UpdateUserCerts(userId, userIdPath)) != CM_SUCCESS) {
+        int32_t ret = UpdateUserCerts(userId, userIdPath);
+        if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to update all certificates for the userIdPath(%s)", userIdPath);
             continue;
         }
