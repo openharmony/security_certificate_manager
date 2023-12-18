@@ -424,7 +424,7 @@ static napi_value ProcessFinishTwoParam(napi_env env, napi_value *argv, SignVeri
             return nullptr;
         }
 
-        int32_t ret = GetCallback(env, argv[curIndex], context->callback);
+        ret = GetCallback(env, argv[curIndex], context->callback);
         if (ret != CM_SUCCESS) {
             ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("arg2 is callback: get sign callback function failed when using finish function");
