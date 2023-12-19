@@ -32,7 +32,7 @@
 
 static void DeleteAuth(const struct CmContext *context, const char *fileName, bool isDeleteByUid)
 {
-    CM_LOG_I("isDeleteByUid:%d", isDeleteByUid);
+    CM_LOG_D("isDeleteByUid:%d", isDeleteByUid);
     struct CmBlob keyUri = { strlen(fileName) + 1, (uint8_t *)fileName };
 
     int32_t ret;
@@ -58,7 +58,7 @@ static int32_t CmTraversalDirActionCredential(const char *filePath, const char *
     struct CmBlob keyUri = { strlen(fileName) + 1, (uint8_t *)fileName };
     ret = CmKeyOpDeleteKey(&keyUri);
     if (ret != CM_SUCCESS) { /* ignore the return of delete key */
-        CM_LOG_I("App key delete failed ret: %d", ret);
+        CM_LOG_E("App key delete failed ret: %d", ret);
     }
 
     return CM_SUCCESS;
@@ -190,7 +190,7 @@ static int32_t CmTraversalUidLayerDir(const struct CmContext *context, const cha
     int32_t ret = CM_SUCCESS;
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
-        CM_LOG_I("Dir is not exist");
+        CM_LOG_D("Dir is not exist");
         return CM_SUCCESS;
     }
 
@@ -228,7 +228,7 @@ static int32_t TraversalUserIdLayerDir(const struct CmContext *context, const ch
     const uint32_t store, bool isUserDeleteEvent)
 {
     uint32_t uid = (uint32_t)atoi(direName);
-    CM_LOG_I("CmTraversalUserIdLayerDir userId:%u, uid:%u", context->userId, uid);
+    CM_LOG_D("CmTraversalUserIdLayerDir userId:%u, uid:%u", context->userId, uid);
 
     int32_t ret = CM_SUCCESS;
     if (isUserDeleteEvent) { /* user delete event */
@@ -253,7 +253,7 @@ static int32_t CmTraversalUserIdLayerDir(const struct CmContext *context, const 
 
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
-        CM_LOG_I("UserId dir is not exist");
+        CM_LOG_D("UserId dir is not exist");
         return CM_SUCCESS;
     }
 
@@ -293,7 +293,7 @@ static int32_t CmTraversalDir(const struct CmContext *context, const char *path,
     int32_t ret = CM_SUCCESS;
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
-        CM_LOG_I("Root dir is not exist");
+        CM_LOG_D("Root dir is not exist");
         return CM_SUCCESS;
     }
 
@@ -336,7 +336,7 @@ static int32_t CmTraversalBakeupUidDir(const char *certConfigUidDirPath)
     /* Gets all files under the certConfigUidDirPath */
     int32_t ret = CmUidLayerGetFileCountAndNames(certConfigUidDirPath, fileNames, sizeof(fileNames), &fileCounts);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get file count and names for the certConfigUidDirPath(%s), ret = %d", certConfigUidDirPath, ret);
+        CM_LOG_E("Get file count and names for the certConfigUidDirPath, ret = %d", ret);
         return ret;
     }
 
@@ -346,10 +346,9 @@ static int32_t CmTraversalBakeupUidDir(const char *certConfigUidDirPath)
         /* Delete user cert bakeup and config file */
         ret = CmRemoveBakeupUserCert(NULL, NULL, (const char *)certConfigFilePath->data);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmRemoveBakeupUserCert failed for the certConfigFilePath(%s)", certConfigFilePath->data);
+            CM_LOG_E("CmRemoveBakeupUserCert failed");
             continue;
         }
-        CM_LOG_I("CmRemoveBakeupUserCert success, certConfigFilePath: %s", certConfigFilePath->data);
     }
 
     CmFreeFileNames(fileNames, fileCounts);
@@ -366,7 +365,7 @@ static int32_t CmTraversalBakeupUserIdDir(const char *certConfigUserIdDirPath)
 
     DIR *dir = opendir(certConfigUserIdDirPath);
     if (dir == NULL) {
-        CM_LOG_E("opendir certConfigUserIdDirPath(%s) failed", certConfigUserIdDirPath);
+        CM_LOG_E("opendir certConfigUserIdDirPath failed");
         return CM_FAILURE;
     }
 
@@ -383,21 +382,19 @@ static int32_t CmTraversalBakeupUserIdDir(const char *certConfigUserIdDirPath)
             CM_LOG_E("Construct certConfigUidDirPath failed");
             continue;
         }
-        CM_LOG_I("Construct certConfigUidDirPath: %s", certConfigUidDirPath);
 
         ret = CmTraversalBakeupUidDir(certConfigUidDirPath);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmTraversalBakeupUidDir(%s) failed, ret = %d", certConfigUidDirPath, ret);
+            CM_LOG_E("CmTraversalBakeupUidDir failed, ret = %d", ret);
             continue;
         }
 
         /* Delete user cert config {configRootDir}/{userid}/{uid} directory */
         ret = CmDirRemove(certConfigUidDirPath);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Remove user certConfigUidDirPath(%s) fail, ret = %d", certConfigUidDirPath, ret);
+            CM_LOG_E("Remove user certConfigUidDirPath fail, ret = %d", ret);
             continue;
         }
-        CM_LOG_E("Remove user certConfigUidDirPath(%s) SUCCESS", certConfigUidDirPath);
     };
 
     closedir(dir);
@@ -416,17 +413,16 @@ static int32_t CmTraversalBakeupUserCert(uint32_t userId)
 
     ret = CmTraversalBakeupUserIdDir(certConfigUserIdDirPath);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("CmTraversalBakeupUserIdDir(%s) failed, ret = %d", certConfigUserIdDirPath, ret);
+        CM_LOG_E("CmTraversalBakeupUserIdDir failed, ret = %d", ret);
         return CM_FAILURE;
     }
 
     /* Delete {configRootDir}/{userid} directory */
     ret = CmDirRemove(certConfigUserIdDirPath);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Remove user certConfigUserIdDirPath(%s) fail, ret = %d", certConfigUserIdDirPath, ret);
+        CM_LOG_E("Remove user certConfigUserIdDirPath fail, ret = %d", ret);
         return CMR_ERROR_REMOVE_FILE_FAIL;
     }
-    CM_LOG_I("Remove user certConfigUserIdDirPath(%s) SUCCESS", certConfigUserIdDirPath);
 
     /* Delete {bakeupRootDir}/{userid} directory */
     char certBakeupUserIdDirPath[CERT_MAX_PATH_LEN] = { 0 };
@@ -437,10 +433,9 @@ static int32_t CmTraversalBakeupUserCert(uint32_t userId)
     }
     ret = CmDirRemove(certBakeupUserIdDirPath);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Remove user certBakeupUserIdDirPath(%s) fail, ret = %d", certBakeupUserIdDirPath, ret);
+        CM_LOG_E("Remove user certBakeupUserIdDirPath fail, ret = %d", ret);
         return CMR_ERROR_REMOVE_FILE_FAIL;
     }
-    CM_LOG_I("Remove user certBakeupUserIdDirPath(%s) SUCCESS", certBakeupUserIdDirPath);
 
     return CM_SUCCESS;
 }

@@ -247,7 +247,7 @@ static void TranslateToHuksProperties(const struct CmSignatureSpec *spec, struct
             break;
         }
     }
-    CM_LOG_I("purpose[%u], digest[%u], padding[%u]", spec->purpose, spec->digest, spec->padding);
+    CM_LOG_D("purpose[%u], digest[%u], padding[%u]", spec->purpose, spec->digest, spec->padding);
 }
 
 static int32_t AddParamsToParamSet(const struct CmBlob *commonUri, const struct CmSignatureSpec *spec,

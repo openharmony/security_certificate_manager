@@ -241,7 +241,7 @@ static int32_t ReadFile(const char *file, uint8_t **bufptr, uint32_t *size)
 
     sz = CertManagerFileSize(CERT_STATUS_DIR, file);
     if (sz == 0) {
-        CM_LOG_I("Status file not found\n");
+        CM_LOG_D("Status file not found\n");
         goto finally;
     }
 
@@ -314,7 +314,7 @@ static int32_t LoadTreeStatus(struct RbTree *tree, pthread_rwlock_t *treeLock, u
             return rc;
         }
     }
-    CM_LOG_I("Status loaded for store");
+    CM_LOG_D("Status loaded for store");
     return rc;
 }
 
@@ -728,7 +728,7 @@ static int32_t CertManagerStatus(const struct CmContext *context, struct RbTree 
 
     *oldStatus = GetCertStatusNode(node);
     if (!getter && *oldStatus != status) {
-        CM_LOG_I("start setting status");
+        CM_LOG_D("start setting status");
         if (store == CM_SYSTEM_TRUSTED_STORE) {
             ASSERT_FUNC(SetCertStatusNode(context, tree, node, fn, status));
         } else {

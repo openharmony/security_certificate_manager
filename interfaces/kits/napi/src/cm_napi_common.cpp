@@ -123,7 +123,7 @@ napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob)
         return nullptr;
     }
     if (length == 0) {
-        CM_LOG_I("The memory length created is only 1 Byte");
+        CM_LOG_D("The memory length created is only 1 Byte");
         // The memory length created is only 1 Byte
         arrayBlob.data = static_cast<uint8_t *>(CmMalloc(1));
     } else {
@@ -176,7 +176,7 @@ int32_t GetCallback(napi_env env, napi_value object, napi_ref &callback)
     }
 
     if (valueType == napi_null || valueType == napi_undefined) {
-        CM_LOG_I("callback is null or undefined, treat as promise");
+        CM_LOG_D("callback is null or undefined, treat as promise");
         return CM_SUCCESS;
     }
 

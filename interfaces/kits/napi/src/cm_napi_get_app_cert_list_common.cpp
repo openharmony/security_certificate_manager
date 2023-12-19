@@ -146,7 +146,7 @@ napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyn
                 GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
             }
             DeleteGetAppCertListAsyncContext(env, context);
-            CM_LOG_I("get app cert list end");
+            CM_LOG_D("get app cert list end");
         },
         static_cast<void *>(asyncContext),
         &asyncContext->asyncWork));

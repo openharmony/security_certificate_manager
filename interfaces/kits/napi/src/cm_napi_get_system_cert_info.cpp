@@ -166,7 +166,7 @@ static void GetCertInfoComplete(napi_env env, napi_status status, void *data)
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
     }
     DeleteGetCertInfoAsyncContext(env, context);
-    CM_LOG_I("get system cert info end");
+    CM_LOG_D("get system cert info end");
 }
 
 static napi_value GetCertInfoAsyncWork(napi_env env, GetCertInfoAsyncContext context)

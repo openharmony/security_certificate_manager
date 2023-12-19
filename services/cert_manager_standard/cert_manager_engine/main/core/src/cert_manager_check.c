@@ -110,7 +110,7 @@ static bool AppCertCheckBlobValid(const struct CmBlob *data)
 {
     for (uint32_t i = 0; i < data->size; i++) {
         if ((i > 0) && (data->data[i] == '\0')) { /* from index 1 has '\0' */
-            CM_LOG_I("data has string end character");
+            CM_LOG_D("data has string end character");
             return true;
         }
 
@@ -143,7 +143,7 @@ static bool CmCheckMaxInstalledCertCount(const uint32_t store, const struct CmCo
         CM_LOG_E("The app cert installed has reached max count:%u", fileCount);
     }
 
-    CM_LOG_I("app cert installed count:%u", fileCount);
+    CM_LOG_D("app cert installed count:%u", fileCount);
 
     CmFreeFileNames(fileNames, fileCount);
     return isValid;

@@ -75,7 +75,7 @@ static int32_t DeleteFirstAbortableSession(void)
             DeleteHuksInitInfo(&(sessionNode->handle));
             RemoveAndFreeSessionNode(&sessionNode);
             --g_sessionCount;
-            CM_LOG_I("delete session count: %u", g_sessionCount);
+            CM_LOG_D("delete session count: %u", g_sessionCount);
             return CM_SUCCESS;
         }
     }
@@ -88,7 +88,7 @@ static int32_t AddSessionNode(struct CmSessionNode *sessionNode)
     pthread_mutex_lock(&g_lock);
 
     if (g_sessionCount >= MAX_OPERATIONS_COUNT) {
-        CM_LOG_I("maximum number of sessions reached: delete oldest session.");
+        CM_LOG_D("maximum number of sessions reached: delete oldest session.");
         if (DeleteFirstAbortableSession() != CM_SUCCESS) {
             pthread_mutex_unlock(&g_lock);
             CM_LOG_E("not found abortable session");
@@ -98,7 +98,7 @@ static int32_t AddSessionNode(struct CmSessionNode *sessionNode)
 
     CmAddNodeAtListTail(&g_sessionList, &sessionNode->listHead);
     ++g_sessionCount;
-    CM_LOG_I("add session count:%u", g_sessionCount);
+    CM_LOG_D("add session count:%u", g_sessionCount);
     pthread_mutex_unlock(&g_lock);
 
     return HKS_SUCCESS;
@@ -213,7 +213,7 @@ void CmDeleteSession(const struct CmBlob *handle)
         if (IsSameBlob(handle, &(node->handle))) {
             RemoveAndFreeSessionNode(&node);
             --g_sessionCount;
-            CM_LOG_I("delete session count: %u", g_sessionCount);
+            CM_LOG_D("delete session count: %u", g_sessionCount);
             pthread_mutex_unlock(&g_lock);
             return;
         }
@@ -246,7 +246,7 @@ static void DeleteSessionNode(enum CmSessionDeleteType deleteType, const struct 
         DeleteHuksInitInfo(&(node->handle));
         RemoveAndFreeSessionNode(nodeSession);
         --g_sessionCount;
-        CM_LOG_I("delete session count = %u", g_sessionCount);
+        CM_LOG_D("delete session count = %u", g_sessionCount);
     }
 }
 

@@ -89,7 +89,7 @@ static void SubscribEvent()
 {
     for (uint32_t i = 0; i < MAX_DELAY_TIMES; ++i) {
         if (SystemEventObserver::SubscribeSystemEvent()) {
-            CM_LOG_I("subscribe system event success, i = %u", i);
+            CM_LOG_D("subscribe system event success, i = %u", i);
             return;
         } else {
             CM_LOG_E("subscribe system event failed %u times", i);
@@ -108,7 +108,7 @@ static void CmSubscribeSystemEvent()
         return;
     }
 
-    CM_LOG_I("create thread success");
+    CM_LOG_D("create thread success");
 }
 
 static inline bool IsInvalidLength(uint32_t length)
@@ -159,7 +159,7 @@ CertManagerService::~CertManagerService()
 
 bool CertManagerService::Init()
 {
-    CM_LOG_I("CertManagerService::Init Ready to init");
+    CM_LOG_D("CertManagerService::Init Ready to init");
 
     if (!registerToService_) {
         if (unloadHandler == nullptr) {
@@ -172,11 +172,11 @@ bool CertManagerService::Init()
             CM_LOG_E("CertManagerService::Init Publish Failed");
             return false;
         }
-        CM_LOG_I("CertManagerService::Init Publish service success");
+        CM_LOG_D("CertManagerService::Init Publish service success");
         registerToService_ = true;
     }
 
-    CM_LOG_I("CertManagerService::Init success.");
+    CM_LOG_D("CertManagerService::Init success.");
     return true;
 }
 
@@ -191,7 +191,7 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
         return CM_SYSTEM_ERROR;
     }
 
-    CM_LOG_I("OnRemoteRequest code:%u", code);
+    CM_LOG_D("OnRemoteRequest code:%u", code);
     // check the code is valid
     if (code < static_cast<uint32_t>(CM_MSG_BASE) || code >= static_cast<uint32_t>(CM_MSG_MAX)) {
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -214,7 +214,7 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     const uint8_t *pdata = data.ReadBuffer(static_cast<size_t>(srcData.size));
     if (pdata == nullptr) {
         CM_FREE_BLOB(srcData);
-        CM_LOG_I("CMR_ERROR_NULL_POINTER");
+        CM_LOG_E("CMR_ERROR_NULL_POINTER");
         return CMR_ERROR_NULL_POINTER;
     }
     if (memcpy_s(srcData.data, srcData.size, pdata, srcData.size) != EOK) {
@@ -228,17 +228,17 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
         CM_LOG_E("copy remote data failed!");
         return CMR_ERROR_INVALID_OPERATION;
     }
-    CM_LOG_I("OnRemoteRequest: %d", NO_ERROR);
+    CM_LOG_D("OnRemoteRequest: %d", NO_ERROR);
     CM_FREE_BLOB(srcData);
     return NO_ERROR;
 }
 
 void CertManagerService::OnStart(const SystemAbilityOnDemandReason& startReason)
 {
-    CM_LOG_I("CertManagerService OnStart startReason");
+    CM_LOG_D("CertManagerService OnStart startReason");
 
     if (runningState_ == STATE_RUNNING) {
-        CM_LOG_I("CertManagerService has already Started");
+        CM_LOG_D("CertManagerService has already Started");
         return;
     }
 
@@ -246,19 +246,19 @@ void CertManagerService::OnStart(const SystemAbilityOnDemandReason& startReason)
         CM_LOG_E("Failed to init CertManagerService");
         return;
     }
-    CM_LOG_I("CertManager init success");
+    CM_LOG_D("CertManager init success");
 
     if (!Init()) {
         CM_LOG_E("Failed to init CertManagerService");
         return;
     }
 
-    CM_LOG_I("certmanager start reason %s", startReason.GetName().c_str());
+    CM_LOG_D("certmanager start reason %s", startReason.GetName().c_str());
     if (startReason.GetId() == OnDemandReasonId::COMMON_EVENT &&
         startReason.GetName() == USER_REMOVED_EVENT) {
         struct CmContext context = { 0, INVALID_VALUE, {0} };
         context.userId = startReason.GetExtraData().GetCode();
-        CM_LOG_I("user remove event, userId = %u", context.userId);
+        CM_LOG_D("user remove event, userId = %u", context.userId);
         CmDeleteProcessInfo(&context);
     }
 
@@ -266,34 +266,34 @@ void CertManagerService::OnStart(const SystemAbilityOnDemandReason& startReason)
     (void)AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
 
     runningState_ = STATE_RUNNING;
-    CM_LOG_I("CertManagerService start success.");
+    CM_LOG_D("CertManagerService start success.");
 
     (void)CmBakeupAllSaUserCerts();
 }
 
 void CertManagerService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
 {
-    CM_LOG_I("systemAbilityId is %d!", systemAbilityId);
+    CM_LOG_D("systemAbilityId is %d!", systemAbilityId);
     CmSubscribeSystemEvent();
 }
 
 void CertManagerService::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
 {
-    CM_LOG_I("systemAbilityId is %d!", systemAbilityId);
+    CM_LOG_D("systemAbilityId is %d!", systemAbilityId);
 }
 
 void CertManagerService::OnStop()
 {
-    CM_LOG_I("CertManagerService Service OnStop");
+    CM_LOG_D("CertManagerService Service OnStop");
     runningState_ = STATE_NOT_START;
     registerToService_ = false;
 }
 
 void CertManagerService::DelayUnload()
 {
-    CM_LOG_I("dalay unload certmanager SA begin");
+    CM_LOG_D("dalay unload certmanager SA begin");
     auto unloadTask = []() {
-        CM_LOG_I("do unload task");
+        CM_LOG_D("do unload task");
         auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         if (saManager == nullptr) {
             CM_LOG_E("Failed to get saManager");

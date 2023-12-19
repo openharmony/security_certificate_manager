@@ -222,7 +222,7 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
     }
     ret = CmKeyOpDeleteKey(keyUri);
     if (ret != CM_SUCCESS) { /* ignore the return of deleteKey */
-        CM_LOG_I("CertManagerKeyRemove failed, ret: %d", ret);
+        CM_LOG_E("CertManagerKeyRemove failed, ret: %d", ret);
     }
 
     return CMR_OK;
@@ -344,7 +344,7 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
 
             int32_t retCode = CmKeyOpDeleteKey(&uriBlob);
             if (retCode != CM_SUCCESS) { /* ignore the return of deleteKey */
-                CM_LOG_I("App key %u remove failed ret: %d", i, retCode);
+                CM_LOG_E("App key %u remove failed ret: %d", i, retCode);
             }
             ClearAuthInfo(context, &uriBlob, store);
         }
@@ -393,8 +393,6 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
         return CM_FAILURE;
     }
 
-    CM_LOG_I("Get app cert list path");
-
     if (store == CM_CREDENTIAL_STORE) {
         ret = CmUidLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
     } else {
@@ -404,8 +402,6 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
         CM_LOG_E("Get file count and names from path faild ret:%d", ret);
         return ret;
     }
-
-    CM_LOG_I("Get app cert list fileCount:%u", *fileCount);
 
     return CM_SUCCESS;
 }
@@ -557,7 +553,7 @@ int32_t CmBakeupRemove(uint32_t userId, const char *path, const struct CmBlob *c
     char userCertConfigFilePath[CERT_MAX_PATH_LEN] = { 0 };
     int32_t ret = CmGetCertConfPath(userId, uid, certUri, userCertConfigFilePath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get user cert config path failed ret=%s", ret);
+        CM_LOG_E("Get user cert config path failed ret = %d", ret);
         return CM_FAILURE;
     }
 
@@ -627,7 +623,7 @@ static int32_t RemoveAllConfUidDir(uint32_t userId, const char *uidPath)
 
     ret = CmDirRemove(configUidDirPath);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Remove user cert config file configUidDirPath(%s) fail, ret = %d", configUidDirPath, ret);
+        CM_LOG_E("Remove user cert config file configUidDirPath fail, ret = %d", ret);
     }
     return ret;
 }
@@ -683,13 +679,13 @@ int32_t CmRemoveBakeupUserCert(const struct CmContext *context, const struct CmB
 
     ret = CmRmUserCert(userConfFilePath);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("RmUserCertFile failed, config file path(%s), ret = %d", userConfFilePath, ret);
+        CM_LOG_E("RmUserCertFile failed, ret = %d", ret);
         return CM_FAILURE;
     }
 
     ret = CmRmSaConf(userConfFilePath);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("RmSaConfFile(%s) fail, ret = %d", userConfFilePath, ret);
+        CM_LOG_E("RmSaConfFile fail, ret = %d", ret);
         return CM_FAILURE;
     }
 

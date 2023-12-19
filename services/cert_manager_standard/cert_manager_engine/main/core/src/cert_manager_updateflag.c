@@ -66,7 +66,7 @@ static int32_t GetUpdateFlag(uint8_t *updateFlag)
     uint32_t readSize =
         CmFileRead(UPDATE_FLAG_DIR_PATH, UPDATE_FLAG_FILE_NAME, 0, &updateFlagTmp, sizeof(updateFlagTmp));
     if (readSize == 0) {
-        CM_LOG_I("Read updateFlag file failed, the updateFlag counts as false");
+        CM_LOG_D("Read updateFlag file failed, the updateFlag counts as false");
         *updateFlag = false;
     } else if (sizeof(updateFlagTmp) == readSize) {
         *updateFlag = updateFlagTmp;
@@ -126,7 +126,7 @@ int32_t IsCertNeedBakeup(uint32_t userId, uint32_t uid, const struct CmBlob *cer
         ret = CmIsFileExist(NULL, (const char *)configPath);
         if (ret != CM_SUCCESS) {
             if (ret != CMR_ERROR_NOT_EXIST) {
-                CM_LOG_E("check cert config file(%s) return err code: %d.", configPath, ret);
+                CM_LOG_E("check cert config file return err code: %d.", ret);
             }
             /* The cert config file does not exist or cannot be determined, need to
              * backup cert */
@@ -137,7 +137,7 @@ int32_t IsCertNeedBakeup(uint32_t userId, uint32_t uid, const struct CmBlob *cer
         char bakeupPath[CERT_MAX_PATH_LEN] = { 0 };
         size = CmFileRead(NULL, configPath, 0, (uint8_t *)bakeupPath, CERT_MAX_PATH_LEN - 1);
         if (size == 0) {
-            CM_LOG_E("read cert bakeup file path from configPath(%s) failed.", configPath);
+            CM_LOG_E("read cert bakeup file path from configPath failed.");
             *needUpdate = true;
             break;
         }
@@ -147,7 +147,7 @@ int32_t IsCertNeedBakeup(uint32_t userId, uint32_t uid, const struct CmBlob *cer
             *needUpdate = false;
             break;
         } else if (ret != CMR_ERROR_NOT_EXIST) {
-            CM_LOG_E("check cert bakeup file(%s) return err code: %d.", bakeupPath, ret);
+            CM_LOG_E("check cert bakeup file return err code: %d.", ret);
         }
         *needUpdate = true;
     } while (0);
@@ -176,7 +176,7 @@ int32_t CmReadCertData(uint32_t store, const struct CmContext *context, const st
     /* Reading certificate data */
     ret = CmStorageGetBuf(uidPath, uriStr, userCertData);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Failed to get certificate(path: %s, certName: %s) data", uidPath, uriStr);
+        CM_LOG_E("Failed to get certificate data");
         return CM_FAILURE;
     }
 
@@ -213,7 +213,7 @@ int32_t CmConstructContextFromUri(const char *certUri, struct CmContext *context
     struct CMUri cmUri = { 0 };
     int32_t ret = CertManagerUriDecode(&cmUri, certUri);
     if ((ret != CM_SUCCESS)) {
-        CM_LOG_E("Failed to decode struct CMUri from certUri(%s), ret = %d", certUri, ret);
+        CM_LOG_E("Failed to decode struct CMUri from certUri, ret = %d", ret);
         return CMR_ERROR_INVALID_OPERATION;
     }
 
@@ -263,13 +263,13 @@ static int32_t BakeupUserCert(const X509 *userCertX509, const struct CmBlob *use
     }
     ret = CmGenerateSaConf(userCertConfigFilePath, NULL, userCertBackupFilePath);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("GenerateSaConf(%s) save CertBackupFilePath(%s) fail", userCertConfigFilePath, userCertBackupFilePath);
+        CM_LOG_E("GenerateSaConf: save CertBackupFilePath fail");
         return CM_FAILURE;
     }
 
     ret = CmStoreUserCert(NULL, userCert, userCertBackupFilePath);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("StoreUserCert(%s) fail", userCertBackupFilePath);
+        CM_LOG_E("StoreUserCert fail");
         return CM_FAILURE;
     }
 
@@ -343,7 +343,7 @@ static int32_t UpdateUserCert(uint32_t userId, uint32_t uid, const char *certPat
     struct CmContext context = { 0 };
     ret = CmConstructContextFromUri((const char *)uriStr, &context);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("ConstructContextFromUri(%s) failed, ret = %d", uriStr, ret);
+        CM_LOG_E("ConstructContextFromUri failed, ret = %d", ret);
         return CM_FAILURE;
     }
 
@@ -357,7 +357,7 @@ static int32_t UpdateUserCert(uint32_t userId, uint32_t uid, const char *certPat
 
     ret = CmBakeupUserCert(&context, &certUri, &certificateData);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("update user certUri(%s) failed, ret = %d", uriStr, ret);
+        CM_LOG_E("update user certUri failed, ret = %d", ret);
         ret = CM_FAILURE;
     }
 
@@ -370,7 +370,7 @@ static int32_t UpdateUserCerts(uint32_t userId, const char *userIdPath)
 {
     DIR *dir = opendir(userIdPath);
     if (dir == NULL) {
-        CM_LOG_E("opendir userIdPath(%s) failed", userIdPath);
+        CM_LOG_E("opendir userIdPath failed");
         return CM_FAILURE;
     }
 
@@ -405,7 +405,7 @@ static int32_t UpdateUserCerts(uint32_t userId, const char *userIdPath)
             uid = (uint32_t)atoi(dire->d_name);
             ret = UpdateUserCert(userId, uid, (const char *)certFilePath->data);
             if (ret != CM_SUCCESS) {
-                CM_LOG_E("Failed to update cert file for the certFilePath(%s)", certFilePath);
+                CM_LOG_E("Failed to update cert file for the certFilePath");
                 continue;
             }
         }
@@ -427,7 +427,7 @@ static int32_t UpdateAllUserCerts(void)
 
     /* do nothing when dir is not exist */
     if (CmIsDirExist(USER_CA_STORE) != CMR_OK) {
-        CM_LOG_I("Root dir is not exist");
+        CM_LOG_D("Root dir is not exist");
         return CM_SUCCESS;
     }
 
@@ -452,7 +452,7 @@ static int32_t UpdateAllUserCerts(void)
         userId = (uint32_t)atoi(dire->d_name);
         int32_t ret = UpdateUserCerts(userId, userIdPath);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed to update all certificates for the userIdPath(%s)", userIdPath);
+            CM_LOG_E("Failed to update all certificates for the userIdPath");
             continue;
         }
     };
@@ -475,7 +475,7 @@ int32_t CmBakeupAllSaUserCerts(void)
     }
 
     if (updateFlag == ALREADY_UPDATE) {
-        CM_LOG_I("updateFlag is ALREADY_UPDATE, so not need update");
+        CM_LOG_D("updateFlag is ALREADY_UPDATE, so not need update");
         return CM_SUCCESS;
     }
 

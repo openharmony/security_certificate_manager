@@ -114,7 +114,7 @@ static int32_t CheckCallerIsProducer(const struct CmContext *context, const stru
     uint32_t userId = (uint32_t)atoi(uriObj->user);
     uint32_t uid = (uint32_t)atoi(uriObj->app);
     if ((userId == context->userId) && (uid == context->uid)) {
-        CM_LOG_I("caller is producer.");
+        CM_LOG_D("caller is producer.");
         return CM_SUCCESS;
     }
 
@@ -686,7 +686,7 @@ static int32_t CheckCommonPermission(const struct CmContext *context, const stru
         return CMR_ERROR_PERMISSION_DENIED;
     }
 
-    CM_LOG_I("caller may be authed app, need check");
+    CM_LOG_D("caller may be authed app, need check");
     return CheckIsAuthorizedApp(uriObj);
 }
 
