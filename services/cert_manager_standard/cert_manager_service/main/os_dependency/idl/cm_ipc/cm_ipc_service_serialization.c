@@ -75,7 +75,7 @@ static int32_t GetNormalParam(const struct CmParam *param, struct CmParamOut *ou
             *(outParams->blob) = param->blob;
             break;
         default:
-            CM_LOG_I("invalid tag type:%x", GetTagType(outParams->tag));
+            CM_LOG_E("invalid tag type:%x", GetTagType(outParams->tag));
             return CMR_ERROR_INVALID_ARGUMENT;
     }
     return CM_SUCCESS;
@@ -189,7 +189,7 @@ int32_t CmServiceGetCertInfoPack(const uint32_t store, const struct CmBlob *cert
     uint32_t status, const struct CmBlob *certUri, struct CmBlob *certificateInfo)
 {
     if (certificateData->size == 0) {
-        CM_LOG_I("cert file is not exist");
+        CM_LOG_D("cert file is not exist");
         return CM_SUCCESS;
     }
 

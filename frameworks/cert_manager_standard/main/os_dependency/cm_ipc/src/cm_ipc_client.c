@@ -317,7 +317,7 @@ static int32_t CmAppCertListGetCertCount(const struct CmBlob *outData,
     }
 
     if (credCount == 0) {
-        CM_LOG_I("App cert list is null");
+        CM_LOG_D("App cert list is null");
     }
 
     if (credCount > certificateList->credentialCount) {

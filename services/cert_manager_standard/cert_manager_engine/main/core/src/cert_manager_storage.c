@@ -257,12 +257,12 @@ int32_t CmGetCertConfUserIdDir(uint32_t userId, char *confUserIdDir, uint32_t di
     /* Create the {confRootDir}/{userid} directory */
     ret = CmUserBakupMakeDir(pathTmp, NULL);
     if (ret != CMR_OK) {
-        CM_LOG_E("Create userIdPath(%s) failed, err code: %d", pathTmp, ret);
+        CM_LOG_E("Create userIdPath failed, err code: %d", ret);
         return CMR_ERROR_MAKE_DIR_FAIL;
     }
 
     if (snprintf_s(confUserIdDir, dirLen, dirLen - 1, "%s", pathTmp) < 0) {
-        CM_LOG_E("Failed to construct confUserIdDir, dirLen: %u, userIdPath: %s", dirLen, pathTmp);
+        CM_LOG_E("Failed to construct confUserIdDir");
         return CM_FAILURE;
     }
 
@@ -287,18 +287,18 @@ int32_t CmGetCertConfUidDir(uint32_t userId, uint32_t uid, char *certConfUidDir,
     char pathTmp[CERT_MAX_PATH_LEN] = { 0 };
     /* Concatenate the {confRootDir}/{userid}/{uid} directory  */
     if (snprintf_s(pathTmp, CERT_MAX_PATH_LEN, CERT_MAX_PATH_LEN - 1, "%s/%u", confUserIdDir, uid) < 0) {
-        CM_LOG_E("Construct uidPath failed, userIdDirPath: %s, uid: %u", confUserIdDir, uid);
+        CM_LOG_E("Construct uidPath failed, uid: %u", uid);
         return CM_FAILURE;
     }
     /* Create the {confRootDir}/{userid}/{uid} directory */
     ret = CmUserBakupMakeDir(pathTmp, NULL);
     if (ret != CMR_OK) {
-        CM_LOG_E("Create uidPath(%s) failed, err code: %d", pathTmp, ret);
+        CM_LOG_E("Create uidPath failed, err code: %d", ret);
         return CMR_ERROR_MAKE_DIR_FAIL;
     }
 
     if (snprintf_s(certConfUidDir, dirLen, dirLen - 1, "%s", pathTmp) < 0) {
-        CM_LOG_E("Failed to construct certConfUidDir, dirLen: %u, uidPath: %s", dirLen, pathTmp);
+        CM_LOG_E("Failed to construct certConfUidDir");
         return CM_FAILURE;
     }
 
@@ -326,9 +326,6 @@ int32_t CmGetCertConfPath(uint32_t userId, uint32_t uid, const struct CmBlob *ce
         CM_LOG_E("Failed to construct user cert config file path");
         return CM_FAILURE;
     }
-
-    CM_LOG_I("construct confFilePath(%s)", confFilePath);
-
     return CM_SUCCESS;
 }
 
@@ -391,7 +388,7 @@ int32_t CmGetCertBackupDir(uint32_t userId, char *certBackupDir, uint32_t certBa
     /* Create the {userId} directory for the certificate backup */
     ret = CmUserBakupMakeDir(userIdPath, NULL);
     if (ret != CMR_OK) {
-        CM_LOG_E("Create userIdPath(%s) failed, err code: %d", userIdPath, ret);
+        CM_LOG_E("Create userIdPath failed, err code: %d", ret);
         return CMR_ERROR_MAKE_DIR_FAIL;
     }
 
@@ -399,8 +396,6 @@ int32_t CmGetCertBackupDir(uint32_t userId, char *certBackupDir, uint32_t certBa
         CM_LOG_E("Construct certBackupDir failed");
         return CMR_ERROR_INVALID_OPERATION;
     }
-    CM_LOG_I("Construct certBackupDir(%s)", certBackupDir);
-
     return CM_SUCCESS;
 }
 
@@ -433,17 +428,16 @@ static int32_t CmGetCertMinSeqNum(uint32_t userId, unsigned long certSubjectName
         }
 
         if (access(backupFileSearchPath, F_OK) == 0) {
-            CM_LOG_I("backupFileSearchPath(%s) is exist", backupFileSearchPath);
+            CM_LOG_D("backupFileSearchPath is exist");
             continue;
         } else {
-            CM_LOG_I("backupFileSearchPath(%s) is not exist", backupFileSearchPath);
+            CM_LOG_E("backupFileSearchPath is not exist");
             sequenceNumber = seq;
             break;
         }
     }
 
-    CM_LOG_I("Get sequenceNumber(%d)", sequenceNumber);
-
+    CM_LOG_D("Get sequenceNumber(%d)", sequenceNumber);
     return sequenceNumber;
 }
 
@@ -472,9 +466,6 @@ int32_t CmGetCertBackupFileName(const X509 *userCertX509, uint32_t userId, char 
         CM_LOG_E("Call snprintf_s return failed");
         return CMR_ERROR_INVALID_OPERATION;
     }
-
-    CM_LOG_I("Construct certBackupFileName(%s)", certBackupFileName);
-
     return CM_SUCCESS;
 }
 
@@ -506,8 +497,5 @@ int32_t CmGetCertBackupFilePath(const X509 *userCertX509, uint32_t userId, char 
         CM_LOG_E("Call snprintf_s return failed");
         ret = CMR_ERROR_INVALID_OPERATION;
     }
-
-    CM_LOG_I("Construct backupFilePath(%s)", backupFilePath);
-
     return ret;
 }

@@ -301,7 +301,7 @@ static int32_t MergeUserPathList(const struct CmMutableBlob *callerPathList,
 {
     uint32_t uidCount = callerPathList->size + sysServicePathList->size;
     if (uidCount == 0) {
-        CM_LOG_I("caller and system service dir is empty");
+        CM_LOG_D("caller and system service dir is empty");
         return CM_SUCCESS;
     }
 
@@ -437,7 +437,7 @@ int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlo
 
         uint32_t matchIndex = CmGetMatchedCertIndex(&certFileList, certUri);
         if ((matchIndex == MAX_COUNT_CERTIFICATE) || (matchIndex == certFileList.size)) {
-            CM_LOG_I("certFile of certUri don't matched");
+            CM_LOG_D("certFile of certUri don't matched");
             ret = CM_SUCCESS;
             break;
         }
@@ -613,13 +613,11 @@ int32_t CmRmUserCert(const char *usrCertConfigFilepath)
         CM_LOG_E("CmFileRead read size 0 invalid ,fail");
         return CM_FAILURE;
     }
-    CM_LOG_I("CmFileRead read usrCertBakeupFilePath: %s", usrCertBakeupFilePath);
 
     ret = CmFileRemove(NULL, (const char *)usrCertBakeupFilePath);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Remove cert bakeup file(%s) fail", usrCertBakeupFilePath);
+        CM_LOG_E("Remove cert bakeup file fail");
     }
-    CM_LOG_I("CmRmUserCert usrCertBakeupFilePath: %s success", usrCertBakeupFilePath);
     return ret;
 }
 

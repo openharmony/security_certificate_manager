@@ -270,7 +270,7 @@ static int32_t RefreshAuthList(const char *path, const char *fileName, uint32_t 
     }
 
     if (!isAuthListExist && !isAdd) {
-        CM_LOG_I("auth list file not exit when delete uid");
+        CM_LOG_D("auth list file not exit when delete uid");
         return CM_SUCCESS; /* auth list file not exit when delete uid */
     }
 
@@ -302,7 +302,7 @@ static int32_t FormatAppUidList(const struct CmBlob *list, struct CmAppUidList *
 
     if (count == 0) {
         appUidList->appUidCount = 0;
-        CM_LOG_I("auth list has no auth uid");
+        CM_LOG_D("auth list has no auth uid");
         return CM_SUCCESS; /* has no auth uid */
     }
 
@@ -371,7 +371,7 @@ int32_t CmGetAuthList(const struct CmContext *context, const struct CmBlob *uri,
     /* auth list file not exist */
     ret = CmIsFileExist(authListPath, (char *)uri->data);
     if (ret != CM_SUCCESS) {
-        CM_LOG_I("auth list file not exist.");
+        CM_LOG_D("auth list file not exist.");
         appUidList->appUidCount = 0;
         return CM_SUCCESS;
     }

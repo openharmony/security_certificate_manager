@@ -36,7 +36,7 @@ SystemEventSubscriber::SystemEventSubscriber(const OHOS::EventFwk::CommonEventSu
 
 void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData &data)
 {
-    CM_LOG_I("SystemEventSubscriber::OnReceiveEvent");
+    CM_LOG_D("SystemEventSubscriber::OnReceiveEvent");
 
     struct CmContext context;
     context.uid = INVALID_VALUE;
@@ -48,11 +48,11 @@ void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData
         int userId = 0;
         OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(context.uid, userId);
         context.userId = static_cast<uint32_t>(userId);
-        CM_LOG_I("CmService package removed: uid is %u userId is %u", context.uid, context.userId);
+        CM_LOG_D("CmService package removed: uid is %u userId is %u", context.uid, context.userId);
         CmDeleteProcessInfo(&context);
     } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
         context.userId = static_cast<uint32_t>(data.GetCode());
-        CM_LOG_I("CmService user removed: userId is %d", context.userId);
+        CM_LOG_D("CmService user removed: userId is %d", context.userId);
         CmDeleteProcessInfo(&context);
     }
 }

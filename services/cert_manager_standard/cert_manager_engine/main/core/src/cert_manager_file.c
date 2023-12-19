@@ -79,7 +79,7 @@ static int32_t MallocFileNames(struct CmMutableBlob **fNames, const char *path, 
 {
     int32_t fileNums = GetNumberOfFiles(path);
     if (fileNums == 0) {
-        CM_LOG_I("dir is empty");
+        CM_LOG_D("dir is empty");
         return CM_SUCCESS;
     }
 
@@ -121,7 +121,7 @@ static int32_t GetFileNames(const char *path, struct CmMutableBlob *fNames, uint
     while (CmGetDirFile(d, &dire) == CMR_OK) {
         /* get fileCount files first, verify in follow-up process, no need return err code */
         if (i >= fileCount) {
-            CM_LOG_I("only get %u certfiles", fileCount);
+            CM_LOG_D("only get %u certfiles", fileCount);
             break;
         }
 

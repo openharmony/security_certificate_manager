@@ -114,7 +114,7 @@ static napi_value GetPadding(napi_env env, napi_value object, uint32_t *paddingR
     napi_valuetype type = napi_undefined;
     NAPI_CALL(env, napi_typeof(env, padding, &type));
     if (type == napi_undefined) {
-        CM_LOG_I("padding is undefined, set padding value is default");
+        CM_LOG_D("padding is undefined, set padding value is default");
         *paddingRet = CM_PADDING_PSS;
         return GetInt32(env, 0);
     }
@@ -161,7 +161,7 @@ static napi_value GetDigest(napi_env env, napi_value object, uint32_t *digestRet
     napi_valuetype type = napi_undefined;
     NAPI_CALL(env, napi_typeof(env, digest, &type));
     if (type == napi_undefined) {
-        CM_LOG_I("digest is undefined, set digest value is default");
+        CM_LOG_D("digest is undefined, set digest value is default");
         *digestRet = CM_DIGEST_SHA256;
         return GetInt32(env, 0);
     }

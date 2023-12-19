@@ -247,7 +247,7 @@ int32_t CmFileRemove(const char *path, const char *fileName)
 int32_t CmMakeDir(const char *path)
 {
     if ((access(path, F_OK)) != -1) {
-        CM_LOG_I("path exist");
+        CM_LOG_D("path exist");
         return CMR_OK;
     }
 
@@ -267,7 +267,7 @@ int32_t CmUserBakupMakeDir(const char *path, const mode_t *mode)
     mode_t modeTmp = S_IRWXU | S_IROTH | S_IXOTH; /* The default directory permission is 0705 */
 
     if ((access(path, F_OK)) != -1) {
-        CM_LOG_I("path exist");
+        CM_LOG_D("path exist");
         return CMR_OK;
     }
 
@@ -417,7 +417,7 @@ int32_t CmUidLayerGetFileCountAndNames(const char *path, struct CmBlob *fileName
 {
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
-        CM_LOG_I("Uid layer dir is not exist");
+        CM_LOG_D("Uid layer dir is not exist");
         return CM_SUCCESS;
     }
     DIR *dir = opendir(path);
@@ -468,7 +468,7 @@ int32_t CmUserIdLayerGetFileCountAndNames(const char *path, struct CmBlob *fileN
     char userIdPath[CM_MAX_FILE_NAME_LEN] = { 0 };
     /* do nothing when dir is not exist */
     if (CmIsDirExist(path) != CMR_OK) {
-        CM_LOG_I("UserId layer dir is not exist");
+        CM_LOG_D("UserId layer dir is not exist");
         return CM_SUCCESS;
     }
     DIR *dir = opendir(path);

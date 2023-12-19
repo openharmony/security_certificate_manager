@@ -68,7 +68,7 @@ static int32_t CmReadRequestReply(MessageParcel &reply, struct CmBlob *outBlob)
 {
     int32_t ret = reply.ReadInt32();
     if (ret != CM_SUCCESS) {
-        CM_LOG_I("CmReadRequestReply start");
+        CM_LOG_D("CmReadRequestReply start");
         return ret;
     }
 
@@ -139,7 +139,7 @@ int32_t SendRequest(enum CertManagerInterfaceCode type, const struct CmBlob *inB
 void OnDemandLoadCertManagerCallback::OnLoadSystemAbilitySuccess(int32_t systemAbilityId,
     const sptr<IRemoteObject> &remoteObject)
 {
-    CM_LOG_I("OnLoadSystemAbility Success systemAbilityId: %d, IRemoteObject result:%s",
+    CM_LOG_D("OnLoadSystemAbility Success systemAbilityId: %d, IRemoteObject result:%s",
         systemAbilityId, ((remoteObject != nullptr) ? "succeed" : "failed"));
     promise_.set_value(remoteObject);
 }

@@ -106,7 +106,7 @@ static int32_t CreateCertPathList(const char *useridPath, struct CmMutableBlob *
     }
 
     if (uidCount == 0) {
-        CM_LOG_I("dir is empty");
+        CM_LOG_D("dir is empty");
         return CM_SUCCESS;
     }
 
@@ -255,7 +255,7 @@ static int32_t CreateCertFile(struct CertFileInfo *cFileList, const char *path, 
 
     int32_t fileNums = GetCertCount(path);
     if (fileNums == 0) {
-        CM_LOG_I("no cert file in path");
+        CM_LOG_D("no cert file in path");
         return CM_SUCCESS;
     }
 
@@ -300,7 +300,7 @@ static int32_t CreateCertFile(struct CertFileInfo *cFileList, const char *path, 
 int32_t CreateCertFileList(const struct CmMutableBlob *pathList, struct CmMutableBlob *certFileList)
 {
     if (pathList->size == 0) {
-        CM_LOG_I("dir is empty");
+        CM_LOG_D("dir is empty");
         return CM_SUCCESS;
     }
 
@@ -520,7 +520,7 @@ void CmFreeCertBlob(struct CertBlob *certBlob)
 uint32_t CmGetMatchedCertIndex(const struct CmMutableBlob *certFileList, const struct CmBlob *certUri)
 {
     if (certFileList->size == 0) {
-        CM_LOG_I("no cert file  exist");
+        CM_LOG_D("no cert file  exist");
         return MAX_COUNT_CERTIFICATE;
     }
 
