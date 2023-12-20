@@ -106,7 +106,6 @@ static int32_t CreateCertPathList(const char *useridPath, struct CmMutableBlob *
     }
 
     if (uidCount == 0) {
-        CM_LOG_D("dir is empty");
         return CM_SUCCESS;
     }
 
@@ -300,7 +299,6 @@ static int32_t CreateCertFile(struct CertFileInfo *cFileList, const char *path, 
 int32_t CreateCertFileList(const struct CmMutableBlob *pathList, struct CmMutableBlob *certFileList)
 {
     if (pathList->size == 0) {
-        CM_LOG_D("dir is empty");
         return CM_SUCCESS;
     }
 

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-
 #include "hisysevent_wrapper.h"
+
 #include "hisysevent.h"
 
 #include "cm_log.h"

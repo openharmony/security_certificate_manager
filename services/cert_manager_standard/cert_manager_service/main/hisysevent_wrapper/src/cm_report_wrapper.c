@@ -15,32 +15,50 @@
 
 #include "cm_report_wrapper.h"
 
-#include "cert_manager_check.h"
 #include "cm_log.h"
+#include "cm_type.h"
 
 static int32_t ReportFaultEvent(const char *funcName, const struct CmContext *cmContext,
     const char *name, int32_t errorCode)
 {
-    if (errorCode == CM_SUCCESS) {
-        return CM_SUCCESS;
-    }
-    int32_t ret;
-
     struct EventValues eventValues = { cmContext->userId, cmContext->uid, name, errorCode };
-    ret = WriteEvent(funcName, &eventValues);
+    int32_t ret = WriteEvent(funcName, &eventValues);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("ReportFaultEvent failed, ret = %d", ret);
     }
     return ret;
 }
 
+static bool CheckCertName(const char *certName, uint32_t len)
+{
+    if ((len == 0) || (len > MAX_LEN_URI)) {
+        return false;
+    }
+
+    for (uint32_t i = 1; i < len; ++i) { /* from index 1 has '\0' */
+        if (certName[i] == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void CmReport(const char *funcName, const struct CmContext *cmContext,
     const struct CmBlob *certName, int32_t errorCode)
 {
-    int32_t ret = CheckUri(certName);
-    if (ret != CM_SUCCESS) {
+    if (errorCode == CM_SUCCESS) {
+        return;
+    }
+
+    if ((certName == NULL) || (certName->data == NULL)) {
         (void)ReportFaultEvent(funcName, cmContext, "NULL", errorCode);
         return;
     }
+
+    if (!CheckCertName((char *)certName->data, certName->size)) {
+        CM_LOG_E("certName is invalid");
+        return;
+    }
+
     (void)ReportFaultEvent(funcName, cmContext, (char *)certName->data, errorCode);
 }

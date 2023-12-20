@@ -191,7 +191,6 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
         return CM_SYSTEM_ERROR;
     }
 
-    CM_LOG_D("OnRemoteRequest code:%u", code);
     // check the code is valid
     if (code < static_cast<uint32_t>(CM_MSG_BASE) || code >= static_cast<uint32_t>(CM_MSG_MAX)) {
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -228,7 +227,6 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
         CM_LOG_E("copy remote data failed!");
         return CMR_ERROR_INVALID_OPERATION;
     }
-    CM_LOG_D("OnRemoteRequest: %d", NO_ERROR);
     CM_FREE_BLOB(srcData);
     return NO_ERROR;
 }
@@ -291,7 +289,6 @@ void CertManagerService::OnStop()
 
 void CertManagerService::DelayUnload()
 {
-    CM_LOG_D("dalay unload certmanager SA begin");
     auto unloadTask = []() {
         CM_LOG_D("do unload task");
         auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();

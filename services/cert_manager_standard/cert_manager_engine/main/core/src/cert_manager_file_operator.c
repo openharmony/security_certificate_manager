@@ -122,7 +122,6 @@ static uint32_t FileRead(const char *fileName, uint32_t offset, uint8_t *buf, ui
 static uint32_t FileSize(const char *fileName)
 {
     if (IsFileExist(fileName) != CMR_OK) {
-        CM_LOG_E("file IsFileExist fail.");
         return 0;
     }
 
@@ -247,7 +246,6 @@ int32_t CmFileRemove(const char *path, const char *fileName)
 int32_t CmMakeDir(const char *path)
 {
     if ((access(path, F_OK)) != -1) {
-        CM_LOG_D("path exist");
         return CMR_OK;
     }
 
@@ -267,7 +265,6 @@ int32_t CmUserBakupMakeDir(const char *path, const mode_t *mode)
     mode_t modeTmp = S_IRWXU | S_IROTH | S_IXOTH; /* The default directory permission is 0705 */
 
     if ((access(path, F_OK)) != -1) {
-        CM_LOG_D("path exist");
         return CMR_OK;
     }
 

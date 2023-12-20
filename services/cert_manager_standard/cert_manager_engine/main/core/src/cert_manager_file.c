@@ -79,7 +79,6 @@ static int32_t MallocFileNames(struct CmMutableBlob **fNames, const char *path, 
 {
     int32_t fileNums = GetNumberOfFiles(path);
     if (fileNums == 0) {
-        CM_LOG_D("dir is empty");
         return CM_SUCCESS;
     }
 

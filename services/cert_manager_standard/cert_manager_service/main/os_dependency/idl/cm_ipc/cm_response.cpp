@@ -45,7 +45,6 @@ void CmSendResponse(const struct CmContext *context, int32_t result, const struc
     } else {
         reply->WriteUint32(response->size);
         reply->WriteBuffer(response->data, static_cast<size_t>(response->size));
-        CM_LOG_D("CmSendResponse before result = %d, size = %u", result, response->size);
     }
 }
 
@@ -60,7 +59,6 @@ int32_t CmGetProcessInfoForIPC(struct CmContext *cmContext)
     auto callingUid = IPCSkeleton::GetCallingUid();
 
     OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(callingUid, userId);
-    CM_LOG_D("CmGetProcessInfoForIPC callingUid = %d, userId = %d", callingUid, userId);
 
     cmContext->uid = (uint32_t)callingUid;
     cmContext->userId = static_cast<uint32_t>(userId);
