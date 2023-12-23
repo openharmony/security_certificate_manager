@@ -196,7 +196,8 @@ static int32_t ConvertCertDataToPem(const struct CmBlob *userCertData, const X50
         }
         *userCertPemDataNeedFree = true;
     } else {
-        userCertPemData = (struct CmBlob *)userCertData;
+        userCertPemData->data = userCertData->data;
+        userCertPemData->size = userCertData->size;
         *userCertPemDataNeedFree = false;
     }
 

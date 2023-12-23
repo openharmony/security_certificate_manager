@@ -315,6 +315,31 @@ static const uint8_t g_certData05[] = { /* 2e0g9ue5 */
     0x59, 0xae, 0x6b, 0x04, 0x1b
 };
 
+static char g_certData06[] =
+    "-----BEGIN CERTIFICATE-----\r\n"
+    "MIID6jCCAtKgAwIBAgIIIM2q/TmRoLcwDQYJKoZIhvcNAQELBQAwWjELMAkGA1UE\r\n"
+    "BhMCRU4xEDAOBgNVBAgTB0VuZ2xhbmQxDzANBgNVBAcTBkxvbmRvbjEMMAoGA1UE\r\n"
+    "ChMDdHMyMQwwCgYDVQQLEwN0czIxDDAKBgNVBAMTA3RzMjAeFw0yMzEyMDUwNzM5\r\n"
+    "MDBaFw0yNDEwMzEyMzU5MDBaMGExCzAJBgNVBAYTAkNOMRAwDgYDVQQIEwdKaWFu\r\n"
+    "Z3N1MRAwDgYDVQQHEwdOYW5qaW5nMQwwCgYDVQQKEwN0czMxDDAKBgNVBAsTA3Rz\r\n"
+    "MzESMBAGA1UEAxMJMTI3LjAuMC4xMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB\r\n"
+    "CgKCAQEAtt+2QxUevbolYLp51QGcUpageI4fwGLIqv4fj4aoVnHFOOBqVOVpfCLR\r\n"
+    "p26LFV/F8ebwPyo8YEBKSwXzMD1573rMSbaH9BalscH5lZYAbetXoio6YRvzlcmc\r\n"
+    "rVvLBNMeVnxY86xHpo0MTNyP7W024rZsxWO98xFQVdoiaBC+7+midlisx2Y+7u0j\r\n"
+    "zT9GjeUP6JLdLFUZJKUPSTK3jVzw9v1eZQZKYoNfU6vFMd6ndtwW6qEnwpzmmX/U\r\n"
+    "T+p5ThAMH593zszlz330nTSXBjIsGkyvOz9gSB0Z0LAuJj06XUNhGL5xKJYKbdI3\r\n"
+    "8MFQFJKvRHfgTAvVsvAvpBUM2DuBKwIDAQABo4GsMIGpMAkGA1UdEwQCMAAwHQYD\r\n"
+    "VR0OBBYEFDfsHTMZwoA6eaDFlBUyDpka+sYtMAsGA1UdDwQEAwID+DAnBgNVHSUE\r\n"
+    "IDAeBggrBgEFBQcDAQYIKwYBBQUHAwIGCCsGAQUFBwMEMBQGA1UdEQQNMAuCCTEy\r\n"
+    "Ny4wLjAuMTARBglghkgBhvhCAQEEBAMCBkAwHgYJYIZIAYb4QgENBBEWD3hjYSBj\r\n"
+    "ZXJ0aWZpY2F0ZTANBgkqhkiG9w0BAQsFAAOCAQEAp5vTvXrt8ZpgRJVtzv9ss0lJ\r\n"
+    "izp1fJf+ft5cDXrs7TSD5oHrSW2vk/ZieIMhexU4LFwhs4OE7jK6pgI48Dseqxx7\r\n"
+    "B/KktxhVMJUmVXd9Ayjp6f+BtZlIk0cArPuoXToXjsV8caTGBXHRdzxpAk/w9syc\r\n"
+    "GYrbH9TrdNMuTizOb+k268oKXUageZNxHmd7YvOXkcNgrd29jzwXKDYYiUa1DISz\r\n"
+    "DnYaJOgPt0B/5izhoWNK7GhJDy9KEuLURcTSWFysbbnljwO9INPT9MmlS83PdAgN\r\n"
+    "iS8VXF4pce1W9U5jH7d7k0JDVSXybebe1iPFphsZpYM/NE+jap+mPy1nTCbf9g==\r\n"
+    "-----END CERTIFICATE-----\r\n";
+
 struct UserCertListResult {
     struct CertAbstract certAbstract;
     bool bExpectResult;
@@ -462,6 +487,7 @@ static uint8_t certAliasBuf01[] = "40dc992e";
 static uint8_t certAliasBuf02[] = "985c1f52";
 static uint8_t certAliasBuf03[] = "1df5a75f";
 static uint8_t certAliasBuf05[] = "2e0g9ue5";
+static uint8_t certAliasBuf06[] = "3a2g6de7";
 
 struct CmBlob certAlias[] = {
     { sizeof(certAliasBuf01), certAliasBuf01 },
@@ -750,6 +776,27 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest011, TestSize.Level0)
 
     ret = CmInstallUserTrustedCert(&userCertTemp, &edgeAlias, &largeUri);
     EXPECT_EQ(ret, CM_FAILURE) << "Normal user cert Install test failed, recode:" << ret;
+}
+
+/**
+ * @tc.name: InstallUserCertTest012
+ * @tc.desc: Test CertManager Install pem user cert interface base function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MJ8 /SR000H09N7
+ */
+HWTEST_F(CmUserCertTest, InstallUserCertTest012, TestSize.Level0)
+{
+    int32_t ret;
+    uint8_t uriBuf012[MAX_URI_LEN] = {0};
+    struct CmBlob certUri = { sizeof(uriBuf012), uriBuf012 };
+
+    struct CmBlob userCert012 = { strlen(g_certData06) + 1, reinterpret_cast<uint8_t *>(g_certData06) };
+    struct CmBlob certAlias012 = { sizeof(certAliasBuf06), certAliasBuf06 };
+    ret = CmInstallUserTrustedCert(&userCert012, &certAlias012, &certUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Install test failed, recode:" << ret;
+
+    ret = CmUninstallUserTrustedCert(&certUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Install test failed, recode:" << ret;
 }
 
 /**
