@@ -301,7 +301,6 @@ static int32_t MergeUserPathList(const struct CmMutableBlob *callerPathList,
 {
     uint32_t uidCount = callerPathList->size + sysServicePathList->size;
     if (uidCount == 0) {
-        CM_LOG_D("caller and system service dir is empty");
         return CM_SUCCESS;
     }
 

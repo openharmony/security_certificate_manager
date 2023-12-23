@@ -277,7 +277,6 @@ finally:
 static int32_t LoadTreeStatus(struct RbTree *tree, pthread_rwlock_t *treeLock, uint8_t *buf, uint32_t sz)
 {
     int32_t rc = CMR_OK;
-    CM_LOG_W("LoadTreeStatus6");
     if (buf == NULL || sz == 0) {
         /* file does not exist or is empty */
         CM_LOG_D("Status file does not exist or is empty.");

@@ -431,7 +431,7 @@ static int32_t CmGetCertMinSeqNum(uint32_t userId, unsigned long certSubjectName
             CM_LOG_D("backupFileSearchPath is exist");
             continue;
         } else {
-            CM_LOG_E("backupFileSearchPath is not exist");
+            CM_LOG_D("backupFileSearchPath is not exist");
             sequenceNumber = seq;
             break;
         }
