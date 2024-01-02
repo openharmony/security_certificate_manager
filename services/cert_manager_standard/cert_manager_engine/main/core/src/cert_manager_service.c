@@ -468,7 +468,6 @@ int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem)
 {
     int32_t ret = CM_SUCCESS;
     char *pemCert = NULL;
-    long pemCertLen = 0;
 
     BIO *bio = BIO_new(BIO_s_mem());
     if (!bio) {
@@ -483,7 +482,7 @@ int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem)
             break;
         }
 
-        pemCertLen = BIO_get_mem_data(bio, &pemCert);
+        long pemCertLen = BIO_get_mem_data(bio, &pemCert);
         if (pemCertLen <= 0) {
             perror("Error getting PEM data");
             ret = CM_FAILURE;
@@ -496,7 +495,7 @@ int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem)
             ret = CMR_ERROR_MALLOC_FAIL;
             break;
         }
-        userCertPem->size = pemCertLen;
+        userCertPem->size = (uint32_t)pemCertLen;
         (void)memcpy_s(userCertPem->data, userCertPem->size, pemCert, pemCertLen);
     } while (0);
 

@@ -68,7 +68,7 @@ static int32_t GetUpdateFlag(uint8_t *updateFlag)
     if (readSize == 0) {
         CM_LOG_D("Read updateFlag file failed, the updateFlag counts as false");
         *updateFlag = false;
-    } else if (sizeof(updateFlagTmp) == readSize) {
+    } else if (readSize == sizeof(updateFlagTmp)) {
         *updateFlag = updateFlagTmp;
     } else {
         CM_LOG_E("Failed read UpdateFlag");
@@ -186,10 +186,8 @@ int32_t CmReadCertData(uint32_t store, const struct CmContext *context, const st
 static int32_t ConvertCertDataToPem(const struct CmBlob *userCertData, const X509 *userCertX509,
     struct CmBlob *userCertPemData, bool *userCertPemDataNeedFree)
 {
-    int32_t ret = CM_SUCCESS;
-
     if (userCertData->data[0] != '-') {
-        ret = CmX509ToPEM(userCertX509, userCertPemData);
+        int32_t ret = CmX509ToPEM(userCertX509, userCertPemData);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmX509ToPEM fail");
             return CM_FAILURE;
