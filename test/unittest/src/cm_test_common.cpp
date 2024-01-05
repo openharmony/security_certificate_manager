@@ -248,52 +248,61 @@ bool CompareCredential(const struct Credential *firstCredential, const struct Cr
             (firstCredential->credData.size == secondCredential->credData.size));
 }
 
-int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t store)
+static int32_t ConstructAppCertData(uint32_t alg, struct CmBlob *appCert)
 {
-    struct CmBlob appCert = { 0, NULL };
     switch (alg) {
         case CERT_KEY_ALG_RSA:
-            appCert.size = sizeof(g_rsa2048P12CertInfo);
-            appCert.data = const_cast<uint8_t *>(g_rsa2048P12CertInfo);
+            appCert->size = sizeof(g_rsa2048P12CertInfo);
+            appCert->data = const_cast<uint8_t *>(g_rsa2048P12CertInfo);
             break;
         case CERT_KEY_ALG_ECC:
-            appCert.size = sizeof(g_eccP256P12CertInfo);
-            appCert.data = const_cast<uint8_t *>(g_eccP256P12CertInfo);
+            appCert->size = sizeof(g_eccP256P12CertInfo);
+            appCert->data = const_cast<uint8_t *>(g_eccP256P12CertInfo);
             break;
         case CERT_KEY_ALG_RSA_512:
-            appCert.size = sizeof(g_rsa512P12CertInfo);
-            appCert.data = const_cast<uint8_t *>(g_rsa512P12CertInfo);
+            appCert->size = sizeof(g_rsa512P12CertInfo);
+            appCert->data = const_cast<uint8_t *>(g_rsa512P12CertInfo);
             break;
         case CERT_KEY_ALG_RSA_1024:
-            appCert.size = sizeof(g_rsa1024P12CertInfo);
-            appCert.data = const_cast<uint8_t *>(g_rsa1024P12CertInfo);
+            appCert->size = sizeof(g_rsa1024P12CertInfo);
+            appCert->data = const_cast<uint8_t *>(g_rsa1024P12CertInfo);
             break;
         case CERT_KEY_ALG_RSA_3072:
-            appCert.size = sizeof(g_rsa3072P12CertInfo);
-            appCert.data = const_cast<uint8_t *>(g_rsa3072P12CertInfo);
+            appCert->size = sizeof(g_rsa3072P12CertInfo);
+            appCert->data = const_cast<uint8_t *>(g_rsa3072P12CertInfo);
             break;
         case CERT_KEY_ALG_RSA_4096:
-            appCert.size = sizeof(g_rsa4096P12CertInfo);
-            appCert.data = const_cast<uint8_t *>(g_rsa4096P12CertInfo);
+            appCert->size = sizeof(g_rsa4096P12CertInfo);
+            appCert->data = const_cast<uint8_t *>(g_rsa4096P12CertInfo);
             break;
         case CERT_KEY_ALG_ECC_P224:
-            appCert.size = sizeof(g_eccP224P12CertInfo);
-            appCert.data = const_cast<uint8_t *>(g_eccP224P12CertInfo);
+            appCert->size = sizeof(g_eccP224P12CertInfo);
+            appCert->data = const_cast<uint8_t *>(g_eccP224P12CertInfo);
             break;
         case CERT_KEY_ALG_ECC_P384:
-            appCert.size = sizeof(g_eccP384P12CertInfo);
-            appCert.data = const_cast<uint8_t *>(g_eccP384P12CertInfo);
+            appCert->size = sizeof(g_eccP384P12CertInfo);
+            appCert->data = const_cast<uint8_t *>(g_eccP384P12CertInfo);
             break;
         case CERT_KEY_ALG_ECC_P521:
-            appCert.size = sizeof(g_eccP521P12CertInfo);
-            appCert.data = const_cast<uint8_t *>(g_eccP521P12CertInfo);
+            appCert->size = sizeof(g_eccP521P12CertInfo);
+            appCert->data = const_cast<uint8_t *>(g_eccP521P12CertInfo);
             break;
         case CERT_KEY_ALG_ED25519:
-            appCert.size = sizeof(g_ed25519P12CertInfo);
-            appCert.data = const_cast<uint8_t *>(g_ed25519P12CertInfo);
+            appCert->size = sizeof(g_ed25519P12CertInfo);
+            appCert->data = const_cast<uint8_t *>(g_ed25519P12CertInfo);
             break;
         default:
             return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    return CM_SUCCESS;
+}
+
+int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t store)
+{
+    struct CmBlob appCert = { 0, NULL };
+    int32_t ret = ConstructAppCertData(alg, &appCert);
+    if (ret != CM_SUCCESS) {
+        return ret;
     }
 
     struct CmBlob appCertPwd = { sizeof(g_certPwd), const_cast<uint8_t *>(g_certPwd) };
