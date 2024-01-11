@@ -19,5 +19,5 @@ using namespace std;
 
 OnDemandLoadCertManagerCallback::OnDemandLoadCertManagerCallback(string servers) : servers(servers)
 {
-    CM_LOG_E("Servers %s on demand Callback constructor success", servers.c_str());
+    CM_LOG_I("Servers %s on demand Callback constructor success", servers.c_str());
 }
