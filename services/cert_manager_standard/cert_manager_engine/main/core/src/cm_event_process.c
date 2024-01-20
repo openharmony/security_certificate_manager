@@ -91,7 +91,8 @@ static int32_t CmTraversalDirAction(const struct CmContext *context, const char 
 
     switch (store) {
         case CM_CREDENTIAL_STORE :
-            DeleteAuth(context, fileName, false); /* fall-through */
+            DeleteAuth(context, fileName, false);
+            __attribute__((fallthrough));
         case CM_PRI_CREDENTIAL_STORE :
             ret = CmTraversalDirActionCredential(filePath, fileName);
             break;
