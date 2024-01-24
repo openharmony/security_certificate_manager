@@ -96,11 +96,14 @@ static uint32_t FileRead(const char *fileName, uint32_t offset, uint8_t *buf, ui
     if (IsFileExist(fileName) != CMR_OK) {
         return 0;
     }
+    if (strstr(fileName, "../") != NULL) {
+        CM_LOG_E("invalid filePath");
+        return 0;
+    }
 
     char filePath[PATH_MAX + 1] = {0};
-    (void)realpath(fileName, filePath);
-    if (strstr(filePath, "../") != NULL) {
-        CM_LOG_E("invalid filePath");
+    if (realpath(fileName, filePath) == NULL) {
+        CM_LOG_E("invalid filepath: %s", fileName);
         return 0;
     }
 
@@ -136,9 +139,26 @@ static uint32_t FileSize(const char *fileName)
     return (uint32_t)fileStat.st_size;
 }
 
-int32_t OpenWriteFile(const char *pathname, int32_t flags, mode_t mode, const uint8_t *buf, uint32_t len)
+static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *buf, uint32_t len, bool isWriteBakFile)
 {
-    int32_t fd = open(pathname, flags, mode);
+    (void)offset;
+    char filePath[PATH_MAX + 1] = {0};
+    if (memcpy_s(filePath, sizeof(filePath) - 1, fileName, strlen(fileName)) != EOK) {
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+    if (strstr(filePath, "../") != NULL) {
+        CM_LOG_E("invalid filePath");
+        return CMR_ERROR_NOT_EXIST;
+    }
+    /* Ignore return value: realpath will return null in musl c when the file does not exist */
+    (void)realpath(fileName, filePath);
+
+    int32_t fd;
+    if (isWriteBakFile) {
+        fd = open(filePath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    } else {
+        fd = open(filePath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    }
     if (fd < 0) {
         CM_LOG_E("open file failed, errno = 0x%x", errno);
         return CMR_ERROR_OPEN_FILE_FAIL;
@@ -156,49 +176,6 @@ int32_t OpenWriteFile(const char *pathname, int32_t flags, mode_t mode, const ui
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
     close(fd);
-    return CMR_OK;
-}
-
-static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *buf, uint32_t len)
-{
-    (void)offset;
-    char filePath[PATH_MAX + 1] = { 0 };
-    if (memcpy_s(filePath, sizeof(filePath) - 1, fileName, strlen(fileName)) != EOK) {
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-    (void)realpath(fileName, filePath);
-    if (strstr(filePath, "../") != NULL) {
-        CM_LOG_E("invalid filePath");
-        return CMR_ERROR_NOT_EXIST;
-    }
-    int32_t ret = OpenWriteFile(filePath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR, buf, len);
-    if (ret != CMR_OK) {
-        CM_LOG_E("open and write file failed, ret = %d", ret);
-        return ret;
-    }
-    return CMR_OK;
-}
-
-static int32_t UserBakupFileWrite(const char *fileName, uint32_t offset, const uint8_t *buf, uint32_t len)
-{
-    (void)offset;
-    char filePath[PATH_MAX + 1] = {0};
-    if (memcpy_s(filePath, sizeof(filePath) - 1, fileName, strlen(fileName)) != EOK) {
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-    (void)realpath(fileName, filePath);
-    if (strstr(filePath, "../") != NULL) {
-        CM_LOG_E("invalid filePath");
-        return CMR_ERROR_NOT_EXIST;
-    }
-
-    int32_t ret =
-        OpenWriteFile(filePath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH, buf, len);
-    if (ret != CMR_OK) {
-        CM_LOG_E("open and write file failed, ret = %d", ret);
-        return ret;
-    }
-
     return CMR_OK;
 }
 
@@ -343,7 +320,7 @@ int32_t CmFileWrite(const char *path, const char *fileName, uint32_t offset, con
         return ret;
     }
 
-    ret = FileWrite(fullFileName, offset, buf, len);
+    ret = FileWrite(fullFileName, offset, buf, len, false);
     CM_FREE_PTR(fullFileName);
     return ret;
 }
@@ -360,7 +337,7 @@ int32_t CmUserBackupFileWrite(const char *path, const char *fileName, uint32_t o
         return ret;
     }
 
-    ret = UserBakupFileWrite(fullFileName, offset, buf, len);
+    ret = FileWrite(fullFileName, offset, buf, len, true);
     CM_FREE_PTR(fullFileName);
     return ret;
 }
