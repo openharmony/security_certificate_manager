@@ -94,11 +94,14 @@ static uint32_t FileRead(const char *fileName, uint32_t offset, uint8_t *buf, ui
     if (IsFileExist(fileName) != CMR_OK) {
         return 0;
     }
+    if (strstr(fileName, "../") != NULL) {
+        CM_LOG_E("invalid filePath");
+        return 0;
+    }
 
     char filePath[PATH_MAX + 1] = {0};
-    (void)realpath(fileName, filePath);
-    if (strstr(filePath, "../") != NULL) {
-        CM_LOG_E("invalid filePath");
+    if (realpath(fileName, filePath) == NULL) {
+        CM_LOG_E("invalid filepath: %s", fileName);
         return 0;
     }
 
@@ -142,11 +145,12 @@ static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *b
     if (memcpy_s(filePath, sizeof(filePath) - 1, fileName, strlen(fileName)) != EOK) {
         return CMR_ERROR_INVALID_OPERATION;
     }
-    (void)realpath(fileName, filePath);
     if (strstr(filePath, "../") != NULL) {
         CM_LOG_E("invalid filePath");
         return CMR_ERROR_NOT_EXIST;
     }
+    /* Ignore return value: realpath will return null in musl c when the file does not exist */
+    (void)realpath(fileName, filePath);
 
     int32_t fd = open(filePath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
     if (fd < 0) {
