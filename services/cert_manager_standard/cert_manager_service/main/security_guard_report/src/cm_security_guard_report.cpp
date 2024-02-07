@@ -39,8 +39,8 @@ uint32_t CmGetCallingUid(void)
 
 void InfoToJson(const struct CmReportSGInfo *info, char *json, int32_t jsonLen)
 {
-    int32_t ret = snprintf_s(json, jsonLen, jsonLen - 1, "{\\\"action\\\":\\\"%s\\\", \\\"uid\\\":%d, "
-        "\\\"result\\\":%d, \\\"name\\\":\\\"%s\\\", \\\"isSetGrantUid\\\":%d, \\\"grantUid\\\":%d,"
+    int32_t ret = snprintf_s(json, jsonLen, jsonLen - 1, "{\\\"action\\\":\\\"%s\\\", \\\"uid\\\":%u, "
+        "\\\"result\\\":%d, \\\"name\\\":\\\"%s\\\", \\\"isSetGrantUid\\\":%d, \\\"grantUid\\\":%u,"
         "\\\"isSetStatus\\\":%d, \\\"status\\\":%d}", info->action, info->uid, info->result, info->name,
         info->isSetGrantUid ? 1 : 0, info->grantUid, info->isSetStatus ? 1 : 0, info->status ? 1 : 0);
     if (ret < 0) {
