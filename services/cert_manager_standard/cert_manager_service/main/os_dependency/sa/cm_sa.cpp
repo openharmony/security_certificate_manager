@@ -255,7 +255,7 @@ void CertManagerService::OnStart(const SystemAbilityOnDemandReason& startReason)
     if (startReason.GetId() == OnDemandReasonId::COMMON_EVENT &&
         startReason.GetName() == USER_REMOVED_EVENT) {
         struct CmContext context = { 0, INVALID_VALUE, {0} };
-        context.userId = startReason.GetExtraData().GetCode();
+        context.userId = (uint32_t)startReason.GetExtraData().GetCode();
         CM_LOG_D("user remove event, userId = %u", context.userId);
         CmDeleteProcessInfo(&context);
     }

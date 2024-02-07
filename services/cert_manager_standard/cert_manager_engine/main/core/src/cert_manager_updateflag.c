@@ -88,8 +88,6 @@ static int32_t GetUpdateFlag(uint8_t *updateFlag)
  */
 static int32_t SetUpdateFlag(uint8_t updateFlag)
 {
-    uint32_t writeSize = 0;
-
     /* Create an update flag directory */
     if (CmMakeDir(UPDATE_FLAG_DIR_PATH) == CMR_ERROR_MAKE_DIR_FAIL) {
         CM_LOG_E("Failed to create UPDATE_FLAG_DIR_PATH");
@@ -97,13 +95,11 @@ static int32_t SetUpdateFlag(uint8_t updateFlag)
     }
 
     /* Writes the update flag */
-    writeSize = CmFileWrite(UPDATE_FLAG_DIR_PATH, UPDATE_FLAG_FILE_NAME, 0, &updateFlag, sizeof(updateFlag));
-    if (writeSize != sizeof(updateFlag)) {
+    int32_t ret = CmFileWrite(UPDATE_FLAG_DIR_PATH, UPDATE_FLAG_FILE_NAME, 0, &updateFlag, sizeof(updateFlag));
+    if (ret != CMR_OK) {
         CM_LOG_E("Failed to write updateFlag");
-        return CM_FAILURE;
     }
-
-    return CM_SUCCESS;
+    return ret;
 }
 
 int32_t IsCertNeedBakeup(uint32_t userId, uint32_t uid, const struct CmBlob *certUri, bool *needUpdate)
@@ -222,10 +218,10 @@ int32_t CmConstructContextFromUri(const char *certUri, struct CmContext *context
             ret = CMR_ERROR_INVALID_ARGUMENT;
             break;
         }
-        context->userId = atoi(cmUri.user);
-        context->uid = atoi(cmUri.app);
+        context->userId = (uint32_t)atoi(cmUri.user);
+        context->uid = (uint32_t)atoi(cmUri.app);
         if (snprintf_s(context->packageName, sizeof(context->packageName), sizeof(context->packageName) - 1, "%s",
-                cmUri.object) < 0) {
+            cmUri.object) < 0) {
             CM_LOG_E("Failed to fill context->packageName");
             ret = CMR_ERROR_INVALID_ARGUMENT;
             break;
@@ -240,11 +236,10 @@ int32_t CmConstructContextFromUri(const char *certUri, struct CmContext *context
 static int32_t BakeupUserCert(const X509 *userCertX509, const struct CmBlob *userCert, const struct CmContext *context,
                               const struct CmBlob *certUri)
 {
-    uint32_t ret = CM_SUCCESS;
     char userCertConfigFilePath[CERT_MAX_PATH_LEN] = { 0 };
     char userCertBackupFilePath[CERT_MAX_PATH_LEN] = { 0 };
 
-    ret = CmGetCertConfPath(context->userId, context->uid, certUri, userCertConfigFilePath, CERT_MAX_PATH_LEN);
+    int32_t ret = CmGetCertConfPath(context->userId, context->uid, certUri, userCertConfigFilePath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmGetCertConfPath fail");
         return CM_FAILURE;
