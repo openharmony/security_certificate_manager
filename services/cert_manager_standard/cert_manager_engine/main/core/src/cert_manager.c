@@ -615,7 +615,7 @@ static int32_t RemoveAllConfUidDir(uint32_t userId, const char *uidPath)
     char configUidDirPath[CERT_MAX_PATH_LEN] = { 0 };
     uint32_t uid = (uint32_t)atoi(basename((char *)uidPath));
 
-    uint32_t ret = CmGetCertConfUidDir(userId, uid, configUidDirPath, CERT_MAX_PATH_LEN);
+    int32_t ret = CmGetCertConfUidDir(userId, uid, configUidDirPath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get user cert config file UidDirPath failed, ret = %d", ret);
         return CM_FAILURE;
