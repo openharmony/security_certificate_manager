@@ -27,10 +27,14 @@
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
+#include <unistd.h>
 
 namespace CertmanagerTest {
+constexpr uint32_t SLEEP_TIME = 3;
+
 void SetATPermission(void)
 {
+    static bool firstRun = true;
     const char **perms = new const char *[2]; // 2 permissions
     perms[0] = "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL"; // system_basic
     perms[1] = "ohos.permission.ACCESS_CERT_MANAGER"; // normal
@@ -47,6 +51,11 @@ void SetATPermission(void)
     auto tokenId = GetAccessTokenId(&infoInstance);
     SetSelfTokenID(tokenId);
     OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+    if (firstRun) {
+        system("pidof accesstoken_ser | xargs kill -9");
+        sleep(SLEEP_TIME);
+        firstRun = false;
+    }
     delete[] perms;
 }
 
@@ -313,7 +322,7 @@ int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t s
 
 bool FindCertAbstract(const struct CertAbstract *abstract, const struct CertList *cList)
 {
-    if (abstract == NULL || cList == NULL || cList->certsCount == 0) {
+    if (abstract == nullptr || cList == nullptr || cList->certsCount == 0) {
         return false;
     }
     for (uint32_t i = 0; i < cList->certsCount; ++i) {
