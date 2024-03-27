@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -46,6 +46,9 @@ namespace CMNapi {
         AddInt32Property(env, errorCode, "CM_ERROR_GENERIC", INNER_FAILURE);
         AddInt32Property(env, errorCode, "CM_ERROR_NO_FOUND", NOT_FOUND);
         AddInt32Property(env, errorCode, "CM_ERROR_INCORRECT_FORMAT", INVALID_CERT_FORMAT);
+        AddInt32Property(env, errorCode, "CM_ERROR_CERT_NUM_REACHED_LIMIT", CERT_NUM_REACHED_LIMIT);
+        AddInt32Property(env, errorCode, "CM_ERROR_NO_AUTHORIZATION", NO_AUTHORIZATION);
+        AddInt32Property(env, errorCode, "CM_ERROR_ALIAS_LENGTH_REACHED_LIMIT", ALIAS_LENGTH_REACHED_LIMIT);
     }
 
     static napi_value CreateCMErrorCode(napi_env env)
@@ -110,26 +113,33 @@ extern "C" {
             DECLARE_NAPI_FUNCTION("getSystemTrustedCertificateList", CMNapiGetSystemCertList),
             DECLARE_NAPI_FUNCTION("getSystemTrustedCertificate", CMNapiGetSystemCertInfo),
             DECLARE_NAPI_FUNCTION("setCertificateStatus", CMNapiSetCertStatus),
-            DECLARE_NAPI_FUNCTION("installAppCertificate", CMNapiInstallAppCert),
+            DECLARE_NAPI_FUNCTION("installAppCertificate", CMNapiInstallPublicCert),
+            DECLARE_NAPI_FUNCTION("installPublicCertificate", CMNapiInstallPublicCert),
             DECLARE_NAPI_FUNCTION("uninstallAllAppCertificate", CMNapiUninstallAllAppCert),
-            DECLARE_NAPI_FUNCTION("uninstallAppCertificate", CMNapiUninstallAppCert),
-            DECLARE_NAPI_FUNCTION("getAppCertificateList", CMNapiGetAppCertList),
-            DECLARE_NAPI_FUNCTION("getAppCertificate", CMNapiGetAppCertInfo),
+            DECLARE_NAPI_FUNCTION("uninstallAppCertificate", CMNapiUninstallPublicCert),
+            DECLARE_NAPI_FUNCTION("getAppCertificateList", CMNapiGetAllPublicCertList),
+            DECLARE_NAPI_FUNCTION("getAppCertificate", CMNapiGetPublicCertInfo),
+            DECLARE_NAPI_FUNCTION("uninstallPublicCertificate", CMNapiUninstallPublicCert),
+            DECLARE_NAPI_FUNCTION("getAllPublicCertificates", CMNapiGetAllPublicCertList),
+            DECLARE_NAPI_FUNCTION("getPublicCertificate", CMNapiGetPublicCertInfo),
 
             DECLARE_NAPI_FUNCTION("installUserTrustedCertificate", CMNapiInstallUserTrustedCert),
             DECLARE_NAPI_FUNCTION("uninstallAllUserTrustedCertificate", CMNapiUninstallAllUserTrustedCert),
             DECLARE_NAPI_FUNCTION("uninstallUserTrustedCertificate", CMNapiUninstallUserTrustedCert),
-            DECLARE_NAPI_FUNCTION("getUserTrustedCertificateList", CMNapiGetUserTrustedCertList),
+            DECLARE_NAPI_FUNCTION("getUserTrustedCertificateList", CMNapiGetAllUserTrustedCertList),
+            DECLARE_NAPI_FUNCTION("getAllUserTrustedCertificates", CMNapiGetAllUserTrustedCertList),
             DECLARE_NAPI_FUNCTION("getUserTrustedCertificate", CMNapiGetUserTrustedCertInfo),
             DECLARE_NAPI_FUNCTION("installPrivateCertificate", CMNapiInstallPrivateAppCert),
             DECLARE_NAPI_FUNCTION("uninstallPrivateCertificate", CMNapiUninstallPrivateAppCert),
             DECLARE_NAPI_FUNCTION("getPrivateCertificateList", CMNapiGetPrivateAppCertList),
             DECLARE_NAPI_FUNCTION("getAllAppPrivateCertificates", CMNapiGetPrivateAppCertList),
             DECLARE_NAPI_FUNCTION("getPrivateCertificate", CMNapiGetPrivateAppCertInfo),
-            DECLARE_NAPI_FUNCTION("grantAppCertificate", CMNapiGrantAppCertificate),
+            DECLARE_NAPI_FUNCTION("grantAppCertificate", CMNapiGrantPublicCertificate),
+            DECLARE_NAPI_FUNCTION("grantPublicCertificate", CMNapiGrantPublicCertificate),
             DECLARE_NAPI_FUNCTION("isAuthorizedApp", CMNapiIsAuthorizedApp),
             DECLARE_NAPI_FUNCTION("getAuthorizedAppList", CMNapiGetAuthorizedAppList),
-            DECLARE_NAPI_FUNCTION("removeGrantedAppCertificate", CMNapiRemoveGrantedApp),
+            DECLARE_NAPI_FUNCTION("removeGrantedAppCertificate", CMNapiRemoveGrantedPublic),
+            DECLARE_NAPI_FUNCTION("removeGrantedPublicCertificate", CMNapiRemoveGrantedPublic),
             DECLARE_NAPI_FUNCTION("init", CMNapiInit),
             DECLARE_NAPI_FUNCTION("update", CMNapiUpdate),
             DECLARE_NAPI_FUNCTION("finish", CMNapiFinish),

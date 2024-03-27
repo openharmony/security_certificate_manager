@@ -25,11 +25,6 @@ extern "C" {
 
 #define DEC_LEN 10
 
-// maximum length of object names for cert manager
-#define CM_NAME_MAX_LEN 32
-// maximum length of URI
-#define CM_URI_MAX_LEN 256
-
 #define CM_URI_TYPE_CERTIFICATE ((uint32_t)0)
 #define CM_URI_TYPE_MAC_KEY ((uint32_t)1)
 #define CM_URI_TYPE_APP_KEY ((uint32_t)2)

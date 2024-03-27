@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,6 +15,7 @@
 
 #include "cm_napi_common.h"
 
+#include <unordered_map>
 #include "securec.h"
 
 #include "cm_log.h"
@@ -23,6 +24,23 @@
 namespace CMNapi {
 namespace {
 constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M
+
+static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
+    // invalid params
+    { CMR_ERROR_INVALID_ARGUMENT, PARAM_ERROR },
+
+    // no permission
+    { CMR_ERROR_PERMISSION_DENIED, HAS_NO_PERMISSION },
+    { CMR_ERROR_NOT_SYSTEMP_APP, NOT_SYSTEM_APP },
+
+    { CMR_ERROR_INVALID_CERT_FORMAT, INVALID_CERT_FORMAT },
+    { CMR_ERROR_INSUFFICIENT_DATA, INVALID_CERT_FORMAT },
+    { CMR_ERROR_NOT_FOUND, NOT_FOUND },
+    { CMR_ERROR_NOT_EXIST, NOT_FOUND },
+    { CMR_ERROR_CERT_NUM_REACHED_LIMIT, CERT_NUM_REACHED_LIMIT },
+    { CMR_ERROR_AUTH_CHECK_FAILED, NO_AUTHORIZATION },
+    { CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT, ALIAS_LENGTH_REACHED_LIMIT },
+};
 }  // namespace
 
 napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store)
@@ -334,20 +352,9 @@ napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo)
 
 int32_t TranformErrorCode(int32_t errorCode)
 {
-    if (errorCode == CMR_ERROR_INVALID_CERT_FORMAT || errorCode == CMR_ERROR_INSUFFICIENT_DATA) {
-        return INVALID_CERT_FORMAT;
-    }
-    if (errorCode == CMR_ERROR_NOT_FOUND || errorCode == CMR_ERROR_NOT_EXIST) {
-        return NOT_FOUND;
-    }
-    if (errorCode == CMR_ERROR_PERMISSION_DENIED) {
-        return HAS_NO_PERMISSION;
-    }
-    if (errorCode == CMR_ERROR_NOT_SYSTEMP_APP) {
-        return NOT_SYSTEM_APP;
-    }
-    if (errorCode == CMR_ERROR_INVALID_ARGUMENT) {
-        return PARAM_ERROR;
+    auto iter = NATIVE_CODE_TO_JS_CODE_MAP.find(errorCode);
+    if (iter != NATIVE_CODE_TO_JS_CODE_MAP.end()) {
+        return iter->second;
     }
     return INNER_FAILURE;
 }

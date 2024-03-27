@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -245,6 +245,10 @@ static void RemoveOrIsAuthedComplete(napi_env env, napi_status status, void *dat
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         napi_get_boolean(env, true, &result[1]);
+    } else if (context->errCode == CMR_ERROR_AUTH_CHECK_FAILED) {
+        napi_create_uint32(env, 0, &result[0]);
+        napi_get_boolean(env, false, &result[1]);
+        context->errCode = CM_SUCCESS;
     } else {
         result[0] = GenerateBusinessError(env, context->errCode, "remove or check is authed process failed");
         napi_get_undefined(env, &result[1]);
@@ -428,7 +432,7 @@ static napi_value GetUidListAsyncWork(napi_env env, GrantAsyncContext context)
     return promise;
 }
 
-napi_value CMNapiGrantAppCertificate(napi_env env, napi_callback_info info)
+napi_value CMNapiGrantPublicCertificate(napi_env env, napi_callback_info info)
 {
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {
@@ -503,7 +507,7 @@ napi_value CMNapiGetAuthorizedAppList(napi_env env, napi_callback_info info)
     return result;
 }
 
-napi_value CMNapiRemoveGrantedApp(napi_env env, napi_callback_info info)
+napi_value CMNapiRemoveGrantedPublic(napi_env env, napi_callback_info info)
 {
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {

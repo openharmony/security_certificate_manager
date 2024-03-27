@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -470,7 +470,7 @@ static int32_t CheckIsAuthorizedApp(const struct CMUri *uriObj)
     if (ret != CM_SUCCESS) {
         CM_LOG_E("calc uri mac failed, ret = %d", ret);
         CM_FREE_PTR(macByte.data);
-        return ret;
+        return CMR_ERROR_AUTH_CHECK_FAILED;
     }
 
     if ((macByte.size != mac.size) || (memcmp(macByte.data, mac.data, macByte.size) != 0)) {

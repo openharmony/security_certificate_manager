@@ -95,8 +95,8 @@ declare namespace CertificateManager {
    * @syscap SystemCapability.Security.CertificateManager
    * @permission ohos.permission.ACCESS_CERT_MANAGER
    */
-  function getUserTrustedCertificateList(callback: AsyncCallback<CMResult>) : void;
-  function getUserTrustedCertificateList() : Promise<CMResult>;
+  function getAllUserTrustedCertificates(callback: AsyncCallback<CMResult>) : void;
+  function getAllUserTrustedCertificates() : Promise<CMResult>;
 
   /**
    * Get the detail of user root certificate.
@@ -118,8 +118,8 @@ declare namespace CertificateManager {
    * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
    * @systemapi Hide this for inner system use
    */
-  function installAppCertificate(keystore: Uint8Array, keystorePwd: string, certAlias: string, callback: AsyncCallback<CMResult>) : void;
-  function installAppCertificate(keystore: Uint8Array, keystorePwd: string, certAlias: string) : Promise<CMResult>;
+  function installPublicCertificate(keystore: Uint8Array, keystorePwd: string, certAlias: string, callback: AsyncCallback<CMResult>) : void;
+  function installPublicCertificate(keystore: Uint8Array, keystorePwd: string, certAlias: string) : Promise<CMResult>;
 
   /**
    * Install private application certificate.
@@ -174,8 +174,8 @@ declare namespace CertificateManager {
    * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
    * @systemapi Hide this for inner system use
    */
-  function uninstallAppCertificate(keyUri: string, callback: AsyncCallback<boolean>) : void;
-  function uninstallAppCertificate(keyUri: string) : Promise<boolean>;
+  function uninstallPublicCertificate(keyUri: string, callback: AsyncCallback<boolean>) : void;
+  function uninstallPublicCertificate(keyUri: string) : Promise<boolean>;
 
   /**
    * Uninstall the specified normal application certificate.
@@ -194,8 +194,8 @@ declare namespace CertificateManager {
    * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
    * @systemapi Hide this for inner system use
    */
-  function getAppCertificateList(callback: AsyncCallback<CMResult>) : void;
-  function getAppCertificateList() : Promise<CMResult>;
+  function getAllPublicCertificates(callback: AsyncCallback<CMResult>) : void;
+  function getAllPublicCertificates() : Promise<CMResult>;
 
   /**
    * Get a list of private application certificates.
@@ -214,8 +214,8 @@ declare namespace CertificateManager {
    * @param keyUri Indicates key's name.
    * @permission ohos.permission.ACCESS_CERT_MANAGER
    */
-  function getAppCertificate(keyUri: string, callback: AsyncCallback<CMResult>) : void;
-  function getAppCertificate(keyUri: string, ) : Promise<CMResult>;
+  function getPublicCertificate(keyUri: string, callback: AsyncCallback<CMResult>) : void;
+  function getPublicCertificate(keyUri: string, ) : Promise<CMResult>;
 
   /**
    * Get the detail of private application certificate.
@@ -236,8 +236,8 @@ declare namespace CertificateManager {
    * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
    * @systemapi Hide this for inner system use
    */
-  function grantAppCertificate(keyUri: string, clientAppUid: string, callback: AsyncCallback<CMResult>) : void;
-  function grantAppCertificate(keyUri: string, clientAppUid: string) : Promise<CMResult>;
+  function grantPublicCertificate(keyUri: string, clientAppUid: string, callback: AsyncCallback<CMResult>) : void;
+  function grantPublicCertificate(keyUri: string, clientAppUid: string) : Promise<CMResult>;
 
   /**
    * Whether the current application is authorized by the specified application certificate.
@@ -269,8 +269,8 @@ declare namespace CertificateManager {
    * @permission ohos.permission.ACCESS_CERT_MANAGER_INTERNAL
    * @systemapi Hide this for inner system use
    */
-  function removeGrantedAppCertificate(keyUri: string, clientAppUid: string, callback: AsyncCallback<boolean>) : void;
-  function removeGrantedAppCertificate(keyUri: string, clientAppUid: string) : Promise<boolean>;
+  function removeGrantedPublicCertificate(keyUri: string, clientAppUid: string, callback: AsyncCallback<boolean>) : void;
+  function removeGrantedPublicCertificate(keyUri: string, clientAppUid: string) : Promise<boolean>;
 
   /**
    * Init operation for signing and verifying etc.
@@ -394,11 +394,15 @@ declare namespace CertificateManager {
   }
 
   export enum CMErrorCode {
-    CM_SUCCESS = 0,
-    CM_ERROR_INNER_ERROR = 17500001,
-    CM_ERROR_NO_PERMISSION = 17500002,
-    CM_ERROR_NO_FOUND = 17500003,
-    CM_ERROR_X509_FORMATE = 17500004,
+    CM_ERROR_NO_PERMISSION = 201,
+    CM_ERROR_NOT_SYSTEM_APP = 202,
+    CM_ERROR_INVALID_PARAMS = 401,
+    CM_ERROR_GENERIC = 17500001,
+    CM_ERROR_NO_FOUND = 17500002,
+    CM_ERROR_INCORRECT_FORMAT = 17500003,
+    CM_ERROR_CERT_NUM_REACHED_LIMIT = 17500004,
+    CM_ERROR_NO_AUTHORIZATION = 17500005,
+    CM_ERROR_ALIAS_LENGTH_REACHED_LIMIT = 17500006
   }
 }
 

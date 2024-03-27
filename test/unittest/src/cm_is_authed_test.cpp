@@ -324,7 +324,7 @@ HWTEST_F(CmIsAuthedTest, CmIsAuthedTest016, TestSize.Level0)
         "oh:t=ak;o=keyA;u=0;a=0?ca=0&m=BA632421B76F1059BC28184FB9E50D5795232B6D5C535E0DCAC0114A7AD8FAFE";
     struct CmBlob authUriFail = { sizeof(uriDataFail), uriDataFail };
     int32_t ret = CmIsAuthorizedApp(&authUriFail);
-    EXPECT_EQ(ret, CMR_ERROR_KEY_OPERATION_FAILED);
+    EXPECT_EQ(ret, CMR_ERROR_AUTH_CHECK_FAILED);
 }
 
 /**

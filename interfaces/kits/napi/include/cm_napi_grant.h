@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,10 +20,10 @@
 #include "napi/native_node_api.h"
 
 namespace CMNapi {
-    napi_value CMNapiGrantAppCertificate(napi_env env, napi_callback_info info);
+    napi_value CMNapiGrantPublicCertificate(napi_env env, napi_callback_info info);
     napi_value CMNapiIsAuthorizedApp(napi_env env, napi_callback_info info);
     napi_value CMNapiGetAuthorizedAppList(napi_env env, napi_callback_info info);
-    napi_value CMNapiRemoveGrantedApp(napi_env env, napi_callback_info info);
+    napi_value CMNapiRemoveGrantedPublic(napi_env env, napi_callback_info info);
 }  // namespace CMNapi
 
 #endif  /* CM_NAPI_GRANT_H */

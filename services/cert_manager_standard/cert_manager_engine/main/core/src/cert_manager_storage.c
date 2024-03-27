@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -127,9 +127,14 @@ int32_t ConstructAuthListPath(const struct CmContext *context, uint32_t store,
 int32_t CmStorageGetBuf(const char *path, const char *fileName, struct CmBlob *storageBuf)
 {
     uint32_t fileSize = CmFileSize(path, fileName);
-    if (fileSize == 0 || fileSize > MAX_OUT_BLOB_SIZE) {
+    if (fileSize > MAX_OUT_BLOB_SIZE) {
         CM_LOG_E("file size[%u] invalid", fileSize);
         return CMR_ERROR_INVALID_OPERATION;
+    }
+
+    if (fileSize == 0) {
+        CM_LOG_E("file is not exist");
+        return CMR_ERROR_NOT_EXIST;
     }
 
     uint8_t *data = (uint8_t *)CMMalloc(fileSize);
@@ -142,7 +147,7 @@ int32_t CmStorageGetBuf(const char *path, const char *fileName, struct CmBlob *s
     if (readSize == 0) {
         CM_LOG_E("read file size 0 invalid");
         CMFree(data);
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_NOT_EXIST;
     }
 
     storageBuf->data = data;
