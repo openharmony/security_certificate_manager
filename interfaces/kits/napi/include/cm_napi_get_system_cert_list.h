@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,7 +22,7 @@
 namespace CMNapi {
 napi_value CMNapiGetSystemCertList(napi_env env, napi_callback_info info);
 
-napi_value CMNapiGetUserTrustedCertList(napi_env env, napi_callback_info info);
+napi_value CMNapiGetAllUserTrustedCertList(napi_env env, napi_callback_info info);
 }  // namespace CertManagerNapi
 
 #endif  // CM_NAPI_GET_CERTIFICATE_LIST_H

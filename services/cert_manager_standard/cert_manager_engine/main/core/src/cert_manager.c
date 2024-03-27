@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -468,7 +468,7 @@ int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *p
 {
     if (certAlias->size > MAX_LEN_CERT_ALIAS) {
         CM_LOG_E("alias size is too large");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT;
     }
 
     int32_t ret;
@@ -488,7 +488,7 @@ int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *p
         ret = CherkCertCountBeyondMax((char*)pathBlob->data, (char *)certUri->data);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("cert count beyond maxcount, can't install");
-            ret = CMR_ERROR_INVALID_ARGUMENT;
+            ret = CMR_ERROR_CERT_NUM_REACHED_LIMIT;
             break;
         }
 

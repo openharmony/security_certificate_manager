@@ -106,24 +106,6 @@ int32_t CmServiceSetCertStatusCheck(const uint32_t store, const struct CmBlob *c
     return CM_SUCCESS;
 }
 
-static bool AppCertCheckBlobValid(const struct CmBlob *data)
-{
-    for (uint32_t i = 0; i < data->size; i++) {
-        if ((i > 0) && (data->data[i] == '\0')) { /* from index 1 has '\0' */
-            CM_LOG_D("data has string end character");
-            return true;
-        }
-
-        if ((!isalnum(data->data[i])) && (data->data[i] != '_')) { /* has invalid character */
-            CM_LOG_E("data include invalid character");
-            return false;
-        }
-    }
-
-    CM_LOG_E("data has no string end character");
-    return false;
-}
-
 static bool CmCheckMaxInstalledCertCount(const uint32_t store, const struct CmContext *cmContext)
 {
     bool isValid = true;
@@ -163,21 +145,24 @@ int32_t CmServiceInstallAppCertCheck(const struct CmBlob *appCert, const struct 
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (appCert->size > MAX_LEN_APP_CERT || appCertPwd->size > MAX_LEN_APP_CERT_PASSWD ||
-        certAlias->size > MAX_LEN_CERT_ALIAS) {
-        CM_LOG_E("CmInstallAppCertCheck max check fail, appCert:%u, appCertPwd:%u, certAlias:%u",
-            appCert->size, appCertPwd->size, certAlias->size);
+    if (certAlias->size > MAX_LEN_CERT_ALIAS) {
+        CM_LOG_E("alias size is too large");
+        return CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT;
+    }
+
+    if (appCert->size > MAX_LEN_APP_CERT || appCertPwd->size > MAX_LEN_APP_CERT_PASSWD) {
+        CM_LOG_E("CmInstallAppCertCheck max check fail, appCert:%u, appCertPwd:%u", appCert->size, appCertPwd->size);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((CheckUri(appCertPwd) != CM_SUCCESS) || (!AppCertCheckBlobValid(certAlias))) {
+    if ((CheckUri(appCertPwd) != CM_SUCCESS) || (CheckUri(certAlias) != CM_SUCCESS)) {
         CM_LOG_E("CmInstallAppCertCheck blob data check fail");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     if (CmCheckMaxInstalledCertCount(store, cmContext) == false) {
         CM_LOG_E("CmCheckMaxInstalledCertCount check fail");
-        return CM_FAILURE;
+        return CMR_ERROR_CERT_NUM_REACHED_LIMIT;
     }
 
     if (!CmPermissionCheck(store)) {

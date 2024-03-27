@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -683,7 +683,7 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest007, TestSize.Level0)
     struct CmBlob certUri257 = { sizeof(certUriBuf257), certUriBuf257 };
 
     ret = CmInstallUserTrustedCert(&userCertTest, &certAlias257, &certUri257);
-    EXPECT_EQ(ret, CM_FAILURE) << "Normal user cert Install test failed, recode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_CERT_NUM_REACHED_LIMIT) << "Normal user cert Install test failed, recode:" << ret;
 
     uint8_t certAliasBuf000[] = "alias0"; /* update 001th user cert */
     uint8_t certUriBuf000[MAX_URI_LEN] = {0};
@@ -727,7 +727,8 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest008, TestSize.Level0)
 HWTEST_F(CmUserCertTest, InstallUserCertTest009, TestSize.Level0)
 {
     int32_t ret;
-    uint8_t largeAliasBuf[] = "large-size-input-cert-alias-000000000000000000000000000000000000";
+    /* size is 66, include 1 byte: the terminator('\0') */
+    uint8_t largeAliasBuf[] = "large-size-input-cert-alias-0000000000000000000000000000000000000";
     uint8_t certUriBuf[MAX_URI_LEN] = {0};
 
     struct CmBlob userCertTemp = { sizeof(g_certData02), const_cast<uint8_t *>(g_certData02) };
@@ -735,7 +736,7 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest009, TestSize.Level0)
     struct CmBlob certUriTemp = { sizeof(certUriBuf), certUriBuf };
 
     ret = CmInstallUserTrustedCert(&userCertTemp, &largeAlias, &certUriTemp);
-    EXPECT_EQ(ret, CM_FAILURE) << "Normal user cert Install test failed, recode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT) << "Normal user cert Install test failed, recode:" << ret;
 }
 
 /**
@@ -760,22 +761,25 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest010, TestSize.Level0)
 
 /**
  * @tc.name: InstallUserCertTest011
- * @tc.desc: Test CertManager Install user cert interface Abnormal function
+ * @tc.desc: Test CertManager Install user cert interface normal function
  * @tc.type: FUNC
  * @tc.require: AR000H0MJ8 /SR000H09N7
  */
 HWTEST_F(CmUserCertTest, InstallUserCertTest011, TestSize.Level0)
 {
     int32_t ret;
-    char edgeAliasBuf[] = "aliaslengthis4800000000000000000000000000000000"; /* size is 48 */
-    uint8_t largeUriBuf[MAX_URI_LEN] = {0}; /* oh:t=c;o=;u=0;a=0 + alias size is 65 */
+    char edgeAliasBuf[] = "alias-length-is-48-000000000000000000000000000000000000000000000"; /* size is 64 */
+    uint8_t uriBuf[MAX_URI_LEN] = {0};
 
     struct CmBlob userCertTemp = { sizeof(g_certData01), const_cast<uint8_t *>(g_certData01) };
     struct CmBlob edgeAlias = { strlen(edgeAliasBuf) + 1, reinterpret_cast<uint8_t *>(edgeAliasBuf) };
-    struct CmBlob largeUri = { sizeof(largeUriBuf), largeUriBuf };
+    struct CmBlob uri = { sizeof(uriBuf), uriBuf };
 
-    ret = CmInstallUserTrustedCert(&userCertTemp, &edgeAlias, &largeUri);
-    EXPECT_EQ(ret, CM_FAILURE) << "Normal user cert Install test failed, recode:" << ret;
+    ret = CmInstallUserTrustedCert(&userCertTemp, &edgeAlias, &uri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Install test failed, recode:" << ret;
+
+    ret = CmUninstallUserTrustedCert(&uri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall test failed, recode:" << ret;
 }
 
 /**
