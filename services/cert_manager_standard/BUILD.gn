@@ -13,6 +13,14 @@
 
 import("//build/ohos.gni")
 
+declare_args() {
+  certificate_manager_feature_ca_enabled = "true"
+}
+
+declare_args() {
+  certificate_manager_feature_credential_enabled = "true"
+}
+
 ohos_prebuilt_etc("cert_manager_service.rc") {
   source = "cert_manager_service.cfg"
   relative_install_dir = "init"
@@ -36,6 +44,14 @@ ohos_shared_library("cert_manager_service") {
     "L2_STANDARD",
     "_CM_LOG_ENABLE_",
   ]
+
+  if (certificate_manager_feature_ca_enabled == "false") {
+    defines += [ "CERTIFICATE_MANAGER_FEATURE_CA_DISABLED" ]
+  }
+  if (certificate_manager_feature_credential_enabled == "false") {
+    defines += [ "CERTIFICATE_MANAGER_FEATURE_CREDENTIAL_DISABLED" ]
+  }
+
   deps = [
     ":cert_manager_service.rc",
     "cert_manager_engine/main/core:cert_manager_engine_core_standard",

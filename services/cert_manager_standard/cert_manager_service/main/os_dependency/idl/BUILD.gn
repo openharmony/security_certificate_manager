@@ -31,7 +31,6 @@ ohos_static_library("libcm_service_idl_standard_static") {
     ubsan = true
   }
   include_dirs = [
-    "//third_party/json/include",
     "//third_party/openssl/include",
     "../../../../../../interfaces/innerkits/cert_manager_standard/main/include",
     "../../../../cert_manager_engine/main/core/include",
