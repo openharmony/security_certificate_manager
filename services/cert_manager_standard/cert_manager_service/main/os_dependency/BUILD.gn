@@ -26,7 +26,6 @@ ohos_static_library("libcert_manager_service_os_dependency_standard_static") {
     ubsan = true
   }
   include_dirs = [
-    "//third_party/json/include",
     "//third_party/openssl/include",
     "../../../cert_manager_engine/main/core/include",
     "../../../../../interfaces/innerkits/cert_manager_standard/main/include",
