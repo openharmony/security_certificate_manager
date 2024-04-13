@@ -323,13 +323,15 @@ static int32_t MergeUserPathList(const struct CmMutableBlob *callerPathList,
     for (uint32_t i = 0; i < callerPathList->size; i++) {
         ret = DeepCopyPath(callerPath[i].data, callerPath[i].size, &uidList[i]);
         if (ret != CM_SUCCESS) {
-            return ret; /* uniformly free the memory in CmServiceGetCertList */
+            CmFreePathList(uidList, uidCount);
+            return ret;
         }
     }
     for (uint32_t i = 0; i < sysServicePathList->size; i++) {
         ret = DeepCopyPath(sysServicePath[i].data, sysServicePath[i].size, &uidList[i + callerPathList->size]);
         if (ret != CM_SUCCESS) {
-            return ret; /* uniformly free the memory in CmServiceGetCertList */
+            CmFreePathList(uidList, uidCount);
+            return ret;
         }
     }
 

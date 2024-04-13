@@ -229,7 +229,7 @@ int32_t CmMakeDir(const char *path)
     if (mkdir(path, S_IRWXU) == 0) {
         return CMR_OK;
     } else {
-        if (errno == EEXIST  || errno == EAGAIN) {
+        if (errno == EEXIST || errno == EAGAIN) {
             return CMR_ERROR_ALREADY_EXISTS;
         } else {
             return CMR_ERROR_MAKE_DIR_FAIL;
@@ -251,7 +251,7 @@ int32_t CmUserBakupMakeDir(const char *path, const mode_t *mode)
     if (mkdir(path, modeTmp) == 0) {
         return CMR_OK;
     } else {
-        if (errno == EEXIST  || errno == EAGAIN) {
+        if (errno == EEXIST || errno == EAGAIN) {
             return CMR_ERROR_ALREADY_EXISTS;
         } else {
             return CMR_ERROR_MAKE_DIR_FAIL;

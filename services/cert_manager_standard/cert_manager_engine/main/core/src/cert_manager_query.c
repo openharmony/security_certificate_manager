@@ -51,7 +51,7 @@ void CmFreePathList(struct CmMutableBlob *pList, uint32_t pathCount)
         pList[i].size = 0;
         CM_FREE_PTR(pList[i].data);
     }
-    CMFree(pList);
+    CM_FREE_PTR(pList);
 }
 
 static int32_t ConstrutPathList(const char *useridPath, struct CmMutableBlob *cPathList, uint32_t dirCount)
