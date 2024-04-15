@@ -112,7 +112,7 @@ static int32_t CmGetFilePath(const struct CmContext *context, uint32_t store, st
     uint32_t suffixLen = 0;
     char suffixBuf[MAX_SUFFIX_LEN] = {0};
 
-    if ((pathBlob == NULL) || (pathBlob->data == NULL)) {
+    if ((pathBlob == NULL) || (pathBlob->data == NULL) || (pathBlob->size == 0)) {
         CM_LOG_E("Null pointer failure");
         return CMR_ERROR_NULL_POINTER;
     }
