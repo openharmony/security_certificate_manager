@@ -31,7 +31,7 @@
 
 static int32_t GetFileName(const char *path, const char *fileName, char *fullFileName, uint32_t fullFileNameLen)
 {
-    if (path != NULL) {
+    if (path != NULL && strlen(path) > 0) {
         if (strncpy_s(fullFileName, fullFileNameLen, path, strlen(path)) != EOK) {
             return CMR_ERROR_INVALID_OPERATION;
         }
