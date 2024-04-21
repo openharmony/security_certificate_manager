@@ -49,6 +49,7 @@ namespace CMNapi {
         AddInt32Property(env, errorCode, "CM_ERROR_CERT_NUM_REACHED_LIMIT", CERT_NUM_REACHED_LIMIT);
         AddInt32Property(env, errorCode, "CM_ERROR_NO_AUTHORIZATION", NO_AUTHORIZATION);
         AddInt32Property(env, errorCode, "CM_ERROR_ALIAS_LENGTH_REACHED_LIMIT", ALIAS_LENGTH_REACHED_LIMIT);
+        AddInt32Property(env, errorCode, "CM_ERROR_DEVICE_ENTER_ADVSECMODE", DEVICE_ENTER_ADVSECMODE);
     }
 
     static napi_value CreateCMErrorCode(napi_env env)
