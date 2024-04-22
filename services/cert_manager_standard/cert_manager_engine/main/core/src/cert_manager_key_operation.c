@@ -90,6 +90,7 @@ int32_t CmKeyOpGenMacKey(const struct CmBlob *alias)
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_MAC },
         { .tag = HKS_TAG_DIGEST, .uint32Param = HKS_DIGEST_SHA256 },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE },
     };
 
     struct HksParamSet *paramSet = NULL;
@@ -112,8 +113,19 @@ int32_t CmKeyOpGenMacKey(const struct CmBlob *alias)
 
 int32_t CmKeyOpGenMacKeyIfNotExist(const struct CmBlob *alias)
 {
+    struct HksParam keyExistParams[] = {
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE },
+    };
+    struct HksParamSet *paramSet = NULL;
+    int32_t ret = ConstructParamSet(keyExistParams, sizeof(keyExistParams) / sizeof(struct HksParam), &paramSet);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to construct key exist paramSet");
+        return CMR_ERROR_KEY_OPERATION_FAILED;
+    }
+
     struct HksBlob keyAlias = { alias->size, alias->data };
-    int32_t ret = HksKeyExist(&keyAlias, NULL);
+    ret = HksKeyExist(&keyAlias, paramSet);
+    HksFreeParamSet(&paramSet);
     if (ret == HKS_SUCCESS) {
         return ret;
     }
@@ -127,8 +139,19 @@ int32_t CmKeyOpGenMacKeyIfNotExist(const struct CmBlob *alias)
 
 int32_t CmKeyOpDeleteKey(const struct CmBlob *alias)
 {
+    struct HksParam deleteKeyParams[] = {
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE },
+    };
+    struct HksParamSet *paramSet = NULL;
+    int32_t ret = ConstructParamSet(deleteKeyParams, sizeof(deleteKeyParams) / sizeof(struct HksParam), &paramSet);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to construct delete key paramSet");
+        return CMR_ERROR_KEY_OPERATION_FAILED;
+    }
+
     struct HksBlob keyAlias = { alias->size, alias->data };
-    int32_t ret = HksDeleteKey(&keyAlias, NULL);
+    ret = HksDeleteKey(&keyAlias, paramSet);
+    HksFreeParamSet(&paramSet);
     if ((ret != HKS_SUCCESS) && (ret != HKS_ERROR_NOT_EXIST)) {
         CM_LOG_E("hks delete key failed, ret = %d", ret);
         return CMR_ERROR_KEY_OPERATION_FAILED;
@@ -144,6 +167,7 @@ int32_t CmKeyOpCalcMac(const struct CmBlob *alias, const struct CmBlob *srcData,
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_MAC },
         { .tag = HKS_TAG_DIGEST, .uint32Param = HKS_DIGEST_SHA256 },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE },
     };
 
     struct HksParamSet *paramSet = NULL;
@@ -185,6 +209,7 @@ int32_t CmKeyOpImportKey(const struct CmBlob *alias, const struct CmKeyPropertie
         { .tag = HKS_TAG_ALGORITHM, .uint32Param = properties->algType },
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = properties->keySize },
         { .tag = HKS_TAG_PURPOSE, .uint32Param = properties->purpose },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE },
     };
 
     struct HksParamSet *paramSet = NULL;
@@ -250,12 +275,8 @@ static void TranslateToHuksProperties(const struct CmSignatureSpec *spec, struct
     CM_LOG_D("purpose[%u], digest[%u], padding[%u]", spec->purpose, spec->digest, spec->padding);
 }
 
-static int32_t AddParamsToParamSet(const struct CmBlob *commonUri, const struct CmSignatureSpec *spec,
-    struct HksParamSet *paramSet)
+static int32_t GetKeyProperties(const struct CmBlob *commonUri, struct CmKeyProperties *keySpec)
 {
-    struct CmKeyProperties inputKeyProp = {0};
-    TranslateToHuksProperties(spec, &inputKeyProp);
-
     struct HksParamSet *outParamSet = (struct HksParamSet*)CMMalloc(DEFAULT_LEN_USED_FOR_MALLOC);
     if (outParamSet == NULL) {
         CM_LOG_E("malloc failed");
@@ -263,22 +284,52 @@ static int32_t AddParamsToParamSet(const struct CmBlob *commonUri, const struct 
     }
     outParamSet->paramSetSize = DEFAULT_LEN_USED_FOR_MALLOC;
 
+    struct HksParam getKeyParams[] = {
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE },
+    };
+    struct HksParamSet *inParamSet = NULL;
+    int32_t ret = ConstructParamSet(getKeyParams, sizeof(getKeyParams) / sizeof(struct HksParam), &inParamSet);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to construct get key inParamSet");
+        CM_FREE_PTR(outParamSet);
+        return CMR_ERROR_KEY_OPERATION_FAILED;
+    }
+
+    ret = HksGetKeyParamSet((const struct HksBlob *)commonUri, inParamSet, outParamSet);
+    HksFreeParamSet(&inParamSet);
+    if (ret != HKS_SUCCESS) {
+        CM_LOG_E("get paramSet from huks failed, ret = %d", ret);
+        CM_FREE_PTR(outParamSet);
+        return ret;
+    }
+
+    FillKeySpec(outParamSet, keySpec);
+    CM_FREE_PTR(outParamSet);
+    return ret;
+}
+
+static int32_t AddParamsToParamSet(const struct CmBlob *commonUri, const struct CmSignatureSpec *spec,
+    struct HksParamSet *paramSet)
+{
+    struct CmKeyProperties inputKeyProp = {0};
+    TranslateToHuksProperties(spec, &inputKeyProp);
+
     int32_t ret;
     do {
-        ret = HksGetKeyParamSet((const struct HksBlob *)commonUri, NULL, outParamSet);
+        struct CmKeyProperties keySpec = {0};
+        ret = GetKeyProperties(commonUri, &keySpec);
         if (ret != HKS_SUCCESS) {
-            CM_LOG_E("get paramSet from huks failed, ret = %d", ret);
+            CM_LOG_E("Failed to get key properties, ret = %d", ret);
             break;
         }
 
-        struct CmKeyProperties keySpec = {0};
-        FillKeySpec(outParamSet, &keySpec);
         struct HksParam params[] = {
             { .tag = HKS_TAG_ALGORITHM, .uint32Param = keySpec.algType },
             { .tag = HKS_TAG_KEY_SIZE, .uint32Param = keySpec.keySize },
             { .tag = HKS_TAG_PURPOSE, .uint32Param = inputKeyProp.purpose },
             { .tag = HKS_TAG_DIGEST, .uint32Param = inputKeyProp.digest },
             { .tag = HKS_TAG_PADDING, .uint32Param = inputKeyProp.padding },
+            { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE },
         };
 
         ret = HksAddParams(paramSet, params, sizeof(params) / sizeof(struct HksParam));
@@ -301,7 +352,6 @@ static int32_t AddParamsToParamSet(const struct CmBlob *commonUri, const struct 
         }
     } while (0);
 
-    CM_FREE_PTR(outParamSet);
     return (ret == HKS_SUCCESS) ? CM_SUCCESS : CMR_ERROR_KEY_OPERATION_FAILED;
 }
 
@@ -422,10 +472,13 @@ int32_t CmKeyOpProcess(enum CmSignVerifyCmd cmdId, const struct CmContext *conte
         return (cmdId == SIGN_VERIFY_CMD_ABORT) ? CM_SUCCESS : CMR_ERROR_NOT_EXIST;
     }
 
+    struct HksParam params[] = {
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE },
+    };
     struct HksParamSet *paramSet = NULL;
-    int32_t ret = HksInitParamSet(&paramSet);
-    if (ret != HKS_SUCCESS) {
-        CM_LOG_E("init paramset failed");
+    int32_t ret = ConstructParamSet(params, sizeof(params) / sizeof(struct HksParam), &paramSet);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to construct paramSet");
         CmDeleteSession(handle);
         return CMR_ERROR_KEY_OPERATION_FAILED;
     }

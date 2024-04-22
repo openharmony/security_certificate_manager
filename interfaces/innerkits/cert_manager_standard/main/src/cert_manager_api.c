@@ -15,6 +15,7 @@
 
 #include "cert_manager_api.h"
 
+#include "cm_advsecmode_check.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_ipc_client.h"
@@ -89,7 +90,17 @@ CM_API_EXPORT int32_t CmInstallAppCert(const struct CmBlob *appCert, const struc
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    int32_t ret = CmClientInstallAppCert(appCert, appCertPwd, certAlias, store, keyUri);
+    bool isAdvSecMode = false;
+    int32_t ret = CheckAdvSecMode(&isAdvSecMode);
+    if (ret != CM_SUCCESS) {
+        return ret;
+    }
+    if (isAdvSecMode) {
+        CM_LOG_E("InstallAppCert: the device enters advanced security mode");
+        return CMR_ERROR_DEVICE_ENTER_ADVSECMODE;
+    }
+
+    ret = CmClientInstallAppCert(appCert, appCertPwd, certAlias, store, keyUri);
     CM_LOG_D("leave install app certificate, result = %d", ret);
     return ret;
 }
@@ -294,7 +305,17 @@ CM_API_EXPORT int32_t CmInstallUserTrustedCert(const struct CmBlob *userCert, co
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    int32_t ret = CmClientInstallUserTrustedCert(userCert, certAlias, certUri);
+    bool isAdvSecMode = false;
+    int32_t ret = CheckAdvSecMode(&isAdvSecMode);
+    if (ret != CM_SUCCESS) {
+        return ret;
+    }
+    if (isAdvSecMode) {
+        CM_LOG_E("InstallUserTrustedCert: the device enters advanced security mode");
+        return CMR_ERROR_DEVICE_ENTER_ADVSECMODE;
+    }
+
+    ret = CmClientInstallUserTrustedCert(userCert, certAlias, certUri);
     CM_LOG_D("leave install user trusted cert, result = %d", ret);
     return ret;
 }
