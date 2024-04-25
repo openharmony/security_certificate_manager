@@ -144,7 +144,7 @@ static napi_value ParseIsAuthedParams(napi_env env, napi_callback_info info, Gra
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_IS_AUTHED_ARGS_CNT) && (argc != (CM_NAPI_IS_AUTHED_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid when using isAuthed");
+        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid, arguments count need between 1 and 2.");
         CM_LOG_E("arguments count is not expected when using isAuthed");
         return nullptr;
     }
@@ -152,7 +152,7 @@ static napi_value ParseIsAuthedParams(napi_env env, napi_callback_info info, Gra
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "keyUri type error");
+        ThrowParamsError(env, PARAM_ERROR, "keyUri is not a string or the length is 0 or too long.");
         CM_LOG_E("get uri failed when using isAuthed");
         return nullptr;
     }
@@ -161,7 +161,7 @@ static napi_value ParseIsAuthedParams(napi_env env, napi_callback_info info, Gra
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
+            ThrowParamsError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
             CM_LOG_E("get callback function failed when using isAuthed");
             return nullptr;
         }
@@ -353,7 +353,7 @@ static napi_value GrantUidAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowParamsError(env, PARAM_ERROR, "queue asyncWork error");
+        napi_throw(env, GenerateBusinessError(env, INNER_FAILURE, "queue asyncWork error"));
         CM_LOG_E("get async work failed when granting uid");
         return nullptr;
     }
@@ -377,7 +377,7 @@ static napi_value RemoveUidAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowParamsError(env, PARAM_ERROR, "queue asyncWork error");
+        napi_throw(env, GenerateBusinessError(env, INNER_FAILURE, "queue asyncWork error"));
         CM_LOG_E("queue async work failed when removing uid");
         return nullptr;
     }
@@ -401,7 +401,7 @@ static napi_value IsAuthedAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowParamsError(env, PARAM_ERROR, "queue asyncWork error");
+        napi_throw(env, GenerateBusinessError(env, INNER_FAILURE, "queue asyncWork error"));
         CM_LOG_E("queue async work failed when using isAuthed");
         return nullptr;
     }
@@ -425,7 +425,7 @@ static napi_value GetUidListAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowParamsError(env, PARAM_ERROR, "queue asyncWork error");
+        napi_throw(env, GenerateBusinessError(env, INNER_FAILURE, "queue asyncWork error"));
         CM_LOG_E("queue async work failed when getting authed uid list");
         return nullptr;
     }

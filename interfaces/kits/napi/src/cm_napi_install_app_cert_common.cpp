@@ -76,7 +76,7 @@ napi_value InstallAppCertParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_INSTALL_APP_CERT_MIN_ARGS) && (argc != CM_NAPI_INSTALL_APP_CERT_MAX_ARGS)) {
-        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid.");
+        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid, arguments count need between 3 and 4.");
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
     }
@@ -91,7 +91,7 @@ napi_value InstallAppCertParseParams(
 
     napi_value result = GetUint8Array(env, argv[index], *context->keystore);
     if (result == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "get keystore type error");
+        ThrowParamsError(env, PARAM_ERROR, "keystore is not a uint8Array or the length is 0 or too long.");
         CM_LOG_E("could not get keystore");
         return nullptr;
     }
@@ -99,7 +99,7 @@ napi_value InstallAppCertParseParams(
     index++;
     result = ParseString(env, argv[index], context->keystorePwd);
     if (result == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "get keystore Pwd type error");
+        ThrowParamsError(env, PARAM_ERROR, "keystore Pwd is not a string or the length is 0 or too long.");
         CM_LOG_E("could not get keystore Pwd");
         return nullptr;
     }
@@ -107,7 +107,7 @@ napi_value InstallAppCertParseParams(
     index++;
     result = ParseString(env, argv[index], context->keyAlias);
     if (result == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "get keyAlias type error");
+        ThrowParamsError(env, PARAM_ERROR, "keyAlias is not a string or the length is 0 or too long.");
         CM_LOG_E("could not get uri");
         return nullptr;
     }
@@ -116,7 +116,7 @@ napi_value InstallAppCertParseParams(
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback failed.");
+            ThrowParamsError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
             CM_LOG_E("get callback function faild when install application cert");
             return nullptr;
         }
