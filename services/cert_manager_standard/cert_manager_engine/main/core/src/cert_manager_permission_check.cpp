@@ -45,6 +45,16 @@ bool CmHasCommonPermission(void)
     return HasPermission("ohos.permission.ACCESS_CERT_MANAGER");
 }
 
+bool CmHasUserTrustedPermission(void)
+{
+    return HasPermission("ohos.permission.ACCESS_USER_TRUSTED_CERT");
+}
+
+bool CmHasSystemAppPermission(void)
+{
+    return HasPermission("ohos.permission.ACCESS_SYSTEM_APP_CERT");
+}
+
 bool CmIsSystemApp(void)
 {
     AccessTokenID tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
@@ -58,7 +68,8 @@ bool CmIsSystemApp(void)
 
 bool CmIsSystemAppByStoreType(const uint32_t store)
 {
-    if (store == CM_CREDENTIAL_STORE) { /* only care about public credential */
+    /* care about public and system credential */
+    if (store == CM_CREDENTIAL_STORE || store == CM_SYS_CREDENTIAL_STORE) {
         return CmIsSystemApp();
     }
     return true;
@@ -71,6 +82,8 @@ bool CmPermissionCheck(const uint32_t store)
             return CmHasPrivilegedPermission() && CmHasCommonPermission();
         case CM_PRI_CREDENTIAL_STORE:
             return CmHasCommonPermission();
+        case CM_SYS_CREDENTIAL_STORE:
+            return CmHasCommonPermission() && CmHasSystemAppPermission();
         default:
             return false;
     }

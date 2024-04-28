@@ -72,6 +72,11 @@ CM_API_EXPORT int32_t CmUninstallUserTrustedCert(const struct CmBlob *certUri);
 
 CM_API_EXPORT int32_t CmUninstallAllUserTrustedCert(void);
 
+CM_API_EXPORT int32_t CmInstallSystemAppCert(const struct CmAppCertParam *certParam, struct CmBlob *keyUri);
+
+CM_API_EXPORT int32_t CmInstallUserCACert(const struct CmBlob *userCert,
+    const struct CmBlob *certAlias, const uint32_t userId, const bool status, struct CmBlob *certUri);
+
 #ifdef __cplusplus
 }
 #endif

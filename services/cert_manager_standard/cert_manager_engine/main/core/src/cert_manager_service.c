@@ -64,17 +64,15 @@ static int32_t CheckPermission(bool needPriPermission, bool needCommonPermission
     return CM_SUCCESS;
 }
 
-int32_t CmServicInstallAppCert(const struct CmContext *context, struct CmAppCertInfo *appCertInfo,
-    const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri)
+int32_t CmServicInstallAppCert(struct CmContext *context, const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
 {
-    int32_t ret = CmServiceInstallAppCertCheck(&appCertInfo->appCert, &appCertInfo->appCertPwd,
-        certAlias, store, context);
+    int32_t ret = CmServiceInstallAppCertCheck(certParam, context);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("service intall app cert check params failed, ret = %d", ret);
         return ret;
     }
 
-    ret = CmInstallAppCertPro(context, appCertInfo, certAlias, store, keyUri);
+    ret = CmInstallAppCertPro(context, certParam, keyUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmInstallAppCert fail, ret = %d", ret);
         return ret;
@@ -86,7 +84,7 @@ static int32_t GetPublicAppCert(const struct CmContext *context, uint32_t store,
     struct CmBlob *keyUri, struct CmBlob *certBlob)
 {
     struct CmBlob commonUri = { 0, NULL };
-    int32_t ret = CmCheckAndGetCommonUri(context, keyUri, &commonUri);
+    int32_t ret = CmCheckAndGetCommonUri(context, store, keyUri, &commonUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("check and get common uri when get app cert failed, ret = %d", ret);
         return ret;
@@ -144,6 +142,8 @@ int32_t CmServiceGetAppCert(const struct CmContext *context, uint32_t store,
         return GetPublicAppCert(context, store, keyUri, certBlob);
     } else if (store == CM_PRI_CREDENTIAL_STORE) {
         return GetPrivateAppCert(context, store, keyUri, certBlob);
+    } else if (store == CM_SYS_CREDENTIAL_STORE) {
+        return CmStorageGetAppCert(context, store, keyUri, certBlob);
     }
     return CMR_ERROR_INVALID_ARGUMENT;
 }
@@ -210,6 +210,41 @@ int32_t CmServiceRemoveGrantedApp(const struct CmContext *context, const struct 
     return CmAuthRemoveGrantedApp(context, keyUri, appUid);
 }
 
+static int32_t CheckAndGetStore(const struct CmContext *context, const struct CmBlob *authUri, uint32_t *store)
+{
+    struct CMUri uriObj;
+    int32_t ret = CertManagerUriDecode(&uriObj, (char *)authUri->data);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("uri decode failed, ret = %d", ret);
+        return ret;
+    }
+
+    if ((uriObj.object == NULL) || (uriObj.user == NULL) || (uriObj.app == NULL)) {
+        CM_LOG_E("uri format invalid");
+        (void)CertManagerFreeUri(&uriObj);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    uint32_t type = uriObj.type;
+    uint32_t userId = atoi(uriObj.user);
+    (void)CertManagerFreeUri(&uriObj);
+    if (type == CM_URI_TYPE_SYS_KEY) {
+        if (!CmHasSystemAppPermission()) {
+            CM_LOG_E("caller lacks system app cert permission");
+            return CMR_ERROR_PERMISSION_DENIED;
+        }
+
+        if (context->userId != 0 && context->userId != userId) {
+            CM_LOG_E("uri check userId failed");
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+
+        *store = CM_SYS_CREDENTIAL_STORE;
+    }
+
+    return CM_SUCCESS;
+}
+
 int32_t CmServiceInit(const struct CmContext *context, const struct CmBlob *authUri,
     const struct CmSignatureSpec *spec, struct CmBlob *handle)
 {
@@ -223,8 +258,15 @@ int32_t CmServiceInit(const struct CmContext *context, const struct CmBlob *auth
         return ret;
     }
 
+    uint32_t store = CM_CREDENTIAL_STORE;
+    ret = CheckAndGetStore(context, authUri, &store);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("check and get store error");
+        return ret;
+    }
+
     struct CmBlob commonUri = { 0, NULL };
-    ret = CmCheckAndGetCommonUri(context, authUri, &commonUri);
+    ret = CmCheckAndGetCommonUri(context, store, authUri, &commonUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("check and get common uri failed, ret = %d", ret);
         return ret;
@@ -439,7 +481,7 @@ int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlo
         uint32_t matchIndex = CmGetMatchedCertIndex(&certFileList, certUri);
         if ((matchIndex == MAX_COUNT_CERTIFICATE) || (matchIndex == certFileList.size)) {
             CM_LOG_D("certFile of certUri don't matched");
-            ret = CM_SUCCESS;
+            ret = CMR_ERROR_NOT_EXIST;
             break;
         }
 
@@ -506,13 +548,8 @@ int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem)
 }
 
 int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *userCert,
-    const struct CmBlob *certAlias, struct CmBlob *certUri)
+    const struct CmBlob *certAlias, const uint32_t status, struct CmBlob *certUri)
 {
-    if ((CmCheckBlob(userCert) != CM_SUCCESS) || (CheckUri(certAlias) != CM_SUCCESS)) {
-        CM_LOG_E("input params invalid");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-
     int32_t ret = CM_SUCCESS;
     uint8_t pathBuf[CERT_MAX_PATH_LEN] = { 0 };
     struct CmMutableBlob pathBlob = { sizeof(pathBuf), pathBuf };
@@ -538,21 +575,22 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
             break;
         }
 
-        ret = CmSetStatusEnable(context, &pathBlob, certUri, store);
+        ret = SetcertStatus(context, certUri, store, status, NULL);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CertManagerUpdateStatusFile fail");
-            ret = CM_FAILURE;
+            CM_LOG_E("SetcertStatus fail");
             break;
         }
 
-        ret = CmBakeupUserCert(context, certUri, userCert);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmBakeupUserCert fail");
-            if (CmRemoveUserCert(&pathBlob, certUri) != CM_SUCCESS) {
-                CM_LOG_E("CmBakeupUserCert fail and CmRemoveUserCert fail");
+        if (status == CERT_STATUS_ENABLED) {
+            ret = CmBakeupUserCert(context, certUri, userCert);
+            if (ret != CM_SUCCESS) {
+                CM_LOG_E("CmBakeupUserCert fail");
+                if (CmRemoveUserCert(&pathBlob, certUri) != CM_SUCCESS) {
+                    CM_LOG_E("CmBakeupUserCert fail and CmRemoveUserCert fail");
+                }
+                ret = CM_FAILURE;
+                break;
             }
-            ret = CM_FAILURE;
-            break;
         }
     } while (0);
     return ret;

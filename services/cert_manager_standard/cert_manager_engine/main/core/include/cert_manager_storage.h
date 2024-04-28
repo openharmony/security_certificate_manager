@@ -27,6 +27,7 @@ extern "C" {
 #define SYSTEM_CA_STORE     "/system/etc/security/certificates/"
 #define USER_CA_STORE       "/data/service/el1/public/cert_manager_service/certificates/user/"
 #define PRI_CREDNTIAL_STORE "/data/service/el1/public/cert_manager_service/certificates/priv_credential/"
+#define SYS_CREDNTIAL_STORE "/data/service/el1/public/cert_manager_service/certificates/sys_credential/"
 
 #define CERT_BACKUP_ROOT_DIR "/data/service/el1/public/cert_manager_service/certificates/user_open"
 #define CERT_BACKUP_CONFIG_ROOT_DIR "/data/service/el1/public/cert_manager_service/certificates/user_config"

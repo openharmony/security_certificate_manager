@@ -37,7 +37,7 @@ static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     { CMR_ERROR_INSUFFICIENT_DATA, INVALID_CERT_FORMAT },
     { CMR_ERROR_NOT_FOUND, NOT_FOUND },
     { CMR_ERROR_NOT_EXIST, NOT_FOUND },
-    { CMR_ERROR_CERT_NUM_REACHED_LIMIT, CERT_NUM_REACHED_LIMIT },
+    { CMR_ERROR_MAX_CERT_COUNT_REACHED, MAX_CERT_COUNT_REACHED },
     { CMR_ERROR_AUTH_CHECK_FAILED, NO_AUTHORIZATION },
     { CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT, ALIAS_LENGTH_REACHED_LIMIT },
     { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE },
@@ -88,8 +88,9 @@ napi_value ParseString(napi_env env, napi_value object, CmBlob *&certUri)
         return nullptr;
     }
 
-    if (length > CM_MAX_DATA_LEN) {
-        CM_LOG_E("input key alias length too large");
+    // add 0 length check
+    if ((length == 0) || (length > CM_MAX_DATA_LEN)) {
+        CM_LOG_E("input key alias length is 0 or too large");
         return nullptr;
     }
 

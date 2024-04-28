@@ -88,7 +88,7 @@ static int32_t HexStringToByte(const char *hexStr, uint8_t *byte, uint32_t byteL
     return CM_SUCCESS;
 }
 
-static int32_t GetAndCheckUriObj(struct CMUri *uriObj, const struct CmBlob *uri)
+static int32_t GetAndCheckUriObj(struct CMUri *uriObj, const struct CmBlob *uri, uint32_t type)
 {
     int32_t ret = CertManagerUriDecode(uriObj, (char *)uri->data);
     if (ret != CM_SUCCESS) {
@@ -96,10 +96,7 @@ static int32_t GetAndCheckUriObj(struct CMUri *uriObj, const struct CmBlob *uri)
         return ret;
     }
 
-    if ((uriObj->object == NULL) ||
-        (uriObj->user == NULL) ||
-        (uriObj->app == NULL) ||
-        (uriObj->type != CM_URI_TYPE_APP_KEY)) {
+    if ((uriObj->object == NULL) || (uriObj->user == NULL) || (uriObj->app == NULL) || (uriObj->type != type)) {
         CM_LOG_E("uri format invalid");
         (void)CertManagerFreeUri(uriObj);
         return CMR_ERROR_INVALID_ARGUMENT;
@@ -168,12 +165,17 @@ static int32_t ConstructMacKeyUri(const struct CMUri *uriObj, uint32_t clientUid
     return CmConstructUri(&uri, macKeyUri);
 }
 
-static int32_t ConstructCommonUri(const struct CMUri *uriObj, struct CmBlob *commonUri)
+static int32_t ConstructCommonUri(const struct CMUri *uriObj, struct CmBlob *commonUri, uint32_t store)
 {
     struct CMUri uri;
     (void)memcpy_s(&uri, sizeof(uri), uriObj, sizeof(uri));
 
-    uri.type = CM_URI_TYPE_APP_KEY; /* type is 'ak' */
+    if (store != CM_SYS_CREDENTIAL_STORE) {
+        uri.type = CM_URI_TYPE_APP_KEY; /* type is 'ak' */
+    } else {
+        uri.type = CM_URI_TYPE_SYS_KEY; /* type is 'sk' */
+    }
+
     uri.clientApp = NULL;
     uri.clientUser = NULL;
     uri.mac = NULL;
@@ -336,7 +338,7 @@ int32_t CmAuthGrantAppCertificate(const struct CmContext *context, const struct 
 
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
-    ret = GetAndCheckUriObj(&uriObj, keyUri);
+    ret = GetAndCheckUriObj(&uriObj, keyUri, CM_URI_TYPE_APP_KEY);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uri decode failed, ret = %d", ret);
         pthread_mutex_unlock(&g_authMgrLock);
@@ -379,7 +381,7 @@ int32_t CmAuthGetAuthorizedAppList(const struct CmContext *context, const struct
     pthread_mutex_lock(&g_authMgrLock);
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
-    int32_t ret = GetAndCheckUriObj(&uriObj, keyUri);
+    int32_t ret = GetAndCheckUriObj(&uriObj, keyUri, CM_URI_TYPE_APP_KEY);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uri decode failed, ret = %d", ret);
         pthread_mutex_unlock(&g_authMgrLock);
@@ -487,7 +489,7 @@ int32_t CmAuthIsAuthorizedApp(const struct CmContext *context, const struct CmBl
 {
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
-    int32_t ret = GetAndCheckUriObj(&uriObj, authUri);
+    int32_t ret = GetAndCheckUriObj(&uriObj, authUri, CM_URI_TYPE_APP_KEY);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uri decode failed, ret = %d", ret);
         return ret;
@@ -506,7 +508,7 @@ int32_t CmAuthRemoveGrantedApp(const struct CmContext *context, const struct CmB
     pthread_mutex_lock(&g_authMgrLock);
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
-    int32_t ret = GetAndCheckUriObj(&uriObj, keyUri);
+    int32_t ret = GetAndCheckUriObj(&uriObj, keyUri, CM_URI_TYPE_APP_KEY);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uri decode failed, ret = %d", ret);
         pthread_mutex_unlock(&g_authMgrLock);
@@ -548,7 +550,7 @@ static int32_t DeleteAuthInfo(uint32_t userId, const struct CmBlob *uri, const s
 {
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
-    int32_t ret = GetAndCheckUriObj(&uriObj, uri);
+    int32_t ret = GetAndCheckUriObj(&uriObj, uri, CM_URI_TYPE_APP_KEY);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uri decode failed, ret = %d", ret);
         return ret;
@@ -690,23 +692,28 @@ static int32_t CheckCommonPermission(const struct CmContext *context, const stru
     return CheckIsAuthorizedApp(uriObj);
 }
 
-int32_t CmCheckAndGetCommonUri(const struct CmContext *context, const struct CmBlob *uri, struct CmBlob *commonUri)
+int32_t CmCheckAndGetCommonUri(const struct CmContext *context, uint32_t store, const struct CmBlob *uri,
+    struct CmBlob *commonUri)
 {
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
-    int32_t ret = GetAndCheckUriObj(&uriObj, uri);
+    int32_t ret = CM_SUCCESS;
+    uint32_t type = (store == CM_SYS_CREDENTIAL_STORE) ? CM_URI_TYPE_SYS_KEY : CM_URI_TYPE_APP_KEY;
+    ret = GetAndCheckUriObj(&uriObj, uri, type);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uri decode failed, ret = %d", ret);
         return ret;
     }
 
     do {
-        ret = CheckCommonPermission(context, &uriObj);
-        if (ret != CM_SUCCESS) {
-            break;
+        if (store != CM_SYS_CREDENTIAL_STORE) {
+            ret = CheckCommonPermission(context, &uriObj);
+            if (ret != CM_SUCCESS) {
+                break;
+            }
         }
 
-        ret = ConstructCommonUri(&uriObj, commonUri);
+        ret = ConstructCommonUri(&uriObj, commonUri, store);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("construct common uri failed, ret = %d", ret);
             break;
@@ -721,7 +728,7 @@ int32_t CmCheckCallerIsProducer(const struct CmContext *context, const struct Cm
 {
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
-    int32_t ret = GetAndCheckUriObj(&uriObj, uri);
+    int32_t ret = GetAndCheckUriObj(&uriObj, uri, CM_URI_TYPE_APP_KEY);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uri decode failed, ret = %d", ret);
         return ret;

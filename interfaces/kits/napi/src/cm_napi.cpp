@@ -46,7 +46,7 @@ namespace CMNapi {
         AddInt32Property(env, errorCode, "CM_ERROR_GENERIC", INNER_FAILURE);
         AddInt32Property(env, errorCode, "CM_ERROR_NO_FOUND", NOT_FOUND);
         AddInt32Property(env, errorCode, "CM_ERROR_INCORRECT_FORMAT", INVALID_CERT_FORMAT);
-        AddInt32Property(env, errorCode, "CM_ERROR_CERT_NUM_REACHED_LIMIT", CERT_NUM_REACHED_LIMIT);
+        AddInt32Property(env, errorCode, "CM_ERROR_MAX_CERT_COUNT_REACHED", MAX_CERT_COUNT_REACHED);
         AddInt32Property(env, errorCode, "CM_ERROR_NO_AUTHORIZATION", NO_AUTHORIZATION);
         AddInt32Property(env, errorCode, "CM_ERROR_ALIAS_LENGTH_REACHED_LIMIT", ALIAS_LENGTH_REACHED_LIMIT);
         AddInt32Property(env, errorCode, "CM_ERROR_DEVICE_ENTER_ADVSECMODE", DEVICE_ENTER_ADVSECMODE);
@@ -145,6 +145,11 @@ extern "C" {
             DECLARE_NAPI_FUNCTION("update", CMNapiUpdate),
             DECLARE_NAPI_FUNCTION("finish", CMNapiFinish),
             DECLARE_NAPI_FUNCTION("abort", CMNapiAbort),
+
+            DECLARE_NAPI_FUNCTION("installSystemAppCertificate", CMNapiInstallSystemAppCert),
+            DECLARE_NAPI_FUNCTION("uninstallSystemAppCertificate", CMNapiUninstallSystemAppCert),
+            DECLARE_NAPI_FUNCTION("getAllSystemAppCertificates", CMNapiGetSystemAppCertList),
+            DECLARE_NAPI_FUNCTION("getSystemAppCertificate", CMNapiGetSystemAppCertInfo),
         };
         NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
         return exports;

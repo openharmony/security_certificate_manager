@@ -85,8 +85,7 @@ CM_API_EXPORT int32_t CmInstallAppCert(const struct CmBlob *appCert, const struc
 {
     CM_LOG_D("enter install app certificate");
     if (appCert == NULL || appCertPwd == NULL || certAlias == NULL ||
-        keyUri == NULL || keyUri->data == NULL || (store != CM_CREDENTIAL_STORE &&
-        store != CM_PRI_CREDENTIAL_STORE)) {
+        keyUri == NULL || keyUri->data == NULL || CM_SOTRE_CHECK(store)) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -108,8 +107,7 @@ CM_API_EXPORT int32_t CmInstallAppCert(const struct CmBlob *appCert, const struc
 CM_API_EXPORT int32_t CmUninstallAppCert(const struct CmBlob *keyUri, const uint32_t store)
 {
     CM_LOG_D("enter uninstall app certificate");
-    if (keyUri == NULL || (store != CM_CREDENTIAL_STORE &&
-        store != CM_PRI_CREDENTIAL_STORE)) {
+    if (keyUri == NULL || CM_SOTRE_CHECK(store)) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -131,8 +129,7 @@ CM_API_EXPORT int32_t CmUninstallAllAppCert(void)
 CM_API_EXPORT int32_t CmGetAppCertList(const uint32_t store, struct CredentialList *certificateList)
 {
     CM_LOG_D("enter get app certificatelist");
-    if (certificateList == NULL || (store != CM_CREDENTIAL_STORE &&
-        store != CM_PRI_CREDENTIAL_STORE)) {
+    if (certificateList == NULL || CM_SOTRE_CHECK(store)) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -145,8 +142,7 @@ CM_API_EXPORT int32_t CmGetAppCert(const struct CmBlob *keyUri, const uint32_t s
     struct Credential *certificate)
 {
     CM_LOG_D("enter get app certificate");
-    if (keyUri == NULL || certificate == NULL || (store != CM_CREDENTIAL_STORE &&
-        store != CM_PRI_CREDENTIAL_STORE)) {
+    if (keyUri == NULL || certificate == NULL || CM_SOTRE_CHECK(store)) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -305,17 +301,9 @@ CM_API_EXPORT int32_t CmInstallUserTrustedCert(const struct CmBlob *userCert, co
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    bool isAdvSecMode = false;
-    int32_t ret = CheckAdvSecMode(&isAdvSecMode);
-    if (ret != CM_SUCCESS) {
-        return ret;
-    }
-    if (isAdvSecMode) {
-        CM_LOG_E("InstallUserTrustedCert: the device enters advanced security mode");
-        return CMR_ERROR_DEVICE_ENTER_ADVSECMODE;
-    }
-
-    ret = CmClientInstallUserTrustedCert(userCert, certAlias, certUri);
+    uint32_t userId = INIT_INVALID_VALUE;
+    bool status = true;
+    int32_t ret = CmInstallUserCACert(userCert, certAlias, userId, status, certUri);
     CM_LOG_D("leave install user trusted cert, result = %d", ret);
     return ret;
 }
@@ -341,3 +329,41 @@ CM_API_EXPORT int32_t CmUninstallAllUserTrustedCert(void)
     return ret;
 }
 
+CM_API_EXPORT int32_t CmInstallSystemAppCert(const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
+{
+    CM_LOG_D("enter install system app certificate");
+    if ((certParam == NULL) || (certParam->appCert == NULL) || (certParam->appCertPwd == NULL) ||
+        (certParam->certAlias == NULL) || (keyUri == NULL) || (keyUri->data == NULL) ||
+        (certParam->store != CM_SYS_CREDENTIAL_STORE) || (certParam->userId == 0) ||
+        (certParam->userId == INIT_INVALID_VALUE)) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CmClientInstallSystemAppCert(certParam, keyUri);
+    CM_LOG_D("leave install system app certificate, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT int32_t CmInstallUserCACert(const struct CmBlob *userCert,
+    const struct CmBlob *certAlias, const uint32_t userId, const bool status, struct CmBlob *certUri)
+{
+    CM_LOG_D("enter install user ca cert");
+    if ((userCert == NULL) || (certAlias == NULL) || (certUri == NULL)) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    bool isAdvSecMode = false;
+    int32_t ret = CheckAdvSecMode(&isAdvSecMode);
+    if (ret != CM_SUCCESS) {
+        return ret;
+    }
+    if (isAdvSecMode) {
+        CM_LOG_E("InstallUserTrustedCert: the device enters advanced security mode");
+        return CMR_ERROR_DEVICE_ENTER_ADVSECMODE;
+    }
+
+    uint32_t uStatus = status ? 0 : 1; // 0 indicates the certificate enabled status
+    ret = CmClientInstallUserTrustedCert(userCert, certAlias, userId, uStatus, certUri);
+    CM_LOG_D("leave install user ca cert, result = %d", ret);
+    return ret;
+}

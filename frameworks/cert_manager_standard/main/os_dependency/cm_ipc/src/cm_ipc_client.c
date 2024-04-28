@@ -191,21 +191,18 @@ int32_t CmClientSetCertStatus(const struct CmBlob *certUri, const uint32_t store
     return SetCertificateStatus(CM_MSG_SET_CERTIFICATE_STATUS, certUri, store, status);
 }
 
-static int32_t InstallAppCert(const struct CmBlob *appCert, const struct CmBlob *appCertPwd,
-    const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri)
+static int32_t InstallAppCert(const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
 {
     int32_t ret;
     struct CmParamSet *sendParamSet = NULL;
     struct CmParam params[] = {
-        { .tag = CM_TAG_PARAM0_BUFFER,
-          .blob = *appCert },
-        { .tag = CM_TAG_PARAM1_BUFFER,
-          .blob = *appCertPwd },
-        { .tag = CM_TAG_PARAM2_BUFFER,
-          .blob = *certAlias },
-        { .tag = CM_TAG_PARAM3_UINT32,
-          .uint32Param = store },
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *(certParam->appCert) },
+        { .tag = CM_TAG_PARAM1_BUFFER, .blob = *(certParam->appCertPwd) },
+        { .tag = CM_TAG_PARAM2_BUFFER, .blob = *(certParam->certAlias) },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = certParam->store },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = certParam->userId },
     };
+
     do {
         ret = CmParamsToParamSet(params, CM_ARRAY_SIZE(params), &sendParamSet);
         if (ret != CM_SUCCESS) {
@@ -232,7 +229,9 @@ static int32_t InstallAppCert(const struct CmBlob *appCert, const struct CmBlob 
 int32_t CmClientInstallAppCert(const struct CmBlob *appCert, const struct CmBlob *appCertPwd,
     const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri)
 {
-    return InstallAppCert(appCert, appCertPwd, certAlias, store, keyUri);
+    struct CmAppCertParam certParam = { (struct CmBlob *)appCert, (struct CmBlob *)appCertPwd,
+        (struct CmBlob *)certAlias, store, INIT_INVALID_VALUE };
+    return InstallAppCert(&certParam, keyUri);
 }
 
 static int32_t UninstallAppCert(enum CertManagerInterfaceCode type, const struct CmBlob *keyUri,
@@ -389,7 +388,7 @@ static int32_t GetAppCertList(enum CertManagerInterfaceCode type, const uint32_t
 
     struct CmParam params[] = {
         { .tag = CM_TAG_PARAM0_UINT32,
-            .uint32Param = store },
+          .uint32Param = store },
     };
 
     do {
@@ -946,15 +945,23 @@ int32_t CmClientSetUserCertStatus(const struct CmBlob *certUri, const uint32_t s
     return SetUserCertStatus(CM_MSG_SET_USER_CERTIFICATE_STATUS, certUri, store, status);
 }
 
-static int32_t InstallUserCert(enum CertManagerInterfaceCode type, const struct CmBlob *userCert,
-    const struct CmBlob *certAlias, struct CmBlob *certUri)
+int32_t CmClientInstallUserTrustedCert(const struct CmBlob *userCert, const struct CmBlob *certAlias,
+    const uint32_t userId, const uint32_t status, struct CmBlob *certUri)
 {
+    if (CmCheckBlob(userCert) != CM_SUCCESS || CmCheckBlob(certAlias) != CM_SUCCESS ||
+        CmCheckBlob(certUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input params");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     int32_t ret = CM_SUCCESS;
     struct CmBlob parcelBlob = {0, NULL};
     struct CmParamSet *sendParamSet = NULL;
     struct CmParam params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = *userCert },
         { .tag = CM_TAG_PARAM1_BUFFER, .blob = *certAlias },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = userId },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = status },
     };
 
     do {
@@ -964,20 +971,14 @@ static int32_t InstallUserCert(enum CertManagerInterfaceCode type, const struct 
             break;
         }
 
-        ret = SendRequest(type, &parcelBlob, certUri);
+        ret = SendRequest(CM_MSG_INSTALL_USER_CERTIFICATE, &parcelBlob, certUri);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("InstallUserCert request failed, ret: %d", ret);
+            CM_LOG_E("CmClientInstallUserTrustedCert request failed, ret: %d", ret);
             break;
         }
     } while (0);
     CmFreeParamSet(&sendParamSet);
     return ret;
-}
-
-int32_t CmClientInstallUserTrustedCert(const struct CmBlob *userCert, const struct CmBlob *certAlias,
-    struct CmBlob *certUri)
-{
-    return InstallUserCert(CM_MSG_INSTALL_USER_CERTIFICATE, userCert, certAlias, certUri);
 }
 
 static int32_t UninstallUserCert(enum CertManagerInterfaceCode type, const struct CmBlob *certUri)
@@ -1029,3 +1030,7 @@ int32_t CmClientUninstallAllUserTrustedCert(void)
     return UninstallAllUserCert(CM_MSG_UNINSTALL_ALL_USER_CERTIFICATE);
 }
 
+int32_t CmClientInstallSystemAppCert(const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
+{
+    return InstallAppCert(certParam, keyUri);
+}

@@ -56,6 +56,10 @@ extern "C" {
 
 #define CERT_MAX_PATH_LEN       256
 #define CM_ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
+#define INIT_INVALID_VALUE      0xFFFFFFFF
+
+#define CERT_STATUS_ENABLED    ((uint32_t) 0)
+#define CERT_STATUS_DISABLED   ((uint32_t) 1)
 
 /*
  * Align to 4-tuple
@@ -70,7 +74,10 @@ extern "C" {
 #define CM_CREDENTIAL_STORE             0
 #define CM_SYSTEM_TRUSTED_STORE         1
 #define CM_USER_TRUSTED_STORE           2
-#define CM_PRI_CREDENTIAL_STORE    3
+#define CM_PRI_CREDENTIAL_STORE         3
+#define CM_SYS_CREDENTIAL_STORE         4
+#define CM_SOTRE_CHECK(a) \
+    (((a) != CM_CREDENTIAL_STORE) && ((a) != CM_PRI_CREDENTIAL_STORE) && ((a) != CM_SYS_CREDENTIAL_STORE))
 
 enum CmKeyDigest {
     CM_DIGEST_NONE = 0,
@@ -132,7 +139,7 @@ enum CmErrorCode {
     CMR_ERROR_AUTH_CHECK_FAILED = -24,
     CMR_ERROR_KEY_OPERATION_FAILED = -25,
     CMR_ERROR_NOT_SYSTEMP_APP = -26,
-    CMR_ERROR_CERT_NUM_REACHED_LIMIT = -27,
+    CMR_ERROR_MAX_CERT_COUNT_REACHED = -27,
     CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT = -28,
     CMR_ERROR_GET_ADVSECMODE_PARAM_FAIL = -29,
     CMR_ERROR_DEVICE_ENTER_ADVSECMODE = -30,
@@ -335,6 +342,14 @@ struct CmSignatureSpec {
     uint32_t purpose;
     uint32_t padding;
     uint32_t digest;
+};
+
+struct CmAppCertParam {
+    struct CmBlob *appCert;
+    struct CmBlob *appCertPwd;
+    struct CmBlob *certAlias;
+    uint32_t store;
+    uint32_t userId;
 };
 
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)

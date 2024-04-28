@@ -487,5 +487,11 @@ int32_t CmDeleteProcessInfo(const struct CmContext *context)
         CM_LOG_E("CmDeletePublicCredential faild");
     }
 
+    /* Delete system credentail*/
+    ret = CmTraversalDir(context, SYS_CREDNTIAL_STORE, CM_SYS_CREDENTIAL_STORE);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CmDeletePublicCredential faild");
+    }
+
     return ret;
 }

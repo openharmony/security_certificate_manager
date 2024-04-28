@@ -36,6 +36,7 @@ constexpr uint32_t CERT_KEY_ALG_ECC_P224 = 7;
 constexpr uint32_t CERT_KEY_ALG_ECC_P384 = 8;
 constexpr uint32_t CERT_KEY_ALG_ECC_P521 = 9;
 constexpr uint32_t CERT_KEY_ALG_ED25519 = 10;
+constexpr uint32_t TEST_USERID = 100;
 
 namespace CertmanagerTest {
 void FreeCMBlobData(struct CmBlob *blob);

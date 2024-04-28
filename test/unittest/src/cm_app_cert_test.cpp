@@ -187,10 +187,11 @@ HWTEST_F(CmAppCertTest, AppCertInstallTest003, TestSize.Level0)
     struct CmBlob keyUri = { sizeof(keyUriBuf), keyUriBuf };
 
     int32_t ret = CmInstallAppCert(&appCert, &g_appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
-    EXPECT_EQ(ret, CM_FAILURE) << "AppCertInstallTest003 credentail test failed, retcode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_CERT_FORMAT) << "AppCertInstallTest003 credentail test failed, retcode:" << ret;
 
     ret = CmInstallAppCert(&appCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
-    EXPECT_EQ(ret, CM_FAILURE) << "AppCertInstallTest003 pri_credentail test failed, retcode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_CERT_FORMAT) <<
+        "AppCertInstallTest003 pri_credentail test failed, retcode:" << ret;
 }
 
 /**
@@ -207,10 +208,10 @@ HWTEST_F(CmAppCertTest, AppCertInstallAbnormalTest004, TestSize.Level0)
     uint8_t keyUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob keyUri = { sizeof(keyUriBuf), keyUriBuf };
 
-    int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE + 1, &keyUri);
+    int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_SYS_CREDENTIAL_STORE + 1, &keyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "AppCertInstallAbnormalTest004 test failed, retcode:" << ret;
 
-    ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE + 1, &keyUri);
+    ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_SYS_CREDENTIAL_STORE + 1, &keyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "AppCertInstallAbnormalTest004 privite test failed, retcode:" << ret;
 }
 
@@ -402,7 +403,7 @@ HWTEST_F(CmAppCertTest, CmGetAppCertAbnormalTest004, TestSize.Level0)
     ret = CmGetAppCert(&keyUri, CM_CREDENTIAL_STORE, nullptr);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "CmGetAppCertAbnormalTest004 02 failed, retcode:" << ret;
 
-    ret = CmGetAppCert(&keyUri, CM_PRI_CREDENTIAL_STORE + 1, &certificate);
+    ret = CmGetAppCert(&keyUri, CM_SYS_CREDENTIAL_STORE + 1, &certificate);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "CmGetAppCertAbnormalTest004 03 failed, retcode:" << ret;
 
     ret = CmUninstallAllAppCert();
@@ -514,7 +515,7 @@ HWTEST_F(CmAppCertTest, CmGetAppCertListAbnormalTest004, TestSize.Level0)
     certificateList.credentialCount = MAX_COUNT_CERTIFICATE;
     (void)memset_s(certificateList.credentialAbstract, buffSize, 0, buffSize);
 
-    int32_t ret = CmGetAppCertList(CM_PRI_CREDENTIAL_STORE + 1, &certificateList);
+    int32_t ret = CmGetAppCertList(CM_SYS_CREDENTIAL_STORE + 1, &certificateList);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "Abnormal AppCertInstallTest04 test failed, retcode:" << ret;
 
     if (certificateList.credentialAbstract != nullptr) {
@@ -566,7 +567,7 @@ HWTEST_F(CmAppCertTest, AppCertUnInstallAbnormalTest003, TestSize.Level0)
     uint8_t keyUriBuf[] = "oh:t=ak;o=keyA;u=0;a=0";
     struct CmBlob keyUri = { sizeof(keyUriBuf), keyUriBuf };
 
-    int32_t ret = CmUninstallAppCert(&keyUri, CM_PRI_CREDENTIAL_STORE + 1);
+    int32_t ret = CmUninstallAppCert(&keyUri, CM_SYS_CREDENTIAL_STORE + 1);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "AppCertUnInstallAbnormalTest003 test failed, retcode:" << ret;
 }
 

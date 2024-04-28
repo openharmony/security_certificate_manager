@@ -30,14 +30,19 @@ int32_t CmServiceGetSystemCertCheck(const uint32_t store, const struct CmBlob *c
 
 int32_t CmServiceSetCertStatusCheck(const uint32_t store, const struct CmBlob *certUri, const uint32_t status);
 
-int32_t CmServiceInstallAppCertCheck(const struct CmBlob *appCert, const struct CmBlob *appCertPwd,
-    const struct CmBlob *certAlias, const uint32_t store, const struct CmContext *cmContext);
+int32_t CmServiceInstallAppCertCheck(const struct CmAppCertParam *certParam, struct CmContext *cmContext);
 
-int32_t CmServiceUninstallAppCertCheck(const uint32_t store, const struct CmBlob *keyUri);
+int32_t CmServiceUninstallAppCertCheck(struct CmContext *cmContext, const uint32_t store,
+    const struct CmBlob *keyUri);
 
-int32_t CmServiceGetAppCertListCheck(const uint32_t store);
+int32_t CmServiceGetAppCertListCheck(const struct CmContext *cmContext, const uint32_t store);
 
-int32_t CmServiceGetAppCertCheck(const uint32_t store, const struct CmBlob *keyUri);
+int32_t CmServiceGetAppCertCheck(struct CmContext *cmContext, const uint32_t store, const struct CmBlob *keyUri);
+
+int32_t CmServiceInstallUserCertCheck(struct CmContext *cmContext, const struct CmBlob *userCert,
+    const struct CmBlob *certAlias, const uint32_t userId);
+
+int32_t CmServiceUninstallUserCertCheck(struct CmContext *cmContext, const struct CmBlob *certUri);
 
 #ifdef __cplusplus
 }

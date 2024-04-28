@@ -64,44 +64,51 @@ static int32_t GetFilePath(const struct CmContext *context, uint32_t store, char
     char *suffix, uint32_t *suffixLen)
 {
     int32_t ret;
-    int32_t retVal;
+
+    if (context == NULL) {
+        CM_LOG_E("Null pointer failture");
+        return CMR_ERROR_NULL_POINTER;
+    }
+
     if (suffix == NULL || suffixLen == NULL) {
         CM_LOG_E("NULL pointer failure");
         return CMR_ERROR_NULL_POINTER;
     }
 
     switch (store) {
-        if (context == NULL) {
-            CM_LOG_E("Null pointer failture");
-            return CMR_ERROR_NULL_POINTER;
-        }
         case CM_CREDENTIAL_STORE:
+            ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", CREDNTIAL_STORE, context->userId);
+            break;
         case CM_USER_TRUSTED_STORE:
+            ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", USER_CA_STORE, context->userId);
+            break;
         case CM_PRI_CREDENTIAL_STORE:
-            if (store == CM_CREDENTIAL_STORE) {
-                ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", CREDNTIAL_STORE, context->userId);
-            } else if (store == CM_PRI_CREDENTIAL_STORE) {
-                ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", APP_CA_STORE, context->userId);
-            } else {
-                ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", USER_CA_STORE, context->userId);
-            }
-
-            retVal = sprintf_s(suffix, MAX_SUFFIX_LEN, "%u", context->uid);
-            if (ret < 0 || retVal < 0) {
-                CM_LOG_E("Construct file Path failed ret:%d, retVal:%d", ret, retVal);
-                return CMR_ERROR;
-            }
+            ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", APP_CA_STORE, context->userId);
+            break;
+        case CM_SYS_CREDENTIAL_STORE:
+            ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", SYS_CREDNTIAL_STORE, context->userId);
             break;
         case CM_SYSTEM_TRUSTED_STORE:
             ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s", SYSTEM_CA_STORE);
-            if (ret < 0) {
-                return CMR_ERROR;
-            }
             break;
-
         default:
             return CMR_ERROR_NOT_SUPPORTED;
     }
+
+    if (ret < 0) {
+        CM_LOG_E("Construct file Path failed ret: %d", ret);
+        return CMR_ERROR;
+    }
+
+    // construct file suffix
+    if (store != CM_SYSTEM_TRUSTED_STORE) {
+        ret = sprintf_s(suffix, MAX_SUFFIX_LEN, "%u", context->uid);
+        if (ret < 0) {
+            CM_LOG_E("Construct file suffix failed ret: %d", ret);
+            return CMR_ERROR;
+        }
+    }
+
     *suffixLen = (uint32_t)strlen(suffix);
     return CMR_OK;
 }
@@ -214,7 +221,6 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
         CM_LOG_E("Failed obtain path for store %u", store);
         return ret;
     }
-
     ret = CertManagerFileRemove(pathBuf, (char *)keyUri->data);
     if (ret != CMR_OK) {
         CM_LOG_E("CertManagerFileRemove failed ret: %d", ret);
@@ -251,6 +257,8 @@ static int32_t CmAppCertGetFilePath(const struct CmContext *context, const uint3
         case CM_PRI_CREDENTIAL_STORE :
             ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u", APP_CA_STORE, context->userId);
             break;
+        case CM_SYS_CREDENTIAL_STORE:
+            ret = sprintf_s((char *)path->data, MAX_PATH_LEN, "%s%u", SYS_CREDNTIAL_STORE, context->userId);
         default:
             break;
     }
@@ -356,7 +364,7 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
 
 int32_t CmRemoveAllAppCert(const struct CmContext *context)
 {
-    if (!CmHasPrivilegedPermission() || !CmHasCommonPermission()) {
+    if (!CmHasPrivilegedPermission() || !CmHasCommonPermission() || !CmHasSystemAppPermission()) {
         CM_LOG_E("permission check failed");
         return CMR_ERROR_PERMISSION_DENIED;
     }
@@ -376,6 +384,12 @@ int32_t CmRemoveAllAppCert(const struct CmContext *context)
     ret = CmRemoveSpecifiedAppCert(context, CM_PRI_CREDENTIAL_STORE);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("remove private credential app cert faild");
+    }
+
+    /* remove system credential app cert */
+    ret = CmRemoveSpecifiedAppCert(context, CM_SYS_CREDENTIAL_STORE);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("remove system credential app cert faild");
     }
 
     return ret;
@@ -488,7 +502,7 @@ int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *p
         ret = CherkCertCountBeyondMax((char*)pathBlob->data, (char *)certUri->data);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("cert count beyond maxcount, can't install");
-            ret = CMR_ERROR_CERT_NUM_REACHED_LIMIT;
+            ret = CMR_ERROR_MAX_CERT_COUNT_REACHED;
             break;
         }
 

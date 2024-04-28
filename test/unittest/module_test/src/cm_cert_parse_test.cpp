@@ -505,7 +505,7 @@ HWTEST_F(CmCertParseTest, CmCertParseTest027, TestSize.Level0)
 
     int32_t ret = CmParsePkcs12Cert(&certInfo, reinterpret_cast<char *>(const_cast<uint8_t *>(g_certPwd)),
         &pkey, &appCert);
-    EXPECT_EQ(ret, CM_FAILURE);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_CERT_FORMAT);
 
     EVP_PKEY_free(pkey);
 }

@@ -366,12 +366,17 @@ static int32_t StoreAppCert(const struct CmContext *context, struct AppCert *app
     return ret;
 }
 
-static int32_t ConstructKeyUri(const struct CmContext *context, const struct CmBlob *certAlias, struct CmBlob *keyUri)
+static int32_t ConstructKeyUri(
+    const struct CmContext *context, const struct CmBlob *certAlias, uint32_t store, struct CmBlob *keyUri)
 {
+    uint32_t type = CM_URI_TYPE_APP_KEY; /* type is 'ak' */
+    if (store == CM_SYS_CREDENTIAL_STORE) {
+        type = CM_URI_TYPE_SYS_KEY; /* type is 'sk' */
+    }
     struct CmBlob commonUri = { 0, NULL };
     int32_t ret;
     do {
-        ret = CmConstructCommonUri(context, CM_URI_TYPE_APP_KEY, certAlias, &commonUri);
+        ret = CmConstructCommonUri(context, type, certAlias, &commonUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("construct key uri get common uri failed");
             break;
@@ -396,8 +401,8 @@ static int32_t ConstructKeyUri(const struct CmContext *context, const struct CmB
     return ret;
 }
 
-int32_t CmInstallAppCertPro(const struct CmContext *context, struct CmAppCertInfo *appCertInfo,
-    const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri)
+int32_t CmInstallAppCertPro(
+    const struct CmContext *context, const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
 {
     struct AppCert appCert;
     (void)memset_s(&appCert, sizeof(struct AppCert), 0, sizeof(struct AppCert));
@@ -405,13 +410,13 @@ int32_t CmInstallAppCertPro(const struct CmContext *context, struct CmAppCertInf
 
     int32_t ret;
     do {
-        ret = ConstructKeyUri(context, certAlias, keyUri);
+        ret = ConstructKeyUri(context, certParam->certAlias, certParam->store, keyUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("construct app cert uri fail");
             break;
         }
 
-        ret = CmParsePkcs12Cert(&appCertInfo->appCert, (char *)appCertInfo->appCertPwd.data, &priKey, &appCert);
+        ret = CmParsePkcs12Cert(certParam->appCert, (char *)certParam->appCertPwd->data, &priKey, &appCert);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmParsePkcs12Cert fail");
             break;
@@ -423,7 +428,7 @@ int32_t CmInstallAppCertPro(const struct CmContext *context, struct CmAppCertInf
             break;
         }
 
-        ret = StoreAppCert(context, &appCert, store, keyUri);
+        ret = StoreAppCert(context, &appCert, certParam->store, keyUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("store App Cert failed");
             break;

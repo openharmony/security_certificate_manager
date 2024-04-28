@@ -26,6 +26,10 @@ bool CmHasPrivilegedPermission(void);
 
 bool CmHasCommonPermission(void);
 
+bool CmHasUserTrustedPermission(void);
+
+bool CmHasSystemAppPermission(void);
+
 bool CmIsSystemApp(void);
 
 bool CmIsSystemAppByStoreType(const uint32_t store);

@@ -61,6 +61,7 @@ static const int32_t CERT_MANAGER_SYS_CAP = 17500000;
 static const int32_t RESULT_NUMBER = 2;
 static const uint32_t APPLICATION_CERTIFICATE_STORE = 0;
 static const uint32_t APPLICATION_PRIVATE_CERTIFICATE_STORE = 3;
+static const uint32_t APPLICATION_SYSTEM_CERTIFICATE_STORE = 4;
 
 napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store);
 napi_value ParseBoolean(napi_env env, napi_value object, bool &status);
@@ -155,7 +156,7 @@ enum ErrorCode {
     INNER_FAILURE = 17500001,
     NOT_FOUND = 17500002,
     INVALID_CERT_FORMAT = 17500003,
-    CERT_NUM_REACHED_LIMIT = 17500004,
+    MAX_CERT_COUNT_REACHED = 17500004,
     NO_AUTHORIZATION = 17500005,
     ALIAS_LENGTH_REACHED_LIMIT = 17500006,
     DEVICE_ENTER_ADVSECMODE = 17500007,

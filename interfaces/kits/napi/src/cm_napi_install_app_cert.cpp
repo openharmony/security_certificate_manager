@@ -28,4 +28,9 @@ napi_value CMNapiInstallPrivateAppCert(napi_env env, napi_callback_info info)
 {
     return CMNapiInstallAppCertCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
 }
+
+napi_value CMNapiInstallSystemAppCert(napi_env env, napi_callback_info info)
+{
+    return CMNapiInstallAppCertCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
+}
 }  // namespace CertManagerNapi

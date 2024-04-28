@@ -28,4 +28,9 @@ napi_value CMNapiUninstallPrivateAppCert(napi_env env, napi_callback_info info)
 {
     return CMNapiUninstallAppCertCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
 }
+
+napi_value CMNapiUninstallSystemAppCert(napi_env env, napi_callback_info info)
+{
+    return CMNapiUninstallAppCertCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
+}
 }  // namespace CertManagerNapi

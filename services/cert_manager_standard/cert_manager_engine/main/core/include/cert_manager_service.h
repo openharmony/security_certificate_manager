@@ -24,8 +24,8 @@
 extern "C" {
 #endif
 
-int32_t CmServicInstallAppCert(const struct CmContext *context, struct CmAppCertInfo *appCertInfo,
-    const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri);
+int32_t CmServicInstallAppCert(
+    struct CmContext *context, const struct CmAppCertParam *certParam, struct CmBlob *keyUri);
 
 int32_t CmServiceGetAppCert(const struct CmContext *context, uint32_t store,
     struct CmBlob *keyUri, struct CmBlob *certBlob);
@@ -59,7 +59,7 @@ int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlo
 int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem);
 
 int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *userCert,
-    const struct CmBlob *certAlias, struct CmBlob *certUri);
+    const struct CmBlob *certAlias, const uint32_t status, struct CmBlob *certUri);
 
 int32_t CmUninstallUserCert(const struct CmContext *context, const struct CmBlob *certUri);
 
