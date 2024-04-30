@@ -353,7 +353,7 @@ static napi_value GrantUidAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        napi_throw(env, GenerateBusinessError(env, INNER_FAILURE, "queue asyncWork error"));
+        ThrowParamsError(env, INNER_FAILURE, "queue asyncWork error");
         CM_LOG_E("get async work failed when granting uid");
         return nullptr;
     }
@@ -377,7 +377,7 @@ static napi_value RemoveUidAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        napi_throw(env, GenerateBusinessError(env, INNER_FAILURE, "queue asyncWork error"));
+        ThrowParamsError(env, INNER_FAILURE, "queue asyncWork error");
         CM_LOG_E("queue async work failed when removing uid");
         return nullptr;
     }
@@ -401,7 +401,7 @@ static napi_value IsAuthedAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        napi_throw(env, GenerateBusinessError(env, INNER_FAILURE, "queue asyncWork error"));
+        ThrowParamsError(env, INNER_FAILURE, "queue asyncWork error");
         CM_LOG_E("queue async work failed when using isAuthed");
         return nullptr;
     }
@@ -425,7 +425,7 @@ static napi_value GetUidListAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        napi_throw(env, GenerateBusinessError(env, INNER_FAILURE, "queue asyncWork error"));
+        ThrowParamsError(env, INNER_FAILURE, "queue asyncWork error");
         CM_LOG_E("queue async work failed when getting authed uid list");
         return nullptr;
     }
