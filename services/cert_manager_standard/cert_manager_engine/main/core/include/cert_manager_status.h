@@ -34,9 +34,6 @@
 #define VERSION_1                   ((uint32_t) 0)
 #define VERSION_1                   ((uint32_t) 0)
 
-#define CERT_STATUS_ENABLED    ((uint32_t) 0)
-#define CERT_STATUS_DISABLED   ((uint32_t) 1)
-
 #define DECODE_UINT32(_b) (uint32_t)(((_b)[0] << 24) | ((_b)[1] << 16) | ((_b)[2] << 8) | (_b)[3])
 #define ENCODE_UINT32(_b, _i) do { (_b)[0] = ((_i) >> 24) & 0xff; (_b)[1] = ((_i) >> 16) & 0xff; \
     (_b)[2] = ((_i) >> 8) & 0xff; (_b)[3] = (_i) & 0xff; } while (0)

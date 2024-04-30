@@ -23,6 +23,8 @@ namespace CMNapi {
 napi_value CMNapiUninstallPublicCert(napi_env env, napi_callback_info info);
 
 napi_value CMNapiUninstallPrivateAppCert(napi_env env, napi_callback_info info);
+
+napi_value CMNapiUninstallSystemAppCert(napi_env env, napi_callback_info info);
 }  // namespace CertManagerNapi
 
 #endif  // CM_NAPI_UNINSTALL_APP_CERT_H

@@ -103,7 +103,7 @@ int32_t CmParsePkcs12Cert(const struct CmBlob *p12Cert, char *passWd, EVP_PKEY *
 
         p12 = d2i_PKCS12_bio(bio, NULL);
         if (p12 == NULL) {
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_INVALID_CERT_FORMAT;
             CM_LOG_E("D2i_PKCS12_bio faild:%s", ERR_error_string(ERR_get_error(), NULL));
             break;
         }

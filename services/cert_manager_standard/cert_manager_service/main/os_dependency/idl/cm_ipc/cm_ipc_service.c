@@ -39,7 +39,6 @@
 #include "cert_manager_file_operator.h"
 
 #define MAX_LEN_CERTIFICATE     8196
-#define INIT_INVALID_VALUE      0xFFFFFFFF
 
 static int32_t GetInputParams(const struct CmBlob *paramSetBlob, struct CmParamSet **paramSet,
     struct CmContext *cmContext, struct CmParamOut *params, uint32_t paramsCount)
@@ -210,27 +209,31 @@ void CmIpcServiceSetCertStatus(const struct CmBlob *paramSetBlob, struct CmBlob 
 void CmIpcServiceInstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context)
 {
-    struct CmContext cmContext = {0};
-    struct CmParamSet *paramSet = NULL;
-    int32_t ret;
-    struct CmBlob certAlias = { 0, NULL };
     uint32_t store = CM_CREDENTIAL_STORE;
+    uint32_t userId = 0;
+    struct CmBlob appCert = { 0, NULL };
+    struct CmBlob appCertPwd = { 0, NULL };
+    struct CmBlob certAlias = { 0, NULL };
+    struct CmParamOut params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = &appCert },
+        { .tag = CM_TAG_PARAM1_BUFFER, .blob = &appCertPwd },
+        { .tag = CM_TAG_PARAM2_BUFFER, .blob = &certAlias },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &userId },
+    };
 
+    int32_t ret;
+    struct CmContext cmContext = { 0 };
+    struct CmParamSet *paramSet = NULL;
     do {
-        struct CmAppCertInfo appCertInfo = { { 0, NULL }, { 0, NULL } };
-        struct CmParamOut params[] = {
-            { .tag = CM_TAG_PARAM0_BUFFER, .blob = &appCertInfo.appCert },
-            { .tag = CM_TAG_PARAM1_BUFFER, .blob = &appCertInfo.appCertPwd },
-            { .tag = CM_TAG_PARAM2_BUFFER, .blob = &certAlias },
-            { .tag = CM_TAG_PARAM3_UINT32, .uint32Param = &store },
-        };
         ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
             CM_LOG_E("install app cert get input params failed, ret = %d", ret);
             break;
         }
 
-        ret = CmServicInstallAppCert(&cmContext, &appCertInfo, &certAlias, store, outData);
+        struct CmAppCertParam certParam = { &appCert, &appCertPwd, &certAlias, store, userId };
+        ret = CmServicInstallAppCert(&cmContext, &certParam, outData);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("service install app cert failed, ret = %d", ret);
             break;
@@ -273,7 +276,7 @@ void CmIpcServiceUninstallAppCert(const struct CmBlob *paramSetBlob, struct CmBl
             break;
         }
 
-        ret = CmServiceUninstallAppCertCheck(store, &keyUri);
+        ret = CmServiceUninstallAppCertCheck(&cmContext, store, &keyUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("UninstallAppCert CmServiceGetSystemCertCheck failed, ret = %d", ret);
             break;
@@ -459,7 +462,7 @@ void CmIpcServiceGetAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob
             break;
         }
 
-        ret = CmServiceGetAppCertListCheck(store);
+        ret = CmServiceGetAppCertListCheck(&cmContext, store);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmServiceGetAppCertListCheck fail, ret = %d", ret);
             break;
@@ -618,7 +621,7 @@ void CmIpcServiceGetAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *ou
             break;
         }
 
-        ret = CmServiceGetAppCertCheck(store, &keyUri);
+        ret = CmServiceGetAppCertCheck(&cmContext, store, &keyUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("GCmServiceGetAppCertCheck fail, ret = %d", ret);
             break;
@@ -1054,7 +1057,7 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
     };
 
     do {
-        if (!CmHasCommonPermission() || !CmHasPrivilegedPermission()) {
+        if (!CmHasCommonPermission() || !CmHasUserTrustedPermission()) {
             CM_LOG_E("caller no permission");
             ret = CMR_ERROR_PERMISSION_DENIED;
             break;
@@ -1094,32 +1097,31 @@ void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlo
     int32_t ret = CM_SUCCESS;
     struct CmBlob userCert = { 0, NULL };
     struct CmBlob certAlias = { 0, NULL };
+    uint32_t userId = 0;
+    uint32_t status = CERT_STATUS_ENANLED;
     struct CmContext cmContext = {0};
     struct CmParamSet *paramSet = NULL;
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = &userCert },
         { .tag = CM_TAG_PARAM1_BUFFER, .blob = &certAlias },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &userId },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &status },
     };
 
     do {
-        if (!CmHasCommonPermission() || !CmHasPrivilegedPermission()) {
-            CM_LOG_E("caller no permission");
-            ret = CMR_ERROR_PERMISSION_DENIED;
-            break;
-        }
-        if (!CmIsSystemApp()) {
-            CM_LOG_E("install user cert: caller is not system app");
-            ret = CMR_ERROR_NOT_SYSTEMP_APP;
-            break;
-        }
-
         ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
             CM_LOG_E("InstallUserCert get input params failed, ret = %d", ret);
             break;
         }
 
-        ret = CmInstallUserCert(&cmContext, &userCert, &certAlias, outData);
+        ret = CmServiceInstallUserCertCheck(&cmContext, &userCert, &certAlias, userId);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmServiceInstallUserCertCheck fail, ret = %d", ret);
+            break;
+        }
+
+        ret = CmInstallUserCert(&cmContext, &userCert, &certAlias, status, outData);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CertManagerInstallUserCert fail, ret = %d", ret);
             break;
@@ -1151,20 +1153,15 @@ void CmIpcServiceUninstallUserCert(const struct CmBlob *paramSetBlob, struct CmB
     };
 
     do {
-        if (!CmHasCommonPermission() || !CmHasPrivilegedPermission()) {
-            CM_LOG_E("caller no permission");
-            ret = CMR_ERROR_PERMISSION_DENIED;
-            break;
-        }
-        if (!CmIsSystemApp()) {
-            CM_LOG_E("uninstall user cert: caller is not system app");
-            ret = CMR_ERROR_NOT_SYSTEMP_APP;
-            break;
-        }
-
         ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
             CM_LOG_E("UninstallUserCert get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmServiceUninstallUserCertCheck(&cmContext, &certUri);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmServiceUninstallUserCertCheck fail, ret = %d", ret);
             break;
         }
 
@@ -1189,7 +1186,7 @@ void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct 
     struct CmContext cmContext = {0};
 
     do {
-        if (!CmHasCommonPermission() || !CmHasPrivilegedPermission()) {
+        if (!CmHasCommonPermission() || !CmHasUserTrustedPermission()) {
             CM_LOG_E("caller no permission");
             ret = CMR_ERROR_PERMISSION_DENIED;
             break;

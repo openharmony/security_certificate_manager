@@ -43,6 +43,9 @@ int32_t GetRootPath(uint32_t store, char *rootPath, uint32_t pathLen)
         case CM_PRI_CREDENTIAL_STORE:
             ret = memcpy_s(rootPath, pathLen - 1, PRI_CREDNTIAL_STORE, strlen(PRI_CREDNTIAL_STORE));
             break;
+        case CM_SYS_CREDENTIAL_STORE:
+            ret = memcpy_s(rootPath, pathLen - 1, SYS_CREDNTIAL_STORE, strlen(SYS_CREDNTIAL_STORE));
+            break;
         default:
             return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -64,10 +67,14 @@ int32_t ConstructUserIdPath(const struct CmContext *context, uint32_t store,
         return ret;
     }
 
+    CM_LOG_I("root path: %s", rootPath);
+
     if (snprintf_s(userIdPath, pathLen, pathLen - 1, "%s%u", rootPath, context->userId) < 0) {
         CM_LOG_E("construct user id path failed");
         return CMR_ERROR_INVALID_OPERATION;
     }
+
+    CM_LOG_I("userId path: %s", userIdPath);
 
     ret = CmMakeDir(userIdPath);
     if (ret == CMR_ERROR_MAKE_DIR_FAIL) {

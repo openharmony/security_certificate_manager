@@ -472,5 +472,71 @@ HWTEST_F(CmCommonPermissionTest, CmCommonPermissionTest026, TestSize.Level0)
     int32_t ret = CmAbort(&handle);
     EXPECT_EQ(ret, CMR_ERROR_PERMISSION_DENIED);
 }
+
+/**
+* @tc.name: CmCommonPermissionTest027
+* @tc.desc: test CmInstallAppCert sys credential
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCommonPermissionTest, CmCommonPermissionTest027, TestSize.Level0)
+{
+    uint8_t aliasData[] = "Common027";
+    struct CmBlob alias = { sizeof(aliasData), aliasData };
+    int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_RSA, CM_SYS_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CMR_ERROR_PERMISSION_DENIED);
+}
+
+/**
+* @tc.name: CmCommonPermissionTest028
+* @tc.desc: test CmUninstallAppCert sys credential
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCommonPermissionTest, CmCommonPermissionTest028, TestSize.Level0)
+{
+    uint8_t uriData[] = "Common028";
+    struct CmBlob uri = { sizeof(uriData), uriData };
+    int32_t ret = CmUninstallAppCert(&uri, CM_SYS_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CMR_ERROR_PERMISSION_DENIED);
+}
+
+/**
+* @tc.name: CmCommonPermissionTest029
+* @tc.desc: test CmGetAppCertList sys
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCommonPermissionTest, CmCommonPermissionTest029, TestSize.Level0)
+{
+    struct CredentialAbstract abstract[MAX_COUNT_CERTIFICATE];
+    (void)memset_s(abstract, sizeof(abstract), 0, sizeof(abstract));
+    struct CredentialList certList = { MAX_COUNT_CERTIFICATE, abstract };
+    int32_t ret = CmGetAppCertList(CM_SYS_CREDENTIAL_STORE, &certList);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+}
+
+/**
+* @tc.name: CmCommonPermissionTest030
+* @tc.desc: test CmGetAppCert sys
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCommonPermissionTest, CmCommonPermissionTest030, TestSize.Level0)
+{
+    struct Credential cred;
+    (void)memset_s(&cred, sizeof(struct Credential), 0, sizeof(struct Credential));
+    cred.credData.size = MAX_LEN_CERTIFICATE_CHAIN;
+    cred.credData.data = static_cast<uint8_t *>(malloc(MAX_LEN_CERTIFICATE_CHAIN));
+    ASSERT_TRUE(cred.credData.data != nullptr);
+
+    uint8_t uriData[] = "Common030";
+    struct CmBlob uri = { sizeof(uriData), uriData };
+
+    int32_t ret = CmGetAppCert(&uri, CM_SYS_CREDENTIAL_STORE, &cred);
+    EXPECT_EQ(ret, CMR_ERROR_PERMISSION_DENIED);
+
+    free(cred.credData.data);
+}
 } // end of namespace
 

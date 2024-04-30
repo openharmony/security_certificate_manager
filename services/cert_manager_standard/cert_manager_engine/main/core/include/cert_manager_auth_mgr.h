@@ -38,7 +38,8 @@ int32_t CmAuthDeleteAuthInfoByUserId(uint32_t userId, const struct CmBlob *uri);
 
 int32_t CmAuthDeleteAuthInfoByUid(uint32_t userId, uint32_t targetUid, const struct CmBlob *uri);
 
-int32_t CmCheckAndGetCommonUri(const struct CmContext *context, const struct CmBlob *uri, struct CmBlob *commonUri);
+int32_t CmCheckAndGetCommonUri(const struct CmContext *context, uint32_t store, const struct CmBlob *uri,
+    struct CmBlob *commonUri);
 
 int32_t CmCheckCallerIsProducer(const struct CmContext *context, const struct CmBlob *uri);
 

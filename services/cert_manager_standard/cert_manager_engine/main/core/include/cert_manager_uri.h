@@ -29,7 +29,8 @@ extern "C" {
 #define CM_URI_TYPE_MAC_KEY ((uint32_t)1)
 #define CM_URI_TYPE_APP_KEY ((uint32_t)2)
 #define CM_URI_TYPE_WLAN_KEY ((uint32_t)3)
-#define CM_URI_TYPE_MAX CM_URI_TYPE_WLAN_KEY
+#define CM_URI_TYPE_SYS_KEY ((uint32_t)4)
+#define CM_URI_TYPE_MAX CM_URI_TYPE_SYS_KEY
 #define CM_URI_TYPE_INVALID (CM_URI_TYPE_MAX + 1)
 
 #define MALLOC CMMalloc
@@ -39,8 +40,8 @@ extern "C" {
     CM_LOG_E("Failed to allocate memory of size: %u\n", (uint32_t) (sz)); return CMR_ERROR_MALLOC_FAIL; } } while (0)
 
 // object types: certificate, mac-key, app-key, WLAN-key
-static const char *g_types[] = { "c", "m", "ak", "wk" };
-static const uint32_t TYPE_COUNT = 4;
+static const char *g_types[] = { "c", "m", "ak", "wk", "sk" };
+static const uint32_t TYPE_COUNT = 5;
 
 struct CMUri {
     // path components

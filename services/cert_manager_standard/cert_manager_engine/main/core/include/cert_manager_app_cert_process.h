@@ -22,8 +22,8 @@
 extern "C" {
 #endif
 
-int32_t CmInstallAppCertPro(const struct CmContext *context, struct CmAppCertInfo *appCertInfo,
-    const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri);
+int32_t CmInstallAppCertPro(
+    const struct CmContext *context, const struct CmAppCertParam *certParam, struct CmBlob *keyUri);
 
 #ifdef __cplusplus
 }

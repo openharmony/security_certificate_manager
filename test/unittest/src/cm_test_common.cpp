@@ -31,21 +31,28 @@
 
 namespace CertmanagerTest {
 constexpr uint32_t SLEEP_TIME = 3;
+constexpr int32_t PERMISSION_MAX = 4;
+constexpr int32_t PERMISSION_INDEX0 = 0;
+constexpr int32_t PERMISSION_INDEX1 = 1;
+constexpr int32_t PERMISSION_INDEX2 = 2;
+constexpr int32_t PERMISSION_INDEX3 = 3;
 
 void SetATPermission(void)
 {
     static bool firstRun = true;
-    const char **perms = new const char *[2]; // 2 permissions
-    perms[0] = "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL"; // system_basic
-    perms[1] = "ohos.permission.ACCESS_CERT_MANAGER"; // normal
+    const char **perms = new const char *[PERMISSION_MAX]; // 4 permissions
+    perms[PERMISSION_INDEX0] = "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL"; // system_core
+    perms[PERMISSION_INDEX1] = "ohos.permission.ACCESS_CERT_MANAGER"; // normal
+    perms[PERMISSION_INDEX2] = "ohos.permission.ACCESS_USER_TRUSTED_CERT"; // system_core
+    perms[PERMISSION_INDEX3] = "ohos.permission.ACCESS_SYSTEM_APP_CERT"; // system_core
     NativeTokenInfoParams infoInstance = {
         .dcapsNum = 0,
-        .permsNum = 2,
+        .permsNum = PERMISSION_MAX,
         .dcaps = nullptr,
         .perms = perms,
         .acls = nullptr,
         .processName = "TestCertManager",
-        .aplStr = "system_basic",
+        .aplStr = "system_core",
     };
 
     auto tokenId = GetAccessTokenId(&infoInstance);
@@ -317,6 +324,12 @@ int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t s
     struct CmBlob appCertPwd = { sizeof(g_certPwd), const_cast<uint8_t *>(g_certPwd) };
     uint8_t uriData[MAX_LEN_URI] = {0};
     struct CmBlob keyUri = { sizeof(uriData), uriData };
+
+    if (store == CM_SYS_CREDENTIAL_STORE) {
+        struct CmAppCertParam appCertParam = { &appCert, &appCertPwd,
+            (struct CmBlob *)alias, CM_SYS_CREDENTIAL_STORE, TEST_USERID };
+        return CmInstallSystemAppCert(&appCertParam, &keyUri);
+    }
     return CmInstallAppCert(&appCert, &appCertPwd, alias, store, &keyUri);
 }
 
