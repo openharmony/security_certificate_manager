@@ -36,7 +36,7 @@ extern "C" {
  * @retval 0 success
  * @retval <0 failure
  */
-int32_t IsCertNeedBakeup(uint32_t userId, uint32_t uid, const struct CmBlob *certUri, bool *needUpdate);
+int32_t IsCertNeedBackup(uint32_t userId, uint32_t uid, const struct CmBlob *certUri, bool *needUpdate);
 
 /**
  * @brief Read the user certificate data
@@ -62,7 +62,7 @@ int32_t CmReadCertData(uint32_t store, const struct CmContext *context, const st
  * @retval 0 success
  * @retval <0 failure
  */
-int32_t CmBakeupUserCert(const struct CmContext *context, const struct CmBlob *certUri, const struct CmBlob *certData);
+int32_t CmBackupUserCert(const struct CmContext *context, const struct CmBlob *certUri, const struct CmBlob *certData);
 
 /**
  * @brief Back up all user certificates
@@ -71,7 +71,7 @@ int32_t CmBakeupUserCert(const struct CmContext *context, const struct CmBlob *c
  * @retval 0 success
  * @retval <0 failure
  */
-int32_t CmBakeupAllSaUserCerts(void);
+int32_t CmBackupAllSaUserCerts(void);
 
 #ifdef __cplusplus
 }

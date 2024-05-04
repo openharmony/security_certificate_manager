@@ -1079,9 +1079,9 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
             CM_LOG_E("set user cert status failed, ret = %d", ret);
             break;
         }
-        ret = CmSetStatusBakeupCert(&cmContext, &certUri, store, status);
+        ret = CmSetStatusBackupCert(&cmContext, &certUri, store, status);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmSetStatusBakeupCert failed, ret = %d", ret);
+            CM_LOG_E("CmSetStatusBackupCert failed, ret = %d", ret);
             break;
         }
     } while (0);

@@ -85,7 +85,7 @@ CM_API_EXPORT int32_t CmInstallAppCert(const struct CmBlob *appCert, const struc
 {
     CM_LOG_D("enter install app certificate");
     if (appCert == NULL || appCertPwd == NULL || certAlias == NULL ||
-        keyUri == NULL || keyUri->data == NULL || CM_SOTRE_CHECK(store)) {
+        keyUri == NULL || keyUri->data == NULL || CM_STORE_CHECK(store)) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -107,7 +107,7 @@ CM_API_EXPORT int32_t CmInstallAppCert(const struct CmBlob *appCert, const struc
 CM_API_EXPORT int32_t CmUninstallAppCert(const struct CmBlob *keyUri, const uint32_t store)
 {
     CM_LOG_D("enter uninstall app certificate");
-    if (keyUri == NULL || CM_SOTRE_CHECK(store)) {
+    if (keyUri == NULL || CM_STORE_CHECK(store)) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -129,7 +129,7 @@ CM_API_EXPORT int32_t CmUninstallAllAppCert(void)
 CM_API_EXPORT int32_t CmGetAppCertList(const uint32_t store, struct CredentialList *certificateList)
 {
     CM_LOG_D("enter get app certificatelist");
-    if (certificateList == NULL || CM_SOTRE_CHECK(store)) {
+    if (certificateList == NULL || CM_STORE_CHECK(store)) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -142,7 +142,7 @@ CM_API_EXPORT int32_t CmGetAppCert(const struct CmBlob *keyUri, const uint32_t s
     struct Credential *certificate)
 {
     CM_LOG_D("enter get app certificate");
-    if (keyUri == NULL || certificate == NULL || CM_SOTRE_CHECK(store)) {
+    if (keyUri == NULL || certificate == NULL || CM_STORE_CHECK(store)) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 

@@ -225,7 +225,7 @@ static int32_t GetCertConfRootDir(char *confRootDir, uint32_t dirLen)
     }
 
     if (dirLen < sizeof(CERT_BACKUP_CONFIG_ROOT_DIR)) {
-        CM_LOG_E("dirLen(%u) is too small for save user cert bakeup config file root path", dirLen);
+        CM_LOG_E("dirLen(%u) is too small for save user cert backup config file root path", dirLen);
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
 
@@ -344,21 +344,21 @@ int32_t CmGetCertConfPath(uint32_t userId, uint32_t uid, const struct CmBlob *ce
 /**
  * @brief Get the user certificate backup file root directory
  *
- * @param[out] certBakeupRootDir Save the buffer of the user certificate backup file root directory
- * @param[in] dirLen Maximum length of the certBakeupRootDir buffer
+ * @param[out] certBackupRootDir Save the buffer of the user certificate backup file root directory
+ * @param[in] dirLen Maximum length of the certBackupRootDir buffer
  * @return int32_t result
  * @retval 0 success
  * @retval <0 failure
  */
-static int32_t GetCertBakeupRootDir(char *certBakeupRootDir, uint32_t dirLen)
+static int32_t GetCertBackupRootDir(char *certBackupRootDir, uint32_t dirLen)
 {
-    if (certBakeupRootDir == NULL) {
+    if (certBackupRootDir == NULL) {
         CM_LOG_E("Input params invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     if (dirLen < sizeof(CERT_BACKUP_ROOT_DIR)) {
-        CM_LOG_E("dirLen(%u) is too small for save user cert bakeup root path", dirLen);
+        CM_LOG_E("dirLen(%u) is too small for save user cert backup root path", dirLen);
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
 
@@ -372,8 +372,8 @@ static int32_t GetCertBakeupRootDir(char *certBakeupRootDir, uint32_t dirLen)
         return CMR_ERROR_MAKE_DIR_FAIL;
     }
 
-    if (snprintf_s(certBakeupRootDir, dirLen, dirLen - 1, "%s", CERT_BACKUP_ROOT_DIR) < 0) {
-        CM_LOG_E("Construct certBakeupRootDir failed");
+    if (snprintf_s(certBackupRootDir, dirLen, dirLen - 1, "%s", CERT_BACKUP_ROOT_DIR) < 0) {
+        CM_LOG_E("Construct certBackupRootDir failed");
         return CM_FAILURE;
     }
 
@@ -385,7 +385,7 @@ int32_t CmGetCertBackupDir(uint32_t userId, char *certBackupDir, uint32_t certBa
     int32_t ret = CM_SUCCESS;
     char rootPath[CERT_MAX_PATH_LEN] = { 0 };
 
-    ret = GetCertBakeupRootDir(rootPath, CERT_MAX_PATH_LEN);
+    ret = GetCertBackupRootDir(rootPath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get user cert root path failed");
         return ret;

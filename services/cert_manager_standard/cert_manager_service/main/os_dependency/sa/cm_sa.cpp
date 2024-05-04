@@ -266,7 +266,7 @@ void CertManagerService::OnStart(const SystemAbilityOnDemandReason& startReason)
     runningState_ = STATE_RUNNING;
     CM_LOG_D("CertManagerService start success.");
 
-    (void)CmBakeupAllSaUserCerts();
+    (void)CmBackupAllSaUserCerts();
 }
 
 void CertManagerService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)

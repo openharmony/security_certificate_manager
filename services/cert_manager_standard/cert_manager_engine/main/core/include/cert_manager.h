@@ -75,7 +75,7 @@ int32_t CmRemoveAllUserCert(const struct CmContext *context, uint32_t store, con
  * @retval 0 success
  * @retval <0 failure
  */
-int32_t CmRemoveBakeupUserCert(const struct CmContext *context, const struct CmBlob *certUri,
+int32_t CmRemoveBackupUserCert(const struct CmContext *context, const struct CmBlob *certUri,
                                const char *userCertConfigFilePath);
 
 #ifdef __cplusplus

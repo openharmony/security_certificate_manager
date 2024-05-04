@@ -547,6 +547,20 @@ int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem)
     return ret;
 }
 
+static int32_t TryBackupUserCert(const struct CmContext *context, const struct CmBlob *userCert,
+    struct CmBlob *certUri, struct CmMutableBlob *pathBlob)
+{
+    int32_t ret = CmBackupUserCert(context, certUri, userCert);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CmBackupUserCert fail");
+        if (CmRemoveUserCert(pathBlob, certUri) != CM_SUCCESS) {
+            CM_LOG_E("CmBackupUserCert fail and CmRemoveUserCert fail");
+        }
+        return CM_FAILURE;
+    }
+    return ret;
+}
+
 int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *userCert,
     const struct CmBlob *certAlias, const uint32_t status, struct CmBlob *certUri)
 {
@@ -582,13 +596,9 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
         }
 
         if (status == CERT_STATUS_ENABLED) {
-            ret = CmBakeupUserCert(context, certUri, userCert);
+            ret = TryBackupUserCert(context, userCert, certUri, &pathBlob);
             if (ret != CM_SUCCESS) {
-                CM_LOG_E("CmBakeupUserCert fail");
-                if (CmRemoveUserCert(&pathBlob, certUri) != CM_SUCCESS) {
-                    CM_LOG_E("CmBakeupUserCert fail and CmRemoveUserCert fail");
-                }
-                ret = CM_FAILURE;
+                CM_LOG_E("BackupUserCert fail");
                 break;
             }
         }
@@ -638,22 +648,22 @@ static int32_t CmComparisonCallerIdWithUri(const struct CmContext *context,
 int32_t CmRmUserCert(const char *usrCertConfigFilepath)
 {
     int32_t ret = CM_SUCCESS;
-    uint8_t usrCertBakeupFilePath[CERT_MAX_PATH_LEN + 1] = { 0 };
+    uint8_t usrCertBackupFilePath[CERT_MAX_PATH_LEN + 1] = { 0 };
     uint32_t size = 0;
 
     ret = CmIsFileExist(NULL, usrCertConfigFilepath);
     if (ret != CMR_OK) {
         return CM_SUCCESS;
     }
-    size = CmFileRead(NULL, usrCertConfigFilepath, 0, usrCertBakeupFilePath, CERT_MAX_PATH_LEN);
+    size = CmFileRead(NULL, usrCertConfigFilepath, 0, usrCertBackupFilePath, CERT_MAX_PATH_LEN);
     if (size == 0) {
         CM_LOG_E("CmFileRead read size 0 invalid ,fail");
         return CM_FAILURE;
     }
 
-    ret = CmFileRemove(NULL, (const char *)usrCertBakeupFilePath);
+    ret = CmFileRemove(NULL, (const char *)usrCertBackupFilePath);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Remove cert bakeup file fail");
+        CM_LOG_E("Remove cert backup file fail");
     }
     return ret;
 }
@@ -702,9 +712,9 @@ int32_t CmUninstallUserCert(const struct CmContext *context, const struct CmBlob
             break;
         }
 
-        ret = CmRemoveBakeupUserCert(context, certUri, NULL);
+        ret = CmRemoveBackupUserCert(context, certUri, NULL);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmRemoveBakeupUserCert fail");
+            CM_LOG_E("CmRemoveBackupUserCert fail");
             break;
         }
         ret = CmSetStatusEnable(context, &pathBlob, certUri, store);
@@ -748,14 +758,14 @@ int32_t CmServiceSetCertStatus(const struct CmContext *context, const struct CmB
     return SetcertStatus(context, certUri, store, status, NULL);
 }
 
-int32_t CmSetStatusBakeupCert(
+int32_t CmSetStatusBackupCert(
     const struct CmContext *context, const struct CmBlob *certUri, uint32_t store, uint32_t status)
 {
     int32_t ret = CM_SUCCESS;
 
     if (status == CERT_STATUS_ENANLED) {
         bool needUpdate = false;
-        ret = IsCertNeedBakeup(context->userId, context->uid, certUri, &needUpdate);
+        ret = IsCertNeedBackup(context->userId, context->uid, certUri, &needUpdate);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Check cert is need update failed, ret = %d", ret);
             return CMR_ERROR_INVALID_OPERATION;
@@ -771,16 +781,16 @@ int32_t CmSetStatusBakeupCert(
             return CM_FAILURE;
         }
 
-        ret = CmBakeupUserCert(context, certUri, &certificateData);
+        ret = CmBackupUserCert(context, certUri, &certificateData);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmBakeupUserCert failed, ret = %d", ret);
+            CM_LOG_E("CmBackupUserCert failed, ret = %d", ret);
             ret = CM_FAILURE;
         }
         CM_FREE_BLOB(certificateData);
     } else if (status == CERT_STATUS_DISABLED) {
-        ret = CmRemoveBakeupUserCert(context, certUri, NULL);
+        ret = CmRemoveBackupUserCert(context, certUri, NULL);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmRemoveBakeupUserCert fail, ret = %d", ret);
+            CM_LOG_E("CmRemoveBackupUserCert fail, ret = %d", ret);
         }
     }
 

@@ -76,7 +76,7 @@ extern "C" {
 #define CM_USER_TRUSTED_STORE           2
 #define CM_PRI_CREDENTIAL_STORE         3
 #define CM_SYS_CREDENTIAL_STORE         4
-#define CM_SOTRE_CHECK(a) \
+#define CM_STORE_CHECK(a) \
     (((a) != CM_CREDENTIAL_STORE) && ((a) != CM_PRI_CREDENTIAL_STORE) && ((a) != CM_SYS_CREDENTIAL_STORE))
 
 enum CmKeyDigest {

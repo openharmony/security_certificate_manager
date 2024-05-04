@@ -210,7 +210,7 @@ int32_t CmServiceInstallAppCertCheck(const struct CmAppCertParam *certParam, str
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (CM_SOTRE_CHECK(certParam->store)) {
+    if (CM_STORE_CHECK(certParam->store)) {
         CM_LOG_E("CmInstallAppCertCheck store check fail, store:%u", certParam->store);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -291,7 +291,7 @@ static int32_t checkCallerAndUri(struct CmContext *cmContext, const struct CmBlo
 int32_t CmServiceUninstallAppCertCheck(struct CmContext *cmContext,
     const uint32_t store, const struct CmBlob *keyUri)
 {
-    if (CM_SOTRE_CHECK(store)) {
+    if (CM_STORE_CHECK(store)) {
         CM_LOG_E("invalid input arguments store:%u", store);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -339,7 +339,7 @@ static int32_t CmGetSysAppCertListCheck(const struct CmContext *cmContext, const
 
 int32_t CmServiceGetAppCertListCheck(const struct CmContext *cmContext, const uint32_t store)
 {
-    if (CM_SOTRE_CHECK(store)) {
+    if (CM_STORE_CHECK(store)) {
         CM_LOG_E("invalid input arguments store:%u", store);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -363,7 +363,7 @@ int32_t CmServiceGetAppCertListCheck(const struct CmContext *cmContext, const ui
 
 int32_t CmServiceGetAppCertCheck(struct CmContext *cmContext, const uint32_t store, const struct CmBlob *keyUri)
 {
-    if (CM_SOTRE_CHECK(store)) {
+    if (CM_STORE_CHECK(store)) {
         CM_LOG_E("invalid input arguments store:%u", store);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
