@@ -325,7 +325,7 @@ static int32_t CmTraversalDir(const struct CmContext *context, const char *path,
     return ret;
 }
 
-static int32_t CmTraversalBakeupUidDir(const char *certConfigUidDirPath)
+static int32_t CmTraversalBackupUidDir(const char *certConfigUidDirPath)
 {
     if (certConfigUidDirPath == NULL) {
         CM_LOG_E("input params is invaild");
@@ -344,10 +344,10 @@ static int32_t CmTraversalBakeupUidDir(const char *certConfigUidDirPath)
     for (uint32_t i = 0; i < fileCounts; i++) {
         struct CmBlob *certConfigFilePath = &fileNames[i];
 
-        /* Delete user cert bakeup and config file */
-        ret = CmRemoveBakeupUserCert(NULL, NULL, (const char *)certConfigFilePath->data);
+        /* Delete user cert backup and config file */
+        ret = CmRemoveBackupUserCert(NULL, NULL, (const char *)certConfigFilePath->data);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmRemoveBakeupUserCert failed");
+            CM_LOG_E("CmRemoveBackupUserCert failed");
             continue;
         }
     }
@@ -357,7 +357,7 @@ static int32_t CmTraversalBakeupUidDir(const char *certConfigUidDirPath)
     return CM_SUCCESS;
 }
 
-static int32_t CmTraversalBakeupUserIdDir(const char *certConfigUserIdDirPath)
+static int32_t CmTraversalBackupUserIdDir(const char *certConfigUserIdDirPath)
 {
     if (certConfigUserIdDirPath == NULL) {
         CM_LOG_E("input params is invaild");
@@ -384,9 +384,9 @@ static int32_t CmTraversalBakeupUserIdDir(const char *certConfigUserIdDirPath)
             continue;
         }
 
-        ret = CmTraversalBakeupUidDir(certConfigUidDirPath);
+        ret = CmTraversalBackupUidDir(certConfigUidDirPath);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmTraversalBakeupUidDir failed, ret = %d", ret);
+            CM_LOG_E("CmTraversalBackupUidDir failed, ret = %d", ret);
             continue;
         }
 
@@ -402,7 +402,7 @@ static int32_t CmTraversalBakeupUserIdDir(const char *certConfigUserIdDirPath)
     return CM_SUCCESS;
 }
 
-static int32_t CmTraversalBakeupUserCert(uint32_t userId)
+static int32_t CmTraversalBackupUserCert(uint32_t userId)
 {
     int32_t ret = CM_SUCCESS;
     char certConfigUserIdDirPath[CERT_MAX_PATH_LEN] = { 0 };
@@ -412,9 +412,9 @@ static int32_t CmTraversalBakeupUserCert(uint32_t userId)
         return CM_FAILURE;
     }
 
-    ret = CmTraversalBakeupUserIdDir(certConfigUserIdDirPath);
+    ret = CmTraversalBackupUserIdDir(certConfigUserIdDirPath);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("CmTraversalBakeupUserIdDir failed, ret = %d", ret);
+        CM_LOG_E("CmTraversalBackupUserIdDir failed, ret = %d", ret);
         return CM_FAILURE;
     }
 
@@ -425,16 +425,16 @@ static int32_t CmTraversalBakeupUserCert(uint32_t userId)
         return CMR_ERROR_REMOVE_FILE_FAIL;
     }
 
-    /* Delete {bakeupRootDir}/{userid} directory */
-    char certBakeupUserIdDirPath[CERT_MAX_PATH_LEN] = { 0 };
-    ret = CmGetCertBackupDir(userId, certBakeupUserIdDirPath, CERT_MAX_PATH_LEN);
+    /* Delete {backupRootDir}/{userid} directory */
+    char certBackupUserIdDirPath[CERT_MAX_PATH_LEN] = { 0 };
+    ret = CmGetCertBackupDir(userId, certBackupUserIdDirPath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Construct certBakeupUserIdDirPath failed");
+        CM_LOG_E("Construct certBackupUserIdDirPath failed");
         return CM_FAILURE;
     }
-    ret = CmDirRemove(certBakeupUserIdDirPath);
+    ret = CmDirRemove(certBackupUserIdDirPath);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Remove user certBakeupUserIdDirPath fail, ret = %d", ret);
+        CM_LOG_E("Remove user certBackupUserIdDirPath fail, ret = %d", ret);
         return CMR_ERROR_REMOVE_FILE_FAIL;
     }
 
@@ -468,10 +468,10 @@ int32_t CmDeleteProcessInfo(const struct CmContext *context)
             CM_LOG_E("CmDeleteUserCa faild");
         }
 
-        /* Delete user ca bakeup and config */
-        ret = CmTraversalBakeupUserCert(context->userId);
+        /* Delete user ca backup and config */
+        ret = CmTraversalBackupUserCert(context->userId);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Delete user ca bakeup and config file failed");
+            CM_LOG_E("Delete user ca backup and config file failed");
         }
     }
 

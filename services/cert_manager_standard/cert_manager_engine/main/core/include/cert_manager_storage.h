@@ -97,7 +97,7 @@ int32_t CmGetCertConfPath(uint32_t userId, uint32_t uid, const struct CmBlob *ce
  * @brief Construct the absolute path of the directory where the CA certificate backup file is stored
  *
  * @param[in] userId User ID
- * @param[out] certBackupDir The buffer that holds the absolute path of the {bakeupRootDir}/{userId} directory
+ * @param[out] certBackupDir The buffer that holds the absolute path of the {backupRootDir}/{userId} directory
  * @param[in] certBackupDirLen Maximum length of the certBackupDir buffer
  * @return int32_t result
  * @retval 0 success

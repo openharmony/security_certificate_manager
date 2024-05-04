@@ -102,7 +102,7 @@ static int32_t SetUpdateFlag(uint8_t updateFlag)
     return ret;
 }
 
-int32_t IsCertNeedBakeup(uint32_t userId, uint32_t uid, const struct CmBlob *certUri, bool *needUpdate)
+int32_t IsCertNeedBackup(uint32_t userId, uint32_t uid, const struct CmBlob *certUri, bool *needUpdate)
 {
     int32_t ret = CM_SUCCESS;
     char configPath[CERT_MAX_PATH_LEN] = { 0 };
@@ -130,20 +130,20 @@ int32_t IsCertNeedBakeup(uint32_t userId, uint32_t uid, const struct CmBlob *cer
             break;
         }
         uint32_t size = 0;
-        char bakeupPath[CERT_MAX_PATH_LEN] = { 0 };
-        size = CmFileRead(NULL, configPath, 0, (uint8_t *)bakeupPath, CERT_MAX_PATH_LEN - 1);
+        char backupPath[CERT_MAX_PATH_LEN] = { 0 };
+        size = CmFileRead(NULL, configPath, 0, (uint8_t *)backupPath, CERT_MAX_PATH_LEN - 1);
         if (size == 0) {
-            CM_LOG_E("read cert bakeup file path from configPath failed.");
+            CM_LOG_E("read cert backup file path from configPath failed.");
             *needUpdate = true;
             break;
         }
 
-        ret = CmIsFileExist(NULL, (const char *)bakeupPath);
+        ret = CmIsFileExist(NULL, (const char *)backupPath);
         if (ret == CMR_OK) {
             *needUpdate = false;
             break;
         } else if (ret != CMR_ERROR_NOT_EXIST) {
-            CM_LOG_E("check cert bakeup file return err code: %d.", ret);
+            CM_LOG_E("check cert backup file return err code: %d.", ret);
         }
         *needUpdate = true;
     } while (0);
@@ -233,7 +233,7 @@ int32_t CmConstructContextFromUri(const char *certUri, struct CmContext *context
     return ret;
 }
 
-static int32_t BakeupUserCert(const X509 *userCertX509, const struct CmBlob *userCert, const struct CmContext *context,
+static int32_t BackupUserCert(const X509 *userCertX509, const struct CmBlob *userCert, const struct CmContext *context,
                               const struct CmBlob *certUri)
 {
     char userCertConfigFilePath[CERT_MAX_PATH_LEN] = { 0 };
@@ -245,9 +245,9 @@ static int32_t BakeupUserCert(const X509 *userCertX509, const struct CmBlob *use
         return CM_FAILURE;
     }
 
-    ret = CmRemoveBakeupUserCert(context, certUri, userCertConfigFilePath);
+    ret = CmRemoveBackupUserCert(context, certUri, userCertConfigFilePath);
     if (ret != CMR_OK) {
-        CM_LOG_E("Remove user cert config and bakeup file failed, ret: %d", ret);
+        CM_LOG_E("Remove user cert config and backup file failed, ret: %d", ret);
     }
 
     ret = CmGetCertBackupFilePath(userCertX509, context->userId, userCertBackupFilePath, CERT_MAX_PATH_LEN);
@@ -270,7 +270,7 @@ static int32_t BakeupUserCert(const X509 *userCertX509, const struct CmBlob *use
     return CM_SUCCESS;
 }
 
-int32_t CmBakeupUserCert(const struct CmContext *context, const struct CmBlob *certUri, const struct CmBlob *certData)
+int32_t CmBackupUserCert(const struct CmContext *context, const struct CmBlob *certUri, const struct CmBlob *certData)
 {
     if ((context == NULL) || (CmCheckBlob(certUri) != CM_SUCCESS) || (CmCheckBlob(certData) != CM_SUCCESS)) {
         CM_LOG_E("Invalid input arguments");
@@ -294,9 +294,9 @@ int32_t CmBakeupUserCert(const struct CmContext *context, const struct CmBlob *c
             break;
         }
 
-        ret = BakeupUserCert(userCertX509, (const struct CmBlob *)&certPemData, context, certUri);
+        ret = BackupUserCert(userCertX509, (const struct CmBlob *)&certPemData, context, certUri);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("BakeupUserCert fail");
+            CM_LOG_E("BackupUserCert fail");
             ret = CM_FAILURE;
             break;
         }
@@ -325,7 +325,7 @@ static int32_t UpdateUserCert(uint32_t userId, uint32_t uid, const char *certPat
     certUri.size = strlen(uriStr);
 
     bool needUpdate = false;
-    ret = IsCertNeedBakeup(userId, uid, &certUri, &needUpdate);
+    ret = IsCertNeedBackup(userId, uid, &certUri, &needUpdate);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Check cert is need update failed, ret = %d", ret);
         return CMR_ERROR_INVALID_OPERATION;
@@ -349,7 +349,7 @@ static int32_t UpdateUserCert(uint32_t userId, uint32_t uid, const char *certPat
         return CM_FAILURE;
     }
 
-    ret = CmBakeupUserCert(&context, &certUri, &certificateData);
+    ret = CmBackupUserCert(&context, &certUri, &certificateData);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("update user certUri failed, ret = %d", ret);
         ret = CM_FAILURE;
@@ -456,7 +456,7 @@ static int32_t UpdateAllUserCerts(void)
     return CM_SUCCESS;
 }
 
-int32_t CmBakeupAllSaUserCerts(void)
+int32_t CmBackupAllSaUserCerts(void)
 {
     int32_t ret = 0;
     uint8_t updateFlag = 0;
