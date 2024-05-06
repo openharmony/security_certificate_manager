@@ -22,10 +22,7 @@ ohos_unittest("cm_inner_permission_test") {
     "cm_inner_permission_test.cpp",
   ]
 
-  include_dirs = [
-    "../include",
-    "//third_party/bounds_checking_function/include",
-  ]
+  include_dirs = [ "../include" ]
   cflags_cc = [
     "-Wall",
     "-Werror",
@@ -44,14 +41,14 @@ ohos_unittest("cm_inner_permission_test") {
   deps = [
     "../../../frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
     "../../../interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
-    "//third_party/bounds_checking_function:libsec_static",
-    "//third_party/googletest:gtest_main",
   ]
   defines = [ "_CM_LOG_ENABLE_" ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
+    "bounds_checking_function:libsec_static",
     "c_utils:utils",
+    "googletest:gtest",
   ]
 }

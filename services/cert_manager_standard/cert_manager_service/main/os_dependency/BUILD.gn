@@ -26,7 +26,6 @@ ohos_static_library("libcert_manager_service_os_dependency_standard_static") {
     ubsan = true
   }
   include_dirs = [
-    "//third_party/openssl/include",
     "../../../cert_manager_engine/main/core/include",
     "../../../../../interfaces/innerkits/cert_manager_standard/main/include",
   ]
@@ -40,7 +39,6 @@ ohos_static_library("libcert_manager_service_os_dependency_standard_static") {
     "../../../../../frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
     "../../../../../frameworks/cert_manager_standard/main/os_dependency:libcert_manager_log_mem_static",
     "idl:libcm_service_idl_standard_static",
-    "//third_party/openssl:libcrypto_shared",
   ]
 
   external_deps = [

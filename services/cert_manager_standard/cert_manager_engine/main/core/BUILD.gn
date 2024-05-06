@@ -37,7 +37,6 @@ ohos_static_library("cert_manager_engine_core_standard") {
   ]
   include_dirs = [
     "../../../../../interfaces/innerkits/cert_manager_standard/main/include",
-    "//third_party/openssl/include",
   ]
   cflags = [
     "-Wall",
@@ -70,7 +69,6 @@ ohos_static_library("cert_manager_engine_core_standard") {
   deps = [
     "../../../../../frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
     "../../../../../frameworks/cert_manager_standard/main/os_dependency:libcert_manager_log_mem_static",
-    "//third_party/openssl:libcrypto_shared",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
@@ -78,5 +76,6 @@ ohos_static_library("cert_manager_engine_core_standard") {
     "c_utils:utils",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "openssl:libcrypto_shared",
   ]
 }

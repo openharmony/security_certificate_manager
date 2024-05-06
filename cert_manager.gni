@@ -16,7 +16,7 @@ non_rwlock_support = false
 
 declare_args() {
   # depend on the definition of huks security level in base/security/huks/build/config.gni
-  deps_huks_security_level = "software"
+  certificate_manager_deps_huks_enabled = "software"
 }
 
 if (!defined(global_parts_info) ||
