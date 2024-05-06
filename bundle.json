@@ -17,7 +17,11 @@
       "name": "certificate_manager",
       "subsystem": "security",
       "syscap": [ "SystemCapability.Security.CertificateManager" ],
-      "features": [],
+      "features": [
+        "certificate_manager_deps_huks_enabled",
+        "certificate_manager_feature_ca_enabled",
+        "certificate_manager_feature_credential_enabled"
+      ],
       "adapted_system_type": [
         "mini",
         "small",
@@ -45,9 +49,7 @@
           "os_account",
           "safwk",
           "samgr",
-          "security_guard"
-        ],
-        "third_party": [
+          "security_guard",
           "openssl"
         ]
       },

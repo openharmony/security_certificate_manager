@@ -31,7 +31,6 @@ ohos_static_library("libcm_service_idl_standard_static") {
     ubsan = true
   }
   include_dirs = [
-    "//third_party/openssl/include",
     "../../../../../../interfaces/innerkits/cert_manager_standard/main/include",
     "../../../../cert_manager_engine/main/core/include",
   ]
@@ -49,12 +48,12 @@ ohos_static_library("libcm_service_idl_standard_static") {
     "../../../../../../frameworks/cert_manager_standard/main/os_dependency:libcert_manager_log_mem_static",
     "../../hisysevent_wrapper:libcert_manager_hisysevent_wrapper_static",
     "../../security_guard_report:libcert_manager_sg_report_static",
-    "//third_party/openssl:libcrypto_shared",
   ]
   external_deps = [
     "c_utils:utils",
     "huks:libhukssdk",
     "ipc:ipc_core",
+    "openssl:libcrypto_shared",
     "os_account:os_account_innerkits",
   ]
 

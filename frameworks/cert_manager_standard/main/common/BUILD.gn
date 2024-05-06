@@ -36,10 +36,8 @@ ohos_static_library("libcert_manager_common_standard_static") {
   public_configs =
       [ ":cert_manager_config" ]  # Share include files for other gn when deps.
 
-  include_dirs = [
-    "//third_party/openssl/include",
-    "../../../../interfaces/innerkits/cert_manager_standard/main/include",
-  ]
+  include_dirs =
+      [ "../../../../interfaces/innerkits/cert_manager_standard/main/include" ]
 
   sources = [
     "src/cm_advsecmode_check.c",
@@ -48,11 +46,11 @@ ohos_static_library("libcert_manager_common_standard_static") {
     "src/cm_x509.c",
   ]
 
-  deps = [ "//third_party/openssl:libcrypto_shared" ]
   external_deps = [
     "c_utils:utils",
     "huks:libhukssdk",
     "init:libbegetutil",
+    "openssl:libcrypto_shared",
   ]
   cflags = [
     "-DHILOG_ENABLE",

@@ -18,7 +18,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "openssl/ossl_typ.h"
 #include "cm_type.h"
 
 #ifdef __cplusplus
