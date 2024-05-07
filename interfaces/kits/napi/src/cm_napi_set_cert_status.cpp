@@ -76,7 +76,7 @@ static napi_value SetCertStatusParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_SET_CERT_STATUS_MIN_ARGS) && (argc != CM_NAPI_SET_CERT_STATUS_MAX_ARGS)) {
-        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid.");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid.");
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
     }
@@ -84,7 +84,7 @@ static napi_value SetCertStatusParseParams(
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "get certUri type error");
+        ThrowError(env, PARAM_ERROR, "get certUri type error");
         CM_LOG_E("could not get cert uri when set cert status");
         return nullptr;
     }
@@ -92,7 +92,7 @@ static napi_value SetCertStatusParseParams(
     index++;
     result = ParseUint32(env, argv[index], context->store);
     if (result == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "get store type error");
+        ThrowError(env, PARAM_ERROR, "get store type error");
         CM_LOG_E("could not get store");
         return nullptr;
     }
@@ -100,7 +100,7 @@ static napi_value SetCertStatusParseParams(
     index++;
     result = ParseBoolean(env, argv[index], context->status);
     if (result == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "get status type error");
+        ThrowError(env, PARAM_ERROR, "get status type error");
         CM_LOG_E("could not get status");
         return nullptr;
     }
@@ -109,7 +109,7 @@ static napi_value SetCertStatusParseParams(
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
+            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function failed when set cert status function");
             return nullptr;
         }

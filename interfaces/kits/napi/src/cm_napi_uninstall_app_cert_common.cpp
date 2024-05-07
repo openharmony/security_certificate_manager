@@ -65,7 +65,7 @@ napi_value UninstallAppCertParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_UNINSTALL_APP_CERT_MIN_ARGS) && (argc != CM_NAPI_UNINSTALL_APP_CERT_MAX_ARGS)) {
-        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid, arguments count need between 1 and 2.");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need between 1 and 2.");
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
     }
@@ -73,7 +73,7 @@ napi_value UninstallAppCertParseParams(
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "keyUri is not a string or the length is 0 or too long.");
+        ThrowError(env, PARAM_ERROR, "keyUri is not a string or the length is 0 or too long.");
         CM_LOG_E("could not get cert uri");
         return nullptr;
     }
@@ -82,7 +82,7 @@ napi_value UninstallAppCertParseParams(
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
             CM_LOG_E("get callback function faild when uninstall applicaiton cert");
             return nullptr;
         }
