@@ -140,7 +140,7 @@ static napi_value ParseInstallUserCertParams(napi_env env, napi_callback_info in
 
     if ((argc != CM_NAPI_USER_INSTALL_ARGS_CNT) &&
         (argc != (CM_NAPI_USER_INSTALL_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid when installing user cert");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid when installing user cert");
         CM_LOG_E("arguments count is not expected when installing user cert");
         return nullptr;
     }
@@ -148,7 +148,7 @@ static napi_value ParseInstallUserCertParams(napi_env env, napi_callback_info in
     size_t index = 0;
     napi_value result = ParseCertInfo(env, argv[index], context);
     if (result == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "get context type error");
+        ThrowError(env, PARAM_ERROR, "get context type error");
         CM_LOG_E("get CertBlob failed when installing user cert");
         return nullptr;
     }
@@ -157,7 +157,7 @@ static napi_value ParseInstallUserCertParams(napi_env env, napi_callback_info in
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
+            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function failed when install user cert");
             return nullptr;
         }
@@ -174,7 +174,7 @@ static napi_value ParseUninstallUserCertParams(napi_env env, napi_callback_info 
 
     if ((argc != CM_NAPI_USER_UNINSTALL_ARGS_CNT) &&
         (argc != (CM_NAPI_USER_UNINSTALL_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid when uninstalling user cert");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid when uninstalling user cert");
         CM_LOG_E("arguments count is not expected when uninstalling user cert");
         return nullptr;
     }
@@ -182,7 +182,7 @@ static napi_value ParseUninstallUserCertParams(napi_env env, napi_callback_info 
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "get certUri type error");
+        ThrowError(env, PARAM_ERROR, "get certUri type error");
         CM_LOG_E("get CertBlob failed when uninstalling user cert");
         return nullptr;
     }
@@ -191,7 +191,7 @@ static napi_value ParseUninstallUserCertParams(napi_env env, napi_callback_info 
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
+            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function failed when uninstalling user cert");
             return nullptr;
         }
@@ -208,7 +208,7 @@ static napi_value ParseUninstallAllUserCertParams(napi_env env, napi_callback_in
 
     if ((argc != CM_NAPI_USER_UNINSTALL_ALL_ARGS_CNT) &&
         (argc != (CM_NAPI_USER_UNINSTALL_ALL_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid when uninstalling all user cert");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid when uninstalling all user cert");
         CM_LOG_E("arguments count is not expected when uninstalling all user cert");
         return nullptr;
     }
@@ -217,7 +217,7 @@ static napi_value ParseUninstallAllUserCertParams(napi_env env, napi_callback_in
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
+            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function failed when uninstalling all user cert");
             return nullptr;
         }
@@ -299,7 +299,7 @@ static napi_value InstallUserCertAsyncWork(napi_env env, UserCertAsyncContext co
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowParamsError(env, PARAM_ERROR, "queue async work error");
+        ThrowError(env, PARAM_ERROR, "queue async work error");
         CM_LOG_E("queue async work failed when installing user cert");
         return nullptr;
     }
@@ -349,7 +349,7 @@ static napi_value UninstallUserCertAsyncWork(napi_env env, UserCertAsyncContext 
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowParamsError(env, PARAM_ERROR, "queue async work error");
+        ThrowError(env, PARAM_ERROR, "queue async work error");
         CM_LOG_E("queue async work failed when uninstalling user cert");
         return nullptr;
     }
@@ -379,7 +379,7 @@ static napi_value UninstallAllUserCertAsyncWork(napi_env env, UserCertAsyncConte
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowParamsError(env, PARAM_ERROR, "queue async work error");
+        ThrowError(env, PARAM_ERROR, "queue async work error");
         CM_LOG_E("queue async work failed uninstall all user cert");
         return nullptr;
     }

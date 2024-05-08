@@ -80,7 +80,7 @@ static napi_value GetCertInfoParseParams(napi_env env, napi_callback_info info,
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_GET_CERT_INFO_MAX_ARGS) && (argc != CM_NAPI_GET_CERT_INFO_MIN_ARGS)) {
-        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid when getting trusted certificate info");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid when getting trusted certificate info");
         CM_LOG_E("arguments count invalid when getting trusted certificate info");
         return nullptr;
     }
@@ -88,7 +88,7 @@ static napi_value GetCertInfoParseParams(napi_env env, napi_callback_info info,
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
-        ThrowParamsError(env, PARAM_ERROR, "certUri type error");
+        ThrowError(env, PARAM_ERROR, "certUri type error");
         CM_LOG_E("get cert uri failed when getting trusted certificate info");
         return nullptr;
     }
@@ -97,7 +97,7 @@ static napi_value GetCertInfoParseParams(napi_env env, napi_callback_info info,
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
+            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function failed when get cert info function");
             return nullptr;
         }

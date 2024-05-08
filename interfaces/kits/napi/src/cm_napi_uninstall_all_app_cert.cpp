@@ -69,7 +69,7 @@ static napi_value UninstallAllAppCertParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_UNINSTALL_ALL_APP_CERT_MIN_ARGS) && (argc != CM_NAPI_UNINSTALL_ALL_APP_CERT_MAX_ARGS)) {
-        ThrowParamsError(env, PARAM_ERROR, "Missing parameter");
+        ThrowError(env, PARAM_ERROR, "Missing parameter");
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
@@ -79,7 +79,7 @@ static napi_value UninstallAllAppCertParseParams(
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
+            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function failed when uninstall all app cert function");
             return nullptr;
         }

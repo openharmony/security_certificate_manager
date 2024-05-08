@@ -76,7 +76,7 @@ static napi_value GetCertListParseParams(    napi_env env, napi_callback_info in
 
     if ((argc != CM_NAPI_GET_CERT_LIST_MIN_ARGS) &&
         (argc != CM_NAPI_GET_CERT_LIST_MAX_ARGS)) {
-        ThrowParamsError(env, PARAM_ERROR, "arguments count invalid when getting trusted certificate list");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid when getting trusted certificate list");
         CM_LOG_E("arguments count is not expected when getting trusted certificate list");
         return nullptr;
     }
@@ -85,7 +85,7 @@ static napi_value GetCertListParseParams(    napi_env env, napi_callback_info in
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowParamsError(env, PARAM_ERROR, "Get callback type failed.");
+            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
             CM_LOG_E("get callback function failed when get certlist function");
             return nullptr;
         }
