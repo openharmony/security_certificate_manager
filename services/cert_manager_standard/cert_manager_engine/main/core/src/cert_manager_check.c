@@ -270,8 +270,8 @@ static int32_t checkCallerAndUri(struct CmContext *cmContext, const struct CmBlo
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    uint32_t userId = atoi(uriObj.user);
-    uint32_t uid = atoi(uriObj.app);
+    uint32_t userId = (uint32_t)atoi(uriObj.user);
+    uint32_t uid = (uint32_t)atoi(uriObj.app);
     (void)CertManagerFreeUri(&uriObj);
     if ((cmContext->userId != 0) && (cmContext->userId != userId)) {
         CM_LOG_E("caller userid is not producer");
