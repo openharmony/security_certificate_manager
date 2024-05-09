@@ -226,7 +226,7 @@ static int32_t CheckAndGetStore(const struct CmContext *context, const struct Cm
     }
 
     uint32_t type = uriObj.type;
-    uint32_t userId = atoi(uriObj.user);
+    uint32_t userId = (uint32_t)atoi(uriObj.user);
     (void)CertManagerFreeUri(&uriObj);
     if (type == CM_URI_TYPE_SYS_KEY) {
         if (!CmHasSystemAppPermission()) {

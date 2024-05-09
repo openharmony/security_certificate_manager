@@ -549,7 +549,7 @@ int32_t CertManagerGetUidFromUri(const struct CmBlob *uri, uint32_t *uid)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    *uid = atoi(uriObj.app);
+    *uid = (uint32_t)atoi(uriObj.app);
     (void)CertManagerFreeUri(&uriObj);
     return CM_SUCCESS;
 }
