@@ -23,6 +23,12 @@
 #include "securec.h"
 
 namespace CmFuzzTest {
+constexpr uint32_t CERT_INFO_LEN = sizeof(uint32_t) + MAX_LEN_CERTIFICATE + sizeof(uint32_t) +
+    MAX_LEN_CERT_ALIAS + sizeof(uint32_t);
+
+constexpr uint32_t CERT_LIST_LEN = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
+    sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) + MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE;
+
 bool GetUintFromBuffer(uint8_t *srcData, uint32_t *remSize, uint32_t *offset, uint32_t *outVal);
 
 bool GetCmBlobFromBuffer(uint8_t *srcData, uint32_t *remSize, uint32_t *offset, struct CmBlob *outBlob);
@@ -30,6 +36,10 @@ bool GetCmBlobFromBuffer(uint8_t *srcData, uint32_t *remSize, uint32_t *offset, 
 bool GetCertListFromBuffer(uint8_t *srcData, uint32_t *remSize, uint32_t *offset, struct CertList *outList);
 
 bool GetCertInfoFromBuffer(uint8_t *srcData, uint32_t *remSize, uint32_t *offset, struct CertInfo *outInfo);
+
+bool TenPercentChanceOfBeingTrue(uint8_t *srcData, uint32_t *remSize, uint32_t *offset);
+
+int32_t GetCertListInitOutData(struct CmBlob *outListBlob);
 
 bool CopyMyData(const uint8_t *data, const size_t size, const uint32_t minSize, uint8_t **myData);
 

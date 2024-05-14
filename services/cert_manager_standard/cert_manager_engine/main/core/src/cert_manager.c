@@ -259,6 +259,7 @@ static int32_t CmAppCertGetFilePath(const struct CmContext *context, const uint3
             break;
         case CM_SYS_CREDENTIAL_STORE:
             ret = sprintf_s((char *)path->data, MAX_PATH_LEN, "%s%u", SYS_CREDNTIAL_STORE, context->userId);
+            break;
         default:
             break;
     }
