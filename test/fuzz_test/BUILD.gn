@@ -66,5 +66,11 @@ group("fuzztest") {
       "./cmipcserviceupdate_fuzzer:fuzztest",
       "./cmonremoterequest_fuzzer:fuzztest",
     ]
+
+    deps += [
+      "./cmappcert_fuzzer:fuzztest",
+      "./cmsystemtrustedstore_fuzzer:fuzztest",
+      "./cmusertrustedstore_fuzzer:fuzztest",
+    ]
   }
 }

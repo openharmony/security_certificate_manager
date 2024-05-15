@@ -19,6 +19,8 @@
 #include "message_parcel.h"
 
 namespace CmFuzzTest {
+constexpr uint32_t NUM_10 = 10;
+constexpr uint32_t NUM_9 = 9;
 bool GetUintFromBuffer(uint8_t *srcData, uint32_t *remSize, uint32_t *offset, uint32_t *outVal)
 {
     if (*remSize < sizeof(uint32_t)) {
@@ -78,6 +80,33 @@ bool GetCertInfoFromBuffer(uint8_t *srcData, uint32_t *remSize, uint32_t *offset
 
     outInfo->certInfo.data = const_cast<uint8_t *>(srcData + *offset);
     return true;
+}
+
+bool TenPercentChanceOfBeingTrue(uint8_t *srcData, uint32_t *remSize, uint32_t *offset)
+{
+    if (srcData == nullptr || remSize == nullptr || offset == nullptr) {
+        return false;
+    }
+
+    uint32_t randomNum = 0;
+    if (!GetUintFromBuffer(srcData, remSize, offset, &randomNum)) {
+        return false;
+    }
+    return (randomNum %= NUM_10) == NUM_9;
+}
+
+int32_t GetCertListInitOutData(struct CmBlob *outListBlob)
+{
+    /* buff struct: certCount + MAX_CERT_COUNT * (subjectBlob + status + uriBlob + aliasBlob) */
+    uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
+        sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) +  MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE;
+    outListBlob->data = (uint8_t *)CmMalloc(buffSize);
+    if (outListBlob->data == NULL) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    outListBlob->size = buffSize;
+
+    return CM_SUCCESS;
 }
 
 bool CopyMyData(const uint8_t *data, const size_t size, const uint32_t minSize, uint8_t **myData)
