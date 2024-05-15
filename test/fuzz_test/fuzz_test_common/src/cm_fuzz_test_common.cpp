@@ -95,20 +95,6 @@ bool TenPercentChanceOfBeingTrue(uint8_t *srcData, uint32_t *remSize, uint32_t *
     return (randomNum %= NUM_10) == NUM_9;
 }
 
-int32_t GetCertListInitOutData(struct CmBlob *outListBlob)
-{
-    /* buff struct: certCount + MAX_CERT_COUNT * (subjectBlob + status + uriBlob + aliasBlob) */
-    uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
-        sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) +  MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE;
-    outListBlob->data = (uint8_t *)CmMalloc(buffSize);
-    if (outListBlob->data == NULL) {
-        return CMR_ERROR_MALLOC_FAIL;
-    }
-    outListBlob->size = buffSize;
-
-    return CM_SUCCESS;
-}
-
 bool CopyMyData(const uint8_t *data, const size_t size, const uint32_t minSize, uint8_t **myData)
 {
     if (data == nullptr|| static_cast<uint32_t>(size) < minSize) {

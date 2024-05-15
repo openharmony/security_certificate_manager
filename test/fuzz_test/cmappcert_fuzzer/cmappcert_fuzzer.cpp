@@ -160,6 +160,7 @@ namespace OHOS {
             if (!UnInstallAppCert(tmpData, &remainSize, &offset, store, &keyUri)) {
                 break;
             }
+            ret = true;
         } while (0);
         (void)CmIpcServiceUninstallAllAppCert(nullptr, nullptr, nullptr);
         CmFree(tmpData);
