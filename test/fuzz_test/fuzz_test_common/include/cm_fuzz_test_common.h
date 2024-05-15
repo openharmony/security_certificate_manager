@@ -39,8 +39,6 @@ bool GetCertInfoFromBuffer(uint8_t *srcData, uint32_t *remSize, uint32_t *offset
 
 bool TenPercentChanceOfBeingTrue(uint8_t *srcData, uint32_t *remSize, uint32_t *offset);
 
-int32_t GetCertListInitOutData(struct CmBlob *outListBlob);
-
 bool CopyMyData(const uint8_t *data, const size_t size, const uint32_t minSize, uint8_t **myData);
 
 bool ConstructParamSet(uint8_t *srcData, uint32_t *remainSize, uint32_t *offset,

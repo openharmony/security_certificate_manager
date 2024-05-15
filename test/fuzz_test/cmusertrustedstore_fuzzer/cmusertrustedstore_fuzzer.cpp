@@ -85,7 +85,7 @@ namespace OHOS {
         struct CmParam params02[] = {
             { .tag = CM_TAG_PARAM0_BUFFER, .blob = *keyUri },
             { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = store },
-            { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = state },
+            { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = state },
         };
 
         struct CmParamSet *paramSet02 = nullptr;
@@ -227,6 +227,7 @@ namespace OHOS {
             if (!UnInstallUserCert(tmpData, &remainSize, &offset, &keyUri)) {
                 break;
             }
+            ret = true;
         } while (0);
         (void)CmIpcServiceUninstallAllUserCert(nullptr, nullptr, nullptr);
         CmFree(tmpData);
