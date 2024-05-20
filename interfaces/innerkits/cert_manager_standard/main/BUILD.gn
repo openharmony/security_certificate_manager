@@ -50,7 +50,10 @@ if (os_level == "standard") {
     ]
     deps = [ "../../../../frameworks/cert_manager_standard/main:cert_manager_standard_frameworks" ]
 
-    external_deps = [ "hilog:libhilog" ]
+    external_deps = [
+      "bounds_checking_function:libsec_shared",
+      "hilog:libhilog",
+    ]
   }
 }
 #if (os_level == "small" || os_level == "mini") {
