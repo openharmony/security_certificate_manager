@@ -14,7 +14,8 @@
                   "name":"usual.event.USER_REMOVED"
                 }
               ]
-            }
+            },
+            "recycle-strategy":"low-memory"
         }
     ]
   }
