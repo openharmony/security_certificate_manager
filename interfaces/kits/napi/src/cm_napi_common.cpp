@@ -25,6 +25,17 @@ namespace CMNapi {
 namespace {
 constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M
 
+static const std::string NO_PERMISSION_MSG = "the caller has no permission";
+static const std::string NOT_SYSTEM_APP_MSG = "the caller is not a system application";
+static const std::string INVALID_PARAMS_MSG = "the input parameters is invalid";
+static const std::string GENERIC_MSG = "there is an internal error";
+static const std::string NO_FOUND_MSG = "the certificate do not exist";
+static const std::string INCORRECT_FORMAT_MSG = "the input cert data is invalid";
+static const std::string MAX_CERT_COUNT_REACHED_MSG = "the count of certificates or credentials reach the max";
+static const std::string NO_AUTHORIZATION_MSG = "the application is not authorized by user";
+static const std::string ALIAS_LENGTH_REACHED_LIMIT_MSG = "the input alias length reaches the max";
+static const std::string DEVICE_ENTER_ADVSECMODE_MSG = "the device enters advanced security mode";
+
 static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     // invalid params
     { CMR_ERROR_INVALID_ARGUMENT, PARAM_ERROR },
@@ -41,6 +52,20 @@ static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     { CMR_ERROR_AUTH_CHECK_FAILED, NO_AUTHORIZATION },
     { CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT, ALIAS_LENGTH_REACHED_LIMIT },
     { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE },
+};
+
+static const std::unordered_map<int32_t, std::string> NATIVE_CODE_TO_MSG_MAP = {
+    { CMR_ERROR_PERMISSION_DENIED, NO_PERMISSION_MSG },
+    { CMR_ERROR_NOT_SYSTEMP_APP, NOT_SYSTEM_APP_MSG },
+    { CMR_ERROR_INVALID_ARGUMENT, INVALID_PARAMS_MSG },
+    { CMR_ERROR_NOT_FOUND, NO_FOUND_MSG },
+    { CMR_ERROR_NOT_EXIST, NO_FOUND_MSG },
+    { CMR_ERROR_INVALID_CERT_FORMAT, INCORRECT_FORMAT_MSG },
+    { CMR_ERROR_INSUFFICIENT_DATA, INCORRECT_FORMAT_MSG },
+    { CMR_ERROR_MAX_CERT_COUNT_REACHED, MAX_CERT_COUNT_REACHED_MSG },
+    { CMR_ERROR_AUTH_CHECK_FAILED, NO_AUTHORIZATION_MSG },
+    { CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT, ALIAS_LENGTH_REACHED_LIMIT_MSG },
+    { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE_MSG },
 };
 }  // namespace
 
@@ -352,6 +377,15 @@ napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo)
     return elem;
 }
 
+static const char *GetJsErrorMsg(int32_t errCode)
+{
+    auto iter = NATIVE_CODE_TO_MSG_MAP.find(errCode);
+    if (iter != NATIVE_CODE_TO_MSG_MAP.end()) {
+        return (iter->second).c_str();
+    }
+    return GENERIC_MSG.c_str();
+}
+
 int32_t TranformErrorCode(int32_t errorCode)
 {
     auto iter = NATIVE_CODE_TO_JS_CODE_MAP.find(errorCode);
@@ -361,8 +395,13 @@ int32_t TranformErrorCode(int32_t errorCode)
     return INNER_FAILURE;
 }
 
-napi_value GenerateBusinessError(napi_env env, int32_t errorCode, const char *errorMsg)
+napi_value GenerateBusinessError(napi_env env, int32_t errorCode)
 {
+    const char *errorMsg = GetJsErrorMsg(errorCode);
+    if (errorMsg == nullptr) {
+        return nullptr;
+    }
+
     napi_value businessError = nullptr;
     NAPI_CALL(env, napi_create_object(env, &businessError));
 

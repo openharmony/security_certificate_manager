@@ -138,8 +138,7 @@ static void SetCertStatusComplete(napi_env env, napi_status status, void *data)
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         NAPI_CALL_RETURN_VOID(env, napi_get_boolean(env, true, &result[1]));
     } else {
-        const char *errorMsg = "set cert status error";
-        result[0] = GenerateBusinessError(env, context->result, errorMsg);
+        result[0] = GenerateBusinessError(env, context->result);
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     if (context->deferred != nullptr) {

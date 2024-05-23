@@ -220,7 +220,7 @@ static void GrantUidComplete(napi_env env, napi_status status, void *data)
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultAuthUri(env, context->authUri);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode, "grant uid failed");
+        result[0] = GenerateBusinessError(env, context->errCode);
         napi_get_undefined(env, &result[1]);
     }
 
@@ -250,7 +250,7 @@ static void RemoveOrIsAuthedComplete(napi_env env, napi_status status, void *dat
         napi_get_boolean(env, false, &result[1]);
         context->errCode = CM_SUCCESS;
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode, "remove or check is authed process failed");
+        result[0] = GenerateBusinessError(env, context->errCode);
         napi_get_undefined(env, &result[1]);
     }
 
@@ -324,7 +324,7 @@ static void GetUidListComplete(napi_env env, napi_status status, void *data)
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultAuthList(env, context->uidList);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode, "get authed uid list failed");
+        result[0] = GenerateBusinessError(env, context->errCode);
         napi_get_undefined(env, &result[1]);
     }
 

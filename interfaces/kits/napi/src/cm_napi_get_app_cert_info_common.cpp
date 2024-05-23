@@ -147,8 +147,7 @@ napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext asyn
                 NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
                 result[1] = GetAppCertInfoWriteResult(env, context);
             } else {
-                const char *errorMsg = "get app cert info error";
-                result[0] = GenerateBusinessError(env, context->result, errorMsg);
+                result[0] = GenerateBusinessError(env, context->result);
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
             if (context->deferred != nullptr) {
