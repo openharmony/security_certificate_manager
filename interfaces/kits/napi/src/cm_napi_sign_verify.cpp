@@ -614,7 +614,7 @@ static void InitComplete(napi_env env, napi_status status, void *data)
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultHandle(env, context->handle);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode, "init failed");
+        result[0] = GenerateBusinessError(env, context->errCode);
         napi_get_undefined(env, &result[1]);
     }
 
@@ -640,7 +640,7 @@ static void UpdateOrAbortComplete(napi_env env, napi_status status, void *data)
         napi_create_uint32(env, 0, &result[0]);
         napi_get_undefined(env, &result[1]);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode, "update or abort process failed");
+        result[0] = GenerateBusinessError(env, context->errCode);
         napi_get_undefined(env, &result[1]);
     }
 
@@ -694,7 +694,7 @@ static void FinishComplete(napi_env env, napi_status status, void *data)
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultSignature(env, context->isSign, context->signature);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode, "finish failed");
+        result[0] = GenerateBusinessError(env, context->errCode);
         napi_get_undefined(env, &result[1]);
     }
 

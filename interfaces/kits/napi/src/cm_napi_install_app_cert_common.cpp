@@ -184,8 +184,7 @@ napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext asyn
                 NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
                 result[1] = InstallAppCertWriteResult(env, context);
             } else {
-                const char *errorMsg = "install app cert error";
-                result[0] = GenerateBusinessError(env, context->result, errorMsg);
+                result[0] = GenerateBusinessError(env, context->result);
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
             if (context->deferred != nullptr) {

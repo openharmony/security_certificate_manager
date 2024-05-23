@@ -80,7 +80,7 @@ napi_value GenerateCredentialAbstractArray(napi_env env,
 napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo);
 napi_value GenerateAppCertInfo(napi_env env, const struct Credential *credential);
 void ThrowError(napi_env env, int32_t errorCode, std::string errMsg);
-napi_value GenerateBusinessError(napi_env env, int32_t errorCode, const char *errorMsg);
+napi_value GenerateBusinessError(napi_env env, int32_t errorCode);
 
 void DeleteNapiContext(napi_env env, napi_async_work &asyncWork, napi_ref &callback);
 

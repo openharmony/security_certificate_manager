@@ -270,7 +270,7 @@ static void InstallUserCertComplete(napi_env env, napi_status status, void *data
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultCertUri(env, context->certUri);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode, "install user cert failed");
+        result[0] = GenerateBusinessError(env, context->errCode);
         napi_get_undefined(env, &result[1]);
     }
 
@@ -320,7 +320,7 @@ static void UninstallComplete(napi_env env, napi_status status, void *data)
         napi_create_uint32(env, 0, &result[0]);
         napi_get_boolean(env, true, &result[1]);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode, "uninstall failed");
+        result[0] = GenerateBusinessError(env, context->errCode);
         napi_get_undefined(env, &result[1]);
     }
 
