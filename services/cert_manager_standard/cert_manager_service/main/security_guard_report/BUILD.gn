@@ -46,11 +46,13 @@ ohos_static_library("libcert_manager_sg_report_static") {
   ]
   defines = [ "_CM_LOG_ENABLE_" ]
 
-  external_deps = [ "ipc:ipc_single" ]
+  external_deps = [
+    "bounds_checking_function:libsec_static",
+    "ipc:ipc_single",
+  ]
   if (support_security_guard) {
     cflags += [ "-DSUPPORT_SECURITY_GUARD" ]
     cflags_cc = [ "-DSUPPORT_SECURITY_GUARD" ]
     external_deps += [ "security_guard:libsg_collect_sdk" ]
   }
-  complete_static_lib = true
 }
