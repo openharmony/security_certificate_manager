@@ -679,24 +679,30 @@ HWTEST_F(CmSysAppCertTest, SysAppCertTest031, TestSize.Level0)
  */
 HWTEST_F(CmSysAppCertTest, SysAppCertTest032, TestSize.Level0)
 {
-    char retUriBuf[MAX_LEN_URI] = {0};
-    struct CmBlob sysKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    char retUriBuf01[MAX_LEN_URI] = {0};
+    struct CmBlob sysKeyUri01 = { sizeof(retUriBuf01), reinterpret_cast<uint8_t *>(retUriBuf01) };
 
     uint8_t certAliasBuf01[] = "SyskeyA01";
     struct CmBlob alias01 = { sizeof(certAliasBuf01), certAliasBuf01 };
 
     struct CmAppCertParam appCertParam01 = { (struct CmBlob *)&g_appCert, (struct CmBlob *)&g_appCertPwd,
        &alias01, CM_SYS_CREDENTIAL_STORE, TEST_USERID };
-    int32_t ret = CmInstallSystemAppCert(&appCertParam01, &sysKeyUri);
+    int32_t ret = CmInstallSystemAppCert(&appCertParam01, &sysKeyUri01);
     EXPECT_EQ(ret, CM_SUCCESS) << "SysAppCertTest032 credentail test failed, retcode:" << ret;
+    ret = CmUninstallAppCert(&sysKeyUri01, CM_SYS_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "SysAppCertTest032 uninstall failed, retcode:" << ret;
 
+    char retUriBuf02[MAX_LEN_URI] = {0};
+    struct CmBlob sysKeyUri02 = { sizeof(retUriBuf02), reinterpret_cast<uint8_t *>(retUriBuf02) };
     uint8_t certAliasBuf02[] = "SyskeyA02";
     struct CmBlob alias02 = { sizeof(certAliasBuf02), certAliasBuf02 };
 
     struct CmAppCertParam appCertParam02 = { (struct CmBlob *)&g_appCert, (struct CmBlob *)&g_appCertPwd,
        &alias02, CM_SYS_CREDENTIAL_STORE, TEST_USERID };
-    ret = CmInstallSystemAppCert(&appCertParam02, &sysKeyUri);
+    ret = CmInstallSystemAppCert(&appCertParam02, &sysKeyUri02);
     EXPECT_EQ(ret, CM_SUCCESS) << "SysAppCertTest032 credentail test failed, retcode:" << ret;
+    ret = CmUninstallAppCert(&sysKeyUri02, CM_SYS_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "SysAppCertTest032 uninstall failed, retcode:" << ret;
 
     ret = CmUninstallAllAppCert();
     EXPECT_EQ(ret, CM_SUCCESS) << "SysAppCertTest032 uninstall failed, retcode:" << ret;

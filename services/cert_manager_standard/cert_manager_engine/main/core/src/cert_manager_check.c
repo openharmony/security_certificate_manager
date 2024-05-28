@@ -179,31 +179,6 @@ static bool CmCheckUserIdAndUpdateContext(const uint32_t inputUserId, uint32_t *
     return true;
 }
 
-static bool CmCheckMaxInstalledCertCount(const uint32_t store, const struct CmContext *cmContext)
-{
-    bool isValid = true;
-    uint32_t fileCount = 0;
-    struct CmBlob fileNames[MAX_COUNT_CERTIFICATE];
-    uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
-    (void)memset_s(fileNames, len, 0, len);
-
-    if (CmServiceGetAppCertList(cmContext, store, fileNames,
-        MAX_COUNT_CERTIFICATE, &fileCount) != CM_SUCCESS) {
-        isValid = false;
-        CM_LOG_E("Get App cert list fail");
-    }
-
-    if (fileCount >= MAX_COUNT_CERTIFICATE) {
-        isValid = false;
-        CM_LOG_E("The app cert installed has reached max count:%u", fileCount);
-    }
-
-    CM_LOG_D("app cert installed count:%u", fileCount);
-
-    CmFreeFileNames(fileNames, fileCount);
-    return isValid;
-}
-
 int32_t CmServiceInstallAppCertCheck(const struct CmAppCertParam *certParam, struct CmContext *cmContext)
 {
     if ((certParam == NULL) || (cmContext == NULL)) {
@@ -234,11 +209,6 @@ int32_t CmServiceInstallAppCertCheck(const struct CmAppCertParam *certParam, str
         !CmCheckUserIdAndUpdateContext(certParam->userId, &(cmContext->userId))) {
         CM_LOG_E("input userId is invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (CmCheckMaxInstalledCertCount(certParam->store, cmContext) == false) {
-        CM_LOG_E("CmCheckMaxInstalledCertCount check fail");
-        return CMR_ERROR_MAX_CERT_COUNT_REACHED;
     }
 
     if (!CmPermissionCheck(certParam->store)) {

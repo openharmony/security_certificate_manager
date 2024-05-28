@@ -25,6 +25,7 @@
 
 #include "securec.h"
 
+#include "cert_manager.h"
 #include "cert_manager_check.h"
 #include "cert_manager_file_operator.h"
 #include "cert_manager_key_operation.h"
@@ -413,6 +414,13 @@ int32_t CmInstallAppCertPro(
         ret = ConstructKeyUri(context, certParam->certAlias, certParam->store, keyUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("construct app cert uri fail");
+            break;
+        }
+
+        ret = CmCheckCertCount(context, certParam->store, (char *)keyUri->data);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("cert count beyond maxcount, can't install");
+            ret = CMR_ERROR_MAX_CERT_COUNT_REACHED;
             break;
         }
 
