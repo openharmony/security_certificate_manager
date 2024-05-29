@@ -47,6 +47,8 @@ void CmFreeFileNames(struct CmBlob *fileNames, const uint32_t fileSize);
 
 int32_t CmGetUri(const char *filePath, struct CmBlob *uriBlob);
 
+int32_t CmCheckCertCount(const struct CmContext *context, const uint32_t store, const char *fileName);
+
 int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *pathBlob,
     const struct CmBlob *userCert, const struct CmBlob *certAlias, struct CmBlob *certUri);
 

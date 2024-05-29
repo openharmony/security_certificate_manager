@@ -260,6 +260,9 @@ static int32_t CmAppCertGetFilePath(const struct CmContext *context, const uint3
         case CM_SYS_CREDENTIAL_STORE:
             ret = sprintf_s((char *)path->data, MAX_PATH_LEN, "%s%u", SYS_CREDNTIAL_STORE, context->userId);
             break;
+        case CM_USER_TRUSTED_STORE:
+            ret = sprintf_s((char *)path->data, MAX_PATH_LEN, "%s%u", USER_CA_STORE, context->userId);
+            break;
         default:
             break;
     }
@@ -421,19 +424,52 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
     return CM_SUCCESS;
 }
 
-static int32_t CherkCertCountBeyondMax(const char *path, const char *fileName)
+static int32_t GetCertOrCredCount(const struct CmContext *context, const uint32_t store, uint32_t *certCount)
 {
-    int32_t ret = CM_FAILURE;
+    uint32_t fileCount = 0;
+    struct CmBlob fileNames[MAX_COUNT_CERTIFICATE];
+    uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
+    (void)memset_s(fileNames, len, 0, len);
 
+    int32_t ret = CmServiceGetAppCertList(context, store, fileNames, MAX_COUNT_CERTIFICATE, &fileCount);
+    CmFreeFileNames(fileNames, MAX_COUNT_CERTIFICATE);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to get app cert list");
+        return ret;
+    }
+
+    *certCount = fileCount;
+    return CM_SUCCESS;
+}
+
+int32_t CmCheckCertCount(const struct CmContext *context, const uint32_t store, const char *fileName)
+{
+    if (context == NULL || fileName == NULL) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CM_FAILURE;
     do {
-        int32_t tempCount = GetCertCount(path);
-        if (tempCount < MAX_COUNT_CERTIFICATE) {
+        uint32_t certCount = 0;
+        int32_t retVal = GetCertOrCredCount(context, store, &certCount);
+        if (retVal != CM_SUCCESS) {
+            CM_LOG_E("Failed obtain cert count for store:%u", store);
+            break;
+        }
+        if (certCount < MAX_COUNT_CERTIFICATE) {
             ret = CM_SUCCESS;
             break;
         }
 
+        char pathBuf[CERT_MAX_PATH_LEN] = {0};
+        retVal = ConstructUidPath(context, store, pathBuf, sizeof(pathBuf));
+        if (retVal != CM_SUCCESS) {
+            CM_LOG_E("Failed obtain path for store:%u", store);
+            break;
+        }
+
         char fullFileName[CM_MAX_FILE_NAME_LEN] = {0};
-        if (snprintf_s(fullFileName, CM_MAX_FILE_NAME_LEN, CM_MAX_FILE_NAME_LEN - 1, "%s/%s", path, fileName) < 0) {
+        if (snprintf_s(fullFileName, CM_MAX_FILE_NAME_LEN, CM_MAX_FILE_NAME_LEN - 1, "%s/%s", pathBuf, fileName) < 0) {
             CM_LOG_E("mkdir full name failed");
             ret = CM_FAILURE;
             break;
@@ -500,7 +536,7 @@ int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *p
             break;
         }
 
-        ret = CherkCertCountBeyondMax((char*)pathBlob->data, (char *)certUri->data);
+        ret = CmCheckCertCount(context, CM_USER_TRUSTED_STORE, (char *)certUri->data);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("cert count beyond maxcount, can't install");
             ret = CMR_ERROR_MAX_CERT_COUNT_REACHED;

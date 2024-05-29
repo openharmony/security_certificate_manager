@@ -738,6 +738,11 @@ int32_t CmUninstallAllUserCert(const struct CmContext *context)
         return ret;
     }
 
+    if (pathList.size == 0) {
+        CM_LOG_D("the user dir is empty");
+        return CM_SUCCESS;
+    }
+
     ret = CmRemoveAllUserCert(context, store, &pathList);
     CmFreePathList((struct CmMutableBlob *)pathList.data, pathList.size);
     if (ret != CM_SUCCESS) {
