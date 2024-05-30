@@ -82,20 +82,6 @@ struct CertInfoResult g_listCertInfoexpectResult[] = {
             "EB:D4:10:40:E4:BB:3E:C7:42:C9:E3:81:D3:1E:F2:A4:1A:48:B6:68:5C:96:E7:CE:F3:C1:DF:6C:D4:33:1C:99"
         },
         true
-    },
-    {
-        {
-            "4b718d9b.0",
-            "eMudhra Inc",
-            true,
-            "CN=emSign ECC Root CA - C3,OU=emSign PKI,O=eMudhra Inc",
-            "CN=emSign ECC Root CA - C3,OU=emSign PKI,O=eMudhra Inc",
-            "7B71B68256B8127C9CA8",
-            "2018-2-18",
-            "2043-2-18",
-            "BC:4D:80:9B:15:18:9D:78:DB:3E:1D:8C:F4:F9:72:6A:79:5D:A1:64:3C:A5:F1:35:8E:1D:DB:0E:DC:0D:7E:B3"
-        },
-        true
     }
 };
 

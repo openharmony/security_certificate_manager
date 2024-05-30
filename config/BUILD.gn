@@ -14,902 +14,476 @@
 import("//build/ohos.gni")
 
 ohos_prebuilt_etc("trusted_system_certificate0") {
-  source = "systemCertificates/02265526.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate1") {
-  source = "systemCertificates/03179a64.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate2") {
   source = "systemCertificates/062cdee6.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate3") {
+ohos_prebuilt_etc("trusted_system_certificate1") {
   source = "systemCertificates/064e0aa9.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate4") {
+ohos_prebuilt_etc("trusted_system_certificate2") {
   source = "systemCertificates/06dc52d5.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate5") {
-  source = "systemCertificates/080911ac.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate6") {
-  source = "systemCertificates/fe8a2cd8.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate7") {
-  source = "systemCertificates/09789157.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate8") {
-  source = "systemCertificates/0a775a30.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate9") {
+ohos_prebuilt_etc("trusted_system_certificate3") {
   source = "systemCertificates/0b1b94ef.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate10") {
-  source = "systemCertificates/0bf05006.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate11") {
-  source = "systemCertificates/0c4c9b6c.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate12") {
-  source = "systemCertificates/0f5dc4f3.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate13") {
+ohos_prebuilt_etc("trusted_system_certificate4") {
   source = "systemCertificates/0f6fa695.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate14") {
-  source = "systemCertificates/1001acf7.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate15") {
+ohos_prebuilt_etc("trusted_system_certificate5") {
   source = "systemCertificates/106f3e4d.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate16") {
-  source = "systemCertificates/116bf586.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate17") {
-  source = "systemCertificates/14bc7599.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate18") {
-  source = "systemCertificates/1636090b.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate19") {
-  source = "systemCertificates/18856ac4.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate20") {
+ohos_prebuilt_etc("trusted_system_certificate6") {
   source = "systemCertificates/1d3472b9.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate21") {
-  source = "systemCertificates/1e08bfd1.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate22") {
+ohos_prebuilt_etc("trusted_system_certificate7") {
   source = "systemCertificates/1e09d511.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate23") {
+ohos_prebuilt_etc("trusted_system_certificate8") {
   source = "systemCertificates/244b5494.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate24") {
+ohos_prebuilt_etc("trusted_system_certificate9") {
   source = "systemCertificates/2923b3f9.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate25") {
+ohos_prebuilt_etc("trusted_system_certificate10") {
   source = "systemCertificates/2ae6433e.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate26") {
+ohos_prebuilt_etc("trusted_system_certificate11") {
   source = "systemCertificates/2b349938.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate27") {
-  source = "systemCertificates/2e5ac55d.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate28") {
+ohos_prebuilt_etc("trusted_system_certificate12") {
   source = "systemCertificates/32888f65.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate29") {
-  source = "systemCertificates/349f2832.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate30") {
+ohos_prebuilt_etc("trusted_system_certificate13") {
   source = "systemCertificates/3513523f.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate31") {
+ohos_prebuilt_etc("trusted_system_certificate14") {
   source = "systemCertificates/3bde41ac.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate32") {
-  source = "systemCertificates/3e44d2f7.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate33") {
-  source = "systemCertificates/3e45d192.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate34") {
-  source = "systemCertificates/3fb36b73.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate35") {
-  source = "systemCertificates/40193066.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate36") {
+ohos_prebuilt_etc("trusted_system_certificate15") {
   source = "systemCertificates/4042bcee.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate37") {
+ohos_prebuilt_etc("trusted_system_certificate16") {
   source = "systemCertificates/40547a79.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate38") {
-  source = "systemCertificates/406c9bb1.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate39") {
-  source = "systemCertificates/4304c5e5.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate40") {
+ohos_prebuilt_etc("trusted_system_certificate17") {
   source = "systemCertificates/48bec511.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate41") {
-  source = "systemCertificates/4a6481c9.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate42") {
-  source = "systemCertificates/4b718d9b.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate43") {
+ohos_prebuilt_etc("trusted_system_certificate18") {
   source = "systemCertificates/4bfab552.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate44") {
+ohos_prebuilt_etc("trusted_system_certificate19") {
   source = "systemCertificates/4f316efb.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate45") {
-  source = "systemCertificates/5273a94c.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate46") {
+ohos_prebuilt_etc("trusted_system_certificate20") {
   source = "systemCertificates/5443e9e3.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate47") {
+ohos_prebuilt_etc("trusted_system_certificate21") {
   source = "systemCertificates/54657681.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate48") {
-  source = "systemCertificates/57bcb2da.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate49") {
-  source = "systemCertificates/5a4d6896.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate50") {
+ohos_prebuilt_etc("trusted_system_certificate22") {
   source = "systemCertificates/5ad8a5d6.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate51") {
+ohos_prebuilt_etc("trusted_system_certificate23") {
   source = "systemCertificates/5cd81ad7.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate52") {
-  source = "systemCertificates/5d3033c5.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate53") {
-  source = "systemCertificates/5e98733a.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate54") {
+ohos_prebuilt_etc("trusted_system_certificate24") {
   source = "systemCertificates/5f15c80c.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate55") {
+ohos_prebuilt_etc("trusted_system_certificate25") {
   source = "systemCertificates/5f618aec.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate56") {
+ohos_prebuilt_etc("trusted_system_certificate26") {
   source = "systemCertificates/607986c7.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate57") {
-  source = "systemCertificates/626dceaf.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate58") {
+ohos_prebuilt_etc("trusted_system_certificate27") {
   source = "systemCertificates/653b494a.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate59") {
+ohos_prebuilt_etc("trusted_system_certificate28") {
   source = "systemCertificates/68dd7389.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate60") {
+ohos_prebuilt_etc("trusted_system_certificate29") {
   source = "systemCertificates/6b99d060.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate61") {
-  source = "systemCertificates/6d41d539.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate62") {
+ohos_prebuilt_etc("trusted_system_certificate30") {
   source = "systemCertificates/6fa5da56.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate63") {
-  source = "systemCertificates/706f604c.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate64") {
-  source = "systemCertificates/749e9e03.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate65") {
+ohos_prebuilt_etc("trusted_system_certificate31") {
   source = "systemCertificates/75d1b2ed.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate66") {
-  source = "systemCertificates/76cb8f92.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate67") {
-  source = "systemCertificates/76faf6c0.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate68") {
-  source = "systemCertificates/7719f463.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate69") {
-  source = "systemCertificates/773e07ad.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate70") {
-  source = "systemCertificates/7aaf71c0.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate71") {
-  source = "systemCertificates/7f3d5d1d.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate72") {
+ohos_prebuilt_etc("trusted_system_certificate32") {
   source = "systemCertificates/8160b96c.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate73") {
-  source = "systemCertificates/8cb5ee0f.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate74") {
+ohos_prebuilt_etc("trusted_system_certificate33") {
   source = "systemCertificates/8d86cdd1.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate75") {
-  source = "systemCertificates/8d89cda1.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate76") {
+ohos_prebuilt_etc("trusted_system_certificate34") {
   source = "systemCertificates/930ac5d2.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate77") {
-  source = "systemCertificates/93bc0acc.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate78") {
+ohos_prebuilt_etc("trusted_system_certificate35") {
   source = "systemCertificates/988a38cb.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate79") {
-  source = "systemCertificates/9b5697b0.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate80") {
-  source = "systemCertificates/9c2e7d30.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate81") {
-  source = "systemCertificates/9c8dfbd4.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate82") {
+ohos_prebuilt_etc("trusted_system_certificate36") {
   source = "systemCertificates/9d04f354.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate83") {
-  source = "systemCertificates/a3418fda.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate84") {
-  source = "systemCertificates/a94d09e5.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate85") {
+ohos_prebuilt_etc("trusted_system_certificate37") {
   source = "systemCertificates/aee5f10d.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate86") {
-  source = "systemCertificates/b0e59380.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate87") {
-  source = "systemCertificates/b1159c4c.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate88") {
-  source = "systemCertificates/b66938e9.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-ohos_prebuilt_etc("trusted_system_certificate89") {
-  source = "systemCertificates/b727005e.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate90") {
+ohos_prebuilt_etc("trusted_system_certificate38") {
   source = "systemCertificates/b7a5b843.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate91") {
-  source = "systemCertificates/bf53fb88.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate92") {
-  source = "systemCertificates/c01cdfa2.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate93") {
+ohos_prebuilt_etc("trusted_system_certificate39") {
   source = "systemCertificates/c01eb047.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate94") {
+ohos_prebuilt_etc("trusted_system_certificate40") {
   source = "systemCertificates/c28a8a30.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate95") {
-  source = "systemCertificates/c47d9980.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate96") {
+ohos_prebuilt_etc("trusted_system_certificate41") {
   source = "systemCertificates/ca6e4ad9.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate97") {
+ohos_prebuilt_etc("trusted_system_certificate42") {
   source = "systemCertificates/cbf06781.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate98") {
-  source = "systemCertificates/cc450945.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate99") {
+ohos_prebuilt_etc("trusted_system_certificate43") {
   source = "systemCertificates/cd58d51e.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate100") {
-  source = "systemCertificates/cd8c0d63.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate101") {
-  source = "systemCertificates/ce5e74ef.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate102") {
+ohos_prebuilt_etc("trusted_system_certificate44") {
   source = "systemCertificates/d4dae3dd.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate103") {
+ohos_prebuilt_etc("trusted_system_certificate45") {
   source = "systemCertificates/d6325660.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate104") {
+ohos_prebuilt_etc("trusted_system_certificate46") {
   source = "systemCertificates/d7e8dc79.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate105") {
-  source = "systemCertificates/d853d49e.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate106") {
-  source = "systemCertificates/d887a5bb.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate107") {
+ohos_prebuilt_etc("trusted_system_certificate47") {
   source = "systemCertificates/dc4d6a89.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate108") {
+ohos_prebuilt_etc("trusted_system_certificate48") {
   source = "systemCertificates/dd8e9d41.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate109") {
-  source = "systemCertificates/de6d66f3.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate110") {
+ohos_prebuilt_etc("trusted_system_certificate49") {
   source = "systemCertificates/e113c810.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate111") {
-  source = "systemCertificates/e18bfb83.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate112") {
+ohos_prebuilt_etc("trusted_system_certificate50") {
   source = "systemCertificates/e36a6752.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate113") {
+ohos_prebuilt_etc("trusted_system_certificate51") {
   source = "systemCertificates/e73d606e.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate114") {
-  source = "systemCertificates/e868b802.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate115") {
+ohos_prebuilt_etc("trusted_system_certificate52") {
   source = "systemCertificates/e8de2f56.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate116") {
+ohos_prebuilt_etc("trusted_system_certificate53") {
   source = "systemCertificates/ee64a828.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate117") {
+ohos_prebuilt_etc("trusted_system_certificate54") {
   source = "systemCertificates/eed8c118.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate118") {
+ohos_prebuilt_etc("trusted_system_certificate55") {
   source = "systemCertificates/ef954a4e.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate119") {
+ohos_prebuilt_etc("trusted_system_certificate56") {
   source = "systemCertificates/f081611a.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate120") {
-  source = "systemCertificates/f0c70a8d.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate121") {
-  source = "systemCertificates/f249de83.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate122") {
+ohos_prebuilt_etc("trusted_system_certificate57") {
   source = "systemCertificates/f30dd6ad.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate123") {
-  source = "systemCertificates/f3377b1b.0"
-  part_name = "certificate_manager"
-  subsystem_name = "security"
-  relative_install_dir = "security/certificates"
-}
-
-ohos_prebuilt_etc("trusted_system_certificate124") {
+ohos_prebuilt_etc("trusted_system_certificate58") {
   source = "systemCertificates/f387163d.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate125") {
+ohos_prebuilt_etc("trusted_system_certificate59") {
   source = "systemCertificates/f39fc864.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate126") {
+ohos_prebuilt_etc("trusted_system_certificate60") {
   source = "systemCertificates/f51bb24c.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate127") {
+ohos_prebuilt_etc("trusted_system_certificate61") {
   source = "systemCertificates/fc5a8f99.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
 }
 
-ohos_prebuilt_etc("trusted_system_certificate128") {
+ohos_prebuilt_etc("trusted_system_certificate62") {
   source = "systemCertificates/ff34af3f.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+}
+
+ohos_prebuilt_etc("trusted_system_certificate63") {
+  source = "systemCertificates/022b7604.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+}
+
+ohos_prebuilt_etc("trusted_system_certificate64") {
+  source = "systemCertificates/0b9bc432.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+}
+
+ohos_prebuilt_etc("trusted_system_certificate65") {
+  source = "systemCertificates/02265526.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+}
+
+ohos_prebuilt_etc("trusted_system_certificate66") {
+  source = "systemCertificates/8f103249.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+}
+
+ohos_prebuilt_etc("trusted_system_certificate67") {
+  source = "systemCertificates/d52c538d.0"
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
