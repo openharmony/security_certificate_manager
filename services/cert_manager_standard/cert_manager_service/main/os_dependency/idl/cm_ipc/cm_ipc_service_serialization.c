@@ -24,6 +24,9 @@
 
 int32_t CopyUint32ToBuffer(uint32_t value, const struct CmBlob *destBlob, uint32_t *destOffset)
 {
+    if (CmCheckBlob(destBlob) != CM_SUCCESS || destOffset == NULL) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     if ((*destOffset > destBlob->size) || ((destBlob->size - *destOffset) < sizeof(value))) {
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
@@ -37,6 +40,9 @@ int32_t CopyUint32ToBuffer(uint32_t value, const struct CmBlob *destBlob, uint32
 
 int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlob, uint32_t *destOffset)
 {
+    if (CmCheckBlob(blob) != CM_SUCCESS || CmCheckBlob(destBlob) != CM_SUCCESS || destOffset == NULL) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     if ((*destOffset > destBlob->size) ||
         ((destBlob->size - *destOffset) < (sizeof(blob->size) + ALIGN_SIZE(blob->size)))) {
         return CMR_ERROR_BUFFER_TOO_SMALL;
@@ -102,6 +108,9 @@ static int32_t GetNullBlobParam(const struct CmParamSet *paramSet, struct CmPara
 
 int32_t CmParamSetToParams(const struct CmParamSet *paramSet, struct CmParamOut *outParams, uint32_t cnt)
 {
+    if (paramSet == NULL || outParams == NULL) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     struct CmParam *param = NULL;
     for (uint32_t i = 0; i < cnt; i++) {
         int32_t ret = CmGetParam(paramSet, outParams[i].tag, &param);
@@ -164,6 +173,10 @@ static int32_t CmGetCertListPack(const struct CertBlob *certBlob, uint32_t *stat
 int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store,
     const struct CmMutableBlob *certFileList, struct CmBlob *certificateList)
 {
+    if (context == NULL || certFileList == NULL || certFileList->data == NULL ||
+        certFileList->size == 0 || CmCheckBlob(certificateList) != CM_SUCCESS) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     uint32_t status[MAX_COUNT_CERTIFICATE] = {0};
     struct CertBlob certBlob;
     (void)memset_s(&certBlob, sizeof(struct CertBlob), 0, sizeof(struct CertBlob));
@@ -188,9 +201,13 @@ int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store
 int32_t CmServiceGetCertInfoPack(const uint32_t store, const struct CmBlob *certificateData,
     uint32_t status, const struct CmBlob *certUri, struct CmBlob *certificateInfo)
 {
-    if (certificateData->size == 0) {
+    if (certificateData != NULL && certificateData->size == 0) {
         CM_LOG_D("cert file is not exist");
         return CM_SUCCESS;
+    }
+    if (CmCheckBlob(certificateData) != CM_SUCCESS || CmCheckBlob(certUri) != CM_SUCCESS ||
+        CmCheckBlob(certificateInfo) != CM_SUCCESS) {
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     uint32_t buffSize = sizeof(uint32_t) + MAX_LEN_CERTIFICATE + sizeof(uint32_t) +
