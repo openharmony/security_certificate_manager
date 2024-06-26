@@ -173,8 +173,7 @@ static int32_t CmGetCertListPack(const struct CertBlob *certBlob, uint32_t *stat
 int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store,
     const struct CmMutableBlob *certFileList, struct CmBlob *certificateList)
 {
-    if (context == NULL || certFileList == NULL || certFileList->data == NULL ||
-        certFileList->size == 0 || CmCheckBlob(certificateList) != CM_SUCCESS) {
+    if (context == NULL || certFileList == NULL || CmCheckBlob(certificateList) != CM_SUCCESS) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     uint32_t status[MAX_COUNT_CERTIFICATE] = {0};
