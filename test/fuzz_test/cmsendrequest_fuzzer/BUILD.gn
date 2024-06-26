@@ -44,6 +44,7 @@ ohos_fuzztest("CmSendRequestFuzzTest") {
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
+    "bounds_checking_function:libsec_static",
     "c_utils:utils",
   ]
 }
