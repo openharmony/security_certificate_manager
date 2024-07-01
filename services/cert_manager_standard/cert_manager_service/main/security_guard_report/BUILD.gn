@@ -48,6 +48,7 @@ ohos_static_library("libcert_manager_sg_report_static") {
 
   external_deps = [
     "bounds_checking_function:libsec_static",
+    "c_utils:utils",
     "ipc:ipc_single",
   ]
   if (support_security_guard) {

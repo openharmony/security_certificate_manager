@@ -50,6 +50,7 @@ ohos_static_library("libcm_service_idl_standard_static") {
     "../../security_guard_report:libcert_manager_sg_report_static",
   ]
   external_deps = [
+    "ability_base:want",
     "c_utils:utils",
     "huks:libhukssdk",
     "ipc:ipc_core",
