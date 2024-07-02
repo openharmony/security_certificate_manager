@@ -79,7 +79,6 @@ ohos_static_library("libcert_manager_ipc_client_static") {
   sources = [
     "./cm_ipc/src/cm_ipc_client.c",
     "./cm_ipc/src/cm_ipc_client_serialization.c",
-    "./cm_ipc/src/cm_load_sa.cpp",
     "./cm_ipc/src/cm_request.cpp",
   ]
   deps = [ ":libcert_manager_log_mem_static" ]
