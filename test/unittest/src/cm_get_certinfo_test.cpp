@@ -43,20 +43,6 @@ struct CertInfoResult g_listCertInfoexpectResult[] = {
     },
     {
         {
-            "4bfab552.0",
-            "Starfield Technologies, Inc.",
-            true,
-            "CN=Starfield Root Certificate Authority - G2,OU=,O=Starfield Technologies, Inc.",
-            "CN=Starfield Root Certificate Authority - G2,OU=,O=Starfield Technologies, Inc.",
-            "0",
-            "2009-9-1",
-            "2037-12-31",
-            "2C:E1:CB:0B:F9:D2:F9:E1:02:99:3F:BE:21:51:52:C3:B2:DD:0C:AB:DE:1C:68:E5:31:9B:83:91:54:DB:B7:F5"
-        },
-        true
-    },
-    {
-        {
             "4f316efb.0",
             "SwissSign AG",
             true,

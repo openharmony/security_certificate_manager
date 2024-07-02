@@ -22,6 +22,7 @@
 #include <openssl/pem.h>
 
 #include <string.h>
+#include <time.h>
 
 #include "securec.h"
 
@@ -30,6 +31,7 @@
 typedef X509_NAME *(FUNC)(const X509 *);
 typedef ASN1_TIME *(TIME_FUNC)(const X509 *);
 #define CONVERT(p) (((p)[0] - '0') * 10 + (p)[1] - '0')
+#define BASE_YEAR 1900
 
 X509 *InitCertContext(const uint8_t *certBuf, uint32_t size)
 {
@@ -183,32 +185,70 @@ int32_t GetX509IssueNameLongFormat(const X509 *x509cert, char *outBuf, uint32_t 
     return (int32_t)strlen(outBuf);
 }
 
+static struct tm *GetLocalTime(ASN1_TIME *asn1Time)
+{
+    time_t curLocalTimeSec = time(NULL);
+    if (curLocalTimeSec < 0) {
+        CM_LOG_E("Failed to get current local time");
+        return NULL;
+    }
+
+    struct tm *gmTime = gmtime(&curLocalTimeSec);
+    if (gmTime == NULL) {
+        CM_LOG_E("Failed to convert current local time to utc time");
+        return NULL;
+    }
+
+    time_t curUtcTimeSec = mktime(gmTime);
+    if (curUtcTimeSec < 0) {
+        CM_LOG_E("Failed to get current utc time");
+        return NULL;
+    }
+
+    struct tm utcTime;
+    int ret = ASN1_TIME_to_tm(asn1Time, &utcTime);
+    if (ret == 0) {
+        CM_LOG_E("invalid asn1 time format");
+        return NULL;
+    }
+
+    time_t utcTimeSec = mktime(&utcTime);
+    if (utcTimeSec < 0) {
+        CM_LOG_E("Failed to get utc time");
+        return NULL;
+    }
+    time_t localTimeSec = utcTimeSec + curLocalTimeSec - curUtcTimeSec;
+    return localtime(&localTimeSec);
+}
+
 static int32_t GetX509Time(TIME_FUNC fuc, const X509 *x509cert, struct DataTime *pDataTime)
 {
     if (x509cert == NULL || fuc == NULL || pDataTime == NULL) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    ASN1_TIME *bufTime = fuc(x509cert);
-    if (!bufTime) {
+    ASN1_TIME *asn1Time = fuc(x509cert);
+    if (asn1Time == NULL) {
+        CM_LOG_E("Failed to get asn1 time from x509Cert");
         return CMR_ERROR_INVALID_CERT_FORMAT;
     }
 
-    if (bufTime->length < NAME_ANS1TIME_LEN) {
+    if (asn1Time->length < NAME_ANS1TIME_LEN) {
         return CMR_ERROR_INVALID_CERT_FORMAT;
     }
 
-    /* Convent the asn1 time to the readable time */
-    pDataTime->year = CONVERT(bufTime->data);
-    if (pDataTime->year < 50) { /* 50 is used for the readable time */
-        pDataTime->year += 100; /* 100 is used for the readable time */
+    struct tm *localTime = GetLocalTime(asn1Time);
+    if (localTime == NULL) {
+        CM_LOG_E("Failed to get local time by utc time");
+        return CMR_ERROR_INVALID_OPERATION;
     }
-    pDataTime->year += 1900;    /* 1900 is used for the readable time */
-    pDataTime->month = CONVERT(bufTime->data + 2);
-    pDataTime->day = CONVERT(bufTime->data + 4);
-    pDataTime->hour = CONVERT(bufTime->data + 6);
-    pDataTime->min = CONVERT(bufTime->data + 8);
-    pDataTime->second = CONVERT(bufTime->data + 10);
-    return 0;
+
+    pDataTime->year = (uint32_t)(localTime->tm_year + BASE_YEAR);
+    pDataTime->month = (uint32_t)(localTime->tm_mon + 1);
+    pDataTime->day = (uint32_t)localTime->tm_mday;
+    pDataTime->hour = (uint32_t)localTime->tm_hour;
+    pDataTime->min = (uint32_t)localTime->tm_min;
+    pDataTime->second = (uint32_t)localTime->tm_sec;
+    return CM_SUCCESS;
 }
 
 static int32_t GetX509TimeFormat(TIME_FUNC fuc, const X509 *x509cert, char *outBuf, uint32_t outBufMaxSize)
