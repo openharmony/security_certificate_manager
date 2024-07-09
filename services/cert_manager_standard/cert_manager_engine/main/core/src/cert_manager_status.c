@@ -228,6 +228,11 @@ static int DecodeStatus(RbTreeValue *value, const uint8_t *buf, uint32_t size)
     }
 
     cs->fileName = strdup((char *)s);
+    if (cs->fileName == NULL) {
+        CM_LOG_E("strdup to cs->fileName failed");
+        CMFree(cs);
+        return CMR_ERROR_MALLOC_FAIL;
+    }
     *value = cs;
     return CMR_OK;
 }
@@ -575,6 +580,11 @@ static int32_t SetCertStatusNode(const struct CmContext *ctx, struct RbTree *tre
         cs->userId = ctx->userId;
         cs->uid = ctx->uid;
         cs->fileName = strdup(name);
+        if (cs->fileName == NULL) {
+            CM_LOG_E("strdup to cs->fileName failed\n");
+            CMFree(cs);
+            return CMR_ERROR_MALLOC_FAIL;
+        }
         cs->status = status;
         int rc = RbTreeInsert(tree, GetRbTreeKeyFromName(name), cs);
         if (rc != CMR_OK) {
@@ -619,6 +629,11 @@ static int32_t SetUserCertStatusNode(const struct CertStatus *valInfo, struct Rb
         cStatus->userId = valInfo->userId;
         cStatus->uid = valInfo->uid;
         cStatus->fileName = strdup(name);
+        if (cStatus->fileName == NULL) {
+            CM_LOG_E("strdup to cs->fileName failed\n");
+            CMFree(cStatus);
+            return CMR_ERROR_MALLOC_FAIL;
+        }
         cStatus->status = status;
         int rc = RbTreeInsert(tree, GetRbTreeKey(store, name), cStatus);
         if (rc != CMR_OK) {
