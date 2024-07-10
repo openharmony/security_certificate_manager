@@ -89,17 +89,7 @@ CM_API_EXPORT int32_t CmInstallAppCert(const struct CmBlob *appCert, const struc
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    bool isAdvSecMode = false;
-    int32_t ret = CheckAdvSecMode(&isAdvSecMode);
-    if (ret != CM_SUCCESS) {
-        return ret;
-    }
-    if (isAdvSecMode) {
-        CM_LOG_E("InstallAppCert: the device enters advanced security mode");
-        return CMR_ERROR_DEVICE_ENTER_ADVSECMODE;
-    }
-
-    ret = CmClientInstallAppCert(appCert, appCertPwd, certAlias, store, keyUri);
+    int32_t ret = CmClientInstallAppCert(appCert, appCertPwd, certAlias, store, keyUri);
     CM_LOG_D("leave install app certificate, result = %d", ret);
     return ret;
 }
