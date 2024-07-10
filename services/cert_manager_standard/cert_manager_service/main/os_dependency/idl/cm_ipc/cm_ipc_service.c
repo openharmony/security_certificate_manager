@@ -59,7 +59,6 @@ static int32_t GetInputParams(const struct CmBlob *paramSetBlob, struct CmParamS
     ret = CmParamSetToParams(*paramSet, params, paramsCount);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get params from paramSet failed, ret = %d", ret);
-        CmFreeParamSet(paramSet); /* if success no need free paramSet */
     }
 
     return ret;
