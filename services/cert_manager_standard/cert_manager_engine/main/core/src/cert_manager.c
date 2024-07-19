@@ -27,6 +27,7 @@
 #include "cert_manager_status.h"
 #include "cert_manager_storage.h"
 #include "cert_manager_uri.h"
+#include "cm_cert_property_rdb.h"
 #include "cm_log.h"
 #include "cm_type.h"
 #include "cm_x509.h"
@@ -53,6 +54,11 @@ int32_t CertManagerInitialize(void)
     if (CmMakeDir(CERT_DIR) == CMR_ERROR_MAKE_DIR_FAIL) {
         CM_LOG_E("Failed to create folder\n");
         return CMR_ERROR_WRITE_FILE_FAIL;
+    }
+
+    int32_t ret = CreateCertPropertyRdb();
+    if (ret != CM_SUCCESS) {
+        return ret;
     }
 
     ASSERT_FUNC(CertManagerStatusInit());

@@ -12,6 +12,9 @@
               "commonevent":[
                 {
                   "name":"usual.event.USER_REMOVED"
+                },
+                {
+                  "name":"usual.event.PACKAGE_REMOVED"
                 }
               ]
             },

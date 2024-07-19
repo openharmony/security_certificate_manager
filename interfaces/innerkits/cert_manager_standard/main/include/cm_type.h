@@ -45,6 +45,7 @@ extern "C" {
 #define MAX_LEN_SUBJECT_NAME     256
 #define MAX_LEN_PACKGE_NAME      64
 #define MAX_UINT32_LEN           16
+#define MAX_LEN_CERT_TYPE        8
 
 #define MAX_LEN_ISSUER_NAME             256
 #define MAX_LEN_SERIAL                  64
@@ -143,6 +144,11 @@ enum CmErrorCode {
     CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT = -28,
     CMR_ERROR_GET_ADVSECMODE_PARAM_FAIL = -29,
     CMR_ERROR_DEVICE_ENTER_ADVSECMODE = -30,
+    CMR_ERROR_CREATE_RDB_TABLE_FAIL = -31,
+    CMR_ERROR_INSERT_RDB_DATA_FAIL = -32,
+    CMR_ERROR_UPDATE_RDB_DATA_FAIL = -33,
+    CMR_ERROR_DELETE_RDB_DATA_FAIL = -34,
+    CMR_ERROR_QUERY_RDB_DATA_FAIL = -35,
 };
 
 enum CMErrorCode { /* temp use */
