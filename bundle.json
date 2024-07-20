@@ -48,6 +48,7 @@
           "init",
           "napi",
           "os_account",
+          "relational_store",
           "safwk",
           "samgr",
           "security_guard",
@@ -60,10 +61,10 @@
             "//base/security/certificate_manager:cert_manager_type_base"
           ],
           "fwk_group": [
-              "//base/security/certificate_manager:cert_manager_type_fwk"
+            "//base/security/certificate_manager:cert_manager_type_fwk"
           ],
           "service_group": [
-              "//base/security/certificate_manager:cert_manager_typer_services"
+            "//base/security/certificate_manager:cert_manager_typer_services"
           ]
       },
         "inner_kits": [

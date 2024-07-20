@@ -36,6 +36,7 @@ ohos_static_library("cert_manager_engine_core_standard") {
     "OPENSSL_SUPPRESS_DEPRECATED",
   ]
   include_dirs = [
+    "../rdb/include",
     "../../../../../interfaces/innerkits/cert_manager_standard/main/include",
   ]
   cflags = [
