@@ -24,6 +24,7 @@
 #include "system_ability_definition.h"
 
 #include "cert_manager.h"
+#include "cm_cert_property_rdb.h"
 #include "cm_event_observer.h"
 #include "cm_event_process.h"
 #include "cm_log.h"
@@ -267,6 +268,7 @@ void CertManagerService::OnStart(const SystemAbilityOnDemandReason& startReason)
     CM_LOG_D("CertManagerService start success.");
 
     (void)CmBackupAllSaUserCerts();
+    (void)CreateCertPropertyRdb();
 }
 
 void CertManagerService::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)

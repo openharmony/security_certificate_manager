@@ -140,7 +140,25 @@ static int32_t CmCheckAppCertPwd(const struct CmBlob *appCertPwd)
     return CM_SUCCESS;
 }
 
-static int32_t CmCheckCertAlias(const struct CmBlob *certAlias)
+static bool AppCertCheckBlobValid(const struct CmBlob *data)
+{
+    for (uint32_t i = 0; i < data->size; i++) {
+        if ((i > 0) && (data->data[i] == '\0')) { /* from index 1 has '\0' */
+            CM_LOG_D("data has string end character");
+            return true;
+        }
+
+        if ((!isalnum(data->data[i])) && (data->data[i] != '_')) { /* has invalid character */
+            CM_LOG_E("data include invalid character");
+            return false;
+        }
+    }
+
+    CM_LOG_E("data has no string end character");
+    return false;
+}
+
+static int32_t CmCheckCertAlias(const struct CmBlob *certAlias, uint32_t store)
 {
     if (CmCheckBlob(certAlias) != CM_SUCCESS) {
         CM_LOG_E("certAlias blob is invalid");
@@ -152,8 +170,18 @@ static int32_t CmCheckCertAlias(const struct CmBlob *certAlias)
         return CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT;
     }
 
-    if (CheckUri(certAlias) != CM_SUCCESS) {
-        CM_LOG_E("appCertPwd data check fail");
+    if ((store == CM_PRI_CREDENTIAL_STORE) && (certAlias->size > MAX_LEN_PRI_CRED_ALIAS)) {
+        CM_LOG_E("pri_cred: alias size is too large");
+        return CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT;
+    }
+
+    if ((store != CM_PRI_CREDENTIAL_STORE) && (strcmp("", (char *)certAlias->data) == 0)) {
+        CM_LOG_D("cert alias is empty string");
+        return CM_SUCCESS;
+    }
+
+    if (!AppCertCheckBlobValid(certAlias)) {
+        CM_LOG_E("certAlias data check fail");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     return CM_SUCCESS;
@@ -200,7 +228,7 @@ int32_t CmServiceInstallAppCertCheck(const struct CmAppCertParam *certParam, str
         return ret;
     }
 
-    ret = CmCheckCertAlias(certParam->certAlias);
+    ret = CmCheckCertAlias(certParam->certAlias, certParam->store);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -401,7 +429,7 @@ int32_t CmServiceInstallUserCertCheck(struct CmContext *cmContext, const struct 
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    int32_t ret = CmCheckCertAlias(certAlias);
+    int32_t ret = CmCheckCertAlias(certAlias, CM_USER_TRUSTED_STORE);
     if (ret != CM_SUCCESS) {
         return ret;
     }

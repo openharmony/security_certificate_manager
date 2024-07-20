@@ -504,8 +504,7 @@ static napi_value ParseCMFinishParams(napi_env env, napi_callback_info info, Sig
         return ProcessFinishThreeParam(env, argv, context, index, argc);
     } else if (argc == (CM_NAPI_FINISH_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT)) {
         return ProcessFinishTwoParam(env, argv, context, index, argc);
-    } else {
- /* only this 3 types */
+    } else { /* only three types */
         return ProcessFinishOneParam(env, context);
     }
 }

@@ -23,6 +23,7 @@
 #include "cert_manager_key_operation.h"
 #include "cert_manager_mem.h"
 #include "cert_manager_session_mgr.h"
+#include "cert_manager_crypto_operation.h"
 #include "cert_manager_uri.h"
 #include "cm_log.h"
 

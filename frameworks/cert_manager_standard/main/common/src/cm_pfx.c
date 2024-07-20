@@ -23,6 +23,7 @@
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_type_inner.h"
+#include "cm_x509.h"
 
 static int32_t CmGetAppCertChain(X509 *cert, STACK_OF(X509) *caCert, struct AppCert *appCert)
 {
@@ -81,7 +82,8 @@ static int32_t CmGetAppCertChain(X509 *cert, STACK_OF(X509) *caCert, struct AppC
     return ret;
 }
 
-int32_t CmParsePkcs12Cert(const struct CmBlob *p12Cert, char *passWd, EVP_PKEY **pkey, struct AppCert *appCert)
+int32_t CmParsePkcs12Cert(const struct CmBlob *p12Cert, char *passWd, EVP_PKEY **pkey,
+    struct AppCert *appCert, X509 **x509Cert)
 {
     BIO *bio = NULL;
     X509 *cert = NULL;
@@ -109,7 +111,7 @@ int32_t CmParsePkcs12Cert(const struct CmBlob *p12Cert, char *passWd, EVP_PKEY *
         }
         /* 1 the return value of PKCS12_parse 1 is success */
         if (PKCS12_parse(p12, passWd, pkey, &cert, &caCert) != 1) {
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_PASSWORD_IS_ERR;
             CM_LOG_E("Parsing  PKCS#12 file faild:%s", ERR_error_string(ERR_get_error(), NULL));
             break;
         }
@@ -131,7 +133,7 @@ int32_t CmParsePkcs12Cert(const struct CmBlob *p12Cert, char *passWd, EVP_PKEY *
         sk_X509_pop_free(caCert, X509_free);
     }
     if (cert != NULL) {
-        X509_free(cert);
+        *x509Cert = cert;
     }
     return ret;
 }

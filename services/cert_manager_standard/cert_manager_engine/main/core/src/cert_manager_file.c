@@ -21,6 +21,7 @@
 #include "cert_manager_mem.h"
 #include "cert_manager_storage.h"
 #include "cert_manager_updateflag.h"
+#include "cm_cert_property_rdb.h"
 #include "cm_log.h"
 #include "cm_type.h"
 

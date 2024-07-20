@@ -31,10 +31,14 @@
 #include "cert_manager_key_operation.h"
 #include "cert_manager_mem.h"
 #include "cert_manager_storage.h"
+#include "cert_manager_crypto_operation.h"
+#include "cert_manager.h"
+#include "cert_manager_service.h"
 #include "cert_manager_uri.h"
 #include "cm_log.h"
 #include "cm_pfx.h"
 #include "cm_type.h"
+#include "cm_x509.h"
 
 #include "hks_type.h"
 
@@ -402,43 +406,95 @@ static int32_t ConstructKeyUri(
     return ret;
 }
 
+static int32_t GetCredCertName(const struct CmContext *context, const struct CmAppCertParam *certParam,
+    EVP_PKEY **priKey, struct CertName *certName, struct AppCert *appCert)
+{
+    int32_t ret = CM_SUCCESS;
+    X509 *cert = NULL;
+    do {
+        ret = CmParsePkcs12Cert(certParam->appCert, (char *)certParam->appCertPwd->data, priKey, appCert, &cert);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmParsePkcs12Cert fail");
+            break;
+        }
+
+        ret = GetSubjectNameAndAlias(cert, certParam->certAlias, certName->subjectName, certName->displayName);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed to get alias from subject name");
+            break;
+        }
+
+        ret = GetObjNameFromCertData(certParam->appCert, certParam->certAlias, certName->objectName);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed to get object name from subject name");
+            break;
+        }
+    } while (0);
+    if (cert != NULL) {
+        FreeCertContext(cert);
+    }
+    return ret;
+}
+
+static int32_t StoreKeyAndCert(const struct CmContext *context, uint32_t store,
+    struct AppCert *appCert, EVP_PKEY *priKey, struct CmBlob *keyUri)
+{
+    int32_t ret = CmCheckCertCount(context, store, (char *)keyUri->data);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("cert count beyond maxcount, can't install");
+        return CMR_ERROR_MAX_CERT_COUNT_REACHED;
+    }
+
+    ret = ImportKeyPair(priKey, keyUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("import key pair failed");
+        return ret;
+    }
+
+    ret = StoreAppCert(context, appCert, store, keyUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("store App Cert failed");
+        return ret;
+    }
+    return CM_SUCCESS;
+}
+
 int32_t CmInstallAppCertPro(
     const struct CmContext *context, const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
 {
     struct AppCert appCert;
     (void)memset_s(&appCert, sizeof(struct AppCert), 0, sizeof(struct AppCert));
     EVP_PKEY *priKey = NULL;
-
+    uint8_t subjectBuf[MAX_LEN_SUBJECT_NAME] = { 0 };
+    struct CmBlob subjectName = { sizeof(subjectBuf), subjectBuf };
+    uint8_t objectBuf[MAX_LEN_CERT_ALIAS] = { 0 };
+    struct CmBlob objectName = { sizeof(objectBuf), objectBuf };
+    uint8_t displayBuf[MAX_LEN_CERT_ALIAS] = { 0 };
+    struct CmBlob displayName = { sizeof(displayBuf), displayBuf };
+    struct CertName certName = { &displayName, &objectName, &subjectName };
     int32_t ret;
     do {
-        ret = ConstructKeyUri(context, certParam->certAlias, certParam->store, keyUri);
+        ret = GetCredCertName(context, certParam, &priKey, &certName, &appCert);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetCredCertName fail");
+            break;
+        }
+
+        ret = ConstructKeyUri(context, &objectName, certParam->store, keyUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("construct app cert uri fail");
             break;
         }
 
-        ret = CmCheckCertCount(context, certParam->store, (char *)keyUri->data);
+        ret = StoreKeyAndCert(context, certParam->store, &appCert, priKey, keyUri);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("cert count beyond maxcount, can't install");
-            ret = CMR_ERROR_MAX_CERT_COUNT_REACHED;
+            CM_LOG_E("StoreKeyAndCert fail");
             break;
         }
 
-        ret = CmParsePkcs12Cert(certParam->appCert, (char *)certParam->appCertPwd->data, &priKey, &appCert);
+        ret = RdbInsertCertProperty(context, keyUri, &displayName, &subjectName, certParam->store);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmParsePkcs12Cert fail");
-            break;
-        }
-
-        ret = ImportKeyPair(priKey, keyUri);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("import key pair failed");
-            break;
-        }
-
-        ret = StoreAppCert(context, &appCert, certParam->store, keyUri);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("store App Cert failed");
+            CM_LOG_E("Failed to RdbInsertCertProperty");
             break;
         }
     } while (0);

@@ -301,7 +301,7 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest004, TestSize.Level0)
 HWTEST_F(CmUserCertTest, InstallUserCertTest005, TestSize.Level0)
 {
     int32_t ret;
-    uint8_t aliasBuf002[] = "abnormal-invalid-certdata";
+    uint8_t aliasBuf002[] = "abnormal_invalid_certdata";
     uint8_t uriBuf005[MAX_URI_LEN] = {0};
 
     struct CmBlob userCertTemp = { sizeof(g_certData04),
@@ -454,7 +454,7 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest010, TestSize.Level0)
 HWTEST_F(CmUserCertTest, InstallUserCertTest011, TestSize.Level0)
 {
     int32_t ret;
-    char edgeAliasBuf[] = "alias-length-is-48-000000000000000000000000000000000000000000000"; /* size is 64 */
+    char edgeAliasBuf[] = "alias_length_is_48_000000000000000000000000000000000000000000000"; /* size is 64 */
     uint8_t uriBuf[MAX_URI_LEN] = {0};
 
     struct CmBlob userCertTemp = { sizeof(g_certData01), const_cast<uint8_t *>(g_certData01) };
@@ -596,7 +596,7 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest017, TestSize.Level0)
 HWTEST_F(CmUserCertTest, InstallUserCertTest018, TestSize.Level0)
 {
     int32_t ret;
-    char edgeAliasBuf[] = "alias-length-is-48-000000000000000000000000000000000000000000000"; /* size is 64 */
+    char edgeAliasBuf[] = "alias_length_is_48_000000000000000000000000000000000000000000000"; /* size is 64 */
     struct CmBlob edgeAlias018 = { strlen(edgeAliasBuf) + 1, reinterpret_cast<uint8_t *>(edgeAliasBuf) };
     uint8_t uriBuf[MAX_URI_LEN] = {0};
     struct CmBlob uri = { sizeof(uriBuf), uriBuf };
@@ -732,6 +732,28 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest025, TestSize.Level0)
 
     ret = CmInstallUserCACert(&userCert[0], &alias025, TEST_USERID, true, &certUri25);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "abormal install user ca cert test failed, recode:" << ret;
+}
+
+/**
+ * @tc.name: InstallUserCertTest026
+ * @tc.desc: Test CertManager Install user cert interface base function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MJ8 /SR000H09N7
+ */
+HWTEST_F(CmUserCertTest, InstallUserCertTest026, TestSize.Level0)
+{
+    int32_t ret;
+    uint8_t uriBuf026[MAX_URI_LEN] = {0};
+    struct CmBlob certUri26 = { sizeof(uriBuf026), uriBuf026 };
+
+    char aliasBuf[] = "";
+    struct CmBlob alias026 = { strlen(aliasBuf) + 1, reinterpret_cast<uint8_t *>(aliasBuf) };
+
+    ret = CmInstallUserCACert(&userCert[0], &alias026, TEST_USERID, true, &certUri26);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal install user ca cert test failed, recode:" << ret;
+
+    ret = CmUninstallUserTrustedCert(&certUri26);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal uninstall user ca cert test failed, recode:" << ret;
 }
 
 /**

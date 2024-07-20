@@ -65,7 +65,8 @@ static const uint32_t APPLICATION_SYSTEM_CERTIFICATE_STORE = 4;
 
 napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store);
 napi_value ParseBoolean(napi_env env, napi_value object, bool &status);
-napi_value ParseString(napi_env env, napi_value object, CmBlob *&certUri);
+napi_value ParseCertAlias(napi_env env, napi_value napiObj, CmBlob *&certAlias);
+napi_value ParseString(napi_env env, napi_value object, CmBlob *&stringBlob);
 napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob);
 
 napi_ref GetCallback(napi_env env, napi_value object);
@@ -160,6 +161,7 @@ enum ErrorCode {
     NO_AUTHORIZATION = 17500005,
     ALIAS_LENGTH_REACHED_LIMIT = 17500006,
     DEVICE_ENTER_ADVSECMODE = 17500007,
+    PASSWORD_IS_ERROR = 17500008,
 };
 
 enum CmJSKeyDigest {

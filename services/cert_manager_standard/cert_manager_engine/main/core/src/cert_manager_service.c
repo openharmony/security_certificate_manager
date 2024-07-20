@@ -34,6 +34,7 @@
 #include "cert_manager_storage.h"
 #include "cert_manager_uri.h"
 #include "cm_event_process.h"
+#include "cm_cert_property_rdb.h"
 #include "cm_log.h"
 #include "cm_type.h"
 #include "cm_x509.h"
@@ -561,35 +562,74 @@ static int32_t TryBackupUserCert(const struct CmContext *context, const struct C
     return ret;
 }
 
+static int32_t GetUserCertNameAndPath(const struct CmContext *context, const struct CmBlob *certData,
+    const struct CmBlob *certAlias, struct CertName *certName, struct CmMutableBlob *pathBlob)
+{
+    int32_t ret = CM_SUCCESS;
+    do {
+        X509 *userCertX509 = InitCertContext(certData->data, certData->size);
+        if (userCertX509 == NULL) {
+            CM_LOG_E("Parse X509 cert fail");
+            ret = CMR_ERROR_INVALID_CERT_FORMAT;
+            break;
+        }
+
+        ret = GetSubjectNameAndAlias(userCertX509, certAlias, certName->subjectName, certName->displayName);
+        FreeCertContext(userCertX509);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed to get alias from subject name");
+            break;
+        }
+
+        ret = GetObjNameFromCertData(certData, certAlias, certName->objectName);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed to get object name from subject name");
+            break;
+        }
+
+        ret = CmGetCertFilePath(context, CM_USER_TRUSTED_STORE, pathBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed obtain path for store:%u", CM_USER_TRUSTED_STORE);
+            break;
+        }
+    } while (0);
+    return ret;
+}
+
 int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *userCert,
     const struct CmBlob *certAlias, const uint32_t status, struct CmBlob *certUri)
 {
     int32_t ret = CM_SUCCESS;
     uint8_t pathBuf[CERT_MAX_PATH_LEN] = { 0 };
     struct CmMutableBlob pathBlob = { sizeof(pathBuf), pathBuf };
-    uint32_t store = CM_USER_TRUSTED_STORE;
+    uint8_t subjectBuf[MAX_LEN_SUBJECT_NAME] = { 0 };
+    struct CmBlob subjectName = { sizeof(subjectBuf), subjectBuf };
+    uint8_t objectBuf[MAX_LEN_CERT_ALIAS] = { 0 };
+    struct CmBlob objectName = { sizeof(objectBuf), objectBuf };
+    uint8_t displayBuf[MAX_LEN_CERT_ALIAS] = { 0 };
+    struct CmBlob displayName = { sizeof(displayBuf), displayBuf };
+    struct CertName certName = { &displayName, &objectName, &subjectName };
+
     do {
-        X509 *userCertX509 = InitCertContext(userCert->data, userCert->size);
-        if (userCertX509 == NULL) {
-            CM_LOG_E("Parse X509 cert fail");
-            ret = CMR_ERROR_INVALID_CERT_FORMAT;
-            break;
-        }
-        FreeCertContext(userCertX509);
-
-        ret = CmGetCertFilePath(context, store, &pathBlob);
+        ret = GetUserCertNameAndPath(context, userCert, certAlias, &certName, &pathBlob);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed obtain path for store:%u", store);
+            CM_LOG_E("GetUserCertNameAndPath fail");
             break;
         }
 
-        ret = CmWriteUserCert(context, &pathBlob, userCert, certAlias, certUri);
+        ret = CmWriteUserCert(context, &pathBlob, userCert, &objectName, certUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CertManagerWriteUserCert fail");
             break;
         }
 
-        ret = SetcertStatus(context, certUri, store, status, NULL);
+        ret = RdbInsertCertProperty(context, certUri, &displayName, &subjectName, CM_USER_TRUSTED_STORE);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed to RdbInsertCertProperty");
+            break;
+        }
+
+        ret = SetcertStatus(context, certUri, CM_USER_TRUSTED_STORE, status, NULL);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("SetcertStatus fail");
             break;
@@ -697,6 +737,12 @@ int32_t CmUninstallUserCert(const struct CmContext *context, const struct CmBlob
         ret = CmComparisonCallerIdWithUri(context, certUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CallerId don't match uri, ret = %d", ret);
+            break;
+        }
+
+        ret = DeleteCertProperty((char *)certUri->data);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed delete cert: %s rdbData", (char *)certUri->data);
             break;
         }
 

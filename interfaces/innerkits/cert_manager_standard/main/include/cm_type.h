@@ -44,8 +44,10 @@ extern "C" {
 #define MAX_LEN_CERT_ALIAS       65     /* include 1 byte: the terminator('\0') */
 #define MAX_LEN_SUBJECT_NAME     256
 #define MAX_LEN_PACKGE_NAME      64
+#define MAX_LEN_MAC_KEY          64
 #define MAX_UINT32_LEN           16
 #define MAX_LEN_CERT_TYPE        8
+#define MAX_LEN_PRI_CRED_ALIAS   33     /* include 1 byte: the terminator('\0') */
 
 #define MAX_LEN_ISSUER_NAME             256
 #define MAX_LEN_SERIAL                  64
@@ -149,6 +151,7 @@ enum CmErrorCode {
     CMR_ERROR_UPDATE_RDB_DATA_FAIL = -33,
     CMR_ERROR_DELETE_RDB_DATA_FAIL = -34,
     CMR_ERROR_QUERY_RDB_DATA_FAIL = -35,
+    CMR_ERROR_PASSWORD_IS_ERR = -36,
 };
 
 enum CMErrorCode { /* temp use */
@@ -356,6 +359,12 @@ struct CmAppCertParam {
     struct CmBlob *certAlias;
     uint32_t store;
     uint32_t userId;
+};
+
+struct CertName {
+    struct CmBlob *displayName;
+    struct CmBlob *objectName;
+    struct CmBlob *subjectName;
 };
 
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)
