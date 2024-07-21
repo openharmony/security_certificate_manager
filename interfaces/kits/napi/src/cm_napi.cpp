@@ -50,6 +50,7 @@ namespace CMNapi {
         AddInt32Property(env, errorCode, "CM_ERROR_NO_AUTHORIZATION", NO_AUTHORIZATION);
         AddInt32Property(env, errorCode, "CM_ERROR_ALIAS_LENGTH_REACHED_LIMIT", ALIAS_LENGTH_REACHED_LIMIT);
         AddInt32Property(env, errorCode, "CM_ERROR_DEVICE_ENTER_ADVSECMODE", DEVICE_ENTER_ADVSECMODE);
+        AddInt32Property(env, errorCode, "CM_ERROR_PASSWORD_IS_ERR", PASSWORD_IS_ERROR);
     }
 
     static napi_value CreateCMErrorCode(napi_env env)
@@ -111,41 +112,42 @@ extern "C" {
             DECLARE_NAPI_PROPERTY("CmKeyDigest", CreateCMKeyDigest(env)),
             DECLARE_NAPI_PROPERTY("CmKeyPadding", CreateCMKeyPadding(env)),
 
+            /* system ca */
             DECLARE_NAPI_FUNCTION("getSystemTrustedCertificateList", CMNapiGetSystemCertList),
             DECLARE_NAPI_FUNCTION("getSystemTrustedCertificate", CMNapiGetSystemCertInfo),
             DECLARE_NAPI_FUNCTION("setCertificateStatus", CMNapiSetCertStatus),
-            DECLARE_NAPI_FUNCTION("installAppCertificate", CMNapiInstallPublicCert),
+
+            /* user public cred */
             DECLARE_NAPI_FUNCTION("installPublicCertificate", CMNapiInstallPublicCert),
             DECLARE_NAPI_FUNCTION("uninstallAllAppCertificate", CMNapiUninstallAllAppCert),
-            DECLARE_NAPI_FUNCTION("uninstallAppCertificate", CMNapiUninstallPublicCert),
-            DECLARE_NAPI_FUNCTION("getAppCertificateList", CMNapiGetAllPublicCertList),
-            DECLARE_NAPI_FUNCTION("getAppCertificate", CMNapiGetPublicCertInfo),
             DECLARE_NAPI_FUNCTION("uninstallPublicCertificate", CMNapiUninstallPublicCert),
             DECLARE_NAPI_FUNCTION("getAllPublicCertificates", CMNapiGetAllPublicCertList),
             DECLARE_NAPI_FUNCTION("getPublicCertificate", CMNapiGetPublicCertInfo),
 
+            /* user ca */
             DECLARE_NAPI_FUNCTION("installUserTrustedCertificate", CMNapiInstallUserTrustedCert),
             DECLARE_NAPI_FUNCTION("uninstallAllUserTrustedCertificate", CMNapiUninstallAllUserTrustedCert),
             DECLARE_NAPI_FUNCTION("uninstallUserTrustedCertificate", CMNapiUninstallUserTrustedCert),
-            DECLARE_NAPI_FUNCTION("getUserTrustedCertificateList", CMNapiGetAllUserTrustedCertList),
             DECLARE_NAPI_FUNCTION("getAllUserTrustedCertificates", CMNapiGetAllUserTrustedCertList),
             DECLARE_NAPI_FUNCTION("getUserTrustedCertificate", CMNapiGetUserTrustedCertInfo),
+
+            /* private cred */
             DECLARE_NAPI_FUNCTION("installPrivateCertificate", CMNapiInstallPrivateAppCert),
             DECLARE_NAPI_FUNCTION("uninstallPrivateCertificate", CMNapiUninstallPrivateAppCert),
-            DECLARE_NAPI_FUNCTION("getPrivateCertificateList", CMNapiGetPrivateAppCertList),
             DECLARE_NAPI_FUNCTION("getAllAppPrivateCertificates", CMNapiGetPrivateAppCertList),
             DECLARE_NAPI_FUNCTION("getPrivateCertificate", CMNapiGetPrivateAppCertInfo),
-            DECLARE_NAPI_FUNCTION("grantAppCertificate", CMNapiGrantPublicCertificate),
+
+            /* grant, sign and verify */
             DECLARE_NAPI_FUNCTION("grantPublicCertificate", CMNapiGrantPublicCertificate),
             DECLARE_NAPI_FUNCTION("isAuthorizedApp", CMNapiIsAuthorizedApp),
             DECLARE_NAPI_FUNCTION("getAuthorizedAppList", CMNapiGetAuthorizedAppList),
-            DECLARE_NAPI_FUNCTION("removeGrantedAppCertificate", CMNapiRemoveGrantedPublic),
             DECLARE_NAPI_FUNCTION("removeGrantedPublicCertificate", CMNapiRemoveGrantedPublic),
             DECLARE_NAPI_FUNCTION("init", CMNapiInit),
             DECLARE_NAPI_FUNCTION("update", CMNapiUpdate),
             DECLARE_NAPI_FUNCTION("finish", CMNapiFinish),
             DECLARE_NAPI_FUNCTION("abort", CMNapiAbort),
 
+            /* system cred */
             DECLARE_NAPI_FUNCTION("installSystemAppCertificate", CMNapiInstallSystemAppCert),
             DECLARE_NAPI_FUNCTION("uninstallSystemAppCertificate", CMNapiUninstallSystemAppCert),
             DECLARE_NAPI_FUNCTION("getAllSystemAppCertificates", CMNapiGetSystemAppCertList),

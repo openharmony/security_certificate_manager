@@ -28,6 +28,7 @@
 #include "cert_manager_storage.h"
 #include "cert_manager_uri.h"
 #include "cm_cert_property_rdb.h"
+#include "cert_manager_crypto_operation.h"
 #include "cm_log.h"
 #include "cm_type.h"
 #include "cm_x509.h"
@@ -219,6 +220,12 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
         }
     }
 
+    ret = DeleteCertProperty((char *)keyUri->data);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed delete cert: %s rdbData", (char *)keyUri->data);
+        return ret;
+    }
+
     char pathBuf[CERT_MAX_PATH_LEN] = {0};
     struct CmMutableBlob path = { sizeof(pathBuf), (uint8_t*) pathBuf };
 
@@ -322,6 +329,22 @@ int32_t CmGetUri(const char *filePath, struct CmBlob *uriBlob)
     return CM_SUCCESS;
 }
 
+static int32_t GetUriAndDeleteRdbData(const char *filePath, struct CmBlob *uriBlob)
+{
+    int32_t ret = CmGetUri(filePath, uriBlob);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get uri failed");
+        return ret;
+    }
+
+    ret = DeleteCertProperty((char *)uriBlob->data);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed delete cert: %s rdbData", (char *)uriBlob->data);
+        return ret;
+    }
+    return CM_SUCCESS;
+}
+
 static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const uint32_t store)
 {
     uint32_t fileCount = 0;
@@ -355,7 +378,7 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
 
             uriBlob.size = sizeof(uriBuf);
             (void)memset_s(uriBuf, uriBlob.size, 0, uriBlob.size);
-            if (CmGetUri((char *)fileNames[i].data, &uriBlob) != CM_SUCCESS) {
+            if (GetUriAndDeleteRdbData((char *)fileNames[i].data, &uriBlob) != CM_SUCCESS) {
                 CM_LOG_E("Get uri failed");
                 continue;
             }
@@ -558,6 +581,97 @@ int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *p
     return ret;
 }
 
+int32_t CmGetDisplayNameByURI(const struct CmBlob *uri, const char *object, struct CmBlob *displayName)
+{
+    if ((CmCheckBlob(uri) != CM_SUCCESS) || (object == NULL) ||
+        (CmCheckBlob(displayName) != CM_SUCCESS)) {
+        CM_LOG_E("input param is invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    int32_t ret = CM_SUCCESS;
+    struct CertProperty certProperty;
+    (void)memset_s(&certProperty, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
+    ret = QueryCertProperty((char *)uri->data, &certProperty);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to query certProperty, ret=%d", ret);
+        return ret;
+    }
+    const char *temp = NULL;
+    if (strlen(certProperty.uri) != 0) {
+        temp = (const char *)certProperty.alias;
+    } else {
+        temp = object;
+    }
+    if (memcpy_s(displayName->data, displayName->size, temp, strlen(temp) + 1) != CM_SUCCESS) {
+        CM_LOG_E("Failed to copy displayName->data");
+        ret = CM_FAILURE;
+    }
+    displayName->size = strlen(temp) + 1;
+    return ret;
+}
+
+static const char* GetCertType(uint32_t store)
+{
+    switch (store) {
+        case CM_USER_TRUSTED_STORE:
+            return "c";
+
+        case CM_CREDENTIAL_STORE:
+            return "ak";
+
+        case CM_PRI_CREDENTIAL_STORE:
+            return "ak";
+
+        case CM_SYS_CREDENTIAL_STORE:
+            return "sk";
+
+        default:
+            return NULL;
+    }
+    return NULL;
+}
+
+int32_t RdbInsertCertProperty(const struct CmContext *context, const struct CmBlob *uri,
+    const struct CmBlob *alias, const struct CmBlob *subjectName, uint32_t store)
+{
+    struct CertProperty certProp;
+    (void)memset_s(&certProp, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
+    certProp.userId = (int32_t)context->userId;
+    certProp.uid = (int32_t)context->uid;
+
+    const char *certType = GetCertType(store);
+    if (certType == NULL) {
+        CM_LOG_E("Type %d does not support installation", store);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    certProp.certStore = store;
+    if (memcpy_s(certProp.certType, MAX_LEN_CERT_TYPE, certType, strlen(certType)) != CM_SUCCESS) {
+        CM_LOG_E("memcpy certType fail");
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+
+    if (memcpy_s(certProp.uri, MAX_LEN_URI, (char *)uri->data, uri->size) != CM_SUCCESS) {
+        CM_LOG_E("memcpy uri fail");
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+    if (memcpy_s(certProp.alias, MAX_LEN_SUBJECT_NAME, (char *)alias->data, alias->size) != CM_SUCCESS) {
+        CM_LOG_E("memcpy subjectName fail");
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+    if (memcpy_s(certProp.subjectName, MAX_LEN_SUBJECT_NAME, (char *)subjectName->data, subjectName->size)
+        != CM_SUCCESS) {
+        CM_LOG_E("memcpy subjectName fail");
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+
+    int32_t ret = InsertCertProperty(&certProp);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to InsertCertProperty");
+        return ret;
+    }
+    return CM_SUCCESS;
+}
+
 int32_t CmStoreUserCert(const char *path, const struct CmBlob *userCert, const char *userCertName)
 {
     int32_t ret = CM_SUCCESS;
@@ -637,6 +751,11 @@ static int32_t RemoveAllUserCert(const struct CmContext *context, uint32_t store
     for (uint32_t i = 0; i < fileNames.size; i++) {
         certUri.data = (uint8_t *)fNames[i].data;
         certUri.size = fNames[i].size - 1;
+        ret = DeleteCertProperty((char *)certUri.data);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed delete cert: %s rdbData", (char *)certUri.data);
+            continue;
+        }
         ret = CmBackupRemove(context->userId, path, &certUri);
         if (ret != CMR_OK) {
             CM_LOG_E("User Cert %u remove config and backup file failed, ret: %d", i, ret);
@@ -749,6 +868,32 @@ int32_t CmRemoveBackupUserCert(const struct CmContext *context, const struct CmB
     return CM_SUCCESS;
 }
 
+int32_t GetObjNameFromCertData(const struct CmBlob *certData, const struct CmBlob *certAlias,
+    struct CmBlob *objectName)
+{
+    if ((CmCheckBlob(certData) != CM_SUCCESS) || (CmCheckBlob(certAlias) != CM_SUCCESS) || (objectName == NULL)) {
+        CM_LOG_E("input param is invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    struct CmBlob object = { certAlias->size, certAlias->data };
+    uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
+    struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
+    if (strcmp("", (char *)certAlias->data) == 0) {
+        int32_t ret = GetNameEncode(certData, &encodeTarget);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("base64urlsha256 failed");
+            return ret;
+        }
+        object.data = encodeTarget.data;
+        object.size = encodeTarget.size;
+    }
+
+    if (memcpy_s(objectName->data, objectName->size, object.data, object.size) != CM_SUCCESS) {
+        CM_LOG_E("memcpy object name failed");
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+    return CM_SUCCESS;
+}
 #ifdef __cplusplus
 }
 #endif

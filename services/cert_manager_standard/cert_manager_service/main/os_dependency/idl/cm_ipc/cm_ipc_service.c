@@ -354,12 +354,11 @@ static int32_t GetAppCertInfo(const struct CmBlob *keyUri, struct CmBlob *certTy
         }
         certUri->size = keyUri->size;
 
-        if (memcpy_s(cerAlias->data, cerAlias->size, uri.object, strlen(uri.object) + 1) != EOK) {
-            CM_LOG_E("Failed to copy cerAlias->data");
-            ret = CMR_ERROR;
+        ret = CmGetDisplayNameByURI(keyUri, uri.object, cerAlias);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed to CMGetDisplayNameByURI");
             break;
         }
-        cerAlias->size = strlen(uri.object) + 1;
     } while (0);
 
     CertManagerFreeUri(&uri);

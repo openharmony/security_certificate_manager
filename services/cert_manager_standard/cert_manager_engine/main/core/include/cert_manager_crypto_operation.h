@@ -18,9 +18,16 @@
 
 #include "cm_type.h"
 
+#define DIGEST_SHA256_LEN           32
+#define MAX_LEN_BASE64URL_SHA256    64
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+int32_t GetNameEncode(const struct CmBlob *inBlob, struct CmBlob *outBlob);
+
+int32_t GetEncodeIfLenUp64(const struct CmBlob *inData, struct CmBlob *outData);
 
 int32_t CmGetRandom(struct CmBlob *random);
 

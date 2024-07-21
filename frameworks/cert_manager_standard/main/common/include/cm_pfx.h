@@ -24,7 +24,8 @@
 extern "C" {
 #endif
 
-int32_t CmParsePkcs12Cert(const struct CmBlob *p12Cert, char *passWd, EVP_PKEY **pkey, struct AppCert *appCert);
+int32_t CmParsePkcs12Cert(const struct CmBlob *p12Cert, char *passWd, EVP_PKEY **pkey,
+    struct AppCert *appCert, X509 **x509Cert);
 
 #ifdef __cplusplus
 }

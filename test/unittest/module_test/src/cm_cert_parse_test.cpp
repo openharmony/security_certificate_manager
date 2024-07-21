@@ -423,8 +423,12 @@ HWTEST_F(CmCertParseTest, CmCertParseTest023, TestSize.Level0)
     EVP_PKEY *pkey = nullptr;
     struct CmBlob certInfo = { sizeof(g_rsa2048P12CertInfo), const_cast<uint8_t *>(g_rsa2048P12CertInfo) };
 
+    X509 *cert = nullptr;
     int32_t ret = CmParsePkcs12Cert(&certInfo, reinterpret_cast<char *>(const_cast<uint8_t *>(g_certPwd)),
-        &pkey, &appCert);
+        &pkey, &appCert, &cert);
+    if (cert != nullptr) {
+        FreeCertContext(cert);
+    }
     EXPECT_EQ(ret, CM_SUCCESS);
 
     EVP_PKEY_free(pkey);
@@ -442,8 +446,12 @@ HWTEST_F(CmCertParseTest, CmCertParseTest024, TestSize.Level0)
     (void)memset_s(&appCert, sizeof(struct AppCert), 0, sizeof(struct AppCert));
     EVP_PKEY *pkey = nullptr;
 
+    X509 *cert = nullptr;
     int32_t ret = CmParsePkcs12Cert(nullptr, reinterpret_cast<char *>(const_cast<uint8_t *>(g_certPwd)),
-        &pkey, &appCert);
+        &pkey, &appCert, &cert);
+    if (cert != nullptr) {
+        FreeCertContext(cert);
+    }
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     EVP_PKEY_free(pkey);
@@ -462,8 +470,12 @@ HWTEST_F(CmCertParseTest, CmCertParseTest025, TestSize.Level0)
     EVP_PKEY *pkey = nullptr;
     struct CmBlob certInfo = { sizeof(g_rsa2048P12CertInfo), nullptr };
 
+    X509 *cert = nullptr;
     int32_t ret = CmParsePkcs12Cert(&certInfo, reinterpret_cast<char *>(const_cast<uint8_t *>(g_certPwd)),
-        &pkey, &appCert);
+        &pkey, &appCert, &cert);
+    if (cert != nullptr) {
+        FreeCertContext(cert);
+    }
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     EVP_PKEY_free(pkey);
@@ -482,8 +494,12 @@ HWTEST_F(CmCertParseTest, CmCertParseTest026, TestSize.Level0)
     EVP_PKEY *pkey = nullptr;
     struct CmBlob certInfo = { MAX_LEN_CERTIFICATE_CHAIN + 1, const_cast<uint8_t *>(g_rsa2048P12CertInfo) };
 
+    X509 *cert = nullptr;
     int32_t ret = CmParsePkcs12Cert(&certInfo, reinterpret_cast<char *>(const_cast<uint8_t *>(g_certPwd)),
-        &pkey, &appCert);
+        &pkey, &appCert, &cert);
+    if (cert != nullptr) {
+        FreeCertContext(cert);
+    }
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     EVP_PKEY_free(pkey);
@@ -503,8 +519,12 @@ HWTEST_F(CmCertParseTest, CmCertParseTest027, TestSize.Level0)
     uint8_t tempBuf[] = "this is for test error";
     struct CmBlob certInfo = { sizeof(tempBuf), tempBuf };
 
+    X509 *cert = nullptr;
     int32_t ret = CmParsePkcs12Cert(&certInfo, reinterpret_cast<char *>(const_cast<uint8_t *>(g_certPwd)),
-        &pkey, &appCert);
+        &pkey, &appCert, &cert);
+    if (cert != nullptr) {
+        FreeCertContext(cert);
+    }
     EXPECT_EQ(ret, CMR_ERROR_INVALID_CERT_FORMAT);
 
     EVP_PKEY_free(pkey);
@@ -524,8 +544,12 @@ HWTEST_F(CmCertParseTest, CmCertParseTest028, TestSize.Level0)
     struct CmBlob certInfo = { sizeof(g_rsa2048P12CertInfo), const_cast<uint8_t *>(g_rsa2048P12CertInfo) };
     char tempPwd[] = "this is for test error123";
 
-    int32_t ret = CmParsePkcs12Cert(&certInfo, tempPwd, &pkey, &appCert);
-    EXPECT_EQ(ret, CM_FAILURE);
+    X509 *cert = nullptr;
+    int32_t ret = CmParsePkcs12Cert(&certInfo, tempPwd, &pkey, &appCert, &cert);
+    if (cert != nullptr) {
+        FreeCertContext(cert);
+    }
+    EXPECT_EQ(ret, CMR_ERROR_PASSWORD_IS_ERR);
 
     EVP_PKEY_free(pkey);
 }

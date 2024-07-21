@@ -23,7 +23,68 @@
 #include "cm_log.h"
 #include "cm_type.h"
 
-#define DIGEST_SHA256_LEN 32
+#define BYTE_SHIFT_10           0x10
+#define BYTE_SHIFT_8            0x08
+#define BYTE_SHIFT_6            6
+#define BASE64_URL_TABLE_SIZE   0x3F
+#define BASE64_BITS_PER_OCTET   6
+#define BYTE_LEN                8
+#define BASE64_CARRY_SIZE       5
+#define BYTE_INDEX_ZONE         0
+#define BYTE_INDEX_ONE          1
+#define BYTE_INDEX_TWO          2
+#define BYTE_INDEX_THREE        3
+
+static int32_t Base64UrlEncode(const struct CmBlob *indata, struct CmBlob *uriHash)
+{
+    if ((indata == NULL) || (uriHash == NULL)) {
+        CM_LOG_E("input param is invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    char base64UrlTable[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    int outputLen = (indata->size * BYTE_LEN + BASE64_CARRY_SIZE) / BASE64_BITS_PER_OCTET;
+    uriHash->size = outputLen + 1;
+    uriHash->data[outputLen] = '\0';
+    int i;
+    int j;
+    for (i = 0, j = 0; i < indata->size;) {
+        unsigned int octeta = i < indata->size ? *(indata->data + (i++)) : 0;
+        unsigned int octetb = i < indata->size ? *(indata->data + (i++)) : 0;
+        unsigned int octetc = i < indata->size ? *(indata->data + (i++)) : 0;
+
+        unsigned int triple = (octeta << BYTE_SHIFT_10) + (octetb << BYTE_SHIFT_8) + octetc;
+
+        uriHash->data[j++] = base64UrlTable[(triple >> BYTE_INDEX_THREE * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
+        uriHash->data[j++] = base64UrlTable[(triple >> BYTE_INDEX_TWO   * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
+        uriHash->data[j++] = base64UrlTable[(triple >> BYTE_INDEX_ONE   * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
+        uriHash->data[j++] = base64UrlTable[(triple >> BYTE_INDEX_ZONE  * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
+    }
+    return CM_SUCCESS;
+}
+
+int32_t GetNameEncode(const struct CmBlob *inBlob, struct CmBlob *outBlob)
+{
+    if ((inBlob == NULL) || (outBlob == NULL)) {
+        CM_LOG_E("input param is invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    uint8_t tempBuf[DIGEST_SHA256_LEN] = {0};
+    struct CmBlob inDigest = { DIGEST_SHA256_LEN, tempBuf };
+    int32_t ret = CM_SUCCESS;
+    do {
+        ret = CmGetHash(inBlob, &inDigest);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmGetHash fail, ret = %d", ret);
+            break;
+        }
+        ret = Base64UrlEncode(&inDigest, outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Base64UrlEncode fail, ret = %d", ret);
+            break;
+        }
+    } while (0);
+    return ret;
+}
 
 int32_t CmGetRandom(struct CmBlob *random)
 {

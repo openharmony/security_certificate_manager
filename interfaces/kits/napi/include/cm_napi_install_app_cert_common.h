@@ -39,7 +39,7 @@ InstallAppCertAsyncContext CreateInstallAppCertAsyncContext();
 void DeleteInstallAppCertAsyncContext(napi_env env, InstallAppCertAsyncContext &context);
 
 napi_value InstallAppCertParseParams(
-    napi_env env, napi_callback_info info, InstallAppCertAsyncContext context);
+    napi_env env, napi_callback_info info, InstallAppCertAsyncContext context, uint32_t store);
 
 napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext asyncContext);
 

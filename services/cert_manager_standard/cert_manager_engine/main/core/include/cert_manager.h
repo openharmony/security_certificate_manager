@@ -80,6 +80,14 @@ int32_t CmRemoveAllUserCert(const struct CmContext *context, uint32_t store, con
 int32_t CmRemoveBackupUserCert(const struct CmContext *context, const struct CmBlob *certUri,
                                const char *userCertConfigFilePath);
 
+int32_t CmGetDisplayNameByURI(const struct CmBlob *uri, const char *object, struct CmBlob *displayName);
+
+int32_t RdbInsertCertProperty(const struct CmContext *context, const struct CmBlob *uri,
+    const struct CmBlob *alias, const struct CmBlob *subjectName, uint32_t store);
+
+int32_t GetObjNameFromCertData(const struct CmBlob *certData, const struct CmBlob *certAlias,
+    struct CmBlob *objectName);
+
 #ifdef __cplusplus
 }
 #endif

@@ -35,6 +35,7 @@ static const std::string MAX_CERT_COUNT_REACHED_MSG = "the count of certificates
 static const std::string NO_AUTHORIZATION_MSG = "the application is not authorized by user";
 static const std::string ALIAS_LENGTH_REACHED_LIMIT_MSG = "the input alias length reaches the max";
 static const std::string DEVICE_ENTER_ADVSECMODE_MSG = "the device enters advanced security mode";
+static const std::string PASSWORD_IS_ERROR_MSG = "the input password is error";
 
 static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     // invalid params
@@ -52,6 +53,7 @@ static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     { CMR_ERROR_AUTH_CHECK_FAILED, NO_AUTHORIZATION },
     { CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT, ALIAS_LENGTH_REACHED_LIMIT },
     { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE },
+    { CMR_ERROR_PASSWORD_IS_ERR, PASSWORD_IS_ERROR },
 };
 
 static const std::unordered_map<int32_t, std::string> NATIVE_CODE_TO_MSG_MAP = {
@@ -97,7 +99,56 @@ napi_value ParseBoolean(napi_env env, napi_value object, bool &status)
     return GetInt32(env, 0);
 }
 
-napi_value ParseString(napi_env env, napi_value object, CmBlob *&certUri)
+napi_value ParseCertAlias(napi_env env, napi_value napiObj, CmBlob *&certAlias)
+{
+    napi_valuetype valueType = napi_undefined;
+    NAPI_CALL(env, napi_typeof(env, napiObj, &valueType));
+    if (valueType != napi_string) {
+        CM_LOG_E("the type of napiObj is not string");
+        return nullptr;
+    }
+    size_t length = 0;
+    napi_status status = napi_get_value_string_utf8(env, napiObj, nullptr, 0, &length);
+    if (status != napi_ok) {
+        GET_AND_THROW_LAST_ERROR((env));
+        CM_LOG_E("Failed to get string length");
+        return nullptr;
+    }
+    if (length > CM_MAX_DATA_LEN) { /* alias can be empty */
+        CM_LOG_E("input alias length is too large, length: %d", length);
+        return nullptr;
+    }
+
+    char *value = static_cast<char *>(CmMalloc(length + 1));
+    if (value == nullptr) {
+        napi_throw_error(env, nullptr, "could not alloc memory");
+        CM_LOG_E("could not alloc memory");
+        return nullptr;
+    }
+    (void)memset_s(value, length + 1, 0, length + 1);
+
+    size_t result = 0;
+    status = napi_get_value_string_utf8(env, napiObj, value, length + 1, &result);
+    if (status != napi_ok) {
+        CmFree(value);
+        GET_AND_THROW_LAST_ERROR((env));
+        CM_LOG_E("could not get string");
+        return nullptr;
+    }
+
+    certAlias = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
+    if (certAlias == nullptr) {
+        CmFree(value);
+        napi_throw_error(env, nullptr, "could not alloc memory");
+        CM_LOG_E("could not alloc memory");
+        return nullptr;
+    }
+    certAlias->data = reinterpret_cast<uint8_t *>(value);
+    certAlias->size = static_cast<uint32_t>((length + 1) & UINT32_MAX);
+    return GetInt32(env, 0);
+}
+
+napi_value ParseString(napi_env env, napi_value object, CmBlob *&stringBlob)
 {
     napi_valuetype valueType = napi_undefined;
     NAPI_CALL(env, napi_typeof(env, object, &valueType));
@@ -115,7 +166,7 @@ napi_value ParseString(napi_env env, napi_value object, CmBlob *&certUri)
 
     // add 0 length check
     if ((length == 0) || (length > CM_MAX_DATA_LEN)) {
-        CM_LOG_E("input key alias length is 0 or too large");
+        CM_LOG_E("input string length is 0 or too large, length: %d", length);
         return nullptr;
     }
 
@@ -136,15 +187,15 @@ napi_value ParseString(napi_env env, napi_value object, CmBlob *&certUri)
         return nullptr;
     }
 
-    certUri = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
-    if (certUri == nullptr) {
+    stringBlob = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
+    if (stringBlob == nullptr) {
         CmFree(data);
         napi_throw_error(env, nullptr, "could not alloc memory");
         CM_LOG_E("could not alloc memory");
         return nullptr;
     }
-    certUri->data = reinterpret_cast<uint8_t *>(data);
-    certUri->size = static_cast<uint32_t>((length + 1) & UINT32_MAX);
+    stringBlob->data = reinterpret_cast<uint8_t *>(data);
+    stringBlob->size = static_cast<uint32_t>((length + 1) & UINT32_MAX);
 
     return GetInt32(env, 0);
 }

@@ -16,6 +16,7 @@
 #include "cert_manager_query.h"
 
 #include "securec.h"
+#include "cm_cert_property_rdb.h"
 #include "cm_log.h"
 #include "cm_type.h"
 #include "cm_x509.h"
@@ -375,12 +376,29 @@ static int32_t GetUserCertAlias(const char *uri, struct CmBlob *alias)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    uint32_t objectSize = strlen(certUri.object) + 1;
-    if (memcpy_s(alias->data, alias->size, (uint8_t *)certUri.object, objectSize) != EOK) {
+    struct CertProperty certProperty;
+    (void)memset_s(&certProperty, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
+    ret = QueryCertProperty(uri, &certProperty);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to QueryCertProperty, ret: %d", ret);
         (void)CertManagerFreeUri(&certUri);
-        return CM_FAILURE;
+        return ret;
     }
-    alias->size = objectSize;
+
+    uint32_t size = strlen(certProperty.alias) + 1;
+    if (size <= 1) {
+        size = strlen(certUri.object) + 1;
+        if (memcpy_s(alias->data, size, certUri.object, size) != EOK) {
+            (void)CertManagerFreeUri(&certUri);
+            return CM_FAILURE;
+        }
+    } else {
+        if (memcpy_s(alias->data, size, (uint8_t *)certProperty.alias, size) != EOK) {
+            (void)CertManagerFreeUri(&certUri);
+            return CM_FAILURE;
+        }
+    }
+    alias->size = size;
     (void)CertManagerFreeUri(&certUri);
     return ret;
 }

@@ -68,8 +68,16 @@ void DeleteInstallAppCertAsyncContext(napi_env env, InstallAppCertAsyncContext &
     context = nullptr;
 }
 
+static napi_value GetCredAlias(napi_env env, napi_value napiObject, CmBlob *&certAlias, uint32_t store)
+{
+    if (store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
+        return ParseString(env, napiObject, certAlias);
+    }
+    return ParseCertAlias(env, napiObject, certAlias);
+}
+
 napi_value InstallAppCertParseParams(
-    napi_env env, napi_callback_info info, InstallAppCertAsyncContext context)
+    napi_env env, napi_callback_info info, InstallAppCertAsyncContext context, uint32_t store)
 {
     size_t argc = CM_NAPI_INSTALL_APP_CERT_MAX_ARGS;
     napi_value argv[CM_NAPI_INSTALL_APP_CERT_MAX_ARGS] = { nullptr };
@@ -105,7 +113,7 @@ napi_value InstallAppCertParseParams(
     }
 
     index++;
-    result = ParseString(env, argv[index], context->keyAlias);
+    result = GetCredAlias(env, argv[index], context->keyAlias, store);
     if (result == nullptr) {
         ThrowError(env, PARAM_ERROR, "keyAlias is not a string or the length is 0 or too long.");
         CM_LOG_E("could not get uri");
@@ -159,6 +167,14 @@ static napi_value InstallAppCertWriteResult(napi_env env, InstallAppCertAsyncCon
     return result;
 }
 
+static napi_value GenAppCertBusinessError(napi_env env, int32_t errorCode, uint32_t store)
+{
+    if ((errorCode == CMR_ERROR_PASSWORD_IS_ERR) && (store == APPLICATION_PRIVATE_CERTIFICATE_STORE)) {
+        errorCode = CMR_ERROR_INVALID_CERT_FORMAT;
+    }
+    return GenerateBusinessError(env, errorCode);
+}
+
 napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
@@ -184,7 +200,7 @@ napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext asyn
                 NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
                 result[1] = InstallAppCertWriteResult(env, context);
             } else {
-                result[0] = GenerateBusinessError(env, context->result);
+                result[0] = GenAppCertBusinessError(env, context->result, context->store);
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
             if (context->deferred != nullptr) {
@@ -217,7 +233,7 @@ napi_value CMNapiInstallAppCertCommon(napi_env env, napi_callback_info info, uin
 
     context->store = store;
 
-    napi_value result = InstallAppCertParseParams(env, info, context);
+    napi_value result = InstallAppCertParseParams(env, info, context, store);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
         DeleteInstallAppCertAsyncContext(env, context);

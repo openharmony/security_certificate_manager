@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <openssl/x509.h>
+#include "cm_type.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,6 +31,7 @@ extern "C" {
 #define NAME_DELIMITER_SIZE 2
 #define NAME_ANS1TIME_LEN   12
 
+#define CM_SUBJECT_NAME_NULL "CN=,OU=,O="
 #define CM_COMMON_NAME "CN"
 #define CM_SURNAME   "SN"
 #define CM_COUNTRY_NAME "C"
@@ -61,6 +63,10 @@ int32_t GetX509SerialNumber(X509 *x509cert, char *outBuf, uint32_t outBufMaxSize
 int32_t GetX509SubjectName(const X509 *x509cert, const char *subjectObjName, char* outBuf, uint32_t outBufMaxSize);
 
 int32_t GetX509SubjectNameLongFormat(const X509 *x509cert, char* outBuf, uint32_t outBufMaxSize);
+
+int32_t GetSubjectNameAndAlias(X509 *x509cert, const struct CmBlob *certAlias,
+    struct CmBlob *subjectName, struct CmBlob *displaytName);
+
 int32_t GetX509IssueNameLongFormat(const X509 *x509cert, char* outBuf, uint32_t outBufMaxSize);
 
 int32_t GetX509NotBefore(const X509 *x509cert, char* outBuf, uint32_t outBufMaxSize);

@@ -116,7 +116,7 @@ HWTEST_F(CmSysAppCertTest, SysAppCertTest002, TestSize.Level0)
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appCert, &errAppCertPwd,
         &certAlias, CM_SYS_CREDENTIAL_STORE, TEST_USERID };
     int32_t ret = CmInstallSystemAppCert(&appCertParam, &sysKeyUri);
-    EXPECT_EQ(ret, CM_FAILURE) << "SysAppCertTest002 credentail test failed, retcode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_PASSWORD_IS_ERR) << "SysAppCertTest002 credentail test failed, retcode:" << ret;
 }
 
 /**

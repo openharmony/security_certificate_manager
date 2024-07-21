@@ -164,10 +164,11 @@ HWTEST_F(CmAppCertTest, AppCertInstallBaseTest002, TestSize.Level0)
     struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
 
     int32_t ret = CmInstallAppCert(&g_appCert, &appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
-    EXPECT_EQ(ret, CM_FAILURE) << "AppCertInstallBaseTest002 credentail test failed, retcode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_PASSWORD_IS_ERR) << "AppCertInstallBaseTest002 credentail test failed, retcode:" << ret;
 
     ret = CmInstallAppCert(&g_appCert, &appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
-    EXPECT_EQ(ret, CM_FAILURE) << "AppCertInstallBaseTest002 pri_credentail test failed, retcode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_PASSWORD_IS_ERR)
+        << "AppCertInstallBaseTest002 pri_credentail test failed, retcode:" << ret;
 }
 
 /**
@@ -378,6 +379,8 @@ HWTEST_F(CmAppCertTest, CmGetAppBaseCertTest003, TestSize.Level0)
     EXPECT_EQ(CompareCredential(&firstcertificate, &secondcertificate), true);
     FreeCMBlobData(&(firstcertificate.credData));
     FreeCMBlobData(&(secondcertificate.credData));
+
+    (void)CmUninstallAppCert(&retUri, CM_CREDENTIAL_STORE);
 }
 
 /**
