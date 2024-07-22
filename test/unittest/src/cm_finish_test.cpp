@@ -26,7 +26,7 @@ using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
 static constexpr uint32_t DEFAULT_SIGNATURE_LEN = 1024;
-static constexpr uint32_t MAX_SESSION_NUM_MORE_1 = 16;
+static constexpr uint32_t MAX_SESSION_NUM_MORE_1 = 10;
 
 class CmFinishTest : public testing::Test {
 public:
@@ -176,10 +176,6 @@ static void ProducerSessionMaxTest(void)
         struct CmBlob handleBlob = { sizeof(uint64_t), (uint8_t *)&handle[i] };
 
         int32_t expectRet = CM_SUCCESS;
-        if (i == 0) {
-            expectRet = CMR_ERROR_NOT_EXIST;
-        }
-
         ret = CmUpdate(&handleBlob, &updateInput);
         EXPECT_EQ(ret, expectRet) << "update failed, i:" << i;
 

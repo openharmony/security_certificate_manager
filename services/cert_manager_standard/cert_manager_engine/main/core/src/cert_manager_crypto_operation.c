@@ -35,29 +35,28 @@
 #define BYTE_INDEX_TWO          2
 #define BYTE_INDEX_THREE        3
 
+static const char g_base64UrlTable[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
 static int32_t Base64UrlEncode(const struct CmBlob *indata, struct CmBlob *uriHash)
 {
     if ((indata == NULL) || (uriHash == NULL)) {
         CM_LOG_E("input param is invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    char base64UrlTable[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
     int outputLen = (indata->size * BYTE_LEN + BASE64_CARRY_SIZE) / BASE64_BITS_PER_OCTET;
     uriHash->size = outputLen + 1;
     uriHash->data[outputLen] = '\0';
-    int i;
-    int j;
-    for (i = 0, j = 0; i < indata->size;) {
-        unsigned int octeta = i < indata->size ? *(indata->data + (i++)) : 0;
-        unsigned int octetb = i < indata->size ? *(indata->data + (i++)) : 0;
-        unsigned int octetc = i < indata->size ? *(indata->data + (i++)) : 0;
+    for (int i = 0, j = 0; i < (int)indata->size;) {
+        unsigned int octeta = i < (int)indata->size ? *(indata->data + (i++)) : 0;
+        unsigned int octetb = i < (int)indata->size ? *(indata->data + (i++)) : 0;
+        unsigned int octetc = i < (int)indata->size ? *(indata->data + (i++)) : 0;
 
         unsigned int triple = (octeta << BYTE_SHIFT_10) + (octetb << BYTE_SHIFT_8) + octetc;
 
-        uriHash->data[j++] = base64UrlTable[(triple >> BYTE_INDEX_THREE * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
-        uriHash->data[j++] = base64UrlTable[(triple >> BYTE_INDEX_TWO   * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
-        uriHash->data[j++] = base64UrlTable[(triple >> BYTE_INDEX_ONE   * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
-        uriHash->data[j++] = base64UrlTable[(triple >> BYTE_INDEX_ZONE  * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
+        uriHash->data[j++] = g_base64UrlTable[(triple >> BYTE_INDEX_THREE * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
+        uriHash->data[j++] = g_base64UrlTable[(triple >> BYTE_INDEX_TWO   * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
+        uriHash->data[j++] = g_base64UrlTable[(triple >> BYTE_INDEX_ONE   * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
+        uriHash->data[j++] = g_base64UrlTable[(triple >> BYTE_INDEX_ZONE  * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
     }
     return CM_SUCCESS;
 }

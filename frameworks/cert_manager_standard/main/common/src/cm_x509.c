@@ -135,11 +135,11 @@ static int32_t GetX509IssueName(const X509 *x509cert, const char *issuerObjName,
 
 static int32_t GetX509FirstSubjectName(const X509 *x509cert, struct CmBlob *displaytName)
 {
-    int32_t length = 0;
     char *outBuf = (char *)displaytName->data;
     const char *subjectNameList[] = {CM_COMMON_NAME, CM_ORGANIZATION_UNIT_NAME, CM_ORGANIZATION_NAME};
     uint32_t sizeList = sizeof(subjectNameList) / sizeof(subjectNameList[0]);
     for (uint32_t j = 0; j < sizeList; ++j) {
+        int32_t length = 0;
         char subjectName[NAME_MAX_SIZE] = { 0 };
         length = GetX509SubjectName(x509cert, subjectNameList[j], subjectName, NAME_MAX_SIZE);
         if (length < 0) {

@@ -85,6 +85,21 @@ static int32_t ConstructParamSet(const struct HksParam *params, uint32_t paramCo
     return CM_SUCCESS;
 }
 
+static int32_t GetKeyAlias(struct HksBlob *keyAlias, struct CmBlob *encodeTarget)
+{
+    int32_t ret = CM_SUCCESS;
+    if (keyAlias->size > MAX_LEN_MAC_KEY) {
+        ret = GetNameEncode((struct CmBlob *)keyAlias, encodeTarget);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("base64urlsha256 failed");
+            return ret;
+        }
+        keyAlias->data = encodeTarget->data;
+        keyAlias->size = encodeTarget->size;
+    }
+    return ret;
+}
+
 int32_t CmKeyOpGenMacKey(const struct CmBlob *alias)
 {
     struct HksParam genMacKeyParams[] = {
@@ -107,14 +122,10 @@ int32_t CmKeyOpGenMacKey(const struct CmBlob *alias)
 
     uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
     struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
-    if (alias->size > MAX_LEN_MAC_KEY) {
-        ret = GetNameEncode(alias, &encodeTarget);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("base64urlsha256 failed");
-            return ret;
-        }
-        keyAlias.data = encodeTarget.data;
-        keyAlias.size = encodeTarget.size;
+    ret = GetKeyAlias(&keyAlias, &encodeTarget);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get keyalias failed");
+        return ret;
     }
 
     ret = HksGenerateKey(&keyAlias, paramSet, NULL);
@@ -142,14 +153,10 @@ int32_t CmKeyOpGenMacKeyIfNotExist(const struct CmBlob *alias)
 
     uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
     struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
-    if (alias->size > MAX_LEN_MAC_KEY) {
-        ret = GetNameEncode(alias, &encodeTarget);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("base64urlsha256 failed");
-            return ret;
-        }
-        keyAlias.data = encodeTarget.data;
-        keyAlias.size = encodeTarget.size;
+    ret = GetKeyAlias(&keyAlias, &encodeTarget);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get keyalias failed");
+        return ret;
     }
 
     ret = HksKeyExist(&keyAlias, paramSet);
@@ -181,14 +188,10 @@ int32_t CmKeyOpDeleteKey(const struct CmBlob *alias)
 
     uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
     struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
-    if (alias->size > MAX_LEN_MAC_KEY) {
-        ret = GetNameEncode(alias, &encodeTarget);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("base64urlsha256 failed");
-            return ret;
-        }
-        keyAlias.data = encodeTarget.data;
-        keyAlias.size = encodeTarget.size;
+    ret = GetKeyAlias(&keyAlias, &encodeTarget);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get keyalias failed");
+        return ret;
     }
 
     ret = HksDeleteKey(&keyAlias, paramSet);
@@ -225,14 +228,10 @@ int32_t CmKeyOpCalcMac(const struct CmBlob *alias, const struct CmBlob *srcData,
 
         uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
         struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
-        if (alias->size > MAX_LEN_MAC_KEY) {
-            ret = GetNameEncode(alias, &encodeTarget);
-            if (ret != CM_SUCCESS) {
-                CM_LOG_E("base64urlsha256 failed");
-                return ret;
-            }
-            keyAlias.data = encodeTarget.data;
-            keyAlias.size = encodeTarget.size;
+        ret = GetKeyAlias(&keyAlias, &encodeTarget);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get keyalias failed");
+            return ret;
         }
 
         ret = HksInit(&keyAlias, paramSet, &handle, NULL);
@@ -278,15 +277,11 @@ int32_t CmKeyOpImportKey(const struct CmBlob *alias, const struct CmKeyPropertie
 
     uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
     struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
-    if (alias->size > MAX_LEN_MAC_KEY) {
-        ret = GetNameEncode(alias, &encodeTarget);
+    ret = GetKeyAlias(&keyAlias, &encodeTarget);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("base64urlsha256 failed");
+            CM_LOG_E("get keyalias failed");
             return ret;
         }
-        keyAlias.data = encodeTarget.data;
-        keyAlias.size = encodeTarget.size;
-    }
 
     ret = HksImportKey(&keyAlias, paramSet, &key);
     HksFreeParamSet(&paramSet);
@@ -365,14 +360,10 @@ static int32_t GetKeyProperties(const struct CmBlob *commonUri, struct CmKeyProp
     struct HksBlob keyAlias = { commonUri->size, commonUri->data };
     uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
     struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
-    if (commonUri->size > MAX_LEN_MAC_KEY) {
-        ret = GetNameEncode(commonUri, &encodeTarget);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("base64urlsha256 failed");
-            return ret;
-        }
-        keyAlias.data = encodeTarget.data;
-        keyAlias.size = encodeTarget.size;
+    ret = GetKeyAlias(&keyAlias, &encodeTarget);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get keyalias failed");
+        return ret;
     }
 
     ret = HksGetKeyParamSet(&keyAlias, inParamSet, outParamSet);
@@ -402,14 +393,10 @@ static int32_t AddParamsToParamSet(const struct CmBlob *commonUri, const struct 
         struct HksBlob keyAlias = { commonUri->size, commonUri->data };
         uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
         struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
-        if (commonUri->size > MAX_LEN_MAC_KEY) {
-            ret = GetNameEncode(commonUri, &encodeTarget);
-            if (ret != CM_SUCCESS) {
-                CM_LOG_E("base64urlsha256 failed");
-                return ret;
-            }
-            keyAlias.data = encodeTarget.data;
-            keyAlias.size = encodeTarget.size;
+        ret = GetKeyAlias(&keyAlias, &encodeTarget);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get keyalias failed");
+            return ret;
         }
 
         ret = GetKeyProperties((struct CmBlob *)&keyAlias, &keySpec);
@@ -532,15 +519,10 @@ int32_t CmKeyOpInit(const struct CmContext *context, const struct CmBlob *alias,
     struct HksBlob keyAlias = { alias->size, alias->data };
     uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
     struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
-    int32_t ret = CM_SUCCESS;
-    if (alias->size > MAX_LEN_MAC_KEY) {
-        ret = GetNameEncode(alias, &encodeTarget);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("base64urlsha256 failed");
-            return ret;
-        }
-        keyAlias.data = encodeTarget.data;
-        keyAlias.size = encodeTarget.size;
+    int32_t ret = GetKeyAlias(&keyAlias, &encodeTarget);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get keyalias failed");
+        return ret;
     }
     struct HksParamSet *paramSet = NULL;
     ret = ConstructInitParamSet((struct CmBlob *)&keyAlias, spec, &paramSet);

@@ -125,8 +125,8 @@ int32_t UpdateCertProperty(const struct CertProperty *certProperty)
     updateBucket.PutInt(COLUMN_UID, certProperty->uid);
     bool ret = cmRdbDataManager->UpdateData(std::string(certProperty->uri), COLUMN_URI, updateBucket);
     if (!ret) {
-            CM_LOG_E("Failed to update cert:%s property data", certProperty->uri);
-        return CMR_ERROR_DELETE_RDB_DATA_FAIL;
+        CM_LOG_E("Failed to update cert:%s property data", certProperty->uri);
+        return CMR_ERROR_UPDATE_RDB_DATA_FAIL;
     }
     return CM_SUCCESS;
 }
