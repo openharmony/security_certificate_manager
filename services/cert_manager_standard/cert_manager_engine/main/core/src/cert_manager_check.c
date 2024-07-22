@@ -167,12 +167,12 @@ static int32_t CmCheckCertAlias(const struct CmBlob *certAlias, uint32_t store)
 
     if (certAlias->size > MAX_LEN_CERT_ALIAS) {
         CM_LOG_E("alias size is too large");
-        return CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     if ((store == CM_PRI_CREDENTIAL_STORE) && (certAlias->size > MAX_LEN_PRI_CRED_ALIAS)) {
         CM_LOG_E("pri_cred: alias size is too large");
-        return CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     if ((store != CM_PRI_CREDENTIAL_STORE) && (strcmp("", (char *)certAlias->data) == 0)) {

@@ -422,7 +422,7 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest009, TestSize.Level0)
     struct CmBlob certUriTemp = { sizeof(certUriBuf), certUriBuf };
 
     ret = CmInstallUserTrustedCert(&userCertTemp, &largeAlias, &certUriTemp);
-    EXPECT_EQ(ret, CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT) << "Normal user cert Install test failed, recode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "Normal user cert Install test failed, recode:" << ret;
 }
 
 /**
@@ -565,7 +565,7 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest016, TestSize.Level0)
     struct CmBlob userCertTemp = { sizeof(g_certData02), const_cast<uint8_t *>(g_certData02) };
 
     ret = CmInstallUserCACert(&userCertTemp, &largeAlias, TEST_USERID, true, &certUri016);
-    EXPECT_EQ(ret, CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT) << "abnormal install user ca cert test failed, recode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "abnormal install user ca cert test failed, recode:" << ret;
 }
 
 /**

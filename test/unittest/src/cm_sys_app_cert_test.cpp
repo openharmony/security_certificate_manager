@@ -427,7 +427,7 @@ HWTEST_F(CmSysAppCertTest, SysAppCertTest018, TestSize.Level0)
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_eccAppCert, (struct CmBlob *)&g_appCertPwd,
        &certAlias018, CM_SYS_CREDENTIAL_STORE, TEST_USERID };
     int32_t ret = CmInstallSystemAppCert(&appCertParam, &sysKeyUri);
-    EXPECT_EQ(ret, CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT) <<
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) <<
         "SysAppCertTest018 credentail test failed, retcode:" << ret;
 }
 
