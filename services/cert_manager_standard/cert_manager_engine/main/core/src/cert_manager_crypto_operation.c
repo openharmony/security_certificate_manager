@@ -44,7 +44,7 @@ static int32_t Base64UrlEncode(const struct CmBlob *indata, struct CmBlob *uriHa
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     int outputLen = (indata->size * BYTE_LEN + BASE64_CARRY_SIZE) / BASE64_BITS_PER_OCTET;
-    uriHash->size = outputLen + 1;
+    uriHash->size = (uint32_t)(outputLen + 1);
     uriHash->data[outputLen] = '\0';
     for (int i = 0, j = 0; i < (int)indata->size;) {
         unsigned int octeta = i < (int)indata->size ? *(indata->data + (i++)) : 0;

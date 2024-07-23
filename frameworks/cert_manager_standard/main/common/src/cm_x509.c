@@ -152,7 +152,7 @@ static int32_t GetX509FirstSubjectName(const X509 *x509cert, struct CmBlob *disp
                 return CMR_ERROR_INVALID_OPERATION;
             }
             outBuf[length] = '\0';
-            displaytName->size = length + 1;
+            displaytName->size = (uint32_t)(length + 1);
             break;
         }
     }
@@ -182,7 +182,7 @@ static int32_t GetX509FirstSubjectProp(const X509 *x509cert, struct CmBlob *disp
         return CMR_ERROR_INVALID_OPERATION;
     }
     outBuf[length] = '\0';
-    displaytName->size = length + 1;
+    displaytName->size = (uint32_t)(length + 1);
     OPENSSL_free(data);
     return CM_SUCCESS;
 }
