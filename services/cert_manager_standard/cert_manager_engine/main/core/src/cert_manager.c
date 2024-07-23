@@ -644,7 +644,7 @@ int32_t RdbInsertCertProperty(const struct CmContext *context, const struct CmBl
         CM_LOG_E("Type %d does not support installation", store);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    certProp.certStore = store;
+    certProp.certStore = (int32_t)store;
     if (memcpy_s(certProp.certType, MAX_LEN_CERT_TYPE, certType, strlen(certType)) != CM_SUCCESS) {
         CM_LOG_E("memcpy certType fail");
         return CMR_ERROR_INVALID_OPERATION;
