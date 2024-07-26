@@ -43,6 +43,9 @@ int32_t CmRemoveAllAppCert(const struct CmContext *context);
 int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store, struct CmBlob *fileNames,
     const uint32_t fileSize, uint32_t *fileCount);
 
+int32_t CmServiceGetCallingAppCertList(const struct CmContext *context, uint32_t store, struct CmBlob *fileNames,
+    const uint32_t fileSize, uint32_t *fileCount);
+
 void CmFreeFileNames(struct CmBlob *fileNames, const uint32_t fileSize);
 
 int32_t CmGetUri(const char *filePath, struct CmBlob *uriBlob);

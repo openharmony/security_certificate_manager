@@ -39,6 +39,8 @@ CM_API_EXPORT int32_t CmUninstallAllAppCert(void);
 
 CM_API_EXPORT int32_t CmGetAppCertList(const uint32_t store, struct CredentialList *certificateList);
 
+CM_API_EXPORT int32_t CmCallingGetAppCertList(const uint32_t store, struct CredentialList *certificateList);
+
 CM_API_EXPORT int32_t CmGetAppCert(const struct CmBlob *keyUri, const uint32_t store, struct Credential *certificate);
 
 CM_API_EXPORT int32_t CmGrantAppCertificate(const struct CmBlob *keyUri, uint32_t appUid, struct CmBlob *authUri);

@@ -41,6 +41,8 @@ int32_t CmClientUninstallAllAppCert(enum CertManagerInterfaceCode type);
 
 int32_t CmClientGetAppCertList(const uint32_t store, struct CredentialList *certificateList);
 
+int32_t CmClientGetCallingAppCertList(const uint32_t store, struct CredentialList *certificateList);
+
 int32_t CmClientGetAppCert(const struct CmBlob *keyUri, const uint32_t store, struct Credential *certificate);
 
 int32_t CmClientGrantAppCertificate(const struct CmBlob *keyUri, uint32_t appUid, struct CmBlob *authUri);

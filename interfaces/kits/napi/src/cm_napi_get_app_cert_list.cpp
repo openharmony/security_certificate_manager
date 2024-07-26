@@ -33,4 +33,9 @@ napi_value CMNapiGetSystemAppCertList(napi_env env, napi_callback_info info)
 {
     return CMNapiGetAppCertListCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
 }
+
+napi_value CMNapiGetCallingPrivateAppCertList(napi_env env, napi_callback_info info)
+{
+    return CMNapiGetCallingAppCertListCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
+}
 }  // namespace CertManagerNapi

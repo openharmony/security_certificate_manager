@@ -491,6 +491,56 @@ void CmIpcServiceGetAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob
     CM_LOG_D("CmIpcServiceGetAppCertList end:%d", ret);
 }
 
+void CmIpcServiceGetCallingAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context)
+{
+    int32_t ret;
+    (void)outData;
+    uint32_t store;
+    uint32_t fileCount = 0;
+    struct CmContext cmContext = {0};
+    struct CmBlob certificateList = { 0, NULL };
+    struct CmBlob fileNamesBlob[MAX_COUNT_CERTIFICATE];
+    uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
+    (void)memset_s(fileNamesBlob, len, 0, len);
+    struct CmParamSet *paramSets = NULL;
+    struct CmParamOut params[] = {
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store },
+    };
+
+    do {
+        ret = GetInputParams(paramSetBlob, &paramSets, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmIpcServiceGetCallingAppCertList get input params failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmServiceGetCallingAppCertListCheck(&cmContext, store);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmServiceGetCallingAppCertListCheck fail, ret = %d", ret);
+            break;
+        }
+
+        ret = CmServiceGetCallingAppCertList(&cmContext, store, fileNamesBlob, MAX_COUNT_CERTIFICATE, &fileCount);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Get calling App cert list fail, ret = %d", ret);
+            break;
+        }
+
+        ret = CmServiceGetAppCertListPack(&certificateList, fileNamesBlob, fileCount);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmServiceGetAppCertListPack pack fail, ret = %d", ret);
+        }
+    } while (0);
+
+    CmReport(__func__, &cmContext, NULL, ret);
+    CmSendResponse(context, ret, &certificateList);
+    CmFreeParamSet(&paramSets);
+    CmFreeFileNames(fileNamesBlob, fileCount);
+    CM_FREE_BLOB(certificateList);
+    CM_LOG_D("CmServiceGetCallingAppCertListCheck end:%d", ret);
+}
+
 static int32_t CopyCertificateInfoToBuffer(const struct CmBlob *certBlob,
     const struct CmBlob *certificateInfo, uint32_t *offset)
 {

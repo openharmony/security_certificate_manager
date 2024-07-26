@@ -432,6 +432,11 @@ int32_t CmClientGetAppCertList(const uint32_t store, struct CredentialList *cert
     return GetAppCertList(CM_MSG_GET_APP_CERTIFICATE_LIST, store, certificateList);
 }
 
+int32_t CmClientGetCallingAppCertList(const uint32_t store, struct CredentialList *certificateList)
+{
+    return GetAppCertList(CM_MSG_GET_CALLING_APP_CERTIFICATE_LIST, store, certificateList);
+}
+
 static int32_t GetAppCertInitBlob(struct CmBlob *outBlob)
 {
     uint32_t buffSize = sizeof(uint32_t) + sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME +
