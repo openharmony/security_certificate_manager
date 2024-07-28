@@ -128,6 +128,16 @@ CM_API_EXPORT int32_t CmGetAppCertList(const uint32_t store, struct CredentialLi
     return ret;
 }
 
+CM_API_EXPORT int32_t CmCallingGetAppCertList(const uint32_t store, struct CredentialList *certificateList)
+{
+    if (certificateList == NULL || CM_STORE_CHECK(store)) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CmClientGetCallingAppCertList(store, certificateList);
+    return ret;
+}
+
 CM_API_EXPORT int32_t CmGetAppCert(const struct CmBlob *keyUri, const uint32_t store,
     struct Credential *certificate)
 {

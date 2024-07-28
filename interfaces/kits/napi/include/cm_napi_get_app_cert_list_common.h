@@ -43,7 +43,11 @@ napi_value GetAppCertListWriteResult(napi_env env, GetAppCertListAsyncContext co
 
 napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyncContext);
 
+napi_value GetCallingAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyncContext);
+
 napi_value CMNapiGetAppCertListCommon(napi_env env, napi_callback_info info, uint32_t store);
+
+napi_value CMNapiGetCallingAppCertListCommon(napi_env env, napi_callback_info info, uint32_t store);
 }  // namespace CertManagerNapi
 
 #endif  // CM_NAPI_GET_APP_CERTIFICATE_LIST_COMMON_H

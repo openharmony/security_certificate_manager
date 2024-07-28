@@ -160,6 +160,58 @@ napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyn
     return promise;
 }
 
+napi_value GetCallingAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyncContext)
+{
+    napi_value promise = nullptr;
+    GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
+
+    napi_value resourceName = nullptr;
+    NAPI_CALL(env, napi_create_string_latin1(env, "GetCallingAppCertListAsyncWork", NAPI_AUTO_LENGTH, &resourceName));
+
+    NAPI_CALL(env, napi_create_async_work(
+        env,
+        nullptr,
+        resourceName,
+        [](napi_env env, void *information) {
+            GetAppCertListAsyncContext mcontext = static_cast<GetAppCertListAsyncContext>(information);
+
+            mcontext->credentialList = static_cast<struct CredentialList *>(CmMalloc(sizeof(struct CredentialList)));
+            if (mcontext->credentialList != nullptr) {
+                InitAppCertList(mcontext->credentialList);
+            }
+            mcontext->result = CmCallingGetAppCertList(mcontext->store, mcontext->credentialList);
+        },
+        [](napi_env env, napi_status status, void *information) {
+            GetAppCertListAsyncContext mcontext = static_cast<GetAppCertListAsyncContext>(information);
+            napi_value res[RESULT_NUMBER] = { nullptr };
+            if (mcontext->result == CM_SUCCESS) {
+                NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &res[0]));
+                res[1] = GetAppCertListWriteResult(env, mcontext);
+            } else {
+                res[0] = GenerateBusinessError(env, mcontext->result);
+                NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &res[1]));
+            }
+            if (mcontext->deferred != nullptr) {
+                GeneratePromise(env, mcontext->deferred, mcontext->result, res, CM_ARRAY_SIZE(res));
+            } else {
+                GenerateCallback(env, mcontext->callback, res, CM_ARRAY_SIZE(res), mcontext->result);
+            }
+            DeleteGetAppCertListAsyncContext(env, mcontext);
+            CM_LOG_D("get calling app cert list end");
+        },
+        static_cast<void *>(asyncContext),
+        &asyncContext->asyncWork));
+
+    napi_status status = napi_queue_async_work(env, asyncContext->asyncWork);
+    if (status != napi_ok) {
+        GET_AND_THROW_LAST_ERROR((env));
+        DeleteGetAppCertListAsyncContext(env, asyncContext);
+        CM_LOG_E("get calling app cert list could not queue async work");
+        return nullptr;
+    }
+    return promise;
+}
+
 napi_value CMNapiGetAppCertListCommon(napi_env env, napi_callback_info info, uint32_t store)
 {
     GetAppCertListAsyncContext context = CreateGetAppCertListAsyncContext();
@@ -177,6 +229,31 @@ napi_value CMNapiGetAppCertListCommon(napi_env env, napi_callback_info info, uin
         return nullptr;
     }
     result = GetAppCertListAsyncWork(env, context);
+    if (result == nullptr) {
+        CM_LOG_E("could not start async work");
+        DeleteGetAppCertListAsyncContext(env, context);
+        return nullptr;
+    }
+    return result;
+}
+
+napi_value CMNapiGetCallingAppCertListCommon(napi_env env, napi_callback_info info, uint32_t store)
+{
+    GetAppCertListAsyncContext context = CreateGetAppCertListAsyncContext();
+    if (context == nullptr) {
+        CM_LOG_E("could not create context");
+        return nullptr;
+    }
+
+    context->store = store;
+
+    napi_value result = GetAppCertListParseParams(env, info, context);
+    if (result == nullptr) {
+        CM_LOG_E("could not parse params");
+        DeleteGetAppCertListAsyncContext(env, context);
+        return nullptr;
+    }
+    result = GetCallingAppCertListAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
         DeleteGetAppCertListAsyncContext(env, context);

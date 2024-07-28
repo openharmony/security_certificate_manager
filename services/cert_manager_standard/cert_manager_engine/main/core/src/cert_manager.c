@@ -37,6 +37,7 @@
 
 #include "hks_api.h"
 
+// LCOV_EXCL_START
 #define MAX_PATH_LEN                        256
 
 #ifdef __cplusplus
@@ -285,6 +286,36 @@ static int32_t CmAppCertGetFilePath(const struct CmContext *context, const uint3
     return CM_SUCCESS;
 }
 
+static int32_t CmCallingAppCertGetFilePath(const struct CmContext *context, const uint32_t store, struct CmBlob *path)
+{
+    int32_t ret = CM_FAILURE;
+
+    switch (store) {
+        case CM_CREDENTIAL_STORE :
+            ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u/%u",
+                CREDNTIAL_STORE, context->userId, context->uid);
+            break;
+        case CM_PRI_CREDENTIAL_STORE :
+            ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u/%u",
+                APP_CA_STORE, context->userId, context->uid);
+            break;
+        case CM_SYS_CREDENTIAL_STORE:
+            ret = sprintf_s((char *)path->data, MAX_PATH_LEN, "%s%u/%u",
+                SYS_CREDNTIAL_STORE, context->userId, context->uid);
+            break;
+        case CM_USER_TRUSTED_STORE:
+            ret = sprintf_s((char *)path->data, MAX_PATH_LEN, "%s%u/%u",
+                USER_CA_STORE, context->userId, context->uid);
+            break;
+        default:
+            break;
+    }
+    if (ret < 0) {
+        return CM_FAILURE;
+    }
+    return CM_SUCCESS;
+}
+
 void CmFreeFileNames(struct CmBlob *fileNames, const uint32_t fileSize)
 {
     if (fileNames == NULL) {
@@ -445,6 +476,27 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
     } else {
         ret = CmUserIdLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
     }
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get file count and names from path faild ret:%d", ret);
+        return ret;
+    }
+
+    return CM_SUCCESS;
+}
+
+int32_t CmServiceGetCallingAppCertList(const struct CmContext *context, uint32_t store, struct CmBlob *fileNames,
+    const uint32_t fileSize, uint32_t *fileCount)
+{
+    char pathBuf[CERT_MAX_PATH_LEN] = {0};
+    struct CmBlob path = { sizeof(pathBuf), (uint8_t*)pathBuf };
+
+    int32_t ret = CmCallingAppCertGetFilePath(context, store, &path);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get file path for store:%u faild", store);
+        return CM_FAILURE;
+    }
+    
+    ret = CmUidLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get file count and names from path faild ret:%d", ret);
         return ret;
@@ -897,3 +949,4 @@ int32_t GetObjNameFromCertData(const struct CmBlob *certData, const struct CmBlo
 #ifdef __cplusplus
 }
 #endif
+// LCOV_EXCL_STOP

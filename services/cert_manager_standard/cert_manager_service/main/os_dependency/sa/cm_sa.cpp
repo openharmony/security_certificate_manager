@@ -63,6 +63,7 @@ static struct CmIpcPoint g_cmIpcHandler[] = {
     { CM_MSG_UNINSTALL_APP_CERTIFICATE, CmIpcServiceUninstallAppCert },
     { CM_MSG_UNINSTALL_ALL_APP_CERTIFICATE, CmIpcServiceUninstallAllAppCert },
     { CM_MSG_GET_APP_CERTIFICATE_LIST, CmIpcServiceGetAppCertList },
+    { CM_MSG_GET_CALLING_APP_CERTIFICATE_LIST, CmIpcServiceGetCallingAppCertList },
     { CM_MSG_GET_APP_CERTIFICATE, CmIpcServiceGetAppCert },
 
     { CM_MSG_GRANT_APP_CERT, CmIpcServiceGrantAppCertificate },

@@ -37,6 +37,8 @@ int32_t CmServiceUninstallAppCertCheck(struct CmContext *cmContext, const uint32
 
 int32_t CmServiceGetAppCertListCheck(const struct CmContext *cmContext, const uint32_t store);
 
+int32_t CmServiceGetCallingAppCertListCheck(const struct CmContext *cmContext, const uint32_t store);
+
 int32_t CmServiceGetAppCertCheck(struct CmContext *cmContext, const uint32_t store, const struct CmBlob *keyUri);
 
 int32_t CmServiceInstallUserCertCheck(struct CmContext *cmContext, const struct CmBlob *userCert,

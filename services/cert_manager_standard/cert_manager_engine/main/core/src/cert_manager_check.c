@@ -359,6 +359,39 @@ int32_t CmServiceGetAppCertListCheck(const struct CmContext *cmContext, const ui
     return CM_SUCCESS;
 }
 
+int32_t CmServiceGetCallingAppCertListCheck(const struct CmContext *cmContext, const uint32_t store)
+{
+    if (CM_STORE_CHECK(store)) {
+        CM_LOG_E("invalid input arguments store:%u", store);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (store == CM_SYS_CREDENTIAL_STORE) {
+        return CmGetSysAppCertListCheck(cmContext, store);
+    }
+
+    if (!CmHasCommonPermission()) {
+        CM_LOG_E("permission check failed");
+        return CMR_ERROR_PERMISSION_DENIED;
+    }
+
+    if (store == CM_PRI_CREDENTIAL_STORE) {
+        return CM_SUCCESS;
+    }
+
+    if (!CmHasPrivilegedPermission()) {
+        CM_LOG_E("permission check failed");
+        return CMR_ERROR_PERMISSION_DENIED;
+    }
+
+    if (!CmIsSystemApp()) {
+        CM_LOG_E("get app cert list: caller is not system app");
+        return CMR_ERROR_NOT_SYSTEMP_APP;
+    }
+
+    return CM_SUCCESS;
+}
+
 int32_t CmServiceGetAppCertCheck(struct CmContext *cmContext, const uint32_t store, const struct CmBlob *keyUri)
 {
     if (CM_STORE_CHECK(store)) {

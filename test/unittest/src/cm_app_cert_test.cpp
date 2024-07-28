@@ -527,6 +527,49 @@ HWTEST_F(CmAppCertTest, CmGetAppCertListAbnormalTest004, TestSize.Level0)
 }
 
 /**
+ * @tc.name: CmGetCallingAppCertListPriCert005
+ * @tc.desc: Test CertManager get app cert list interface own private
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmAppCertTest, CmGetCallingAppCertListPriCert005, TestSize.Level0)
+{
+    uint8_t certAliasBuf[] = "OtherKeyA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    uint8_t uriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(uriBuf), uriBuf };
+
+    int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmGetCallingAppCertListPriCert005 install failed, retcode:" << ret;
+
+    struct CredentialList certificateList = { 0, nullptr };
+    uint32_t buffSize = MAX_COUNT_CERTIFICATE * sizeof(struct CredentialAbstract);
+    certificateList.credentialAbstract = static_cast<struct CredentialAbstract *>(CmMalloc(buffSize));
+    ASSERT_TRUE(certificateList.credentialAbstract != nullptr);
+    certificateList.credentialCount = MAX_COUNT_CERTIFICATE;
+    (void)memset_s(certificateList.credentialAbstract, buffSize, 0, buffSize);
+
+    ret = CmCallingGetAppCertList(CM_PRI_CREDENTIAL_STORE, &certificateList);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmGetCallingAppCertListPriCert005 test failed, retcode:" << ret;
+
+    struct CredentialAbstractResult expectList[] = {
+        {
+            { "ak", "OtherKeyA", "oh:t=ak;o=keyA;u=100;a=500" }, false
+        }
+    };
+    uint32_t length = sizeof(expectList) / sizeof(expectList[0]);
+    for (uint32_t j = 0; j < length; ++j) {
+        bool bFind = FindCredentialAbstract(&(expectList[j].credentialAbstract), &certificateList);
+        EXPECT_EQ(bFind, expectList[j].bExpectResult);
+    }
+
+    if (certificateList.credentialAbstract != nullptr) {
+        CmFree(certificateList.credentialAbstract);
+    }
+}
+
+/**
  * @tc.name: AppCertUnInstallBaseTest001
  * @tc.desc: Test CertManager unInstall app cert interface base function
  * @tc.type: FUNC

@@ -25,6 +25,8 @@ napi_value CMNapiGetAllPublicCertList(napi_env env, napi_callback_info info);
 napi_value CMNapiGetPrivateAppCertList(napi_env env, napi_callback_info info);
 
 napi_value CMNapiGetSystemAppCertList(napi_env env, napi_callback_info info);
+
+napi_value CMNapiGetCallingPrivateAppCertList(napi_env env, napi_callback_info info);
 }  // namespace CertManagerNapi
 
 #endif  // CM_NAPI_GET_APP_CERTIFICATE_LIST_H

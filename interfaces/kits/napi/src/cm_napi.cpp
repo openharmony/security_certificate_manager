@@ -136,6 +136,7 @@ extern "C" {
             DECLARE_NAPI_FUNCTION("uninstallPrivateCertificate", CMNapiUninstallPrivateAppCert),
             DECLARE_NAPI_FUNCTION("getAllAppPrivateCertificates", CMNapiGetPrivateAppCertList),
             DECLARE_NAPI_FUNCTION("getPrivateCertificate", CMNapiGetPrivateAppCertInfo),
+            DECLARE_NAPI_FUNCTION("getPrivateCertificates", CMNapiGetCallingPrivateAppCertList),
 
             /* grant, sign and verify */
             DECLARE_NAPI_FUNCTION("grantPublicCertificate", CMNapiGrantPublicCertificate),
