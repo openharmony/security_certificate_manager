@@ -27,7 +27,10 @@ group("cert_manager_sdk_test") {
 group("cert_manager_napi") {
   if (os_level == "standard") {
     if (support_jsapi) {
-      deps = [ "./interfaces/kits/napi:certmanager" ]
+      deps = [
+        "./interfaces/kits/napi:certmanager",
+        "./interfaces/kits/napi:certmanagerdialog",
+      ]
     }
   }
 }

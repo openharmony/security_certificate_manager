@@ -68,3 +68,55 @@ ohos_shared_library("certmanager") {
   subsystem_name = "security"
   part_name = "certificate_manager"
 }
+
+ohos_shared_library("certmanagerdialog") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+  defines = [
+    "L2_STANDARD",
+    "_HARDWARE_ROOT_KEY_",
+    "_CM_LOG_ENABLE_",
+  ]
+
+  include_dirs = [
+    "../../../frameworks/cert_manager_standard/main/common/include",
+    "include",
+    "include/dialog",
+  ]
+
+  sources = [
+    "src/cm_napi_common.cpp",
+    "src/dialog/cm_napi_dialog.cpp",
+    "src/dialog/cm_napi_open_dialog.cpp",
+  ]
+
+  external_deps = [
+    "ability_base:base",
+    "ability_base:want",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:ability_manager",
+    "ability_runtime:abilitykit_native",
+    "ability_runtime:app_context",
+    "ability_runtime:napi_base_context",
+    "ability_runtime:napi_common",
+    "ace_engine:ace_uicontent",
+    "c_utils:utils",
+    "napi:ace_napi",
+  ]
+  cflags_cc = [
+    "-Wall",
+    "-Werror",
+  ]
+  deps = [ "../../innerkits/cert_manager_standard/main:cert_manager_sdk" ]
+
+  relative_install_dir = "module/security"
+  subsystem_name = "security"
+  part_name = "certificate_manager"
+}
