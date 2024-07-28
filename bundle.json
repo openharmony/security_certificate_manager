@@ -35,6 +35,8 @@
       "deps": {
         "components": [
           "ability_base",
+          "ace_engine",
+          "ability_runtime",
           "access_token",
           "bounds_checking_function",
           "bundle_framework",
