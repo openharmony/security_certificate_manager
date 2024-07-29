@@ -52,8 +52,7 @@ struct CommonAsyncContext {
 struct CmUIExtensionRequestContext : public CommonAsyncContext {
     explicit CmUIExtensionRequestContext(napi_env env) : CommonAsyncContext(env) {};
     std::shared_ptr<OHOS::AbilityRuntime::AbilityContext> context = nullptr;
-    OHOS::AAFwk::Want want;
-    uint32_t pageType;
+    uint32_t pageType = 0;
 };
 
 class CmUIExtensionCallback {
