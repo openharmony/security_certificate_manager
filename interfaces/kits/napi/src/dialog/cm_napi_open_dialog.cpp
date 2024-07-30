@@ -34,6 +34,7 @@ const std::string CERT_MANAGER_PAGE_TYPE = "pageType";
 constexpr int32_t PARAM0 = 0;
 constexpr int32_t PARAM1 = 1;
 constexpr int32_t PARAM_SIZE_TWO = 2;
+constexpr int32_t ERROR_STR_LEN = 256;
 } // namespace
 
 CommonAsyncContext::CommonAsyncContext(napi_env env)
@@ -105,6 +106,13 @@ void CmUIExtensionCallback::OnError(const int32_t errorCode, const std::string& 
     if (SetErrorCode(errorCode)) {
         SendMessageBack();
     }
+    char errStr[ERROR_STR_LEN] = { 0 };
+    if (sprintf_s(errStr, ERROR_STR_LEN, "UIExtensionComponent OnError(), errorCode = %d, name = %s, message = %s",
+        errorCode, name.c_str(), message.c_str()) < 0) {
+        CM_LOG_E("copy error str failed");
+        return;
+    }
+    ThrowError(this->reqContext_->env, PARAM_ERROR, errStr);
 }
 
 void CmUIExtensionCallback::OnRemoteReady(const std::shared_ptr<OHOS::Ace::ModalUIExtensionProxy>& uiProxy)
@@ -183,7 +191,8 @@ bool ParseCmUIAbilityContextReq(
     return true;
 }
 
-static void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext)
+static void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::AAFwk::Want want)
 {
     CM_LOG_D("begin StartUIExtensionAbility");
     if (asyncContext == nullptr) {
@@ -219,7 +228,7 @@ static void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext>
 
     OHOS::Ace::ModalUIExtensionConfig uiExtConfig;
     uiExtConfig.isProhibitBack = false;
-    int32_t sessionId = uiContent->CreateModalUIExtension(asyncContext->want, extensionCallbacks, uiExtConfig);
+    int32_t sessionId = uiContent->CreateModalUIExtension(want, extensionCallbacks, uiExtConfig);
     CM_LOG_I("end CreateModalUIExtension sessionId = %d", sessionId);
     if (sessionId == 0) {
         CM_LOG_E("CreateModalUIExtension failed, sessionId is %d", sessionId);
@@ -266,11 +275,10 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
     want.SetElementName(CERT_MANAGER_BUNDLENAME, CERT_MANAGER_ABILITYNAME);
     want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(asyncContext->pageType));
     want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
-    asyncContext->want = want;
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
 
     // Start ui extension by context.
-    StartUIExtensionAbility(asyncContext);
+    StartUIExtensionAbility(asyncContext, want);
     CM_LOG_D("cert manager dialog end");
     return result;
 }
