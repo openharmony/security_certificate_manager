@@ -421,7 +421,8 @@ HWTEST_F(CmSysAppCertTest, SysAppCertTest018, TestSize.Level0)
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob sysKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
 
-    uint8_t certAliasBuf[] = "12345678901234567890123456789012345678901234567890123456789012345";
+    uint8_t certAliasBuf[] = "123456789012345678901234567890123456789012345678901234567890  \
+        12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
     struct CmBlob certAlias018 = { sizeof(certAliasBuf), certAliasBuf }; /* certAlias size beyond max */
 
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_eccAppCert, (struct CmBlob *)&g_appCertPwd,
