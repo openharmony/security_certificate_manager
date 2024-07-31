@@ -26,6 +26,8 @@
 #include "cm_mem.h"
 #include "os_account_manager.h"
 
+#define MAX_SIZE_CAPACITY 409600
+
 using namespace OHOS;
 
 void CmSendResponse(const struct CmContext *context, int32_t result, const struct CmBlob *response)
@@ -43,6 +45,7 @@ void CmSendResponse(const struct CmContext *context, int32_t result, const struc
     if (response == nullptr) {
         reply->WriteUint32(0);
     } else {
+        reply->SetMaxCapacity(MAX_SIZE_CAPACITY);
         reply->WriteUint32(response->size);
         reply->WriteBuffer(response->data, static_cast<size_t>(response->size));
     }
