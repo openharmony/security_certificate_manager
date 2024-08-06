@@ -24,7 +24,7 @@
 
 using namespace testing::ext;
 namespace {
-static constexpr uint32_t DEFAULT_SIZE = 1024;
+static constexpr uint32_t DEFAULT_SIZE = 2048;
 class CmLogTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
