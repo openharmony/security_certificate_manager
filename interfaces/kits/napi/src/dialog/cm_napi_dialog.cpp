@@ -16,7 +16,7 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
-#include "cm_napi_common.h"
+#include "cm_napi_dialog_common.h"
 
 #include "cm_napi_open_dialog.h"
 
