@@ -87,13 +87,12 @@ ohos_shared_library("certmanagerdialog") {
 
   include_dirs = [
     "../../../frameworks/cert_manager_standard/main/common/include",
-    "include",
     "include/dialog",
   ]
 
   sources = [
-    "src/cm_napi_common.cpp",
     "src/dialog/cm_napi_dialog.cpp",
+    "src/dialog/cm_napi_dialog_common.cpp",
     "src/dialog/cm_napi_open_dialog.cpp",
   ]
 

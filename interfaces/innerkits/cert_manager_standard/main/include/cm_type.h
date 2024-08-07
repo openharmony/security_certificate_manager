@@ -154,6 +154,14 @@ enum CmErrorCode {
     CMR_ERROR_PASSWORD_IS_ERR = -36,
 };
 
+enum CMDialogErrorCode {
+    CMR_DIALOG_OK = 0,
+    CMR_DIALOG_ERROR = -1,
+    CMR_DIALOG_ERROR_INVALID_ARGUMENT = -2,
+    CMR_DIALOG_ERROR_INTERNAL = -3,
+    CMR_DIALOG_ERROR_PERMISSION_DENIED = 1011,
+};
+
 enum CMErrorCode { /* temp use */
     CMR_OK = 0,
     CMR_ERROR = -1,
