@@ -20,7 +20,7 @@
 #include "cert_manager_api.h"
 #include "cm_log.h"
 
-#include "cm_napi_common.h"
+#include "cm_napi_dialog_common.h"
 #include "want.h"
 #include "want_params_wrapper.h"
 
@@ -112,7 +112,7 @@ void CmUIExtensionCallback::OnError(const int32_t errorCode, const std::string& 
         CM_LOG_E("copy error str failed");
         return;
     }
-    ThrowError(this->reqContext_->env, PARAM_ERROR, errStr);
+    ThrowError(this->reqContext_->env, DIALOG_ERROR_GENERIC, errStr);
 }
 
 void CmUIExtensionCallback::OnRemoteReady(const std::shared_ptr<OHOS::Ace::ModalUIExtensionProxy>& uiProxy)
@@ -238,6 +238,19 @@ static void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext>
     return;
 }
 
+static bool IsCmDialogPageTypeEnum(const uint32_t value)
+{
+    switch (static_cast<CmDialogPageType>(value)) {
+        case CmDialogPageType::PAGE_MAIN:
+        case CmDialogPageType::PAGE_CA_CERTIFICATE:
+        case CmDialogPageType::PAGE_CREDENTIAL:
+        case CmDialogPageType::PAGE_INSTALL_CERTIFICATE:
+            return true;
+        default:
+            return false;
+    }
+}
+
 napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert manager dialog enter");
@@ -268,6 +281,12 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
         CM_LOG_E("parse type failed");
         ThrowError(env, PARAM_ERROR, "parse type failed");
         return result;
+    }
+
+    if (!IsCmDialogPageTypeEnum(asyncContext->pageType)) {
+        CM_LOG_E("pageType invalid");
+        ThrowError(env, PARAM_ERROR, "pageType invalid");
+        return nullptr;
     }
 
     asyncContext->env = env;
