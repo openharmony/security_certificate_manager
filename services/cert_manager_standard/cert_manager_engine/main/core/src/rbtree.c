@@ -29,15 +29,15 @@
 #define BLACK       0x80000000
 #define RED         0
 
-#define COLOR(n)     ((n)->key & COLOR_MASK)
+#define COLOR(n)     ((n) == NULL ? BLACK : ((n)->key & COLOR_MASK))
 #define IS_RED(n)    (COLOR((n)) == RED)
 #define IS_BLACK(n)  (COLOR((n)) == BLACK)
 
-#define SET_COLOR(n, color) ((n)->key = ((n)->key & KEY_MASK) | (color))
+#define SET_COLOR(n, color) if ((n) != NULL) { (n)->key = ((n)->key & KEY_MASK) | (color); };
 #define SET_RED(n)  SET_COLOR((n), RED)
 #define SET_BLACK(n) SET_COLOR((n), BLACK)
 
-#define KEY(n) ((n)->key & KEY_MASK)
+#define KEY(n) ((n) == NULL ? RED : ((n)->key & KEY_MASK))
 
 #ifdef __cplusplus
 extern "C" {
@@ -239,7 +239,9 @@ static void Transplant(struct RbTree *t, struct RbTreeNode *u, struct RbTreeNode
     } else {
         u->p->right = v;
     }
-    v->p = u->p;
+    if (v != NULL) {
+        v->p = u->p;
+    }
 }
 
 static struct RbTreeNode *Minimum(const struct RbTree *t, struct RbTreeNode *x)
@@ -350,11 +352,15 @@ int32_t RbTreeDelete(struct RbTree *t, struct RbTreeNode *z)
         } else {
             Transplant(t, y, y->right);
             y->right = z->right;
-            y->right->p = y;
+            if (y->right != NULL) {
+                y->right->p = y;
+            }
         }
         Transplant(t, z, y);
         y->left = z->left;
-        y->left->p = y;
+        if (y->left != NULL) {
+            y->left->p = y;
+        }
         SET_COLOR(y, COLOR(z));
     }
     if (yColor == BLACK) {
