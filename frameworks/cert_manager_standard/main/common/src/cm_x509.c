@@ -108,6 +108,10 @@ static int32_t ToStringName(FUNC func, const X509 *x509cert, const char *objname
         X509_NAME_ENTRY *entry = X509_NAME_get_entry(name, i);
         const char *strname = OBJ_nid2sn(OBJ_obj2nid(X509_NAME_ENTRY_get_object(entry)));
 
+        if (strname == NULL) {
+            continue;
+        }
+
         if (strcmp(objname, strname) == 0) {
             char *data = NULL;
             length = ASN1_STRING_to_UTF8((unsigned char **)&data, X509_NAME_ENTRY_get_data(entry));
