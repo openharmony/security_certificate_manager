@@ -24,7 +24,6 @@ extern "C" {
 enum CertManagerInterfaceCode {
     CM_MSG_BASE = 0,
 
-    CM_MSG_GEN_KEY = CM_MSG_BASE,
     CM_MSG_GET_CERTIFICATE_LIST,
     CM_MSG_GET_CERTIFICATE_INFO,
     CM_MSG_SET_CERTIFICATE_STATUS,

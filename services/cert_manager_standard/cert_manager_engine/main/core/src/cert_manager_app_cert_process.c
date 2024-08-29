@@ -32,7 +32,6 @@
 #include "cert_manager_mem.h"
 #include "cert_manager_storage.h"
 #include "cert_manager_crypto_operation.h"
-#include "cert_manager.h"
 #include "cert_manager_service.h"
 #include "cert_manager_uri.h"
 #include "cm_log.h"

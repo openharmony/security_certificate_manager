@@ -32,6 +32,7 @@
 #include "cm_log.h"
 #include "cm_x509.h"
 #include "securec.h"
+#include "cm_util.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -218,8 +219,13 @@ int32_t CmConstructContextFromUri(const char *certUri, struct CmContext *context
             ret = CMR_ERROR_INVALID_ARGUMENT;
             break;
         }
-        context->userId = (uint32_t)atoi(cmUri.user);
-        context->uid = (uint32_t)atoi(cmUri.app);
+
+        if (CmIsNumeric(cmUri.user, strlen(cmUri.user) + 1, &(context->userId)) != CM_SUCCESS ||
+            CmIsNumeric(cmUri.app, strlen(cmUri.app) + 1, &(context->uid)) != CM_SUCCESS) {
+            CM_LOG_E("parse string to uint32 failed.");
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+
         if (snprintf_s(context->packageName, sizeof(context->packageName), sizeof(context->packageName) - 1, "%s",
             cmUri.object) < 0) {
             CM_LOG_E("Failed to fill context->packageName");
@@ -396,7 +402,11 @@ static int32_t UpdateUserCerts(uint32_t userId, const char *userIdPath)
 
             uint32_t uid = 0;
             /* Update certificate file */
-            uid = (uint32_t)atoi(dire->d_name);
+            if (CmIsNumeric(dire->d_name, strlen(dire->d_name) + 1, &uid) != CM_SUCCESS) {
+                CM_LOG_E("parse string to uint32 failed.");
+                return CMR_ERROR_INVALID_ARGUMENT;
+            }
+
             ret = UpdateUserCert(userId, uid, (const char *)certFilePath->data);
             if (ret != CM_SUCCESS) {
                 CM_LOG_E("Failed to update cert file for the certFilePath");
@@ -443,7 +453,11 @@ static int32_t UpdateAllUserCerts(void)
         }
 
         /* Updates all certificates for the specified user */
-        userId = (uint32_t)atoi(dire->d_name);
+        if (CmIsNumeric(dire->d_name, strlen(dire->d_name) + 1, &userId) != CM_SUCCESS) {
+            CM_LOG_E("parse string to uint32 failed.");
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+
         int32_t ret = UpdateUserCerts(userId, userIdPath);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to update all certificates for the userIdPath");

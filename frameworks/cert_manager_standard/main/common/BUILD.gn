@@ -43,6 +43,7 @@ ohos_static_library("libcert_manager_common_standard_static") {
     "src/cm_advsecmode_check.c",
     "src/cm_param.c",
     "src/cm_pfx.c",
+    "src/cm_util.c",
     "src/cm_x509.c",
   ]
 

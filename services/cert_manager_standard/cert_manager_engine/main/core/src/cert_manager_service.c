@@ -38,6 +38,7 @@
 #include "cm_log.h"
 #include "cm_type.h"
 #include "cm_x509.h"
+#include "cm_util.h"
 
 #include "cert_manager_file_operator.h"
 #include "cert_manager_updateflag.h"
@@ -152,7 +153,7 @@ int32_t CmServiceGetAppCert(const struct CmContext *context, uint32_t store,
 int32_t CmServiceGrantAppCertificate(const struct CmContext *context, const struct CmBlob *keyUri,
     uint32_t appUid, struct CmBlob *authUri)
 {
-    if (CheckUri(keyUri) != CM_SUCCESS || CmCheckBlob(authUri) != CM_SUCCESS) {
+    if (CheckUri(keyUri) != CM_SUCCESS || CmCheckBlob(authUri) != CM_SUCCESS || context == NULL) {
         CM_LOG_E("invalid input arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -227,7 +228,12 @@ static int32_t CheckAndGetStore(const struct CmContext *context, const struct Cm
     }
 
     uint32_t type = uriObj.type;
-    uint32_t userId = (uint32_t)atoi(uriObj.user);
+    uint32_t userId = 0;
+    if (CmIsNumeric(uriObj.user, strlen(uriObj.user) + 1, &userId) != CM_SUCCESS) {
+        CM_LOG_E("parse string to uint32 failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     (void)CertManagerFreeUri(&uriObj);
     if (type == CM_URI_TYPE_SYS_KEY) {
         if (!CmHasSystemAppPermission()) {
@@ -667,14 +673,23 @@ static int32_t CmComparisonCallerIdWithUri(const struct CmContext *context,
         (void)CertManagerFreeUri(&uriObj);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    uint32_t userId = (uint32_t)atoi(uriObj.user);
+    uint32_t userId = 0;
+    if (CmIsNumeric(uriObj.user, strlen(uriObj.user) + 1, &userId) != CM_SUCCESS) {
+        CM_LOG_E("parse string to uint32 failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
 
     if (uriObj.app == NULL) {
         CM_LOG_E("uri app invalid");
         (void)CertManagerFreeUri(&uriObj);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    uint32_t uid = (uint32_t)atoi(uriObj.app);
+    uint32_t uid = 0;
+    if (CmIsNumeric(uriObj.app, strlen(uriObj.app) + 1, &uid) != CM_SUCCESS) {
+        CM_LOG_E("parse string to uint32 failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     if ((context->userId == userId) && (context->uid == uid)) {
         ret = CM_SUCCESS;
     } else {

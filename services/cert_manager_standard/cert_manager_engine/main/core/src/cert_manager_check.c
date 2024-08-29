@@ -21,6 +21,7 @@
 #include "cert_manager_permission_check.h"
 #include "cert_manager_uri.h"
 #include "cm_log.h"
+#include "cm_util.h"
 
 int32_t CheckUri(const struct CmBlob *keyUri)
 {
@@ -268,8 +269,14 @@ static int32_t checkCallerAndUri(struct CmContext *cmContext, const struct CmBlo
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    uint32_t userId = (uint32_t)atoi(uriObj.user);
-    uint32_t uid = (uint32_t)atoi(uriObj.app);
+    uint32_t userId = 0;
+    uint32_t uid = 0;
+    if (CmIsNumeric(uriObj.user, strlen(uriObj.user) + 1, &userId) != CM_SUCCESS ||
+        CmIsNumeric(uriObj.app, strlen(uriObj.app) + 1, &uid) != CM_SUCCESS) {
+        CM_LOG_E("parse string to uint32 failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     (void)CertManagerFreeUri(&uriObj);
     if ((cmContext->userId != 0) && (cmContext->userId != userId)) {
         CM_LOG_E("caller userid is not producer");

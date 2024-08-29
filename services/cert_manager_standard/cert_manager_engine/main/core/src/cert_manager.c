@@ -32,6 +32,7 @@
 #include "cm_log.h"
 #include "cm_type.h"
 #include "cm_x509.h"
+#include "cm_util.h"
 
 #include "securec.h"
 
@@ -772,7 +773,13 @@ int32_t CmBackupRemove(uint32_t userId, const char *path, const struct CmBlob *c
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    uint32_t uid = (uint32_t)atoi(basename((char *)path));
+    uint32_t uid = 0;
+    char *uidStr = basename((char *)path);
+    if (CmIsNumeric(uidStr, strlen(uidStr) + 1, &uid) != CM_SUCCESS) {
+        CM_LOG_E("parse string to uint32 failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     char userCertConfigFilePath[CERT_MAX_PATH_LEN] = { 0 };
     int32_t ret = CmGetCertConfPath(userId, uid, certUri, userCertConfigFilePath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
@@ -841,7 +848,12 @@ static int32_t RemoveAllConfUidDir(uint32_t userId, const char *uidPath)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     char configUidDirPath[CERT_MAX_PATH_LEN] = { 0 };
-    uint32_t uid = (uint32_t)atoi(basename((char *)uidPath));
+    uint32_t uid = 0;
+    char *uidStr = basename((char *)uidPath);
+    if (CmIsNumeric(uidStr, strlen(uidStr) + 1, &uid) != CM_SUCCESS) {
+        CM_LOG_E("parse string to uint32 failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
 
     int32_t ret = CmGetCertConfUidDir(userId, uid, configUidDirPath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
