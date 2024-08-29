@@ -41,6 +41,7 @@
 
 #include "cert_manager_file_operator.h"
 #include "cert_manager_updateflag.h"
+#define MAX_PATH_LEN 256
 
 static int32_t CheckPermission(bool needPriPermission, bool needCommonPermission)
 {
@@ -462,14 +463,9 @@ int32_t CmServiceGetCertList(const struct CmContext *context, uint32_t store, st
     return ret;
 }
 
-int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlob *certUri,
+static int32_t CmServiceGetSysCertInfo(const struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, struct CmBlob *certificateData, uint32_t *status)
 {
-    if (CmCheckBlob(certUri) != CM_SUCCESS || CheckUri(certUri) != CM_SUCCESS) {
-        CM_LOG_E("input params invalid");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-
     int32_t ret = CM_SUCCESS;
     struct CmMutableBlob certFileList = { 0, NULL };
     do {
@@ -490,21 +486,80 @@ int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlo
         ret = CmGetCertStatus(context, &cFileList[matchIndex], store, status); /* status */
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get cert status");
-            ret = CM_FAILURE;
             break;
         }
 
         ret = CmStorageGetBuf((char *)cFileList[matchIndex].path.data,
-            (char *)cFileList[matchIndex].fileName.data, certificateData); /* cert data */
+        (char *)cFileList[matchIndex].fileName.data, certificateData); /* cert data */
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get cert data");
-            ret = CM_FAILURE;
             break;
         }
     } while (0);
 
     if (certFileList.data != NULL) {
         CmFreeCertFiles((struct CertFileInfo *)certFileList.data, certFileList.size);
+    }
+    return ret;
+}
+
+static int32_t CmServiceGetUserCertInfo(struct CmContext *context, const struct CmBlob *certUri,
+    uint32_t store, struct CmBlob *certificateData, uint32_t *status)
+{
+    int32_t ret = CM_SUCCESS;
+    char uidPath[MAX_PATH_LEN] = { 0 };
+    ret = CmServiceGetUserCertInfoCheck(context, certUri, CM_URI_TYPE_CERTIFICATE, false);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to check caller and uri");
+        return ret;
+    }
+
+    ret = ConstructUidPath(context, store, uidPath, MAX_PATH_LEN);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to construct uidpath");
+        return ret;
+    }
+
+    struct CmBlob path = {MAX_PATH_LEN, (uint8_t *)uidPath};
+    struct CertFileInfo cFile = {*certUri, path};
+    ret = CmGetCertStatus(context, &cFile, store, status); /* status */
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to get cert status");
+        return ret;
+    }
+
+    ret = CmStorageGetBuf(uidPath, (char *)cFile.fileName.data, certificateData); /* cert data */
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to get cert data");
+        return ret;
+    }
+    return ret;
+}
+
+int32_t CmServiceGetCertInfo(struct CmContext *context, const struct CmBlob *certUri,
+    uint32_t store, struct CmBlob *certificateData, uint32_t *status)
+{
+    if (CmCheckBlob(certUri) != CM_SUCCESS || CheckUri(certUri) != CM_SUCCESS) {
+        CM_LOG_E("input params invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CM_SUCCESS;
+    if (store == CM_SYSTEM_TRUSTED_STORE) {
+        ret = CmServiceGetSysCertInfo(context, certUri, store, certificateData, status);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed to get system cert info");
+            return ret;
+        }
+    } else if (store == CM_USER_TRUSTED_STORE) {
+        ret = CmServiceGetUserCertInfo(context, certUri, store, certificateData, status);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed to get user cert info");
+            return ret;
+        }
+    } else {
+        CM_LOG_E("Invalid store");
+        ret = CM_FAILURE;
     }
     return ret;
 }

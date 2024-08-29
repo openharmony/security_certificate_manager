@@ -53,7 +53,7 @@ int32_t CmServiceAbort(const struct CmContext *context, const struct CmBlob *han
 
 int32_t CmServiceGetCertList(const struct CmContext *context, uint32_t store, struct CmMutableBlob *certFileList);
 
-int32_t CmServiceGetCertInfo(const struct CmContext *context, const struct CmBlob *certUri,
+int32_t CmServiceGetCertInfo(struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, struct CmBlob *certificateData, uint32_t *status);
 
 int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem);

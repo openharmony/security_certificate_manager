@@ -141,6 +141,24 @@ struct UserCertInfoResult g_certInfoExpectResult[] = {
     }
 };
 
+struct UserCertInfoResult g_userCertInfoExpectResult[] = {
+    {
+        {
+            "oh:t=c;o=882de061;u=100;a=0",
+            "882de061",
+            true,
+            "CN=,OU=certSIGN ROOT CA,O=certSIGN",
+            "CN=,OU=certSIGN ROOT CA,O=certSIGN",
+            "200605167002",
+            "2006-7-5",
+            "2031-7-5",
+            "EA:A9:62:C4:FA:4A:6B:AF:EB:E4:15:19:6D:35:1C:CD:88:8D:4F:53:F3:FA:8A:E6:D7:C4:66:A9:4E:60:42:BB",
+            { sizeof(g_certData07), const_cast<uint8_t *>(g_certData07) }
+        },
+        true
+    }
+};
+
 struct UserCertStatusExpectResult {
     char uri[MAX_URI_LEN];
     bool inparamStatus;
@@ -1220,6 +1238,39 @@ HWTEST_F(CmUserCertTest, GetUserCertInfoTest006, TestSize.Level0)
         ret = CmUninstallUserTrustedCert(&certUri);
         EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall test failed, recode:" << ret;
     }
+}
+
+/**
+ * @tc.name: GetUserCertInfoTest007
+ * @tc.desc: Test SA Get user cert info interface performance
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MJ8 /SR000H09N7
+ */
+HWTEST_F(CmUserCertTest, GetUserCertInfoTest007, TestSize.Level0)
+{
+    int32_t ret;
+    uint8_t aliasBuf013[] = "882de061";
+    uint8_t uriBuf027[MAX_URI_LEN] = {0};
+
+    struct CmBlob testUserCert = { sizeof(g_certData07), const_cast<uint8_t *>(g_certData07) };
+    struct CmBlob testCertAlias = { sizeof(aliasBuf013), aliasBuf013 };
+    struct CmBlob testCertUri = { sizeof(uriBuf027), uriBuf027};
+
+    ret = CmInstallUserCACert(&testUserCert, &testCertAlias, TEST_USERID, true, &testCertUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "normal install user ca cert test failed, recode:" << ret;
+
+    struct CertInfo *certInfo008 = nullptr;
+    InitUserCertInfo(&certInfo008);
+    ret = CmGetUserCertInfo(&testCertUri, CM_USER_TRUSTED_STORE, certInfo008);
+    
+    EXPECT_EQ(CompareCertInfo(certInfo008, &(g_userCertInfoExpectResult[0].certInfo)), true) <<
+            DumpCertInfo(certInfo008);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal get user cert info test failed, recode:" << ret;
+    EXPECT_EQ(CompareCertData(&(certInfo008->certInfo), &(g_userCertInfoExpectResult[0].certInfo.certInfo)), true);
+    FreeCertInfo(certInfo008);
+
+    ret = CmUninstallUserTrustedCert(&testCertUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall test failed, recode:" << ret;
 }
 
 /**
