@@ -252,7 +252,7 @@ int32_t CmServiceInstallAppCertCheck(const struct CmAppCertParam *certParam, str
     return CM_SUCCESS;
 }
 
-static int32_t checkCallerAndUri(struct CmContext *cmContext, const struct CmBlob *uri,
+static int32_t CheckAndUpdateCallerAndUri(struct CmContext *cmContext, const struct CmBlob *uri,
     const uint32_t type, bool isCheckUid)
 {
     struct CMUri uriObj;
@@ -286,6 +286,23 @@ static int32_t checkCallerAndUri(struct CmContext *cmContext, const struct CmBlo
     return CM_SUCCESS;
 }
 
+/* check context and uri and update it */
+int32_t CmServiceGetUserCertInfoCheck(struct CmContext *cmContext, const struct CmBlob *uri,
+    const uint32_t type, bool isCheckUid)
+{
+    if (cmContext == NULL) {
+        CM_LOG_E("CmServiceGetCertInfoCheck: Context is NULL");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    return CheckAndUpdateCallerAndUri(cmContext, uri, type, isCheckUid);
+}
+
 int32_t CmServiceUninstallAppCertCheck(struct CmContext *cmContext,
     const uint32_t store, const struct CmBlob *keyUri)
 {
@@ -310,7 +327,7 @@ int32_t CmServiceUninstallAppCertCheck(struct CmContext *cmContext,
     }
 
     if (store == CM_SYS_CREDENTIAL_STORE) {
-        return checkCallerAndUri(cmContext, keyUri, CM_URI_TYPE_SYS_KEY, true);
+        return CheckAndUpdateCallerAndUri(cmContext, keyUri, CM_URI_TYPE_SYS_KEY, true);
     }
 
     return CM_SUCCESS;
@@ -410,7 +427,7 @@ int32_t CmServiceGetAppCertCheck(struct CmContext *cmContext, const uint32_t sto
     }
 
     if (store == CM_SYS_CREDENTIAL_STORE) {
-        int32_t ret = checkCallerAndUri(cmContext, keyUri, CM_URI_TYPE_SYS_KEY, false);
+        int32_t ret = CheckAndUpdateCallerAndUri(cmContext, keyUri, CM_URI_TYPE_SYS_KEY, false);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("get type and userid from uri error");
             return ret;
@@ -506,7 +523,7 @@ int32_t CmServiceUninstallUserCertCheck(struct CmContext *cmContext, const struc
         return CMR_ERROR_NOT_SYSTEMP_APP;
     }
 
-    int32_t ret = checkCallerAndUri(cmContext, certUri, CM_URI_TYPE_CERTIFICATE, true);
+    int32_t ret = CheckAndUpdateCallerAndUri(cmContext, certUri, CM_URI_TYPE_CERTIFICATE, true);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uninstall user cert: caller and uri check fail");
         return ret;

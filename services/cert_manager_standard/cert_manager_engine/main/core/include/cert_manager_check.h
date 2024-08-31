@@ -46,6 +46,8 @@ int32_t CmServiceInstallUserCertCheck(struct CmContext *cmContext, const struct 
 
 int32_t CmServiceUninstallUserCertCheck(struct CmContext *cmContext, const struct CmBlob *certUri);
 
+int32_t CmServiceGetUserCertInfoCheck(struct CmContext *cmContext, const struct CmBlob *uri,
+    const uint32_t type, bool isCheckUid);
 #ifdef __cplusplus
 }
 #endif
