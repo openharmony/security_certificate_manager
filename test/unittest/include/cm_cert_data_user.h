@@ -385,5 +385,5 @@ static char g_certData06[] =
     "DnYaJOgPt0B/5izhoWNK7GhJDy9KEuLURcTSWFysbbnljwO9INPT9MmlS83PdAgN\r\n"
     "iS8VXF4pce1W9U5jH7d7k0JDVSXybebe1iPFphsZpYM/NE+jap+mPy1nTCbf9g==\r\n"
     "-----END CERTIFICATE-----\r\n";
-    
+
 #endif /* CM_CERT_DATA_USER_H */
