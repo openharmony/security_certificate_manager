@@ -22,6 +22,7 @@
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "cm_napi_common.h"
+#include "cm_util.h"
 
 namespace CMNapi {
 namespace {
@@ -76,8 +77,9 @@ static napi_value ParseString2Uint32(napi_env env, napi_value object, uint32_t &
 {
     struct CmBlob *blob = nullptr;
     napi_value result = ParseString(env, object, blob);
-    if (result == nullptr) {
-        CM_LOG_E("parse string to blob failed");
+    if (result == nullptr ||
+        CmIsNumeric(reinterpret_cast<char *>(blob->data), static_cast<size_t>(blob->size), &value) != CM_SUCCESS) {
+        CM_LOG_E("parse string to uint32 failed");
         if (blob != nullptr) {
             CM_FREE_PTR(blob->data);
             CmFree(blob);
@@ -85,7 +87,6 @@ static napi_value ParseString2Uint32(napi_env env, napi_value object, uint32_t &
         return nullptr;
     }
 
-    value = static_cast<uint32_t>(atoi(reinterpret_cast<char *>(blob->data)));
     CM_FREE_PTR(blob->data);
     CM_FREE_PTR(blob);
     return GetInt32(env, 0);

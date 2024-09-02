@@ -26,6 +26,7 @@
 #include "cert_manager_crypto_operation.h"
 #include "cert_manager_uri.h"
 #include "cm_log.h"
+#include "cm_util.h"
 
 #define MAC_SHA256_LEN 32
 
@@ -109,8 +110,14 @@ static int32_t GetAndCheckUriObj(struct CMUri *uriObj, const struct CmBlob *uri,
 static int32_t CheckCallerIsProducer(const struct CmContext *context, const struct CMUri *uriObj)
 {
     /* check caller is Producer: user and app has been checked not null */
-    uint32_t userId = (uint32_t)atoi(uriObj->user);
-    uint32_t uid = (uint32_t)atoi(uriObj->app);
+    uint32_t userId = 0;
+    uint32_t uid = 0;
+    if (CmIsNumeric(uriObj->user, strlen(uriObj->user) + 1, &userId) != CM_SUCCESS ||
+        CmIsNumeric(uriObj->app, strlen(uriObj->app) + 1, &uid) != CM_SUCCESS) {
+        CM_LOG_E("parse string to uint32 failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     if ((userId == context->userId) && (uid == context->uid)) {
         CM_LOG_D("caller is producer.");
         return CM_SUCCESS;
@@ -468,7 +475,12 @@ static int32_t CheckIsAuthorizedApp(const struct CMUri *uriObj)
     /* calc uri mac */
     uint8_t macData[MAC_SHA256_LEN] = {0};
     struct CmBlob mac = { sizeof(macData), macData };
-    uint32_t clientUid = (uint32_t)atoi(uriObj->clientApp);
+    uint32_t clientUid = 0;
+    if (CmIsNumeric(uriObj->clientApp, strlen(uriObj->clientApp) + 1, &clientUid) != CM_SUCCESS) {
+        CM_LOG_E("parse string to uint32 failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     ret = CalcUriMac(uriObj, clientUid, &mac, false);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("calc uri mac failed, ret = %d", ret);
@@ -683,7 +695,12 @@ static int32_t CheckCommonPermission(const struct CmContext *context, const stru
         return CMR_ERROR_PERMISSION_DENIED;
     }
 
-    uint32_t clientUid = (uint32_t)atoi(uriObj->clientApp);
+    uint32_t clientUid = 0;
+    if (CmIsNumeric(uriObj->clientApp, strlen(uriObj->clientApp) + 1, &clientUid) != CM_SUCCESS) {
+        CM_LOG_E("parse string to uint32 failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     if (clientUid != context->uid) {
         CM_LOG_E("caller uid not match client uid");
         return CMR_ERROR_PERMISSION_DENIED;

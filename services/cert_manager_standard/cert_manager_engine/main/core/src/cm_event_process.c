@@ -29,6 +29,7 @@
 #include "cert_manager_storage.h"
 #include "cm_log.h"
 #include "cm_type.h"
+#include "cm_util.h"
 
 static void DeleteAuth(const struct CmContext *context, const char *fileName, bool isDeleteByUid)
 {
@@ -228,7 +229,12 @@ static int32_t CmTraversalUidLayerDir(const struct CmContext *context, const cha
 static int32_t TraversalUserIdLayerDir(const struct CmContext *context, const char *userIdPath, const char *direName,
     const uint32_t store, bool isUserDeleteEvent)
 {
-    uint32_t uid = (uint32_t)atoi(direName);
+    uint32_t uid = 0;
+    if (CmIsNumeric(direName, strlen(direName) + 1, &uid) != CM_SUCCESS) {
+        CM_LOG_E("parse string to uint32 failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     CM_LOG_D("CmTraversalUserIdLayerDir userId:%u, uid:%u", context->userId, uid);
 
     int32_t ret = CM_SUCCESS;
@@ -304,6 +310,7 @@ static int32_t CmTraversalDir(const struct CmContext *context, const char *path,
         return CMR_ERROR_OPEN_FILE_FAIL;
     }
 
+    uint32_t uid = 0;
     struct dirent *dire = readdir(dir);
     while (dire != NULL) {
         char deletePath[CM_MAX_FILE_NAME_LEN] = { 0 };
@@ -312,8 +319,13 @@ static int32_t CmTraversalDir(const struct CmContext *context, const char *path,
             return CMR_ERROR_INVALID_OPERATION;
         }
 
+        if (CmIsNumeric(dire->d_name, strlen(dire->d_name) + 1, &uid) != CM_SUCCESS) {
+            CM_LOG_E("parse string to uint32 failed.");
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+
         if (dire->d_type == DT_DIR && (strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0) &&
-            ((uint32_t)atoi(dire->d_name) == context->userId)) {
+            (uid == context->userId)) {
             ret = CmTraversalUserIdLayerDir(context, deletePath, store);
         } else if (dire->d_type != DT_DIR) {
             (void)remove(deletePath);

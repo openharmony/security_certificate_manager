@@ -22,6 +22,7 @@
 #include "securec.h"
 
 #include "cm_log.h"
+#include "cm_util.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -549,7 +550,11 @@ int32_t CertManagerGetUidFromUri(const struct CmBlob *uri, uint32_t *uid)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    *uid = (uint32_t)atoi(uriObj.app);
+    if (CmIsNumeric(uriObj.app, strlen(uriObj.app) + 1, uid) != CM_SUCCESS) {
+        CM_LOG_E("parse string to uint32 failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     (void)CertManagerFreeUri(&uriObj);
     return CM_SUCCESS;
 }

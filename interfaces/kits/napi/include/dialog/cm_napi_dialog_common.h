@@ -40,13 +40,6 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode);
 void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
     napi_value *result, int32_t length);
 
-inline napi_value GetNull(napi_env env)
-{
-    napi_value result = nullptr;
-    NAPI_CALL(env, napi_get_null(env, &result));
-    return result;
-}
-
 inline napi_value GetInt32(napi_env env, int32_t value)
 {
     napi_value result = nullptr;

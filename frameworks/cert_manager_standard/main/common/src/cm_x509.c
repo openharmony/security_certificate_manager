@@ -36,7 +36,7 @@ typedef ASN1_TIME *(TIME_FUNC)(const X509 *);
 X509 *InitCertContext(const uint8_t *certBuf, uint32_t size)
 {
     X509 *x509 = NULL;
-    if (certBuf == NULL || size > MAX_LEN_CERTIFICATE) {
+    if (certBuf == NULL || size > MAX_LEN_CERTIFICATE || size == 0) {
         return NULL;
     }
     BIO *bio = BIO_new_mem_buf(certBuf, (int)size);

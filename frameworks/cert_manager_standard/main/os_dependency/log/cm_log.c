@@ -24,12 +24,7 @@
 
 void CmLog(uint32_t logLevel, const char *funcName, uint32_t lineNo, const char *format, ...)
 {
-    char *buf = (char *)CmMalloc(MAX_LOG_BUFF_LEN);
-    if (buf == NULL) {
-        HILOG_ERROR(LOG_CORE, "certificate manager log malloc fail");
-        return;
-    }
-    (void)memset_s(buf, MAX_LOG_BUFF_LEN, 0, MAX_LOG_BUFF_LEN);
+    char buf[MAX_LOG_BUFF_LEN] = {0};
 
     va_list ap;
     va_start(ap, format);
@@ -37,7 +32,6 @@ void CmLog(uint32_t logLevel, const char *funcName, uint32_t lineNo, const char 
     va_end(ap);
     if (ret < 0) {
         HILOG_ERROR(LOG_CORE, "certificate manager log concatenate error.");
-        CM_FREE_PTR(buf);
         return;
     }
 
@@ -55,9 +49,6 @@ void CmLog(uint32_t logLevel, const char *funcName, uint32_t lineNo, const char 
             HILOG_DEBUG(LOG_CORE, "%{public}s[%{public}u]: %{private}s\n", funcName, lineNo, buf);
             break;
         default:
-            CM_FREE_PTR(buf);
             return;
     }
-
-    CM_FREE_PTR(buf);
 }
