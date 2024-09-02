@@ -707,7 +707,7 @@ int32_t RdbInsertCertProperty(const struct CmContext *context, const struct CmBl
         CM_LOG_E("memcpy uri fail");
         return CMR_ERROR_INVALID_OPERATION;
     }
-    if (memcpy_s(certProp.alias, MAX_LEN_SUBJECT_NAME, (char *)alias->data, alias->size) != CM_SUCCESS) {
+    if (memcpy_s(certProp.alias, MAX_LEN_CERT_ALIAS, (char *)alias->data, alias->size) != CM_SUCCESS) {
         CM_LOG_E("memcpy subjectName fail");
         return CMR_ERROR_INVALID_OPERATION;
     }
