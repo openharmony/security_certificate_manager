@@ -223,7 +223,8 @@ int32_t CmConstructContextFromUri(const char *certUri, struct CmContext *context
         if (CmIsNumeric(cmUri.user, strlen(cmUri.user) + 1, &(context->userId)) != CM_SUCCESS ||
             CmIsNumeric(cmUri.app, strlen(cmUri.app) + 1, &(context->uid)) != CM_SUCCESS) {
             CM_LOG_E("parse string to uint32 failed.");
-            return CMR_ERROR_INVALID_ARGUMENT;
+            ret = CMR_ERROR_INVALID_ARGUMENT;
+            break;
         }
 
         if (snprintf_s(context->packageName, sizeof(context->packageName), sizeof(context->packageName) - 1, "%s",
@@ -404,7 +405,7 @@ static int32_t UpdateUserCerts(uint32_t userId, const char *userIdPath)
             /* Update certificate file */
             if (CmIsNumeric(dire->d_name, strlen(dire->d_name) + 1, &uid) != CM_SUCCESS) {
                 CM_LOG_E("parse string to uint32 failed.");
-                return CMR_ERROR_INVALID_ARGUMENT;
+                continue;
             }
 
             ret = UpdateUserCert(userId, uid, (const char *)certFilePath->data);
@@ -455,7 +456,7 @@ static int32_t UpdateAllUserCerts(void)
         /* Updates all certificates for the specified user */
         if (CmIsNumeric(dire->d_name, strlen(dire->d_name) + 1, &userId) != CM_SUCCESS) {
             CM_LOG_E("parse string to uint32 failed.");
-            return CMR_ERROR_INVALID_ARGUMENT;
+            continue;
         }
 
         int32_t ret = UpdateUserCerts(userId, userIdPath);
