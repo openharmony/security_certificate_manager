@@ -478,6 +478,7 @@ static int32_t CheckIsAuthorizedApp(const struct CMUri *uriObj)
     uint32_t clientUid = 0;
     if (CmIsNumeric(uriObj->clientApp, strlen(uriObj->clientApp) + 1, &clientUid) != CM_SUCCESS) {
         CM_LOG_E("parse string to uint32 failed.");
+        CM_FREE_PTR(macByte.data);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 

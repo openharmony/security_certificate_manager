@@ -232,6 +232,7 @@ static int32_t CheckAndGetStore(const struct CmContext *context, const struct Cm
     uint32_t userId = 0;
     if (CmIsNumeric(uriObj.user, strlen(uriObj.user) + 1, &userId) != CM_SUCCESS) {
         CM_LOG_E("parse string to uint32 failed.");
+        (void)CertManagerFreeUri(&uriObj);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -731,6 +732,7 @@ static int32_t CmComparisonCallerIdWithUri(const struct CmContext *context,
     uint32_t userId = 0;
     if (CmIsNumeric(uriObj.user, strlen(uriObj.user) + 1, &userId) != CM_SUCCESS) {
         CM_LOG_E("parse string to uint32 failed.");
+        (void)CertManagerFreeUri(&uriObj);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -742,6 +744,7 @@ static int32_t CmComparisonCallerIdWithUri(const struct CmContext *context,
     uint32_t uid = 0;
     if (CmIsNumeric(uriObj.app, strlen(uriObj.app) + 1, &uid) != CM_SUCCESS) {
         CM_LOG_E("parse string to uint32 failed.");
+        (void)CertManagerFreeUri(&uriObj);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 

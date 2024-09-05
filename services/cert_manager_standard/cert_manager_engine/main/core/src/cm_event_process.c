@@ -321,6 +321,7 @@ static int32_t CmTraversalDir(const struct CmContext *context, const char *path,
 
         if (CmIsNumeric(dire->d_name, strlen(dire->d_name) + 1, &uid) != CM_SUCCESS) {
             CM_LOG_E("parse string to uint32 failed.");
+            closedir(dir);
             return CMR_ERROR_INVALID_ARGUMENT;
         }
 
