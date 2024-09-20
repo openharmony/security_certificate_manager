@@ -195,11 +195,6 @@ static void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext>
     OHOS::AAFwk::Want want)
 {
     CM_LOG_D("begin StartUIExtensionAbility");
-    if (asyncContext == nullptr) {
-        CM_LOG_E("asyncContext is null");
-        ThrowError(asyncContext->env, PARAM_ERROR, "asyncContext is null");
-        return;
-    }
     auto abilityContext = asyncContext->context;
     if (abilityContext == nullptr) {
         CM_LOG_E("abilityContext is null");
