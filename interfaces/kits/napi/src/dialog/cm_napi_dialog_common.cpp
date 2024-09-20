@@ -163,7 +163,7 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode)
     return businessErrorMsg;
 }
 
-void ThrowError(napi_env env, int32_t errorCode, std::string errMsg)
+void ThrowError(napi_env env, int32_t errorCode, const std::string errMsg)
 {
     napi_value paramsError = nullptr;
     napi_value outCode = nullptr;
