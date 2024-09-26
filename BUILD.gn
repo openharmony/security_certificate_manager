@@ -35,6 +35,14 @@ group("cert_manager_napi") {
   }
 }
 
+group("cert_manager_cjapi") {
+  if (os_level == "standard") {
+      deps = [
+        "./interfaces/kits/cj:cj_cert_manager_ffi",
+      ]
+  }
+}
+
 group("cipher_napi") {
   if (os_level == "standard") {
     if (support_jsapi) {
@@ -47,6 +55,7 @@ group("cert_manager_type_base") {
   if (os_level == "standard") {
     deps = [
       ":cert_manager_napi",
+      ":cert_manager_cjapi",
       "./config:trusted_system_certificate0",
       "./config:trusted_system_certificate1",
       "./config:trusted_system_certificate10",

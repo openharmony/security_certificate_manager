@@ -1,0 +1,50 @@
+# Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+
+ohos_shared_library("cj_cert_manager_ffi") {
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+  defines = [
+    "L2_STANDARD",
+    "_HARDWARE_ROOT_KEY_",
+    "_CM_LOG_ENABLE_",
+  ]
+
+  include_dirs = [
+    "../../../frameworks/cert_manager_standard/main/common/include",
+    "include",
+  ]
+
+  sources = [
+    "src/cj_cert_manager_ffi.c",
+  ]
+
+  cflags_cc = [
+    "-Wall",
+    "-Werror",
+  ]
+  deps = [ "../../innerkits/cert_manager_standard/main:cert_manager_sdk" ]
+
+  innerapi_tags = [ "platformsdk" ]
+  subsystem_name = "security"
+  part_name = "certificate_manager"
+}
