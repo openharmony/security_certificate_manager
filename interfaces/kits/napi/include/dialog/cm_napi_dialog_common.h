@@ -21,6 +21,7 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
+#include "cm_napi_open_dialog.h"
 #include "cm_mem.h"
 #include "cm_type.h"
 
@@ -30,9 +31,14 @@ static const std::string BUSINESS_ERROR_PROPERTY_CODE = "code";
 static const std::string BUSINESS_ERROR_PROPERTY_MESSAGE = "message";
 static const int32_t RESULT_NUMBER = 2;
 
+void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::AAFwk::Want want, std::shared_ptr<CmUIExtensionCallback> uiExtCallback);
+bool ParseCmUIAbilityContextReq(
+    napi_env env, const napi_value& obj, std::shared_ptr<OHOS::AbilityRuntime::AbilityContext>& abilityContext);
 napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store);
 napi_value ParseBoolean(napi_env env, napi_value object, bool &status);
 napi_value ParseString(napi_env env, napi_value object, CmBlob *&blob);
+napi_value GetUint8ArrayToBase64Str(napi_env env, napi_value object, std::string &certArray);
 
 void ThrowError(napi_env env, int32_t errorCode, const std::string errMsg);
 napi_value GenerateBusinessError(napi_env env, int32_t errorCode);
@@ -51,7 +57,16 @@ enum CmDialogPageType {
     PAGE_MAIN = 1,
     PAGE_CA_CERTIFICATE = 2,
     PAGE_CREDENTIAL = 3,
-    PAGE_INSTALL_CERTIFICATE = 4
+    PAGE_INSTALL_CERTIFICATE = 4,
+    PAGE_INSTALL_CA_GUIDE = 5
+};
+
+enum CmCertificateType {
+    CA_CERT = 1
+};
+
+enum CertificateScope {
+    CURRENT_USER = 1
 };
 
 enum ErrorCode {
@@ -61,6 +76,8 @@ enum ErrorCode {
     PARAM_ERROR = 401,
     DIALOG_ERROR_GENERIC = 29700001,
     DIALOG_ERROR_OPERATION_CANCELED = 29700002,
+    DIALOG_ERROR_INSTALL_FAILED = 29700003,
+    DIALOG_ERROR_NOT_SUPPORTED = 29700004,
 };
 
 }  // namespace CertManagerNapi
