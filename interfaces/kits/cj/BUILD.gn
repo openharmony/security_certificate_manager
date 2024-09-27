@@ -34,9 +34,7 @@ ohos_shared_library("cj_cert_manager_ffi") {
     "include",
   ]
 
-  sources = [
-    "src/cj_cert_manager_ffi.c",
-  ]
+  sources = [ "src/cj_cert_manager_ffi.c" ]
 
   cflags_cc = [
     "-Wall",
