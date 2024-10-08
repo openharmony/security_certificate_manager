@@ -18,8 +18,6 @@
 
 #include "cert_manager_api.h"
 
-#define FFI_EXPORT __attribute__((visibility("default")))
-
 struct CjCredential {
     uint32_t isExist;
     char *type;
