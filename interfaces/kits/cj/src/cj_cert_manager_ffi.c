@@ -37,22 +37,21 @@ int32_t FfiCertManagerGetAppCert(const struct CmBlob *keyUri, const uint32_t sto
     }
     credential.credData.size = MAX_LEN_CERTIFICATE_CHAIN;
     const int32_t errCode = CmGetAppCert(keyUri, store, &credential);
-    if (errCode == CM_SUCCESS) {
-        // When success, resource will be released by caller.
-        // Caller will ensure `retObj` is always not null.
-        retObj->isExist = credential.isExist;
-        retObj->type = strdup(credential.type);
-        retObj->alias = strdup(credential.alias);
-        retObj->keyUri = strdup(credential.keyUri);
-        retObj->certNum = credential.certNum;
-        retObj->keyNum = credential.keyNum;
-        retObj->credData.data = credential.credData.data;
-        retObj->credData.size = credential.credData.size;
-    } else {
-        // When failed, release resource
+    if (errCode != CM_SUCCESS) {
         free(credential.credData.data);
+        return errCode;
     }
-    return errCode;
+    // ATTENTION: resource will be released by caller.
+    // Caller will ensure `retObj` is always not null.
+    retObj->isExist = credential.isExist;
+    retObj->type = strdup(credential.type);
+    retObj->alias = strdup(credential.alias);
+    retObj->keyUri = strdup(credential.keyUri);
+    retObj->certNum = credential.certNum;
+    retObj->keyNum = credential.keyNum;
+    retObj->credData.data = credential.credData.data;
+    retObj->credData.size = credential.credData.size;
+    return CM_SUCCESS;
 }
 
 int32_t FfiCertManagerInit(const struct CmBlob *authUri, const struct CjSignatureSpec *spec, struct CmBlob *handle)
@@ -127,23 +126,22 @@ int32_t FfiCertManagerGetUserCertInfo(const struct CmBlob *certUri, const uint32
     info.certInfo.size = MAX_LEN_CERTIFICATE;
 
     const int32_t errCode = CmGetUserCertInfo(certUri, store, &info);
-    if (errCode == CM_SUCCESS) {
-        // ATTENTION: resource will be released by caller.
-        // Caller will ensure `retObj` is always not null.
-        retObj->uri = strdup(info.uri);
-        retObj->certAlias = strdup(info.certAlias);
-        retObj->status = info.status;
-        retObj->issuerName = strdup(info.issuerName);
-        retObj->subjectName = strdup(info.subjectName);
-        retObj->serial = strdup(info.serial);
-        retObj->notBefore = strdup(info.notBefore);
-        retObj->notAfter = strdup(info.notAfter);
-        retObj->fingerprintSha256 = strdup(info.fingerprintSha256);
-        retObj->certInfo.data = info.certInfo.data;
-        retObj->certInfo.size = info.certInfo.size;
-    } else {
-        // When failed, release resource
+    if (errCode != CM_SUCCESS) {
         free(info.certInfo.data);
+        return errCode;
     }
-    return errCode;
+    // ATTENTION: resource will be released by caller.
+    // Caller will ensure `retObj` is always not null.
+    retObj->uri = strdup(info.uri);
+    retObj->certAlias = strdup(info.certAlias);
+    retObj->status = info.status;
+    retObj->issuerName = strdup(info.issuerName);
+    retObj->subjectName = strdup(info.subjectName);
+    retObj->serial = strdup(info.serial);
+    retObj->notBefore = strdup(info.notBefore);
+    retObj->notAfter = strdup(info.notAfter);
+    retObj->fingerprintSha256 = strdup(info.fingerprintSha256);
+    retObj->certInfo.data = info.certInfo.data;
+    retObj->certInfo.size = info.certInfo.size;
+    return CM_SUCCESS;
 }
