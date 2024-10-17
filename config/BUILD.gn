@@ -18,6 +18,10 @@ ohos_prebuilt_etc("trusted_system_certificate0") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate1") {
@@ -25,6 +29,10 @@ ohos_prebuilt_etc("trusted_system_certificate1") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate2") {
@@ -32,6 +40,10 @@ ohos_prebuilt_etc("trusted_system_certificate2") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate3") {
@@ -39,6 +51,10 @@ ohos_prebuilt_etc("trusted_system_certificate3") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate4") {
@@ -46,6 +62,10 @@ ohos_prebuilt_etc("trusted_system_certificate4") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate5") {
@@ -53,6 +73,10 @@ ohos_prebuilt_etc("trusted_system_certificate5") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate6") {
@@ -60,6 +84,10 @@ ohos_prebuilt_etc("trusted_system_certificate6") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate7") {
@@ -67,6 +95,10 @@ ohos_prebuilt_etc("trusted_system_certificate7") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate8") {
@@ -74,6 +106,10 @@ ohos_prebuilt_etc("trusted_system_certificate8") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate9") {
@@ -81,6 +117,10 @@ ohos_prebuilt_etc("trusted_system_certificate9") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate10") {
@@ -88,6 +128,10 @@ ohos_prebuilt_etc("trusted_system_certificate10") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate11") {
@@ -95,6 +139,10 @@ ohos_prebuilt_etc("trusted_system_certificate11") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate12") {
@@ -102,6 +150,10 @@ ohos_prebuilt_etc("trusted_system_certificate12") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate13") {
@@ -109,6 +161,10 @@ ohos_prebuilt_etc("trusted_system_certificate13") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate14") {
@@ -116,6 +172,10 @@ ohos_prebuilt_etc("trusted_system_certificate14") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate15") {
@@ -123,6 +183,10 @@ ohos_prebuilt_etc("trusted_system_certificate15") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate16") {
@@ -130,6 +194,10 @@ ohos_prebuilt_etc("trusted_system_certificate16") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate17") {
@@ -137,6 +205,10 @@ ohos_prebuilt_etc("trusted_system_certificate17") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate18") {
@@ -144,6 +216,10 @@ ohos_prebuilt_etc("trusted_system_certificate18") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate19") {
@@ -151,6 +227,10 @@ ohos_prebuilt_etc("trusted_system_certificate19") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate20") {
@@ -158,6 +238,10 @@ ohos_prebuilt_etc("trusted_system_certificate20") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate21") {
@@ -165,6 +249,10 @@ ohos_prebuilt_etc("trusted_system_certificate21") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate22") {
@@ -172,6 +260,10 @@ ohos_prebuilt_etc("trusted_system_certificate22") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate23") {
@@ -179,6 +271,10 @@ ohos_prebuilt_etc("trusted_system_certificate23") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate24") {
@@ -186,6 +282,10 @@ ohos_prebuilt_etc("trusted_system_certificate24") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate25") {
@@ -193,6 +293,10 @@ ohos_prebuilt_etc("trusted_system_certificate25") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate26") {
@@ -200,6 +304,10 @@ ohos_prebuilt_etc("trusted_system_certificate26") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate27") {
@@ -207,6 +315,10 @@ ohos_prebuilt_etc("trusted_system_certificate27") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate28") {
@@ -214,6 +326,10 @@ ohos_prebuilt_etc("trusted_system_certificate28") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate29") {
@@ -221,6 +337,10 @@ ohos_prebuilt_etc("trusted_system_certificate29") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate30") {
@@ -228,6 +348,10 @@ ohos_prebuilt_etc("trusted_system_certificate30") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate31") {
@@ -235,6 +359,10 @@ ohos_prebuilt_etc("trusted_system_certificate31") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate32") {
@@ -242,6 +370,10 @@ ohos_prebuilt_etc("trusted_system_certificate32") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate33") {
@@ -249,6 +381,10 @@ ohos_prebuilt_etc("trusted_system_certificate33") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate34") {
@@ -256,6 +392,10 @@ ohos_prebuilt_etc("trusted_system_certificate34") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate35") {
@@ -263,6 +403,10 @@ ohos_prebuilt_etc("trusted_system_certificate35") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate36") {
@@ -270,6 +414,10 @@ ohos_prebuilt_etc("trusted_system_certificate36") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate37") {
@@ -277,6 +425,10 @@ ohos_prebuilt_etc("trusted_system_certificate37") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate38") {
@@ -284,6 +436,10 @@ ohos_prebuilt_etc("trusted_system_certificate38") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate39") {
@@ -291,6 +447,10 @@ ohos_prebuilt_etc("trusted_system_certificate39") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate40") {
@@ -298,6 +458,10 @@ ohos_prebuilt_etc("trusted_system_certificate40") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate41") {
@@ -305,6 +469,10 @@ ohos_prebuilt_etc("trusted_system_certificate41") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate42") {
@@ -312,6 +480,10 @@ ohos_prebuilt_etc("trusted_system_certificate42") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate43") {
@@ -319,6 +491,10 @@ ohos_prebuilt_etc("trusted_system_certificate43") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate44") {
@@ -326,6 +502,10 @@ ohos_prebuilt_etc("trusted_system_certificate44") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate45") {
@@ -333,6 +513,10 @@ ohos_prebuilt_etc("trusted_system_certificate45") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate46") {
@@ -340,6 +524,10 @@ ohos_prebuilt_etc("trusted_system_certificate46") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate47") {
@@ -347,6 +535,10 @@ ohos_prebuilt_etc("trusted_system_certificate47") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate48") {
@@ -354,6 +546,10 @@ ohos_prebuilt_etc("trusted_system_certificate48") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate49") {
@@ -361,6 +557,10 @@ ohos_prebuilt_etc("trusted_system_certificate49") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate50") {
@@ -368,6 +568,10 @@ ohos_prebuilt_etc("trusted_system_certificate50") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate51") {
@@ -375,6 +579,10 @@ ohos_prebuilt_etc("trusted_system_certificate51") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate52") {
@@ -382,6 +590,10 @@ ohos_prebuilt_etc("trusted_system_certificate52") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate53") {
@@ -389,6 +601,10 @@ ohos_prebuilt_etc("trusted_system_certificate53") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate54") {
@@ -396,6 +612,10 @@ ohos_prebuilt_etc("trusted_system_certificate54") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate55") {
@@ -403,6 +623,10 @@ ohos_prebuilt_etc("trusted_system_certificate55") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate56") {
@@ -410,6 +634,10 @@ ohos_prebuilt_etc("trusted_system_certificate56") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate57") {
@@ -417,6 +645,10 @@ ohos_prebuilt_etc("trusted_system_certificate57") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate58") {
@@ -424,6 +656,10 @@ ohos_prebuilt_etc("trusted_system_certificate58") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate59") {
@@ -431,6 +667,10 @@ ohos_prebuilt_etc("trusted_system_certificate59") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate60") {
@@ -438,6 +678,10 @@ ohos_prebuilt_etc("trusted_system_certificate60") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate61") {
@@ -445,6 +689,10 @@ ohos_prebuilt_etc("trusted_system_certificate61") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate62") {
@@ -452,6 +700,10 @@ ohos_prebuilt_etc("trusted_system_certificate62") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate63") {
@@ -459,6 +711,10 @@ ohos_prebuilt_etc("trusted_system_certificate63") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate64") {
@@ -466,6 +722,10 @@ ohos_prebuilt_etc("trusted_system_certificate64") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate65") {
@@ -473,6 +733,10 @@ ohos_prebuilt_etc("trusted_system_certificate65") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate66") {
@@ -480,6 +744,10 @@ ohos_prebuilt_etc("trusted_system_certificate66") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
 
 ohos_prebuilt_etc("trusted_system_certificate67") {
@@ -487,4 +755,8 @@ ohos_prebuilt_etc("trusted_system_certificate67") {
   part_name = "certificate_manager"
   subsystem_name = "security"
   relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
 }
