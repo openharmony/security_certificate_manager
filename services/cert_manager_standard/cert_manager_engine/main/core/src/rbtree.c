@@ -33,7 +33,7 @@
 #define IS_RED(n)    (COLOR((n)) == RED)
 #define IS_BLACK(n)  (COLOR((n)) == BLACK)
 
-#define SET_COLOR(n, color) if ((n) != NULL) { (n)->key = ((n)->key & KEY_MASK) | (color); };
+#define SET_COLOR(n, color) if ((n) != NULL) { (n)->key = ((n)->key & KEY_MASK) | (color); }
 #define SET_RED(n)  SET_COLOR((n), RED)
 #define SET_BLACK(n) SET_COLOR((n), BLACK)
 
