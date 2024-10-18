@@ -34,7 +34,7 @@ napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store);
 napi_value ParseBoolean(napi_env env, napi_value object, bool &status);
 napi_value ParseString(napi_env env, napi_value object, CmBlob *&blob);
 
-void ThrowError(napi_env env, int32_t errorCode, std::string errMsg);
+void ThrowError(napi_env env, int32_t errorCode, const std::string errMsg);
 napi_value GenerateBusinessError(napi_env env, int32_t errorCode);
 
 void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
