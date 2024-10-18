@@ -23,22 +23,8 @@
 #include "napi_common_want.h"
 #include "ui_content.h"
 
-#include "cm_napi_common.h"
-
 namespace CMNapi {
 napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info);
-
-enum CmDialogErrorCode {
-    DIALOG_ERROR_GENERIC = 29700001,
-    DIALOG_ERROR_OPERATION_CANCELED = 29700002,
-};
-
-enum CmDialogPageType {
-    PAGE_MAIN = 1,
-    PAGE_CA_CERTIFICATE = 2,
-    PAGE_CREDENTIAL = 3,
-    PAGE_INSTALL_CERTIFICATE = 4
-};
 
 struct CommonAsyncContext {
     explicit CommonAsyncContext(napi_env env);
