@@ -35,6 +35,8 @@ static napi_value CreateCmErrorCode(napi_env env)
 
     AddInt32Property(env, dialogErrorCode, "ERROR_GENERIC", DIALOG_ERROR_GENERIC);
     AddInt32Property(env, dialogErrorCode, "ERROR_OPERATION_CANCELED", DIALOG_ERROR_OPERATION_CANCELED);
+    AddInt32Property(env, dialogErrorCode, "ERROR_INSTALL_FAILED", DIALOG_ERROR_INSTALL_FAILED);
+    AddInt32Property(env, dialogErrorCode, "ERROR_NOT_SUPPORTED", DIALOG_ERROR_NOT_SUPPORTED);
 
     return dialogErrorCode;
 }
@@ -51,6 +53,26 @@ static napi_value CreateCmDialogPageType(napi_env env)
 
     return dialogPageType;
 }
+
+static napi_value CreateCmCertificateType(napi_env env)
+{
+    napi_value certificateType = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &certificateType));
+
+    AddInt32Property(env, certificateType, "CA_CERT", CA_CERT);
+
+    return certificateType;
+}
+
+static napi_value CreateCmCertificateScope(napi_env env)
+{
+    napi_value certificateScope = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &certificateScope));
+
+    AddInt32Property(env, certificateScope, "CURRENT_USER", CURRENT_USER);
+
+    return certificateScope;
+}
 }  // namespace CertManagerNapi
 
 using namespace CMNapi;
@@ -61,9 +83,12 @@ static napi_value CMDialogNapiRegister(napi_env env, napi_value exports)
     napi_property_descriptor desc[] = {
         DECLARE_NAPI_PROPERTY("CertificateDialogErrorCode", CreateCmErrorCode(env)),
         DECLARE_NAPI_PROPERTY("CertificateDialogPageType", CreateCmDialogPageType(env)),
+        DECLARE_NAPI_PROPERTY("CertificateType", CreateCmCertificateType(env)),
+        DECLARE_NAPI_PROPERTY("CertificateScope", CreateCmCertificateScope(env)),
 
         /* dialog */
         DECLARE_NAPI_FUNCTION("openCertificateManagerDialog", CMNapiOpenCertManagerDialog),
+        DECLARE_NAPI_FUNCTION("openInstallCertificateDialog", CMNapiOpenInstallCertManagerDialog),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
     return exports;
