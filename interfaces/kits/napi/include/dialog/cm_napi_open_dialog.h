@@ -41,7 +41,7 @@ constexpr int32_t PARAM_SIZE_FOUR = 4;
 constexpr int32_t ERROR_STR_LEN = 256;
 
 napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info);
-napi_value CMNapiOpenInstallCertManagerDialog(napi_env env, napi_callback_info info);
+napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info);
 
 struct CommonAsyncContext {
     explicit CommonAsyncContext(napi_env env);
@@ -60,6 +60,7 @@ struct CmUIExtensionRequestContext : public CommonAsyncContext {
     uint32_t certificateType = 0;
     uint32_t certificateScope = 0;
     std::string certStr = "";
+    std::string labelName = "";
 };
 
 class CmUIExtensionCallback {

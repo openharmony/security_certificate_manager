@@ -133,56 +133,67 @@ static bool IsCmCertificateTypeAndConvert(const uint32_t value, uint32_t &pageTy
     }
 }
 
-static napi_value CMCheckArgvVaild(napi_env env, std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
-    napi_value argv[PARAM_SIZE_FOUR])
+static napi_value CMCheckArgvAndInitContext(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    napi_value argv[], size_t length)
 {
-    napi_value result = nullptr;
+    if (length != PARAM_SIZE_FOUR) {
+        CM_LOG_E("params number vaild failed");
+        return nullptr;
+    }
     // Parse first argument for context.
-    if (!ParseCmUIAbilityContextReq(env, argv[PARAM0], asyncContext->context)) {
+    if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[PARAM0], asyncContext->context)) {
         CM_LOG_E("ParseUIAbilityContextReq failed");
-        ThrowError(env, PARAM_ERROR, "Get context failed.");
-        return result;
+        ThrowError(asyncContext->env, PARAM_ERROR, "Get context failed.");
+        return nullptr;
     }
 
     // Parse second argument for certificate type.
     uint32_t certificateType = 0;
-    result = ParseUint32(env, argv[PARAM1], certificateType);
-    if (result == nullptr) {
+    if (ParseUint32(asyncContext->env, argv[PARAM1], certificateType) == nullptr) {
         CM_LOG_E("parse type failed");
-        ThrowError(env, PARAM_ERROR, "parse type failed");
-        return result;
+        ThrowError(asyncContext->env, PARAM_ERROR, "parse type failed");
+        return nullptr;
     }
     if (!IsCmCertificateTypeAndConvert(certificateType, asyncContext->certificateType)) {
         CM_LOG_E("certificateType invalid");
-        ThrowError(env, PARAM_ERROR, "certificateType invalid");
+        ThrowError(asyncContext->env, PARAM_ERROR, "certificateType invalid");
         return nullptr;
     }
 
     // Parse third argument for certificateScope.
-    result = ParseUint32(env, argv[PARAM2], asyncContext->certificateScope);
-    if (result == nullptr) {
+    if (ParseUint32(asyncContext->env, argv[PARAM2], asyncContext->certificateScope) == nullptr) {
         CM_LOG_E("parse type failed");
-        ThrowError(env, PARAM_ERROR, "parse type failed");
-        return result;
+        ThrowError(asyncContext->env, PARAM_ERROR, "parse type failed");
+        return nullptr;
     }
     if (!IsCmCertificateScopeEnum(asyncContext->certificateScope)) {
         CM_LOG_E("certificateScope invalid");
-        ThrowError(env, PARAM_ERROR, "certificateScope invalid");
+        ThrowError(asyncContext->env, PARAM_ERROR, "certificateScope invalid");
         return nullptr;
     }
     
     // Parse fourth argument for cert.
-    result = GetUint8ArrayToBase64Str(env, argv[PARAM3], asyncContext->certStr);
-    if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "cert is not a uint8Array or the length is 0 or too long.");
+    if (GetUint8ArrayToBase64Str(asyncContext->env, argv[PARAM3], asyncContext->certStr) == nullptr) {
+        ThrowError(asyncContext->env, PARAM_ERROR, "cert is not a uint8Array or the length is 0 or too long.");
         CM_LOG_E("could not get cert");
         return nullptr;
     }
-    asyncContext->env = env;
-    return GetInt32(env, 0);
+    return GetInt32(asyncContext->env, 0);
 }
 
-napi_value CMNapiOpenInstallCertManagerDialog(napi_env env, napi_callback_info info)
+static OHOS::AAFwk::Want CMGetInstallCertWant(std::shared_ptr<CmUIExtensionRequestContext> asyncContext)
+{
+    OHOS::AAFwk::Want want;
+    want.SetElementName(CERT_MANAGER_BUNDLENAME, CERT_MANAGER_ABILITYNAME);
+    want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(asyncContext->certificateType));
+    want.SetParam(CERT_MANAGER_CERTIFICATE_DATA, asyncContext->certStr);
+    want.SetParam(CERT_MANAGER_CERTSCOPE_TYPE, static_cast<int32_t>(asyncContext->certificateScope));
+    want.SetParam(CERT_MANAGER_CALLER_BUNDLENAME, asyncContext->labelName);
+    want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
+    return want;
+}
+
+napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_D("cert install dialog enter");
     napi_value result = nullptr;
@@ -206,29 +217,25 @@ napi_value CMNapiOpenInstallCertManagerDialog(napi_env env, napi_callback_info i
     }
 
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
-    if (CMCheckArgvVaild(env, asyncContext, argv) == nullptr) {
-        CM_LOG_E("check argv vaild faild");
+    asyncContext->env = env;
+    if (CMCheckArgvAndInitContext(asyncContext, argv, sizeof(argv) / sizeof(argv[0])) == nullptr) {
+        CM_LOG_E("check argv vaild and init faild");
         return nullptr;
     }
 
-    std::string labelName;
-    int32_t resCode = asyncContext->context->GetResourceManager()->GetStringByName("app_name", labelName);
+    if (asyncContext->context->GetResourceManager() == nullptr) {
+        CM_LOG_E("context get resourcemanager faild");
+        return nullptr;
+    }
+    int32_t resCode = asyncContext->context->GetResourceManager()->GetStringByName("app_name",
+        asyncContext->labelName);
     if (resCode != CM_SUCCESS) {
         CM_LOG_E("get labelName faild, code is %d", resCode);
         return nullptr;
     }
 
-    OHOS::AAFwk::Want want;
-    want.SetElementName(CERT_MANAGER_BUNDLENAME, CERT_MANAGER_ABILITYNAME);
-    want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(asyncContext->certificateType));
-    want.SetParam(CERT_MANAGER_CERTIFICATE_DATA, asyncContext->certStr);
-    want.SetParam(CERT_MANAGER_CERTSCOPE_TYPE, static_cast<int32_t>(asyncContext->certificateScope));
-    want.SetParam(CERT_MANAGER_CALLER_BUNDLENAME, labelName);
-    want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
-    NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
-
     auto uiExtCallback = std::make_shared<CmInstallUIExtensionCallback>(asyncContext);
-    StartUIExtensionAbility(asyncContext, want, uiExtCallback);
+    StartUIExtensionAbility(asyncContext, CMGetInstallCertWant(asyncContext), uiExtCallback);
     CM_LOG_D("cert install dialog end");
     return result;
 }

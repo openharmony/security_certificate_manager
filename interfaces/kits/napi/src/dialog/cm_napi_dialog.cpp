@@ -88,7 +88,7 @@ static napi_value CMDialogNapiRegister(napi_env env, napi_value exports)
 
         /* dialog */
         DECLARE_NAPI_FUNCTION("openCertificateManagerDialog", CMNapiOpenCertManagerDialog),
-        DECLARE_NAPI_FUNCTION("openInstallCertificateDialog", CMNapiOpenInstallCertManagerDialog),
+        DECLARE_NAPI_FUNCTION("openInstallCertificateDialog", CMNapiOpenInstallCertDialog),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
     return exports;
