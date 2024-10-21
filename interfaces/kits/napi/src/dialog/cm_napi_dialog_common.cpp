@@ -287,11 +287,13 @@ napi_value GetUint8ArrayToBase64Str(napi_env env, napi_value object, std::string
     }
     (void)memset_s(data, length, 0, length);
     if (memcpy_s(data, length, certData, length) != EOK) {
+        CmFree(data);
         CM_LOG_E("memcpy_s fail, length = %x", length);
         return nullptr;
     }
     std::string encode = Base64Encode(data, length);
     certArray = encode;
+    CmFree(data);
     return GetInt32(env, 0);
 }
 
