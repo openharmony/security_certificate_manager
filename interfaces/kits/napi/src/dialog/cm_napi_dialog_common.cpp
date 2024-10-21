@@ -21,7 +21,7 @@
 #include "cm_log.h"
 #include "cm_type.h"
 
-#define BYTE_SHIFT_10           0x10
+#define BYTE_SHIFT_16           0x10
 #define BYTE_SHIFT_8            0x08
 #define BYTE_SHIFT_6            6
 #define BASE64_URL_TABLE_SIZE   0x3F
@@ -113,7 +113,7 @@ void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncC
     return;
 }
 
-static std::string Base64Encode(const uint8_t *indata, const uint32_t length)
+static std::string EncodeBase64(const uint8_t *indata, const uint32_t length)
 {
     std::string encodeStr("");
     if (indata == nullptr) {
@@ -126,7 +126,7 @@ static std::string Base64Encode(const uint8_t *indata, const uint32_t length)
         unsigned int octetb = i < (int)length ? *(indata + (i++)) : 0;
         unsigned int octetc = i < (int)length ? *(indata + (i++)) : 0;
 
-        unsigned int triple = (octeta << BYTE_SHIFT_10) + (octetb << BYTE_SHIFT_8) + octetc;
+        unsigned int triple = (octeta << BYTE_SHIFT_16) + (octetb << BYTE_SHIFT_8) + octetc;
 
         encodeStr += g_base64Table[(triple >> BYTE_INDEX_THREE * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
         encodeStr += g_base64Table[(triple >> BYTE_INDEX_TWO   * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
@@ -291,7 +291,7 @@ napi_value GetUint8ArrayToBase64Str(napi_env env, napi_value object, std::string
         CM_LOG_E("memcpy_s fail, length = %x", length);
         return nullptr;
     }
-    std::string encode = Base64Encode(data, length);
+    std::string encode = EncodeBase64(data, length);
     certArray = encode;
     CmFree(data);
     return GetInt32(env, 0);
