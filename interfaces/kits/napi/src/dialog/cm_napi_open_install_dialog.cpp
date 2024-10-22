@@ -233,6 +233,7 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
         CM_LOG_E("get labelName faild, code is %d", resCode);
         return nullptr;
     }
+    NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
 
     auto uiExtCallback = std::make_shared<CmInstallUIExtensionCallback>(asyncContext);
     StartUIExtensionAbility(asyncContext, CMGetInstallCertWant(asyncContext), uiExtCallback);
