@@ -100,13 +100,6 @@ void CmUIExtensionCallback::OnError(const int32_t errorCode, const std::string& 
     if (SetErrorCode(errorCode)) {
         SendMessageBack();
     }
-    char errStr[ERROR_STR_LEN] = { 0 };
-    if (sprintf_s(errStr, ERROR_STR_LEN, "UIExtensionComponent OnError(), errorCode = %d, name = %s, message = %s",
-        errorCode, name.c_str(), message.c_str()) < 0) {
-        CM_LOG_E("copy error str failed");
-        return;
-    }
-    ThrowError(this->reqContext_->env, DIALOG_ERROR_GENERIC, errStr);
 }
 
 void CmUIExtensionCallback::OnRemoteReady(const std::shared_ptr<OHOS::Ace::ModalUIExtensionProxy>& uiProxy)
