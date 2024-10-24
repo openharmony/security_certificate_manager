@@ -33,7 +33,7 @@ extern "C" {
 #define CERT_BACKUP_CONFIG_ROOT_DIR "/data/service/el1/public/cert_manager_service/certificates/user_config"
 #define CERT_BACKUP_DIR_NAME "cacerts"
 #define CERT_CONFIG_FILE_SUFFIX ".config"
-#define CERT_BACKUP_FILENAME_FORMAT "%lx.%d"
+#define CERT_BACKUP_FILENAME_FORMAT "%08lx.%d"
 
 int32_t GetRootPath(uint32_t store, char *rootPath, uint32_t pathLen);
 
