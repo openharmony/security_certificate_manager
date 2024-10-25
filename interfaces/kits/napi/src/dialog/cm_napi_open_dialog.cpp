@@ -224,9 +224,9 @@ static void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext>
     OHOS::Ace::ModalUIExtensionConfig uiExtConfig;
     uiExtConfig.isProhibitBack = false;
     int32_t sessionId = uiContent->CreateModalUIExtension(want, extensionCallbacks, uiExtConfig);
-    CM_LOG_I("end CreateModalUIExtension sessionId = %d", sessionId);
+    CM_LOG_I("end CreateModalUIExtension");
     if (sessionId == 0) {
-        CM_LOG_E("CreateModalUIExtension failed, sessionId is %d", sessionId);
+        CM_LOG_E("CreateModalUIExtension failed");
         ThrowError(asyncContext->env, PARAM_ERROR, "CreateModalUIExtension failed");
     }
     uiExtCallback->SetSessionId(sessionId);
