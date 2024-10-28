@@ -20,6 +20,9 @@
 
 #include "cert_manager_api.h"
 #include "cm_log.h"
+#include "iservice_registry.h"
+#include "bundle_mgr_proxy.h"
+#include "system_ability_definition.h"
 
 #include "cm_napi_dialog_common.h"
 #include "want.h"
@@ -143,7 +146,6 @@ static napi_value CMCheckArgvAndInitContext(std::shared_ptr<CmUIExtensionRequest
     // Parse first argument for context.
     if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[PARAM0], asyncContext->context)) {
         CM_LOG_E("ParseUIAbilityContextReq failed");
-        ThrowError(asyncContext->env, PARAM_ERROR, "Get context failed.");
         return nullptr;
     }
 
@@ -151,31 +153,26 @@ static napi_value CMCheckArgvAndInitContext(std::shared_ptr<CmUIExtensionRequest
     uint32_t certificateType = 0;
     if (ParseUint32(asyncContext->env, argv[PARAM1], certificateType) == nullptr) {
         CM_LOG_E("parse type failed");
-        ThrowError(asyncContext->env, PARAM_ERROR, "parse type failed");
         return nullptr;
     }
     if (!IsCmCertificateTypeAndConvert(certificateType, asyncContext->certificateType)) {
         CM_LOG_E("certificateType invalid");
-        ThrowError(asyncContext->env, PARAM_ERROR, "certificateType invalid");
         return nullptr;
     }
 
     // Parse third argument for certificateScope.
     if (ParseUint32(asyncContext->env, argv[PARAM2], asyncContext->certificateScope) == nullptr) {
         CM_LOG_E("parse type failed");
-        ThrowError(asyncContext->env, PARAM_ERROR, "parse type failed");
         return nullptr;
     }
     if (!IsCmCertificateScopeEnum(asyncContext->certificateScope)) {
         CM_LOG_E("certificateScope invalid");
-        ThrowError(asyncContext->env, PARAM_ERROR, "certificateScope invalid");
         return nullptr;
     }
     
     // Parse fourth argument for cert.
     if (GetUint8ArrayToBase64Str(asyncContext->env, argv[PARAM3], asyncContext->certStr) == nullptr) {
-        ThrowError(asyncContext->env, PARAM_ERROR, "cert is not a uint8Array or the length is 0 or too long.");
-        CM_LOG_E("could not get cert");
+        CM_LOG_E("cert is not a uint8Array or the length is 0 or too long.");
         return nullptr;
     }
     return GetInt32(asyncContext->env, 0);
@@ -191,6 +188,55 @@ static OHOS::AAFwk::Want CMGetInstallCertWant(std::shared_ptr<CmUIExtensionReque
     want.SetParam(CERT_MANAGER_CALLER_BUNDLENAME, asyncContext->labelName);
     want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
     return want;
+}
+
+static OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
+{
+    auto systemAbilityManager = OHOS::SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (!systemAbilityManager) {
+        CM_LOG_E("fail to get system ability mgr.");
+        return nullptr;
+    }
+
+    auto remoteObject = systemAbilityManager->GetSystemAbility(OHOS::BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (!remoteObject) {
+        CM_LOG_E("fail to get bundle manager proxy.");
+        return nullptr;
+    }
+    return OHOS::iface_cast<OHOS::AppExecFwk::BundleMgrProxy>(remoteObject);
+}
+
+static int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncContext)
+{
+    OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> bundleMgrProxy = GetBundleMgrProxy();
+    if (bundleMgrProxy == nullptr) {
+        CM_LOG_E("Failed to get bundle manager proxy.");
+        return CM_FAILURE;
+    }
+
+    OHOS::AppExecFwk::BundleInfo bundleInfo;
+    int32_t flags = static_cast<int32_t>(OHOS::AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_DEFAULT) |
+        static_cast<int32_t>(OHOS::AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_APPLICATION) |
+        static_cast<int32_t>(OHOS::AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE) |
+        static_cast<int32_t>(OHOS::AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_ABILITY);
+    int32_t resCode = bundleMgrProxy->GetBundleInfoForSelf(flags, bundleInfo);
+    if (resCode != CM_SUCCESS) {
+        CM_LOG_E("Failed to get bundleInfo, resCode is %d", resCode);
+        return CM_FAILURE;
+    }
+
+    if (asyncContext->context->GetResourceManager() == nullptr) {
+        CM_LOG_E("context get resourcemanager faild");
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    resCode = asyncContext->context->GetResourceManager()->GetStringById(bundleInfo.applicationInfo.labelId,
+        asyncContext->labelName);
+    if (resCode != CM_SUCCESS) {
+        CM_LOG_E("getStringById is faild, resCode is %d", resCode);
+        return CM_FAILURE;
+    }
+    return CM_SUCCESS;
 }
 
 napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
@@ -220,17 +266,13 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
     asyncContext->env = env;
     if (CMCheckArgvAndInitContext(asyncContext, argv, sizeof(argv) / sizeof(argv[0])) == nullptr) {
         CM_LOG_E("check argv vaild and init faild");
+        ThrowError(env, PARAM_ERROR, "check argv vaild and init faild");
         return nullptr;
     }
 
-    if (asyncContext->context->GetResourceManager() == nullptr) {
-        CM_LOG_E("context get resourcemanager faild");
-        return nullptr;
-    }
-    int32_t resCode = asyncContext->context->GetResourceManager()->GetStringByName("app_name",
-        asyncContext->labelName);
-    if (resCode != CM_SUCCESS) {
-        CM_LOG_E("get labelName faild, code is %d", resCode);
+    if (GetCallerLabelName(asyncContext) != CM_SUCCESS) {
+        CM_LOG_E("get caller labelName faild");
+        ThrowError(env, DIALOG_ERROR_GENERIC, "get caller labelName faild");
         return nullptr;
     }
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
