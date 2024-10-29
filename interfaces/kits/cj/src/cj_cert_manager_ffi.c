@@ -41,8 +41,11 @@ int32_t FfiCertManagerGetAppCert(const struct CmBlob *keyUri, const uint32_t sto
         free(credential.credData.data);
         return errCode;
     }
-    // ATTENTION: resource will be released by caller.
-    // Caller will ensure `retObj` is always not null.
+    /* ATTENTION:
+     * 1. Resource will be released by caller.
+     * 2. strdup may return nullptr, but caller will handle nullptr
+     * 3. Caller will ensure `retObj` is always not null.
+     */
     retObj->isExist = credential.isExist;
     retObj->type = strdup(credential.type);
     retObj->alias = strdup(credential.alias);
@@ -104,8 +107,11 @@ int32_t FfiCertManagerGetUserCertList(const uint32_t store, uint32_t *retCount, 
             return CMR_ERROR_MALLOC_FAIL;
         }
         *retCount = certificateList.certsCount;
-        for (int i = 0; i < certificateList.certsCount; ++i) {
-            // ATTENTION: resource will be released by caller.
+        for (uint32_t i = 0; i < certificateList.certsCount; ++i) {
+            /* ATTENTION:
+             * 1. Resource will be released by caller.
+             * 2. strdup may return nullptr, but caller will handle nullptr
+             */
             (*retObj)->uri = strdup(certificateList.certAbstract[i].uri);
             (*retObj)->certAlias = strdup(certificateList.certAbstract[i].certAlias);
             (*retObj)[i].status = certificateList.certAbstract[i].status;
@@ -130,8 +136,11 @@ int32_t FfiCertManagerGetUserCertInfo(const struct CmBlob *certUri, const uint32
         free(info.certInfo.data);
         return errCode;
     }
-    // ATTENTION: resource will be released by caller.
-    // Caller will ensure `retObj` is always not null.
+    /* ATTENTION:
+     * 1. Resource will be released by caller.
+     * 2. strdup may return nullptr, but caller will handle nullptr
+     * 3. Caller will ensure `retObj` is always not null.
+     */
     retObj->uri = strdup(info.uri);
     retObj->certAlias = strdup(info.certAlias);
     retObj->status = info.status;
