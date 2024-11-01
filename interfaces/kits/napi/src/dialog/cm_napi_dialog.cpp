@@ -35,8 +35,8 @@ static napi_value CreateCmErrorCode(napi_env env)
 
     AddInt32Property(env, dialogErrorCode, "ERROR_GENERIC", DIALOG_ERROR_GENERIC);
     AddInt32Property(env, dialogErrorCode, "ERROR_OPERATION_CANCELED", DIALOG_ERROR_OPERATION_CANCELED);
-    AddInt32Property(env, dialogErrorCode, "ERROR_INSTALL_FAILED", DIALOG_ERROR_INSTALL_FAILED);
-    AddInt32Property(env, dialogErrorCode, "ERROR_NOT_SUPPORTED", DIALOG_ERROR_NOT_SUPPORTED);
+    AddInt32Property(env, dialogErrorCode, "ERROR_OPERATION_FAILED", DIALOG_ERROR_INSTALL_FAILED);
+    AddInt32Property(env, dialogErrorCode, "ERROR_DEVICE_NOT_SUPPORTED", DIALOG_ERROR_NOT_SUPPORTED);
 
     return dialogErrorCode;
 }
