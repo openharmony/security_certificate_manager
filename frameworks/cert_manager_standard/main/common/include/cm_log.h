@@ -22,12 +22,10 @@
 extern "C" {
 #endif
 
-#ifdef _CM_LOG_ENABLE_
 #undef LOG_TAG
 #define LOG_TAG "CertManager"
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002F09 /* CertManager's domain id */
-#endif
 
 enum CmLogLevel {
     CM_LOG_LEVEL_I,
@@ -36,19 +34,12 @@ enum CmLogLevel {
     CM_LOG_LEVEL_D,
 };
 
-#ifdef _CM_LOG_ENABLE_
 void CmLog(uint32_t logLevel, const char *funcName, uint32_t lineNo, const char *format, ...);
 
 #define CM_LOG_I(...) CmLog(CM_LOG_LEVEL_I, __func__, __LINE__, __VA_ARGS__)
 #define CM_LOG_W(...) CmLog(CM_LOG_LEVEL_W, __func__, __LINE__, __VA_ARGS__)
 #define CM_LOG_E(...) CmLog(CM_LOG_LEVEL_E, __func__, __LINE__, __VA_ARGS__)
 #define CM_LOG_D(...) CmLog(CM_LOG_LEVEL_D, __func__, __LINE__, __VA_ARGS__)
-#else
-#define CM_LOG_I(...)
-#define CM_LOG_W(...)
-#define CM_LOG_E(...)
-#define CM_LOG_D(...)
-#endif
 
 #ifdef __cplusplus
 }

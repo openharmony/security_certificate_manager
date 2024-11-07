@@ -17,7 +17,6 @@
 
 #include "cm_fuzz_test_common.h"
 #include "cm_sa.h"
-#include "cm_test_common.h"
 #include "message_option.h"
 #include "message_parcel.h"
 
@@ -67,7 +66,7 @@ namespace OHOS {
 
         MessageParcel reply;
         MessageOption option;
-        CertmanagerTest::SetATPermission();
+        SetATPermission();
         SystemAbilityOnDemandReason reason;
         (void)myService.OnStart(reason);
         (void)myService.OnRemoteRequest(code, messageData, reply, option);

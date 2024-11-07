@@ -11,11 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
 
+config("cert_manager_config") {
+  include_dirs = [ "sa" ]
+}
 ohos_static_library("libcert_manager_service_os_dependency_standard_static") {
   subsystem_name = "security"
   part_name = "certificate_manager"
+  public_configs = [ ":cert_manager_config" ]
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -25,20 +30,13 @@ ohos_static_library("libcert_manager_service_os_dependency_standard_static") {
     integer_overflow = true
     ubsan = true
   }
-  include_dirs = [
-    "../../../cert_manager_engine/main/core/include",
-    "../../../cert_manager_engine/main/rdb/include",
-    "../../../../../interfaces/innerkits/cert_manager_standard/main/include",
-  ]
-
-  defines = [
-    "L2_STANDARD",
-    "_CM_LOG_ENABLE_",
-  ]
+  include_dirs = [ "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main/include" ]
+  defines = []
   sources = [ "sa/cm_sa.cpp" ]
   deps = [
-    "../../../../../frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
-    "../../../../../frameworks/cert_manager_standard/main/os_dependency:libcert_manager_log_mem_static",
+    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
+    "${cert_manager_root_dir}/services/cert_manager_standard/cert_manager_engine/main/core:cert_manager_engine_core_standard",
+    "${cert_manager_root_dir}/services/cert_manager_standard/cert_manager_engine/main/rdb:libcert_manager_rdb_static",
     "idl:libcm_service_idl_standard_static",
   ]
 
@@ -61,7 +59,6 @@ ohos_static_library("libcert_manager_service_os_dependency_standard_static") {
       "os_account:os_account_innerkits",
     ]
   }
-
   cflags_cc = [
     "-Wall",
     "-Werror",

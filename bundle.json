@@ -16,7 +16,10 @@
     "component": {
       "name": "certificate_manager",
       "subsystem": "security",
-      "syscap": [ "SystemCapability.Security.CertificateManager" ],
+      "syscap": [
+        "SystemCapability.Security.CertificateManagerDialog",
+        "SystemCapability.Security.CertificateManager"
+      ],
       "features": [
         "certificate_manager_deps_huks_enabled",
         "certificate_manager_feature_ca_enabled",
@@ -74,7 +77,8 @@
             "name": "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
             "header": {
               "header_files": [
-                "cert_manager_api.h"
+                "cert_manager_api.h",
+                "cm_type.h"
               ],
               "header_base": "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main/include"
             }

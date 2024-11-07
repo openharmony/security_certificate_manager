@@ -13,6 +13,7 @@
 
 use_crypto_lib = "openssl"
 non_rwlock_support = false
+cert_manager_root_dir = "//base/security/certificate_manager"
 
 declare_args() {
   # depend on the definition of huks security level in base/security/huks/build/config.gni
