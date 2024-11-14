@@ -23,6 +23,8 @@
 #include "securec.h"
 
 namespace CmFuzzTest {
+void SetATPermission(void);
+
 constexpr uint32_t CERT_INFO_LEN = sizeof(uint32_t) + MAX_LEN_CERTIFICATE + sizeof(uint32_t) +
     MAX_LEN_CERT_ALIAS + sizeof(uint32_t);
 

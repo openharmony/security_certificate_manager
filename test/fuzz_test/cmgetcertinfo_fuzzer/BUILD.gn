@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/config/features.gni")
 import("//build/test.gni")
 
@@ -19,25 +20,20 @@ module_output_path = "certificate_manager/certificate_manager"
 ##############################fuzztest##########################################
 ohos_fuzztest("CmGetCertInfoFuzzTest") {
   module_out_path = module_output_path
-  fuzz_config_file = "../../../test/fuzz_test/cmgetcertinfo_fuzzer"
+  fuzz_config_file =
+      "${cert_manager_root_dir}/test/fuzz_test/cmgetcertinfo_fuzzer"
 
-  include_dirs = [
-    "../../../frameworks/cert_manager_standard/main/common/include",
-    "../../../test/unittest/include",
-  ]
   cflags = [
     "-g",
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  sources = [
-    "../../../test/unittest/src/cm_test_common.cpp",
-    "cmgetcertinfo_fuzzer.cpp",
-  ]
+  sources = [ "cmgetcertinfo_fuzzer.cpp" ]
   deps = [
-    "../../../interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
-    "../../../test/fuzz_test/fuzz_test_common:libcert_manager_fuzz_test_common_static",
+    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
+    "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+    "${cert_manager_root_dir}/test/fuzz_test/fuzz_test_common:libcert_manager_fuzz_test_common_static",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",

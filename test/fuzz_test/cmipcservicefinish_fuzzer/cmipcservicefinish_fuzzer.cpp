@@ -17,13 +17,12 @@
 
 #include "cm_fuzz_test_common.h"
 #include "cm_ipc_service.h"
-#include "cm_test_common.h"
 
 using namespace CmFuzzTest;
 namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
-        CertmanagerTest::SetATPermission();
+        SetATPermission();
         if (!IpcServiceApiFuzzerTest(data, size, CM_MSG_FINISH, false, CmIpcServiceFinish)) {
             return false;
         }

@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
 
 config("cert_manager_config") {
@@ -31,10 +32,7 @@ ohos_static_library("libcert_manager_rdb_static") {
     ubsan = true
   }
 
-  include_dirs = [
-    "../../../../../frameworks/cert_manager_standard/main/common/include",
-    "../../../../../interfaces/innerkits/cert_manager_standard/main/include",
-  ]
+  include_dirs = [ "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main/include" ]
 
   sources = [
     "src/cm_cert_property_rdb.cpp",
@@ -42,13 +40,12 @@ ohos_static_library("libcert_manager_rdb_static") {
     "src/cm_rdb_open_callback.cpp",
   ]
 
+  deps = [ "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static" ]
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
     "relational_store:native_rdb",
   ]
-
-  defines = [ "_CM_LOG_ENABLE_" ]
 
   cflags_cc = [
     "-Wall",

@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
 
 config("cert_manager_config") {
@@ -29,16 +30,11 @@ ohos_static_library("libcert_manager_common_standard_static") {
     integer_overflow = true
     ubsan = true
   }
-  defines = [
-    "L2_STANDARD",
-    "_CM_LOG_ENABLE_",
-  ]
+
   public_configs =
       [ ":cert_manager_config" ]  # Share include files for other gn when deps.
 
-  include_dirs =
-      [ "../../../../interfaces/innerkits/cert_manager_standard/main/include" ]
-
+  include_dirs = [ "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main/include" ]
   sources = [
     "src/cm_advsecmode_check.c",
     "src/cm_param.c",
@@ -54,7 +50,6 @@ ohos_static_library("libcert_manager_common_standard_static") {
     "openssl:libcrypto_shared",
   ]
   cflags = [
-    "-DHILOG_ENABLE",
     "-Wall",
     "-Werror",
   ]

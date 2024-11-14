@@ -17,7 +17,6 @@
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
-#include "cm_test_common.h"
 
 using namespace CmFuzzTest;
 namespace OHOS {
@@ -43,7 +42,7 @@ namespace OHOS {
             return false;
         }
 
-        CertmanagerTest::SetATPermission();
+        SetATPermission();
         (void)CmGetCertList(sysStore, &sysCertList);
 
         CmFree(myData);

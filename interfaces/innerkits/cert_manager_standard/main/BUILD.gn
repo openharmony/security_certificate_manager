@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
 
 config("cert_manager_config") {
@@ -32,23 +33,18 @@ if (os_level == "standard") {
     innerapi_tags = [
       "platformsdk",
       "chipsetsdk",
+      "sasdk",
     ]
     part_name = "certificate_manager"
     public_configs = [ ":cert_manager_config" ]
-    defines = [
-      "L2_STANDARD",
-      "_HARDWARE_ROOT_KEY_",
-      "_CM_LOG_ENABLE_",
-    ]
 
     sources = [ "src/cert_manager_api.c" ]
 
     cflags = [
-      "-DHILOG_ENABLE",
       "-Wall",
       "-Werror",
     ]
-    deps = [ "../../../../frameworks/cert_manager_standard/main:cert_manager_standard_frameworks" ]
+    deps = [ "${cert_manager_root_dir}/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks" ]
 
     external_deps = [
       "bounds_checking_function:libsec_shared",

@@ -16,15 +16,16 @@
 #include "cmappcert_fuzzer.h"
 
 #include "cm_fuzz_test_common.h"
-#include "cm_test_common.h"
-#include "cm_cert_data_part1_rsa.h"
+#include "cm_cert_data_rsa.h"
 #include "cm_ipc_client_serialization.h"
 #include "cm_ipc_service.h"
 #include "cm_param.h"
 #include "cert_manager_api.h"
+#include "cm_type.h"
 
 using namespace CmFuzzTest;
 namespace OHOS {
+    constexpr uint32_t TEST_USERID = 100;
     constexpr uint32_t MIN_DATA_USE_TIME = 4;
     static bool InstallAppCert(uint8_t *tmpData, uint32_t *remainSize, uint32_t *offset, uint32_t store,
         struct CmBlob *keyUri)
@@ -132,7 +133,7 @@ namespace OHOS {
 
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
-        CertmanagerTest::SetATPermission();
+        SetATPermission();
 
         uint32_t store;
         if (!GetUintFromBuffer(tmpData, &remainSize, &offset, &store)) {

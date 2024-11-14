@@ -11,8 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/test.gni")
-import("../cert_manager.gni")
 
 module_output_path = "cert_manager_standard/cert_manager_standard_test"
 
@@ -53,8 +53,8 @@ ohos_unittest("cm_sdk_test") {
   }
 
   deps = [
-    "../frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
-    "../interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
+    "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",

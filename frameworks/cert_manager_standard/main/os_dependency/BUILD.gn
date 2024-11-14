@@ -11,16 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
-
-config("cert_manager_log_mem_config") {
-  include_dirs = [ "../common/include" ]
-}
 
 ohos_static_library("libcert_manager_log_mem_static") {
   subsystem_name = "security"
   part_name = "certificate_manager"
-  public_configs = [ ":cert_manager_log_mem_config" ]
   branch_protector_ret = "pac_ret"
   sanitize = {
     cfi = true
@@ -30,23 +26,19 @@ ohos_static_library("libcert_manager_log_mem_static") {
     integer_overflow = true
     ubsan = true
   }
-  include_dirs =
-      [ "../../../../interfaces/innerkits/cert_manager_standard/main/include" ]
-  defines = [
-    "L2_STANDARD",
-    "_CM_LOG_ENABLE_",
-  ]
+  include_dirs = [ "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main/include" ]
+
   sources = [
     "./log/cm_log.c",
     "./posix/cm_mem.c",
   ]
 
+  deps = [ "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static" ]
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
   ]
   cflags = [
-    "-DHILOG_ENABLE",
     "-Wall",
     "-Werror",
   ]
@@ -70,18 +62,14 @@ ohos_static_library("libcert_manager_ipc_client_static") {
     integer_overflow = true
     ubsan = true
   }
-  include_dirs =
-      [ "../../../../interfaces/innerkits/cert_manager_standard/main/include" ]
-  defines = [
-    "L2_STANDARD",
-    "_CM_LOG_ENABLE_",
-  ]
+  include_dirs = [ "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main/include" ]
+
   sources = [
     "./cm_ipc/src/cm_ipc_client.c",
     "./cm_ipc/src/cm_ipc_client_serialization.c",
     "./cm_ipc/src/cm_request.cpp",
   ]
-  deps = [ ":libcert_manager_log_mem_static" ]
+  deps = [ "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static" ]
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
@@ -90,7 +78,6 @@ ohos_static_library("libcert_manager_ipc_client_static") {
     "samgr:samgr_proxy",
   ]
   cflags_cc = [
-    "-DHILOG_ENABLE",
     "-Wall",
     "-Werror",
   ]

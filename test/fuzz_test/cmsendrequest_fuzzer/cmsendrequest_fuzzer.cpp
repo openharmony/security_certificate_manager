@@ -18,7 +18,6 @@
 #include "cm_fuzz_test_common.h"
 #include "cm_param.h"
 #include "cm_request.h"
-#include "cm_test_common.h"
 
 using namespace CmFuzzTest;
 namespace OHOS {
@@ -56,7 +55,7 @@ namespace OHOS {
             return false;
         }
 
-        CertmanagerTest::SetATPermission();
+        SetATPermission();
         (void)SendRequest(type, &inBlob, &outBlob);
 
         CmFree(myData);
