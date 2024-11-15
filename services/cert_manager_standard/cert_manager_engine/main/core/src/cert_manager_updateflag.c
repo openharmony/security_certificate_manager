@@ -59,7 +59,7 @@ static int32_t GetUpdateFlag(uint8_t *updateFlag)
     uint8_t updateFlagTmp = false;
 
     if (updateFlag == NULL) {
-        CM_LOG_E("input params is invaild");
+        CM_LOG_E("input params is invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -109,7 +109,7 @@ int32_t IsCertNeedBackup(uint32_t userId, uint32_t uid, const struct CmBlob *cer
     char configPath[CERT_MAX_PATH_LEN] = { 0 };
 
     if (needUpdate == NULL) {
-        CM_LOG_E("input params is invaild");
+        CM_LOG_E("input params is invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 

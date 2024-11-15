@@ -341,7 +341,7 @@ static int32_t CmTraversalDir(const struct CmContext *context, const char *path,
 static int32_t CmTraversalBackupUidDir(const char *certConfigUidDirPath)
 {
     if (certConfigUidDirPath == NULL) {
-        CM_LOG_E("input params is invaild");
+        CM_LOG_E("input params is invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -373,7 +373,7 @@ static int32_t CmTraversalBackupUidDir(const char *certConfigUidDirPath)
 static int32_t CmTraversalBackupUserIdDir(const char *certConfigUserIdDirPath)
 {
     if (certConfigUserIdDirPath == NULL) {
-        CM_LOG_E("input params is invaild");
+        CM_LOG_E("input params is invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -478,7 +478,7 @@ int32_t CmDeleteProcessInfo(const struct CmContext *context)
         /* Delete user ca */
         ret = CmTraversalDir(context, USER_CA_STORE, CM_USER_TRUSTED_STORE);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmDeleteUserCa faild");
+            CM_LOG_E("CmDeleteUserCa failed");
         }
 
         /* Delete user ca backup and config */
@@ -491,19 +491,19 @@ int32_t CmDeleteProcessInfo(const struct CmContext *context)
     /* Delete private credentail */
     ret = CmTraversalDir(context, APP_CA_STORE, CM_PRI_CREDENTIAL_STORE);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("CmDeletePrivateCredential faild");
+        CM_LOG_E("CmDeletePrivateCredential failed");
     }
 
     /* Delete public credentail */
     ret = CmTraversalDir(context, CREDNTIAL_STORE, CM_CREDENTIAL_STORE);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("CmDeletePublicCredential faild");
+        CM_LOG_E("CmDeletePublicCredential failed");
     }
 
     /* Delete system credentail*/
     ret = CmTraversalDir(context, SYS_CREDNTIAL_STORE, CM_SYS_CREDENTIAL_STORE);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("CmDeletePublicCredential faild");
+        CM_LOG_E("CmDeletePublicCredential failed");
     }
 
     return ret;

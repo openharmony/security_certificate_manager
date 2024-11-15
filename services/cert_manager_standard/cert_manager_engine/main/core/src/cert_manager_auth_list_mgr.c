@@ -27,7 +27,7 @@
 
 #define MAX_PATH_LEN                        512
 #define MAX_AUTH_COUNT                      256
-#define AUTH_LIST_VERSON                    0
+#define AUTH_LIST_VERSION                    0
 
 static int32_t CheckAuthListFileSizeValid(const struct CmBlob *originList, uint32_t *authCount)
 {
@@ -219,7 +219,7 @@ static int32_t RefreshAuthListBuf(const char *path, const char *fileName, uint32
 static int32_t InitAuthListBuf(uint32_t uid, struct CmBlob *authList)
 {
     uint32_t count = 1;
-    uint32_t version = AUTH_LIST_VERSON;
+    uint32_t version = AUTH_LIST_VERSION;
     uint32_t size = sizeof(version) + sizeof(count) + sizeof(uid) * count;
     uint8_t *data = (uint8_t *)CMMalloc(size);
     if (data == NULL) {
