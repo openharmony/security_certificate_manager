@@ -383,11 +383,6 @@ static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)
     return (UINT32_MAX - a) < b;
 }
 
-static inline bool CmIsInvalidLength(uint32_t length)
-{
-    return (length == 0) || (length > MAX_OUT_BLOB_SIZE);
-}
-
 static inline int32_t CmCheckBlob(const struct CmBlob *blob)
 {
     if ((blob == NULL) || (blob->data == NULL) || (blob->size == 0)) {
