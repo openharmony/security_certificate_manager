@@ -782,7 +782,7 @@ static int32_t CertManagerCheckStorePermission(const struct CmContext *context, 
     } else if (store == CM_PRI_CREDENTIAL_STORE) {
         /* no additional checks here. context->caller can remove its own */
     } else {
-        CM_LOG_W("Invalid store type. Only a asingle store should be indicated: %u\n", store);
+        CM_LOG_W("Invalid store type. Only a single store should be indicated: %u\n", store);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 

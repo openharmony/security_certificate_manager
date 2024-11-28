@@ -88,13 +88,13 @@ int32_t InitCertList(struct CertList **cList)
         return CMR_ERROR_MALLOC_FAIL;
     }
 
-    uint32_t buffSize = MAX_COUNT_CERTIFICATE * sizeof(struct CertAbstract);
+    uint32_t buffSize = MAX_COUNT_CERTIFICATE_ALL * sizeof(struct CertAbstract);
     (*cList)->certAbstract = static_cast<struct CertAbstract *>(CmMalloc(buffSize));
     if ((*cList)->certAbstract == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
     }
     (void)memset_s((*cList)->certAbstract, buffSize, 0, buffSize);
-    (*cList)->certsCount = MAX_COUNT_CERTIFICATE;
+    (*cList)->certsCount = MAX_COUNT_CERTIFICATE_ALL;
 
     return CM_SUCCESS;
 }

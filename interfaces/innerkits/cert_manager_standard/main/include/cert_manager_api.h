@@ -79,6 +79,8 @@ CM_API_EXPORT int32_t CmInstallSystemAppCert(const struct CmAppCertParam *certPa
 CM_API_EXPORT int32_t CmInstallUserCACert(const struct CmBlob *userCert,
     const struct CmBlob *certAlias, const uint32_t userId, const bool status, struct CmBlob *certUri);
 
+CM_API_EXPORT int32_t CmGetUserCACertList(const struct UserCAProperty *property, struct CertList *certificateList);
+
 #ifdef __cplusplus
 }
 #endif
