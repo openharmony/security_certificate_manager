@@ -91,13 +91,14 @@ static int32_t CmTraversalDirAction(const struct CmContext *context, const char 
     int32_t ret = CM_SUCCESS;
 
     switch (store) {
-        case CM_CREDENTIAL_STORE :
+        case CM_CREDENTIAL_STORE:
             DeleteAuth(context, fileName, false);
             __attribute__((fallthrough));
-        case CM_PRI_CREDENTIAL_STORE :
+        case CM_PRI_CREDENTIAL_STORE:
+        case CM_SYS_CREDENTIAL_STORE:
             ret = CmTraversalDirActionCredential(filePath, fileName);
             break;
-        case CM_USER_TRUSTED_STORE :
+        case CM_USER_TRUSTED_STORE:
             ret = CmTraversalDirActionUserCa(context, filePath, fileName, store);
             break;
         default:
@@ -321,8 +322,8 @@ static int32_t CmTraversalDir(const struct CmContext *context, const char *path,
 
         if (CmIsNumeric(dire->d_name, strlen(dire->d_name) + 1, &uid) != CM_SUCCESS) {
             CM_LOG_E("parse string to uint32 failed.");
-            closedir(dir);
-            return CMR_ERROR_INVALID_ARGUMENT;
+            dire = readdir(dir);
+            continue;
         }
 
         if (dire->d_type == DT_DIR && (strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0) &&
@@ -503,7 +504,7 @@ int32_t CmDeleteProcessInfo(const struct CmContext *context)
     /* Delete system credentail*/
     ret = CmTraversalDir(context, SYS_CREDNTIAL_STORE, CM_SYS_CREDENTIAL_STORE);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("CmDeletePublicCredential failed");
+        CM_LOG_E("CmDeleteSystemCredential failed");
     }
 
     return ret;
