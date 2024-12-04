@@ -100,6 +100,7 @@ const struct CmJSKeyDigestCmKeyDigestMap DIGEST_MAP[] = {
     { CM_JS_DIGEST_SHA256, CM_DIGEST_SHA256 },
     { CM_JS_DIGEST_SHA384, CM_DIGEST_SHA384 },
     { CM_JS_DIGEST_SHA512, CM_DIGEST_SHA512 },
+    { CM_JS_DIGEST_SM3, CM_DIGEST_SM3 },
 };
 
 static napi_value GetPadding(napi_env env, napi_value object, uint32_t *paddingRet)

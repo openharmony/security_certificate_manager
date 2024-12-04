@@ -953,4 +953,48 @@ HWTEST_F(CmSysAppCertTest, SysAppCertTest043, TestSize.Level0)
     ret = CmUninstallAppCert(&sysKeyUri, CM_SYS_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "SysAppCertTest043 uninstall failed, retcode:" << ret;
 }
+
+/**
+ * @tc.name: SysAppCertTest044
+ * @tc.desc: install system sm2, oid is valid
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmSysAppCertTest, SysAppCertTest044, TestSize.Level0)
+{
+    char retUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob sysKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+
+    uint8_t certAliasBuf[] = "SyskeySM2043";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_sm2AppCert, (struct CmBlob *)&g_appSM2CertPwd,
+       &certAlias, CM_SYS_CREDENTIAL_STORE, TEST_USERID };
+    int32_t ret = CmInstallSystemAppCert(&appCertParam, &sysKeyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "SysAppCertTest001 credentail test failed, retcode:" << ret;
+
+    char uriBuf[] = "oh:t=sk;o=SyskeySM2043;u=100;a=0";
+    EXPECT_EQ(strcmp(uriBuf, (char *)sysKeyUri.data), 0) << "strcmp failed";
+
+    ret = CmUninstallAppCert(&sysKeyUri, CM_SYS_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "SysAppCertTest001 uninstall failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: SysAppCertTest045
+ * @tc.desc: install system sm2, oid is invalid
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmSysAppCertTest, SysAppCertTest045, TestSize.Level0)
+{
+    char retUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob sysKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+
+    uint8_t certAliasBuf[] = "SyskeySM2044";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_sm2AppCert3, (struct CmBlob *)&g_appSM2CertPwd,
+       &certAlias, CM_SYS_CREDENTIAL_STORE, TEST_USERID };
+    int32_t ret = CmInstallSystemAppCert(&appCertParam, &sysKeyUri);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_CERT_FORMAT) << "SysAppCertTest001 credentail test failed, retcode:" << ret;
+}
 }

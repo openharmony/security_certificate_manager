@@ -86,6 +86,7 @@ namespace CMNapi {
         AddInt32Property(env, keyDigest, "CM_DIGEST_SHA256", CM_JS_DIGEST_SHA256);
         AddInt32Property(env, keyDigest, "CM_DIGEST_SHA384", CM_JS_DIGEST_SHA384);
         AddInt32Property(env, keyDigest, "CM_DIGEST_SHA512", CM_JS_DIGEST_SHA512);
+        AddInt32Property(env, keyDigest, "CM_DIGEST_SM3", CM_JS_DIGEST_SM3);
         return keyDigest;
     }
 
