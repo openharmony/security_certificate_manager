@@ -26,7 +26,7 @@ using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
 static constexpr uint32_t DEFAULT_SIGNATURE_LEN = 1024;
-static constexpr uint32_t MAX_SESSION_NUM_MORE_1 = 10;
+static constexpr uint32_t MAX_SESSION_NUM_MORE_1 = 16; /* max session count is 15 */
 
 class CmFinishTest : public testing::Test {
 public:
@@ -59,20 +59,23 @@ void CmFinishTest::TearDown()
 static const uint8_t g_uriData[] = "oh:t=ak;o=TestFinishSignVerify;u=0;a=0";
 static const CmBlob g_keyUri = { sizeof(g_uriData), (uint8_t *)g_uriData };
 
+static const uint8_t g_uriDataSysCred[] = "oh:t=sk;o=TestFinishSignVerify;u=100;a=0";
+static const CmBlob g_keyUriSysCred = { sizeof(g_uriDataSysCred), (uint8_t *)g_uriDataSysCred };
+
 static const uint8_t g_messageData[] = "This_is_test_message_for_test_sign_and_verify";
 
-static void TestInstallAppCert(uint32_t alg)
+static void TestInstallAppCert(uint32_t alg, uint32_t store)
 {
     uint8_t aliasData[] = "TestFinishSignVerify";
     struct CmBlob alias = { sizeof(aliasData), aliasData };
 
-    int32_t ret = TestGenerateAppCert(&alias, alg, CM_CREDENTIAL_STORE);
+    int32_t ret = TestGenerateAppCert(&alias, alg, store);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert failed, retcode:" << ret;
 }
 
-static void TestUninstallAppCert(void)
+static void TestUninstallAppCert(uint32_t store)
 {
-    int32_t ret = CmUninstallAppCert(&g_keyUri, CM_CREDENTIAL_STORE);
+    int32_t ret = CmUninstallAppCert(store == CM_SYS_CREDENTIAL_STORE ? &g_keyUriSysCred : &g_keyUri, store);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert failed, retcode:" << ret;
 }
 
@@ -125,11 +128,9 @@ static void TestVerify(const struct CmBlob *keyUri, const struct CmSignatureSpec
     EXPECT_EQ(ret, CM_SUCCESS) << "TestVerify CmAbort test failed";
 }
 
-static void TestSignVerify(uint32_t alg, bool isValidSignature, struct CmSignatureSpec *spec)
-{
-    /* install credential */
-    TestInstallAppCert(alg);
 
+static void SignVerify(const struct CmBlob *keyUri, bool isValidSignature, struct CmSignatureSpec *spec)
+{
     struct CmBlob message = { 0, nullptr };
     uint8_t srcData[] = {
         0xc2, 0xa7, 0xc5, 0x33, 0x79, 0xb0, 0xcd, 0x86, 0x74, 0x09, 0x98, 0x16, 0xd5, 0x85, 0x1b, 0xd6,
@@ -148,14 +149,26 @@ static void TestSignVerify(uint32_t alg, bool isValidSignature, struct CmSignatu
 
     /* sign */
     spec->purpose = CM_KEY_PURPOSE_SIGN;
-    TestSign(&g_keyUri, spec, &message, &signature);
+    TestSign(keyUri, spec, &message, &signature);
 
     /* verify */
     spec->purpose = CM_KEY_PURPOSE_VERIFY;
-    TestVerify(&g_keyUri, spec, &message, &signature, isValidSignature);
+    TestVerify(keyUri, spec, &message, &signature, isValidSignature);
+}
 
-    /* uninstall rsa credential */
-    TestUninstallAppCert();
+static void TestSignVerify(uint32_t alg, bool isValidSignature, struct CmSignatureSpec *spec)
+{
+    TestInstallAppCert(alg, CM_CREDENTIAL_STORE);
+    SignVerify(&g_keyUri, isValidSignature, spec);
+    TestUninstallAppCert(CM_CREDENTIAL_STORE);
+}
+
+static void TestSignVerifyWithCredType(uint32_t alg, uint32_t store, bool isValidSignature,
+    struct CmSignatureSpec *spec)
+{
+    TestInstallAppCert(alg, store);
+    SignVerify(store == CM_SYS_CREDENTIAL_STORE ? &g_keyUriSysCred : &g_keyUri, isValidSignature, spec);
+    TestUninstallAppCert(store);
 }
 
 static void ProducerSessionMaxTest(void)
@@ -176,6 +189,9 @@ static void ProducerSessionMaxTest(void)
         struct CmBlob handleBlob = { sizeof(uint64_t), (uint8_t *)&handle[i] };
 
         int32_t expectRet = CM_SUCCESS;
+        if (i == 0) {
+            expectRet = CMR_ERROR_NOT_EXIST;
+        }
         ret = CmUpdate(&handleBlob, &updateInput);
         EXPECT_EQ(ret, expectRet) << "update failed, i:" << i;
 
@@ -351,9 +367,9 @@ HWTEST_F(CmFinishTest, CmFinishTest010, TestSize.Level0)
 */
 HWTEST_F(CmFinishTest, CmFinishTest011, TestSize.Level0)
 {
-    TestInstallAppCert(CERT_KEY_ALG_ECC);
+    TestInstallAppCert(CERT_KEY_ALG_ECC, CM_CREDENTIAL_STORE);
     ProducerSessionMaxTest();
-    TestUninstallAppCert();
+    TestUninstallAppCert(CM_CREDENTIAL_STORE);
 }
 
 /**
@@ -668,6 +684,85 @@ HWTEST_F(CmFinishTest, CmFinishTest036, TestSize.Level0)
 {
     struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, 0 };
     TestSignVerify(CERT_KEY_ALG_ED25519, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest037
+* @tc.desc: Test CmFinish normal case: caller is producer, sm2 sign verify, sm3, public cred
+* @tc.type: FUNC
+*/
+HWTEST_F(CmFinishTest, CmFinishTest037, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SM3 };
+    TestSignVerify(CERT_KEY_ALG_SM2_1, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest038
+* @tc.desc: Test CmFinish normal case: caller is producer, sm2 sign verify, sm3 with data2, public cred
+* @tc.type: FUNC
+*/
+HWTEST_F(CmFinishTest, CmFinishTest038, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SM3 };
+    TestSignVerify(CERT_KEY_ALG_SM2_2, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest039
+* @tc.desc: Test CmFinish normal case: caller is producer, sm2 sign verify, sm3 with data2, private cred
+* @tc.type: FUNC
+*/
+HWTEST_F(CmFinishTest, CmFinishTest039, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SM3 };
+    TestSignVerifyWithCredType(CERT_KEY_ALG_SM2_2, CM_PRI_CREDENTIAL_STORE, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest040
+* @tc.desc: Test CmFinish normal case: caller is producer, sm2 sign verify, sm3 with data2, system cred
+* @tc.type: FUNC
+*/
+HWTEST_F(CmFinishTest, CmFinishTest040, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SM3 };
+    TestSignVerifyWithCredType(CERT_KEY_ALG_SM2_2, CM_SYS_CREDENTIAL_STORE, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest041
+* @tc.desc: Test CmFinish abnormal case: caller is producer, sm2 sign verify(sign invalid)
+* @tc.type: FUNC
+*/
+HWTEST_F(CmFinishTest, CmFinishTest041, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SM3 };
+    TestSignVerify(CERT_KEY_ALG_SM2_1, false, &spec);
+}
+
+/**
+* @tc.name: CmFinishTest042
+* @tc.desc: Test CmFinish normal case: caller is producer, sm2 sign verify, digest_none with data2, public cred
+* @tc.type: FUNC
+*/
+HWTEST_F(CmFinishTest, CmFinishTest042, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_NONE };
+    TestSignVerify(CERT_KEY_ALG_SM2_2, true, &spec);
+}
+
+/**
+* @tc.name: CmFinishTestPerformance043
+* @tc.desc: 1000 times normal case: caller is producer, sm2 sign verify
+* @tc.type: FUNC
+*/
+HWTEST_F(CmFinishTest, CmFinishTestPerformance043, TestSize.Level1)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SM3 };
+    for (uint32_t i = 0; i < PERFORMACE_COUNT; ++i) {
+        TestSignVerify(CERT_KEY_ALG_SM2_1, true, &spec);
+    }
 }
 } // end of namespace
 

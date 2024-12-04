@@ -49,20 +49,26 @@ void CmInitTest::TearDownTestCase(void)
 
 static const uint8_t g_rsaUriData[] = "oh:t=ak;o=TestInitRsa;u=0;a=0";
 static const uint8_t g_eccUriData[] = "oh:t=ak;o=TestInitEcc;u=0;a=0";
+static const uint8_t g_sm2UriData[] = "oh:t=ak;o=TestInitSM2;u=0;a=0";
 static const CmBlob g_rsaKeyUri = { sizeof(g_rsaUriData), (uint8_t *)g_rsaUriData };
 static const CmBlob g_eccKeyUri = { sizeof(g_eccUriData), (uint8_t *)g_eccUriData };
+static const CmBlob g_sm2KeyUri = { sizeof(g_sm2UriData), (uint8_t *)g_sm2UriData };
 
 void CmInitTest::SetUp()
 {
     uint8_t aliasRsaData[] = "TestInitRsa";
     uint8_t aliasEccData[] = "TestInitEcc";
+    uint8_t aliasSM2Data[] = "TestInitSM2";
     struct CmBlob aliasRsa = { sizeof(aliasRsaData), aliasRsaData };
     struct CmBlob aliasEcc = { sizeof(aliasEccData), aliasEccData };
+    struct CmBlob aliasSM2 = { sizeof(aliasSM2Data), aliasSM2Data };
 
     int32_t ret = TestGenerateAppCert(&aliasRsa, CERT_KEY_ALG_RSA, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert rsa failed, retcode:" << ret;
     ret = TestGenerateAppCert(&aliasEcc, CERT_KEY_ALG_ECC, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert ecc failed, retcode:" << ret;
+    ret = TestGenerateAppCert(&aliasSM2, CERT_KEY_ALG_SM2_1, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert sm2 failed, retcode:" << ret;
 }
 
 void CmInitTest::TearDown()
@@ -71,6 +77,8 @@ void CmInitTest::TearDown()
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert rsa failed, retcode:" << ret;
     ret = CmUninstallAppCert(&g_eccKeyUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert ecc failed, retcode:" << ret;
+    ret = CmUninstallAppCert(&g_sm2KeyUri, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert sm2 failed, retcode:" << ret;
 }
 
 /**
@@ -394,6 +402,110 @@ HWTEST_F(CmInitTest, CmInitTestPerformance019, TestSize.Level1)
     int32_t ret;
     for (uint32_t i = 0; i < PERFORMACE_COUNT; ++i) {
         ret = CmInit(&g_eccKeyUri, &spec, &handle);
+        EXPECT_EQ(ret, CM_SUCCESS);
+        ret = CmAbort(&handle);
+        EXPECT_EQ(ret, CM_SUCCESS);
+    }
+}
+
+/**
+ * @tc.name: CmInitTest020
+ * @tc.desc: normal case: caller is producer, init once sm2 with sm3
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmInitTest, CmInitTest020, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SM3 };
+    uint64_t handleValue1 = 0;
+    struct CmBlob handle1 = { sizeof(handleValue1), (uint8_t *)&handleValue1 };
+
+    int32_t ret = CmInit(&g_sm2KeyUri, &spec, &handle1);
+    EXPECT_EQ(ret, CM_SUCCESS);
+
+    spec.purpose = CM_KEY_PURPOSE_VERIFY;
+    uint64_t handleValue2 = 0;
+    struct CmBlob handle2 = { sizeof(handleValue2), (uint8_t *)&handleValue2 };
+    ret = CmInit(&g_sm2KeyUri, &spec, &handle2);
+    EXPECT_EQ(ret, CM_SUCCESS);
+}
+
+/**
+ * @tc.name: CmInitTest021
+ * @tc.desc: Abnormal case: Test init sm2 with SHA256
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmInitTest, CmInitTest021, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SHA256 };
+    uint64_t handleValue1 = 0;
+    struct CmBlob handle1 = { sizeof(handleValue1), (uint8_t *)&handleValue1 };
+
+    int32_t ret = CmInit(&g_sm2KeyUri, &spec, &handle1);
+    EXPECT_EQ(ret, CMR_ERROR_KEY_OPERATION_FAILED);
+
+    spec.purpose = CM_KEY_PURPOSE_VERIFY;
+    uint64_t handleValue2 = 0;
+    struct CmBlob handle2 = { sizeof(handleValue2), (uint8_t *)&handleValue2 };
+    ret = CmInit(&g_sm2KeyUri, &spec, &handle2);
+    EXPECT_EQ(ret, CMR_ERROR_KEY_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name: CmInitTest022
+ * @tc.desc: Abnormal case: Test init ecc with sm3
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmInitTest, CmInitTest022, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SM3 };
+    uint64_t handleValue1 = 0;
+    struct CmBlob handle1 = { sizeof(handleValue1), (uint8_t *)&handleValue1 };
+
+    int32_t ret = CmInit(&g_eccKeyUri, &spec, &handle1);
+    EXPECT_EQ(ret, CMR_ERROR_KEY_OPERATION_FAILED);
+
+    spec.purpose = CM_KEY_PURPOSE_VERIFY;
+    uint64_t handleValue2 = 0;
+    struct CmBlob handle2 = { sizeof(handleValue2), (uint8_t *)&handleValue2 };
+    ret = CmInit(&g_eccKeyUri, &spec, &handle2);
+    EXPECT_EQ(ret, CMR_ERROR_KEY_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name: CmInitTest023
+ * @tc.desc: normal case: caller is producer, init once sm2 with non_digest
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmInitTest, CmInitTest023, TestSize.Level0)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_NONE };
+    uint64_t handleValue1 = 0;
+    struct CmBlob handle1 = { sizeof(handleValue1), (uint8_t *)&handleValue1 };
+
+    int32_t ret = CmInit(&g_sm2KeyUri, &spec, &handle1);
+    EXPECT_EQ(ret, CM_SUCCESS);
+
+    spec.purpose = CM_KEY_PURPOSE_VERIFY;
+    uint64_t handleValue2 = 0;
+    struct CmBlob handle2 = { sizeof(handleValue2), (uint8_t *)&handleValue2 };
+    ret = CmInit(&g_sm2KeyUri, &spec, &handle2);
+    EXPECT_EQ(ret, CM_SUCCESS);
+}
+
+/**
+ * @tc.name: CmInitTestPerformance024
+ * @tc.desc: 1000 times: caller is producer, init sm2
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmInitTest, CmInitTestPerformance024, TestSize.Level1)
+{
+    struct CmSignatureSpec spec = { CM_KEY_PURPOSE_SIGN, 0, CM_DIGEST_SM3 };
+    uint64_t handleValue = 0;
+    struct CmBlob handle = { sizeof(handleValue), (uint8_t *)&handleValue };
+
+    int32_t ret;
+    for (uint32_t i = 0; i < PERFORMACE_COUNT; ++i) {
+        ret = CmInit(&g_sm2KeyUri, &spec, &handle);
         EXPECT_EQ(ret, CM_SUCCESS);
         ret = CmAbort(&handle);
         EXPECT_EQ(ret, CM_SUCCESS);

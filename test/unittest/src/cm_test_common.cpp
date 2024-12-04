@@ -28,6 +28,7 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include <unistd.h>
+#include <unordered_map>
 
 namespace CertmanagerTest {
 constexpr uint32_t SLEEP_TIME = 3;
@@ -36,6 +37,36 @@ constexpr int32_t PERMISSION_INDEX0 = 0;
 constexpr int32_t PERMISSION_INDEX1 = 1;
 constexpr int32_t PERMISSION_INDEX2 = 2;
 constexpr int32_t PERMISSION_INDEX3 = 3;
+
+static const std::unordered_map<uint32_t, const uint8_t*> ALG_CODE_TO_CERT_DATA = {
+    { CERT_KEY_ALG_RSA, g_rsa2048P12CertInfo },
+    { CERT_KEY_ALG_ECC, g_eccP256P12CertInfo },
+    { CERT_KEY_ALG_RSA_512, g_rsa512P12CertInfo },
+    { CERT_KEY_ALG_RSA_1024, g_rsa1024P12CertInfo },
+    { CERT_KEY_ALG_RSA_3072, g_rsa3072P12CertInfo },
+    { CERT_KEY_ALG_RSA_4096, g_rsa4096P12CertInfo },
+    { CERT_KEY_ALG_ECC_P224, g_eccP224P12CertInfo },
+    { CERT_KEY_ALG_ECC_P384, g_eccP384P12CertInfo },
+    { CERT_KEY_ALG_ECC_P521, g_eccP521P12CertInfo },
+    { CERT_KEY_ALG_ED25519, g_ed25519P12CertInfo },
+    { CERT_KEY_ALG_SM2_1, g_sm2PfxCertInfo },
+    { CERT_KEY_ALG_SM2_2, g_sm2PfxCertInfo2 },
+};
+
+static const std::unordered_map<uint32_t, uint32_t> ALG_CODE_TO_CERT_SIZE = {
+    { CERT_KEY_ALG_RSA, sizeof(g_rsa2048P12CertInfo) },
+    { CERT_KEY_ALG_ECC, sizeof(g_eccP256P12CertInfo) },
+    { CERT_KEY_ALG_RSA_512, sizeof(g_rsa512P12CertInfo) },
+    { CERT_KEY_ALG_RSA_1024, sizeof(g_rsa1024P12CertInfo) },
+    { CERT_KEY_ALG_RSA_3072, sizeof(g_rsa3072P12CertInfo) },
+    { CERT_KEY_ALG_RSA_4096, sizeof(g_rsa4096P12CertInfo) },
+    { CERT_KEY_ALG_ECC_P224, sizeof(g_eccP224P12CertInfo) },
+    { CERT_KEY_ALG_ECC_P384, sizeof(g_eccP384P12CertInfo) },
+    { CERT_KEY_ALG_ECC_P521, sizeof(g_eccP521P12CertInfo) },
+    { CERT_KEY_ALG_ED25519, sizeof(g_ed25519P12CertInfo) },
+    { CERT_KEY_ALG_SM2_1, sizeof(g_sm2PfxCertInfo) },
+    { CERT_KEY_ALG_SM2_2, sizeof(g_sm2PfxCertInfo2) },
+};
 
 void SetATPermission(void)
 {
@@ -188,7 +219,7 @@ std::string  DumpCertAbstractInfo(const struct CertAbstract *certAbstract)
     str += DELIMITER;
     str += certAbstract->subjectName;
     str += DELIMITER;
-    str += (certAbstract->status)? "true":"false";
+    str += (certAbstract->status) ? "true" : "false";
     str += ENDOF;
     return str;
 }
@@ -246,7 +277,7 @@ std::string DumpCertInfo(const struct CertInfo *certInfo)
     str += DELIMITER;
     str += certInfo->subjectName;
     str += DELIMITER;
-    str += (certInfo->status)? "true":"false";
+    str += (certInfo->status) ? "true" : "false";
     str += ENDOF;
     return str;
 }
@@ -266,50 +297,17 @@ bool CompareCredential(const struct Credential *firstCredential, const struct Cr
 
 static int32_t ConstructAppCertData(uint32_t alg, struct CmBlob *appCert)
 {
-    switch (alg) {
-        case CERT_KEY_ALG_RSA:
-            appCert->size = sizeof(g_rsa2048P12CertInfo);
-            appCert->data = const_cast<uint8_t *>(g_rsa2048P12CertInfo);
-            break;
-        case CERT_KEY_ALG_ECC:
-            appCert->size = sizeof(g_eccP256P12CertInfo);
-            appCert->data = const_cast<uint8_t *>(g_eccP256P12CertInfo);
-            break;
-        case CERT_KEY_ALG_RSA_512:
-            appCert->size = sizeof(g_rsa512P12CertInfo);
-            appCert->data = const_cast<uint8_t *>(g_rsa512P12CertInfo);
-            break;
-        case CERT_KEY_ALG_RSA_1024:
-            appCert->size = sizeof(g_rsa1024P12CertInfo);
-            appCert->data = const_cast<uint8_t *>(g_rsa1024P12CertInfo);
-            break;
-        case CERT_KEY_ALG_RSA_3072:
-            appCert->size = sizeof(g_rsa3072P12CertInfo);
-            appCert->data = const_cast<uint8_t *>(g_rsa3072P12CertInfo);
-            break;
-        case CERT_KEY_ALG_RSA_4096:
-            appCert->size = sizeof(g_rsa4096P12CertInfo);
-            appCert->data = const_cast<uint8_t *>(g_rsa4096P12CertInfo);
-            break;
-        case CERT_KEY_ALG_ECC_P224:
-            appCert->size = sizeof(g_eccP224P12CertInfo);
-            appCert->data = const_cast<uint8_t *>(g_eccP224P12CertInfo);
-            break;
-        case CERT_KEY_ALG_ECC_P384:
-            appCert->size = sizeof(g_eccP384P12CertInfo);
-            appCert->data = const_cast<uint8_t *>(g_eccP384P12CertInfo);
-            break;
-        case CERT_KEY_ALG_ECC_P521:
-            appCert->size = sizeof(g_eccP521P12CertInfo);
-            appCert->data = const_cast<uint8_t *>(g_eccP521P12CertInfo);
-            break;
-        case CERT_KEY_ALG_ED25519:
-            appCert->size = sizeof(g_ed25519P12CertInfo);
-            appCert->data = const_cast<uint8_t *>(g_ed25519P12CertInfo);
-            break;
-        default:
-            return CMR_ERROR_INVALID_ARGUMENT;
+    auto iterSize = ALG_CODE_TO_CERT_SIZE.find(alg);
+    if (iterSize == ALG_CODE_TO_CERT_SIZE.end()) {
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
+    appCert->size = iterSize->second;
+
+    auto iterData = ALG_CODE_TO_CERT_DATA.find(alg);
+    if (iterData == ALG_CODE_TO_CERT_DATA.end()) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    appCert->data = const_cast<uint8_t *>(iterData->second);
     return CM_SUCCESS;
 }
 
@@ -322,6 +320,10 @@ int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t s
     }
 
     struct CmBlob appCertPwd = { sizeof(g_certPwd), const_cast<uint8_t *>(g_certPwd) };
+    if (alg == CERT_KEY_ALG_SM2_1 || alg == CERT_KEY_ALG_SM2_2) {
+        appCertPwd.size = sizeof(g_sm2certPwd);
+        appCertPwd.data = const_cast<uint8_t *>(g_sm2certPwd);
+    }
     uint8_t uriData[MAX_LEN_URI] = {0};
     struct CmBlob keyUri = { sizeof(uriData), uriData };
 

@@ -99,7 +99,8 @@ static int32_t TransEccKeyToKeyBlob(const EC_KEY *eccKey, const struct HksKeyMat
     return ret;
 }
 
-static int32_t SaveKeyMaterialEcc(const EC_KEY *eccKey, const uint32_t keySize, struct CmBlob *keyOut)
+static int32_t SaveKeyMaterialEcc(const EC_KEY *eccKey, const uint32_t keySize,
+    const enum HksKeyAlg algType, struct CmBlob *keyOut)
 {
     struct CmBlob rawMaterial = { 0, NULL };
     /* public exponent x and y, and private exponent, so need size is: keySize / 8 * 3 */
@@ -116,7 +117,7 @@ static int32_t SaveKeyMaterialEcc(const EC_KEY *eccKey, const uint32_t keySize, 
      * struct KeyMaterialEcc + pubX_data + pubY_data + pri_data
      */
     struct HksKeyMaterialEcc *keyMaterial = (struct HksKeyMaterialEcc *)rawMaterial.data;
-    keyMaterial->keyAlg = HKS_ALG_ECC;
+    keyMaterial->keyAlg = algType;
     keyMaterial->keySize = keySize;
     keyMaterial->xSize = CM_KEY_BYTES(keySize);
     keyMaterial->ySize = CM_KEY_BYTES(keySize);
@@ -279,15 +280,20 @@ static int32_t ImportEccKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri)
             break;
         }
 
+        enum HksKeyAlg algType = HKS_ALG_ECC;
         uint32_t keyLen = (uint32_t)EC_GROUP_order_bits(EC_KEY_get0_group(eccKey));
-        ret = SaveKeyMaterialEcc(eccKey, keyLen, &keyPair);
+        int curveName = EC_GROUP_get_curve_name(EC_KEY_get0_group(eccKey));
+        if (curveName == NID_sm2) {
+            algType = HKS_ALG_SM2;
+        }
+        ret = SaveKeyMaterialEcc(eccKey, keyLen, algType, &keyPair);
         if (ret != CMR_OK) {
-            CM_LOG_E("save ec key material failed ret=0x%x", ret);
+            CM_LOG_E("save ec key material failed ret=0x%x, curveName = %d", ret, curveName);
             break;
         }
 
         const struct CmKeyProperties props = {
-            .algType = HKS_ALG_ECC,
+            .algType = (uint32_t)algType,
             .keySize = keyLen,
             .purpose = CM_KEY_PURPOSE_SIGN | CM_KEY_PURPOSE_VERIFY,
         };
@@ -341,6 +347,9 @@ static int32_t ImportKeyPair(const EVP_PKEY *priKey, const struct CmBlob *keyUri
             return ImportEccKey(priKey, keyUri);
         case EVP_PKEY_ED25519:
             return ImportEd25519Key(priKey, keyUri);
+        case NID_undef:
+            CM_LOG_E("key's baseid is not specified");
+            return CMR_ERROR_INVALID_CERT_FORMAT;
         default:
             CM_LOG_E("Import key type not suported");
             return CMR_ERROR_INVALID_ARGUMENT;
