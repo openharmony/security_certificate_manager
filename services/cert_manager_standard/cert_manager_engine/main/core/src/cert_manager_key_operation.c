@@ -124,6 +124,7 @@ int32_t CmKeyOpGenMacKey(const struct CmBlob *alias)
     struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
     ret = GetKeyAlias(&keyAlias, &encodeTarget);
     if (ret != CM_SUCCESS) {
+        HksFreeParamSet(&paramSet);
         CM_LOG_E("get keyalias failed");
         return ret;
     }
@@ -155,6 +156,7 @@ int32_t CmKeyOpGenMacKeyIfNotExist(const struct CmBlob *alias)
     struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
     ret = GetKeyAlias(&keyAlias, &encodeTarget);
     if (ret != CM_SUCCESS) {
+        HksFreeParamSet(&paramSet);
         CM_LOG_E("get keyalias failed");
         return ret;
     }
@@ -190,6 +192,7 @@ int32_t CmKeyOpDeleteKey(const struct CmBlob *alias)
     struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
     ret = GetKeyAlias(&keyAlias, &encodeTarget);
     if (ret != CM_SUCCESS) {
+        HksFreeParamSet(&paramSet);
         CM_LOG_E("get keyalias failed");
         return ret;
     }
@@ -231,7 +234,7 @@ int32_t CmKeyOpCalcMac(const struct CmBlob *alias, const struct CmBlob *srcData,
         ret = GetKeyAlias(&keyAlias, &encodeTarget);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("get keyalias failed");
-            return ret;
+            break;
         }
 
         ret = HksInit(&keyAlias, paramSet, &handle, NULL);
@@ -278,10 +281,11 @@ int32_t CmKeyOpImportKey(const struct CmBlob *alias, const struct CmKeyPropertie
     uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
     struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
     ret = GetKeyAlias(&keyAlias, &encodeTarget);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("get keyalias failed");
-            return ret;
-        }
+    if (ret != CM_SUCCESS) {
+        HksFreeParamSet(&paramSet);
+        CM_LOG_E("get keyalias failed");
+        return ret;
+    }
 
     ret = HksImportKey(&keyAlias, paramSet, &key);
     HksFreeParamSet(&paramSet);
@@ -362,6 +366,8 @@ static int32_t GetKeyProperties(const struct CmBlob *commonUri, struct CmKeyProp
     struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
     ret = GetKeyAlias(&keyAlias, &encodeTarget);
     if (ret != CM_SUCCESS) {
+        CM_FREE_PTR(outParamSet);
+        HksFreeParamSet(&inParamSet);
         CM_LOG_E("get keyalias failed");
         return ret;
     }
@@ -396,7 +402,7 @@ static int32_t AddParamsToParamSet(const struct CmBlob *commonUri, const struct 
         ret = GetKeyAlias(&keyAlias, &encodeTarget);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("get keyalias failed");
-            return ret;
+            break;
         }
 
         ret = GetKeyProperties((struct CmBlob *)&keyAlias, &keySpec);
