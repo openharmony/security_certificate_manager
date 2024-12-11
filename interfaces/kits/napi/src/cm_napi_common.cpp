@@ -639,4 +639,26 @@ void FreeCredential(Credential *&credential)
     CmFree(credential);
     credential = nullptr;
 }
+
+bool IsValidCertType(const uint32_t certType)
+{
+    switch (static_cast<CmCertType>(certType)) {
+        case CM_CA_CERT_SYSTEM:
+        case CM_CA_CERT_USER:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool IsValidCertScope(const uint32_t scope)
+{
+    switch (static_cast<CmCertScope>(scope)) {
+        case CM_CURRENT_USER:
+        case CM_GLOBAL_USER:
+            return true;
+        default:
+            return false;
+    }
+}
 }  // namespace CertManagerNapi
