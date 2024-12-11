@@ -131,8 +131,12 @@ static int32_t CmGetCertListPack(const struct CertBlob *certBlob, uint32_t *stat
     struct CmBlob *certificateList)
 {
     uint32_t offset = 0;
+    if (certCount > MAX_COUNT_CERTIFICATE_ALL) {
+        CM_LOG_E("cert count is too large");
+        return CM_FAILURE;
+    }
     uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
-        sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) + MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE;
+        sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) + MAX_LEN_CERT_ALIAS) * certCount;
     if (certificateList->size < buffSize) {
         CM_LOG_E("outdata size too small");
         return CMR_ERROR_BUFFER_TOO_SMALL;
@@ -167,6 +171,9 @@ static int32_t CmGetCertListPack(const struct CertBlob *certBlob, uint32_t *stat
             return ret;
         }
     }
+
+    /* Avoid returning too large a size */
+    certificateList->size = offset;
     return ret;
 }
 
@@ -176,7 +183,7 @@ int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store
     if (context == NULL || certFileList == NULL || CmCheckBlob(certificateList) != CM_SUCCESS) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    uint32_t status[MAX_COUNT_CERTIFICATE] = {0};
+    uint32_t status[MAX_COUNT_CERTIFICATE_ALL] = {0};
     struct CertBlob certBlob;
     (void)memset_s(&certBlob, sizeof(struct CertBlob), 0, sizeof(struct CertBlob));
     int32_t ret = CmGetCertListInfo(context, store, certFileList, &certBlob, status);

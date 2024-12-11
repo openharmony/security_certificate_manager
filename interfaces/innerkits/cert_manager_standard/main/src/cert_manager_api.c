@@ -262,7 +262,8 @@ CM_API_EXPORT int32_t CmGetUserCertList(uint32_t store, struct CertList *certifi
         return CMR_ERROR_NULL_POINTER;
     }
 
-    int32_t ret = CmClientGetUserCertList(store, certificateList);
+    const struct UserCAProperty property = { INIT_INVALID_VALUE, CM_ALL_USER };
+    int32_t ret = CmClientGetUserCertList(&property, store, certificateList);
     CM_LOG_D("leave get cert list, result = %d", ret);
     return ret;
 }
@@ -365,5 +366,18 @@ CM_API_EXPORT int32_t CmInstallUserCACert(const struct CmBlob *userCert,
     uint32_t uStatus = status ? 0 : 1; // 0 indicates the certificate enabled status
     ret = CmClientInstallUserTrustedCert(userCert, certAlias, userId, uStatus, certUri);
     CM_LOG_D("leave install user ca cert, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT int32_t CmGetUserCACertList(const struct UserCAProperty *property, struct CertList *certificateList)
+{
+    CM_LOG_D("enter get user ca cert list");
+    if (certificateList == NULL || property == NULL) {
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    const uint32_t store = CM_USER_TRUSTED_STORE;
+    int32_t ret = CmClientGetUserCertList(property, store, certificateList);
+    CM_LOG_D("leave get user ca cert list, result = %d", ret);
     return ret;
 }

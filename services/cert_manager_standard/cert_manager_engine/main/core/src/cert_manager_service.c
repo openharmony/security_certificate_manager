@@ -348,14 +348,14 @@ static int32_t DeepCopyPath(const uint8_t *srcData, uint32_t srcLen, struct CmMu
 }
 
 static int32_t MergeUserPathList(const struct CmMutableBlob *callerPathList,
-    const struct CmMutableBlob *sysServicePathList, struct CmMutableBlob *pathList)
+    const struct CmMutableBlob *targetPathList, struct CmMutableBlob *pathList)
 {
-    uint32_t uidCount = callerPathList->size + sysServicePathList->size;
+    uint32_t uidCount = callerPathList->size + targetPathList->size;
     if (uidCount == 0) {
         return CM_SUCCESS;
     }
 
-    if (uidCount > MAX_COUNT_CERTIFICATE) {
+    if (uidCount > MAX_COUNT_CERTIFICATE_ALL) {
         CM_LOG_E("uid count beyond MAX");
         return CM_FAILURE;
     }
@@ -370,7 +370,7 @@ static int32_t MergeUserPathList(const struct CmMutableBlob *callerPathList,
 
     int32_t ret = CM_SUCCESS;
     struct CmMutableBlob *callerPath = (struct CmMutableBlob *)callerPathList->data;
-    struct CmMutableBlob *sysServicePath = (struct CmMutableBlob *)sysServicePathList->data;
+    struct CmMutableBlob *sysServicePath = (struct CmMutableBlob *)targetPathList->data;
     for (uint32_t i = 0; i < callerPathList->size; i++) {
         ret = DeepCopyPath(callerPath[i].data, callerPath[i].size, &uidList[i]);
         if (ret != CM_SUCCESS) {
@@ -378,7 +378,7 @@ static int32_t MergeUserPathList(const struct CmMutableBlob *callerPathList,
             return ret;
         }
     }
-    for (uint32_t i = 0; i < sysServicePathList->size; i++) {
+    for (uint32_t i = 0; i < targetPathList->size; i++) {
         ret = DeepCopyPath(sysServicePath[i].data, sysServicePath[i].size, &uidList[i + callerPathList->size]);
         if (ret != CM_SUCCESS) {
             CmFreePathList(uidList, uidCount);
@@ -391,11 +391,12 @@ static int32_t MergeUserPathList(const struct CmMutableBlob *callerPathList,
     return CM_SUCCESS;
 }
 
-static int32_t CmGetUserCertPathList(const struct CmContext *context, uint32_t store, struct CmMutableBlob *pathList)
+static int32_t CmGetUserCertPathList(const struct CmContext *context, const struct UserCAProperty *prop,
+    uint32_t store, struct CmMutableBlob *pathList)
 {
     int32_t ret = CM_SUCCESS;
     struct CmMutableBlob callerPathList = { 0, NULL };
-    struct CmMutableBlob sysServicePathList = { 0, NULL };
+    struct CmMutableBlob targetPathList = { 0, NULL };
 
     do {
         /* user: caller */
@@ -405,17 +406,20 @@ static int32_t CmGetUserCertPathList(const struct CmContext *context, uint32_t s
             break;
         }
 
-        /* user: system service */
-        uint32_t sysServiceUserId = 0;
-        struct CmContext sysServiceContext = { sysServiceUserId, context->uid, {0} };
-        ret = CmGetCertPathList(&sysServiceContext, store, &sysServicePathList);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("get system service certPathList fail, ret = %d", ret);
-            break;
+        /* avoid obtain duplicate data when both the target userid and the caller's userid are same */
+        if (context->userId != prop->userId) {
+            /* The caller takes the specified userid for sa, otherwise 0 */
+            uint32_t targetUserId = context->userId == 0 ? prop->userId : 0;
+            struct CmContext targetContext = { targetUserId, context->uid, {0} };
+            ret = CmGetCertPathList(&targetContext, store, &targetPathList);
+            if (ret != CM_SUCCESS) {
+                CM_LOG_E("get system service certPathList fail, ret = %d", ret);
+                break;
+            }
         }
 
-        /* merge callerPathList and sysServicePathList */
-        ret = MergeUserPathList(&callerPathList, &sysServicePathList, pathList);
+        /* merge callerPathList and targetPathList */
+        ret = MergeUserPathList(&callerPathList, &targetPathList, pathList);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("merge cert path list failed");
             break;
@@ -425,23 +429,116 @@ static int32_t CmGetUserCertPathList(const struct CmContext *context, uint32_t s
     if (callerPathList.data != NULL) {
         CmFreePathList((struct CmMutableBlob *)callerPathList.data, callerPathList.size);
     }
-    if (sysServicePathList.data != NULL) {
-        CmFreePathList((struct CmMutableBlob *)sysServicePathList.data, sysServicePathList.size);
+    if (targetPathList.data != NULL) {
+        CmFreePathList((struct CmMutableBlob *)targetPathList.data, targetPathList.size);
     }
     return ret;
 }
 
-int32_t CmServiceGetCertList(const struct CmContext *context, uint32_t store, struct CmMutableBlob *certFileList)
+static int32_t CmGetSaUserCertList(const struct CmContext *context, const struct UserCAProperty *prop,
+    struct CmMutableBlob *pathList)
 {
     int32_t ret = CM_SUCCESS;
-    struct CmMutableBlob pathList = { 0, NULL }; /* uid path list */
+    struct CmContext cmContext = *context;
 
+    if (prop->userId == INIT_INVALID_VALUE) {
+        /* if target userid is invalid, obtain the certificate in the userid=0 directory */
+        ret = CmGetCertPathList(&cmContext, CM_USER_TRUSTED_STORE, pathList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get target invalid cert path list failed");
+        }
+        return ret;
+    }
+
+    if (prop->scope == CM_ALL_USER) {
+        ret = CmGetUserCertPathList(&cmContext, prop, CM_USER_TRUSTED_STORE, pathList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get all user cert path list failed");
+            return ret;
+        }
+    } else {
+        if (prop->scope == CM_CURRENT_USER) { /* update target userid */
+            cmContext.userId = prop->userId;
+        }
+        ret = CmGetCertPathList(&cmContext, CM_USER_TRUSTED_STORE, pathList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get current or global user cert path list failed");
+            return ret;
+        }
+    }
+    return ret;
+}
+
+static int32_t CmGetHapUserCertList(const struct CmContext *context, const struct UserCAProperty *prop,
+    struct CmMutableBlob *pathList)
+{
+    int32_t ret = CM_SUCCESS;
+    struct CmContext cmContext = *context;
+
+    if (prop->scope == CM_ALL_USER) {
+        ret = CmGetUserCertPathList(&cmContext, prop, CM_USER_TRUSTED_STORE, pathList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get all user cert path list failed");
+            return ret;
+        }
+    } else {
+        if (prop->scope == CM_GLOBAL_USER) { /* Obtain only the certificate in the userid=0 directory  */
+            cmContext.userId = 0;
+        }
+        ret = CmGetCertPathList(&cmContext, CM_USER_TRUSTED_STORE, pathList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get current or gloval cert path list failed");
+            return ret;
+        }
+    }
+    return ret;
+}
+
+static int32_t CmServiceGetUserCACertList(const struct CmContext *context, const struct UserCAProperty *prop,
+    struct CmMutableBlob *pathList)
+{
+    int32_t ret = CM_SUCCESS;
+
+    if (context->userId == 0) { /* caller is sa */
+        ret = CmGetSaUserCertList(context, prop, pathList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get sa user cert list failed");
+            return ret;
+        }
+    } else { /* caller is hap */
+        ret = CmGetHapUserCertList(context, prop, pathList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get gap user cert list failed");
+            return ret;
+        }
+    }
+    return ret;
+}
+
+int32_t CmServiceGetCertList(const struct CmContext *context, const struct UserCAProperty *prop,
+    uint32_t store, struct CmMutableBlob *certFileList)
+{
+    uint32_t scope = prop->scope;
+    if (scope != CM_ALL_USER && scope != CM_CURRENT_USER && scope != CM_GLOBAL_USER) {
+        CM_LOG_E("The scope is incorrect");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CM_SUCCESS;
+    struct CmMutableBlob pathList = { 0, NULL };
+    
     do {
         if (store == CM_USER_TRUSTED_STORE) {
+            if (context->userId != 0 && prop->userId != INIT_INVALID_VALUE) {
+                /* if caller is hap, the target userid must be invalid */
+                CM_LOG_E("The target userid is incorrect");
+                ret = CMR_ERROR_INVALID_ARGUMENT;
+                break;
+            }
             /* get all uid path for caller and system service */
-            ret = CmGetUserCertPathList(context, store, &pathList);
+            ret = CmServiceGetUserCACertList(context, prop, &pathList);
             if (ret != CM_SUCCESS) {
-                CM_LOG_E("GetCertPathList fail, ret = %d", ret);
+                CM_LOG_E("CmServiceGetUserCACertList fail, ret = %d", ret);
                 break;
             }
         } else if (store == CM_SYSTEM_TRUSTED_STORE) {
@@ -476,7 +573,8 @@ static int32_t CmServiceGetSysCertInfo(const struct CmContext *context, const st
     int32_t ret = CM_SUCCESS;
     struct CmMutableBlob certFileList = { 0, NULL };
     do {
-        ret = CmServiceGetCertList(context, store, &certFileList);
+        const struct UserCAProperty prop = { INIT_INVALID_VALUE, CM_ALL_USER };
+        ret = CmServiceGetCertList(context, &prop, store, &certFileList);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("GetCertList failed, ret = %d", ret);
             break;
