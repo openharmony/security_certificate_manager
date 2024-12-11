@@ -241,6 +241,75 @@ HWTEST_F(CmAppCertTest, AppCertInstallBaseEccTest005, TestSize.Level0)
 }
 
 /**
+ * @tc.name: AppCertInstallBaseSM2Test001
+ * @tc.desc: install public and private sm2, oid is valid
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmAppCertTest, AppCertInstallBaseSM2Test001, TestSize.Level0)
+{
+    uint8_t keyUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(keyUriBuf), keyUriBuf };
+
+    uint8_t certAliasBuf[] = "testForSm2";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    int32_t ret = CmInstallAppCert(&g_sm2AppCert, &g_appSM2CertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "BaseSM2Test001 public test failed, retcode:" << ret;
+
+    keyUri.size = sizeof(keyUriBuf);
+    ret = CmInstallAppCert(&g_sm2AppCert, &g_appSM2CertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "BaseSM2Test001 privite test failed, retcode:" << ret;
+
+    ret = CmUninstallAllAppCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "BaseSM2Test001 test failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: AppCertInstallBaseSM2Test002
+ * @tc.desc: install public and private sm2, oid is valid data2
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmAppCertTest, AppCertInstallBaseSM2Test002, TestSize.Level0)
+{
+    uint8_t keyUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(keyUriBuf), keyUriBuf };
+
+    uint8_t certAliasBuf[] = "testForSm2_2";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    int32_t ret = CmInstallAppCert(&g_sm2AppCert2, &g_appSM2CertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "BaseSM2Test002 public test failed, retcode:" << ret;
+
+    keyUri.size = sizeof(keyUriBuf);
+    ret = CmInstallAppCert(&g_sm2AppCert2, &g_appSM2CertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "BaseSM2Test002 privite test failed, retcode:" << ret;
+
+    ret = CmUninstallAllAppCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "BaseSM2Test001 test failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: AppCertInstallBaseSM2Test003
+ * @tc.desc: install public and private sm2, oid is invalid
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmAppCertTest, AppCertInstallBaseSM2Test003, TestSize.Level0)
+{
+    uint8_t keyUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(keyUriBuf), keyUriBuf };
+
+    uint8_t certAliasBuf[] = "testForSm2_2";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    int32_t ret = CmInstallAppCert(&g_sm2AppCert3, &g_appSM2CertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_CERT_FORMAT) << "BaseSM2Test002 public test failed, retcode:" << ret;
+
+    keyUri.size = sizeof(keyUriBuf);
+    ret = CmInstallAppCert(&g_sm2AppCert3, &g_appSM2CertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_CERT_FORMAT) << "BaseSM2Test002 privite test failed, retcode:" << ret;
+}
+
+/**
  * @tc.name: AppCertInstallAbnormalTest005
  * @tc.desc: Test CertManager Install app cert alias not include \0
  * @tc.type: FUNC

@@ -90,6 +90,7 @@ extern "C" {
 enum CmKeyDigest {
     CM_DIGEST_NONE = 0,
     CM_DIGEST_MD5 = 1,
+    CM_DIGEST_SM3 = 2,
     CM_DIGEST_SHA1 = 10,
     CM_DIGEST_SHA224 = 11,
     CM_DIGEST_SHA256 = 12,

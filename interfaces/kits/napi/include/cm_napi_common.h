@@ -174,6 +174,7 @@ enum CmJSKeyDigest {
     CM_JS_DIGEST_SHA256 = 4,
     CM_JS_DIGEST_SHA384 = 5,
     CM_JS_DIGEST_SHA512 = 6,
+    CM_JS_DIGEST_SM3 = 7,
 };
 
 enum CmJSKeyPadding {
