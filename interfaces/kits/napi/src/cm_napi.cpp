@@ -29,6 +29,7 @@
 #include "cm_napi_grant.h"
 #include "cm_napi_sign_verify.h"
 #include "cm_napi_user_trusted_cert.h"
+#include "cm_napi_get_cert_store_path.h"
 
 namespace CMNapi {
     inline void AddInt32Property(napi_env env, napi_value object, const char *name, int32_t value)
@@ -99,6 +100,26 @@ namespace CMNapi {
         AddInt32Property(env, keyPadding, "CM_PADDING_PKCS1_V1_5", CM_JS_PADDING_PKCS1_V1_5);
         return keyPadding;
     }
+
+    static napi_value CreateCertType(napi_env env)
+    {
+        napi_value type = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &type));
+
+        AddInt32Property(env, type, "CA_CERT_SYSTEM", CM_CA_CERT_SYSTEM);
+        AddInt32Property(env, type, "CA_CERT_USER", CM_CA_CERT_USER);
+        return type;
+    }
+
+    static napi_value CreateCertScope(napi_env env)
+    {
+        napi_value scope = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &scope));
+
+        AddInt32Property(env, scope, "CURRENT_USER", CM_CURRENT_USER);
+        AddInt32Property(env, scope, "GLOBAL_USER", CM_GLOBAL_USER);
+        return scope;
+    }
 }  // namespace CertManagerNapi
 
 using namespace CMNapi;
@@ -111,6 +132,8 @@ extern "C" {
             DECLARE_NAPI_PROPERTY("CmKeyPurpose", CreateCMKeyPurpose(env)),
             DECLARE_NAPI_PROPERTY("CmKeyDigest", CreateCMKeyDigest(env)),
             DECLARE_NAPI_PROPERTY("CmKeyPadding", CreateCMKeyPadding(env)),
+            DECLARE_NAPI_PROPERTY("CertType", CreateCertType(env)),
+            DECLARE_NAPI_PROPERTY("CertScope", CreateCertScope(env)),
 
             /* system ca */
             DECLARE_NAPI_FUNCTION("getSystemTrustedCertificateList", CMNapiGetSystemCertList),
@@ -153,6 +176,9 @@ extern "C" {
             DECLARE_NAPI_FUNCTION("uninstallSystemAppCertificate", CMNapiUninstallSystemAppCert),
             DECLARE_NAPI_FUNCTION("getAllSystemAppCertificates", CMNapiGetSystemAppCertList),
             DECLARE_NAPI_FUNCTION("getSystemAppCertificate", CMNapiGetSystemAppCertInfo),
+
+            /* get store path */
+            DECLARE_NAPI_FUNCTION("getCertificateStorePath", CMNapiGetCertStorePath),
         };
         NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
         return exports;

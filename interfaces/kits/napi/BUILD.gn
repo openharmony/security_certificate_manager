@@ -34,6 +34,7 @@ ohos_shared_library("certmanager") {
     "src/cm_napi_get_app_cert_info_common.cpp",
     "src/cm_napi_get_app_cert_list.cpp",
     "src/cm_napi_get_app_cert_list_common.cpp",
+    "src/cm_napi_get_cert_store_path.cpp",
     "src/cm_napi_get_system_cert_info.cpp",
     "src/cm_napi_get_system_cert_list.cpp",
     "src/cm_napi_grant.cpp",
@@ -48,8 +49,13 @@ ohos_shared_library("certmanager") {
   ]
 
   external_deps = [
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
+    "ipc:ipc_core",
     "napi:ace_napi",
+    "os_account:os_account_innerkits",
+    "samgr:samgr_proxy",
   ]
   cflags_cc = [
     "-Wall",
