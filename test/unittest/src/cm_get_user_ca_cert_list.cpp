@@ -117,11 +117,9 @@ static uint32_t CmInstallBorderTestCert()
     struct CmBlob userCertTest = { sizeof(g_certData01), const_cast<uint8_t *>(g_certData01) };
 
     for (uint32_t i = 0; i < MAX_COUNT_CERTIFICATE; i++) { /* install 256 times user cert */
-        char alias[] = "alias";
-        char aliasBuf[MAX_LEN_CERT_ALIAS];
-        ret = snprintf_s(aliasBuf, MAX_LEN_CERT_ALIAS, MAX_LEN_CERT_ALIAS - 1, "%s%u", alias, i);
-        EXPECT_EQ(ret, CM_SUCCESS) << "Get cert alias failed, recode:" << ret;
-        struct CmBlob certAliasTest = { strlen(aliasBuf) + 1, reinterpret_cast<uint8_t *>(aliasBuf) };
+        std::string alias = "alias_global_" + std::to_string(i);
+        char *aliasBuf = const_cast<char *>(alias.c_str());
+        struct CmBlob certAliasTest = { alias.length() + 1, reinterpret_cast<uint8_t *>(aliasBuf) };
 
         uint8_t uriBuf[MAX_URI_LEN] = {0};
         struct CmBlob certUriTest = { sizeof(uriBuf), uriBuf };
@@ -139,11 +137,9 @@ static uint32_t CmInstallCABorderTestCert(uint32_t userId)
     struct CmBlob userCertTest = { sizeof(g_certData01), const_cast<uint8_t *>(g_certData01) };
 
     for (uint32_t i = 0; i < MAX_COUNT_CERTIFICATE; i++) { /* install 256 times user cert */
-        char alias[] = "alias";
-        char aliasBuf[MAX_LEN_CERT_ALIAS];
-        ret = snprintf_s(aliasBuf, MAX_LEN_CERT_ALIAS, MAX_LEN_CERT_ALIAS - 1, "%s%u", alias, i);
-        EXPECT_EQ(ret, CM_SUCCESS) << "Get cert alias failed, recode:" << ret;
-        struct CmBlob certAliasTest = { strlen(aliasBuf) + 1, reinterpret_cast<uint8_t *>(aliasBuf) };
+        std::string alias = "alias_user_" + std::to_string(i);
+        char *aliasBuf = const_cast<char *>(alias.c_str());
+        struct CmBlob certAliasTest = { alias.length() + 1, reinterpret_cast<uint8_t *>(aliasBuf) };
 
         uint8_t uriBuf[MAX_URI_LEN] = {0};
         struct CmBlob certUriTest = { sizeof(uriBuf), uriBuf };
@@ -160,10 +156,10 @@ static uint32_t CmUninstallCACertList(struct CertList *certList)
     int32_t ret;
 
     for (uint32_t i = 0; i < certList->certsCount; i++) {
-        uint8_t uriBuf[MAX_URI_LEN] = {0};
-        uint32_t len = strlen(certList->certAbstract[i].uri) + 1;
-        (void)memcpy_s(uriBuf, sizeof(uriBuf), certList->certAbstract[i].uri, len);
-        const struct CmBlob certUri = { sizeof(uriBuf), uriBuf };
+        const struct CmBlob certUri = {
+            .size = strlen(certList->certAbstract[i].uri) + 1,
+            .data = reinterpret_cast<uint8_t *>(certList->certAbstract[i].uri)
+        };
         ret = CmUninstallUserTrustedCert(&certUri);
         EXPECT_EQ(ret, CM_SUCCESS) << "Normal Uninstall trusted cert test failed, recode:" << ret;
     }
@@ -266,7 +262,7 @@ HWTEST_F(CmGetUserCertListTest, CmGetUserCACertList002, TestSize.Level0)
     struct UserCAProperty prop = { SA_USERID, CM_CURRENT_USER };
     ret = CmGetUserCACertList(&prop, certList002);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal get user cert list test failed, recode:" << ret;
-    
+
     uint32_t certsCount002 = certList002->certsCount;
     EXPECT_EQ(certsCount002, size) << "Get certs count wrong, recode:" << ret;
 
@@ -326,7 +322,7 @@ HWTEST_F(CmGetUserCertListTest, CmGetUserCACertList004, TestSize.Level0)
     uint32_t certsCount004 = certList004->certsCount;
     EXPECT_EQ(certsCount004, size) << "Get certs count wrong, recode:" << ret;
 
-    
+
     ret = CmUninstallAllUserTrustedCert();
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall All test failed, recode:" << ret;
     FreeCertList(certList004);
@@ -709,7 +705,7 @@ HWTEST_F(CmGetUserCertListTest, CmGetUserCACertList018, TestSize.Level0)
 
     ret = CmUninstallCACertList(certList018);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall CA test cert failed, recode:" << ret;
- 
+
     FreeCertList(certList018);
 }
 
