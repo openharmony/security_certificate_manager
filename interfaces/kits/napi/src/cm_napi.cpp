@@ -150,6 +150,7 @@ extern "C" {
 
             /* user ca */
             DECLARE_NAPI_FUNCTION("installUserTrustedCertificate", CMNapiInstallUserTrustedCert),
+            DECLARE_NAPI_FUNCTION("installUserTrustedCertificateSync", CMNapiInstallUserTrustedCertSync),
             DECLARE_NAPI_FUNCTION("uninstallAllUserTrustedCertificate", CMNapiUninstallAllUserTrustedCert),
             DECLARE_NAPI_FUNCTION("uninstallUserTrustedCertificate", CMNapiUninstallUserTrustedCert),
             DECLARE_NAPI_FUNCTION("getAllUserTrustedCertificates", CMNapiGetAllUserTrustedCertList),

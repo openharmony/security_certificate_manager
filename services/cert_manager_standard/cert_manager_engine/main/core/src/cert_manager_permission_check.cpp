@@ -45,6 +45,11 @@ bool CmHasCommonPermission(void)
     return HasPermission("ohos.permission.ACCESS_CERT_MANAGER");
 }
 
+bool CmHasEnterpriseUserTrustedPermission(void)
+{
+    return HasPermission("ohos.permission.ACCESS_ENTERPRISE_USER_TRUSTED_CERT");
+}
+
 bool CmHasUserTrustedPermission(void)
 {
     return HasPermission("ohos.permission.ACCESS_USER_TRUSTED_CERT");

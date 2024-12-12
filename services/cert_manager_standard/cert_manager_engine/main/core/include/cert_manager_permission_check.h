@@ -26,6 +26,8 @@ bool CmHasPrivilegedPermission(void);
 
 bool CmHasCommonPermission(void);
 
+bool CmHasEnterpriseUserTrustedPermission(void);
+
 bool CmHasUserTrustedPermission(void);
 
 bool CmHasSystemAppPermission(void);

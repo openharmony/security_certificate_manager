@@ -133,7 +133,7 @@ static std::string EncodeBase64(const uint8_t *indata, const uint32_t length)
         encodeStr += g_base64Table[(triple >> BYTE_INDEX_ONE   * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
         encodeStr += g_base64Table[(triple >> BYTE_INDEX_ZONE  * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
     }
-    
+
     switch (BASE64_GROUP_NUM - (i % BASE64_GROUP_NUM)) {
         case BYTE_END_TWO:
             encodeStr.replace(encodeStr.length() - BYTE_END_TWO, 1, BASE64_PADDING);

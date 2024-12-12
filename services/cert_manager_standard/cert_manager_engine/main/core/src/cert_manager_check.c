@@ -466,10 +466,14 @@ static bool CmCheckAndUpdateCallerUserId(const uint32_t inputUserId, uint32_t *c
         return true;
     }
 
-    /* caller is hap, callerUserId is not 0 */
-    if (inputUserId != INIT_INVALID_VALUE) {
+    /* caller is hap, callerUserId can be 0 or 0xFFFFFFFF */
+    if (inputUserId != 0 && inputUserId != INIT_INVALID_VALUE) {
         CM_LOG_E("caller is hap, input userId %u is not supported", inputUserId);
         return false;
+    }
+    if (inputUserId == 0) {
+        CM_LOG_D("hap install in public location: update caller userId from %u to 0", *callerUserId);
+        *callerUserId = 0;
     }
     return true;
 }
@@ -492,14 +496,9 @@ int32_t CmServiceInstallUserCertCheck(struct CmContext *cmContext, const struct 
         return ret;
     }
 
-    if (!CmHasCommonPermission() || !CmHasUserTrustedPermission()) {
+    if (!CmHasEnterpriseUserTrustedPermission() && !CmHasUserTrustedPermission()) {
         CM_LOG_E("install user cert: caller no permission");
         return CMR_ERROR_PERMISSION_DENIED;
-    }
-
-    if (!CmIsSystemApp()) {
-        CM_LOG_E("install user cert: caller is not system app");
-        return CMR_ERROR_NOT_SYSTEMP_APP;
     }
 
     if (!CmCheckAndUpdateCallerUserId(userId, &(cmContext->userId))) {
