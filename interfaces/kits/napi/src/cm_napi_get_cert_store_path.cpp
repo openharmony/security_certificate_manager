@@ -91,7 +91,8 @@ static napi_value GetCertStorePath(napi_env env, const enum CmCertType certType,
     } else {
         int32_t ret = GetUserCaStorePath(certScope, path);
         if (ret != CM_SUCCESS) {
-            napi_throw(env, GenerateBusinessError(env, ret));
+            CM_LOG_E("Failed to get user ca path.");
+            ThrowError(env, INNER_FAILURE, "there is an internal error");
             return nullptr;
         }
     }
@@ -99,7 +100,8 @@ static napi_value GetCertStorePath(napi_env env, const enum CmCertType certType,
     napi_value result = nullptr;
     napi_status status = napi_create_string_utf8(env, path.c_str(), path.length(), &result);
     if (status != napi_ok) {
-        napi_throw(env, GenerateBusinessError(env, CM_FAILURE));
+        CM_LOG_E("Failed to creat string out.");
+        ThrowError(env, INNER_FAILURE, "there is an internal error");
         return nullptr;
     }
     return result;
