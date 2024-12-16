@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -381,3 +381,30 @@ CM_API_EXPORT int32_t CmGetUserCACertList(const struct UserCAProperty *property,
     CM_LOG_D("leave get user ca cert list, result = %d", ret);
     return ret;
 }
+
+CM_API_EXPORT int32_t CmGetCertStorePath(const enum CmCertType type, const uint32_t userId,
+    char *path, uint32_t pathLen)
+{
+    if (path == NULL) {
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    if (type == CM_CA_CERT_SYSTEM) {
+        if (strcpy_s(path, pathLen, CA_STORE_PATH_SYSTEM) != EOK) {
+            CM_LOG_E("get system ca path: out path len[%u] too small.", pathLen);
+            return CMR_ERROR_BUFFER_TOO_SMALL;
+        }
+        return CM_SUCCESS;
+    }
+
+    if (type == CM_CA_CERT_USER) {
+        if (sprintf_s(path, pathLen, "%s%u", CA_STORE_PATH_USER_SERVICE_BASE, userId) < 0) {
+            CM_LOG_E("get user ca path: out path len[%u] too small.", pathLen);
+            return CMR_ERROR_BUFFER_TOO_SMALL;
+        }
+        return CM_SUCCESS;
+    }
+
+    return CMR_ERROR_INVALID_ARGUMENT;
+}
+

@@ -22,6 +22,7 @@ using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
 static const int TIMES_PERFORMANCE = 10;
+static const uint32_t PATH_LEN = 1000;
 
 struct CertAbstractResult {
     struct CertAbstract certAbstract;
@@ -170,5 +171,88 @@ HWTEST_F(CmGetCertListTest, ExceptionGetCertList005, TestSize.Level0)
 {
     EXPECT_EQ(CmGetCertList(CM_SYSTEM_TRUSTED_STORE, NULL), CMR_ERROR_NULL_POINTER);
     EXPECT_EQ(CmGetCertList(10, lstCert), CMR_ERROR_INVALID_ARGUMENT);
+}
+
+/**
+ * @tc.name: GetCertStorePath001
+ * @tc.desc: get system ca path
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmGetCertListTest, GetCertStorePath001, TestSize.Level0)
+{
+    char path[PATH_LEN] = {0};
+    int32_t ret = CmGetCertStorePath(CM_CA_CERT_SYSTEM, 0, path, sizeof(path));
+    EXPECT_EQ(ret, CM_SUCCESS);
+    EXPECT_EQ(strcmp(path, CA_STORE_PATH_SYSTEM), 0);
+}
+
+/**
+ * @tc.name: GetCertStorePath002
+ * @tc.desc: get user ca path
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmGetCertListTest, GetCertStorePath002, TestSize.Level0)
+{
+    char path[PATH_LEN] = {0};
+    uint32_t userId = 101;
+    int32_t ret = CmGetCertStorePath(CM_CA_CERT_USER, userId, path, sizeof(path));
+    EXPECT_EQ(ret, CM_SUCCESS);
+
+    std::string expectPath = CA_STORE_PATH_USER_SERVICE_BASE + std::to_string(userId);
+    std::cout << "1:" << path << std::endl;
+    std::cout << "2:" << expectPath << std::endl;
+    EXPECT_EQ(strcmp(path, expectPath.c_str()), 0);
+}
+
+/**
+ * @tc.name: GetCertStorePath003
+ * @tc.desc: type invalid
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmGetCertListTest, GetCertStorePath003, TestSize.Level0)
+{
+    char path[PATH_LEN] = {0};
+    int32_t type = 3; /* type invalid */
+    int32_t ret = CmGetCertStorePath(static_cast<enum CmCertType>(type), 0, path, sizeof(path));
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+}
+
+/**
+ * @tc.name: GetCertStorePath004
+ * @tc.desc: path is null
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmGetCertListTest, GetCertStorePath004, TestSize.Level0)
+{
+    int32_t ret = CmGetCertStorePath(CM_CA_CERT_SYSTEM, 0, nullptr, PATH_LEN);
+    EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
+}
+
+/**
+ * @tc.name: GetCertStorePath005
+ * @tc.desc: get system ca path, len too small
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmGetCertListTest, GetCertStorePath005, TestSize.Level0)
+{
+    char path[PATH_LEN] = {0};
+    uint32_t length = strlen(CA_STORE_PATH_SYSTEM);
+    int32_t ret = CmGetCertStorePath(CM_CA_CERT_SYSTEM, 0, path, length);
+    EXPECT_EQ(ret, CMR_ERROR_BUFFER_TOO_SMALL);
+}
+
+/**
+ * @tc.name: GetCertStorePath006
+ * @tc.desc: get user ca path, len too small
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmGetCertListTest, GetCertStorePath006, TestSize.Level0)
+{
+    char path[PATH_LEN] = {0};
+    uint32_t userId = 100;
+    std::string expectPath = CA_STORE_PATH_USER_SERVICE_BASE + std::to_string(userId);
+    uint32_t length = expectPath.length();
+    int32_t ret = CmGetCertStorePath(CM_CA_CERT_USER, userId, path, length);
+    EXPECT_EQ(ret, CMR_ERROR_BUFFER_TOO_SMALL);
 }
 }
