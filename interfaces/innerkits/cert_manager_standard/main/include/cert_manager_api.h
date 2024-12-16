@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -80,6 +80,9 @@ CM_API_EXPORT int32_t CmInstallUserCACert(const struct CmBlob *userCert,
     const struct CmBlob *certAlias, const uint32_t userId, const bool status, struct CmBlob *certUri);
 
 CM_API_EXPORT int32_t CmGetUserCACertList(const struct UserCAProperty *property, struct CertList *certificateList);
+
+CM_API_EXPORT int32_t CmGetCertStorePath(const enum CmCertType type, const uint32_t userId,
+    char *path, uint32_t pathLen);
 
 #ifdef __cplusplus
 }

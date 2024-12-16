@@ -24,9 +24,6 @@
 #include "cm_mem.h"
 #include "cm_type.h"
 
-#define DATA_SIZE_64KB  (1024 * 64)
-#define NAPI_ASSERT_FUNC(f) if (CM_SUCCESS != (f)) { CM_LOG_W("Failed: %s\n", #f); return; }
-
 namespace CMNapi {
 static const std::string CM_CERT_PROPERTY_URI = "uri";
 static const std::string CM_CERT_PROPERTY_TYPE = "type";
@@ -57,7 +54,9 @@ static const std::string CM_RESULT_PRPPERTY_CERTINFO = "certInfo";
 static const std::string CM_RESULT_PRPPERTY_CREDENTIAL_LIST = "credentialList";
 static const std::string CM_RESULT_PRPPERTY_CREDENTIAL = "credential";
 
-static const int32_t CERT_MANAGER_SYS_CAP = 17500000;
+static const std::string CM_CERT_SCOPE_STR = "certScope";
+static const std::string CM_CERT_TYPE_STR = "certType";
+
 static const int32_t RESULT_NUMBER = 2;
 static const uint32_t APPLICATION_CERTIFICATE_STORE = 0;
 static const uint32_t APPLICATION_PRIVATE_CERTIFICATE_STORE = 3;
@@ -89,6 +88,9 @@ void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
     napi_value *result, int32_t arrLength);
 void GenerateCallback(napi_env env, napi_ref callback, napi_value *result, int32_t arrLength, int32_t ret);
 void GenerateNapiPromise(napi_env env, napi_ref callback, napi_deferred *deferred, napi_value *promise);
+
+bool IsValidCertType(const uint32_t certType);
+bool IsValidCertScope(const uint32_t scope);
 
 inline napi_value GetNull(napi_env env)
 {

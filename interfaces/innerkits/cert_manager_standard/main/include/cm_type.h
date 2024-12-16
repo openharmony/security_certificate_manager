@@ -83,6 +83,10 @@ extern "C" {
 #define CM_STORE_CHECK(a) \
     (((a) != CM_CREDENTIAL_STORE) && ((a) != CM_PRI_CREDENTIAL_STORE) && ((a) != CM_SYS_CREDENTIAL_STORE))
 
+#define CA_STORE_PATH_SYSTEM              "/etc/security/certificates"
+#define CA_STORE_PATH_USER_SANDBOX_BASE   "/data/certificates/user_cacerts/"
+#define CA_STORE_PATH_USER_SERVICE_BASE   "/data/service/el1/public/cert_manager_service/certificates/user_open/"
+
 enum CmKeyDigest {
     CM_DIGEST_NONE = 0,
     CM_DIGEST_MD5 = 1,
@@ -378,6 +382,11 @@ struct CertName {
     struct CmBlob *displayName;
     struct CmBlob *objectName;
     struct CmBlob *subjectName;
+};
+
+enum CmCertType {
+    CM_CA_CERT_SYSTEM = 0,
+    CM_CA_CERT_USER = 1,
 };
 
 enum CmCertScope {
