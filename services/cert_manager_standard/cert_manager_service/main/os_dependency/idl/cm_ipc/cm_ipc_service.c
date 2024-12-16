@@ -89,7 +89,8 @@ void CmIpcServiceGetCertificateList(const struct CmBlob *paramSetBlob, struct Cm
             break;
         }
 
-        ret = CmServiceGetCertList(&cmContext, store, &certFileList);
+        const struct UserCAProperty prop = { INIT_INVALID_VALUE, CM_ALL_USER };
+        ret = CmServiceGetCertList(&cmContext, &prop, store, &certFileList);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("get cert list failed, ret = %d", ret);
             break;
@@ -1003,11 +1004,15 @@ void CmIpcServiceGetUserCertList(const struct CmBlob *paramSetBlob, struct CmBlo
 {
     int32_t ret = CM_SUCCESS;
     uint32_t store;
+    uint32_t userId;
+    enum CmCertScope scope;
     struct CmContext cmContext = {0};
     struct CmParamSet *paramSet = NULL;
     struct CmMutableBlob certFileList = { 0, NULL };
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &userId },
+        { .tag = CM_TAG_PARAM2_UINT32, .uint32Param = &scope },
     };
 
     do {
@@ -1023,7 +1028,8 @@ void CmIpcServiceGetUserCertList(const struct CmBlob *paramSetBlob, struct CmBlo
             break;
         }
 
-        ret = CmServiceGetCertList(&cmContext, store, &certFileList);
+        struct UserCAProperty prop = { userId, scope };
+        ret = CmServiceGetCertList(&cmContext, &prop, store, &certFileList);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("GetCertList failed, ret = %d", ret);
             break;

@@ -39,6 +39,7 @@ extern "C" {
 
 #define MAX_SUFFIX_LEN           16
 #define MAX_COUNT_CERTIFICATE    256
+#define MAX_COUNT_CERTIFICATE_ALL  512
 #define MAX_LEN_URI              256
 #define MAX_AUTH_LEN_URI         256
 #define MAX_LEN_CERT_ALIAS       129    /* include 1 byte: the terminator('\0') */
@@ -227,9 +228,9 @@ struct CmBlob {
 };
 
 struct CertBlob {
-    struct CmBlob uri[MAX_COUNT_CERTIFICATE];
-    struct CmBlob certAlias[MAX_COUNT_CERTIFICATE];
-    struct CmBlob subjectName[MAX_COUNT_CERTIFICATE];
+    struct CmBlob uri[MAX_COUNT_CERTIFICATE_ALL];
+    struct CmBlob certAlias[MAX_COUNT_CERTIFICATE_ALL];
+    struct CmBlob subjectName[MAX_COUNT_CERTIFICATE_ALL];
 };
 
 struct CmAppCertInfo {
@@ -376,6 +377,17 @@ struct CertName {
     struct CmBlob *displayName;
     struct CmBlob *objectName;
     struct CmBlob *subjectName;
+};
+
+enum CmCertScope {
+    CM_ALL_USER = 0,
+    CM_CURRENT_USER = 1,
+    CM_GLOBAL_USER = 2,
+};
+
+struct UserCAProperty {
+    uint32_t userId;
+    enum CmCertScope scope;
 };
 
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)

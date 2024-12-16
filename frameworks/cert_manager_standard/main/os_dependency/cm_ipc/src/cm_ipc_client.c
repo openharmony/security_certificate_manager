@@ -41,7 +41,7 @@ static int32_t GetCertListInitOutData(struct CmBlob *outListBlob)
 {
     /* buff struct: certCount + MAX_CERT_COUNT * (subjectBlob + status + uriBlob + aliasBlob) */
     uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
-        sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) +  MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE;
+        sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) +  MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE_ALL;
     outListBlob->data = (uint8_t *)CmMalloc(buffSize);
     if (outListBlob->data == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
@@ -820,8 +820,8 @@ int32_t CmClientAbort(const struct CmBlob *handle)
     return ret;
 }
 
-static int32_t GetUserCertList(enum CertManagerInterfaceCode type, const uint32_t store,
-    struct CertList *certificateList)
+static int32_t GetUserCertList(enum CertManagerInterfaceCode type, const struct UserCAProperty *property,
+    const uint32_t store, struct CertList *certificateList)
 {
     int32_t ret = CM_SUCCESS;
     struct CmBlob outBlob = {0, NULL};
@@ -829,6 +829,8 @@ static int32_t GetUserCertList(enum CertManagerInterfaceCode type, const uint32_
     struct CmParamSet *sendParamSet = NULL;
     struct CmParam params[] = {
         { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = store },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = property->userId },
+        { .tag = CM_TAG_PARAM2_UINT32, .uint32Param = property->scope },
     };
 
     do {
@@ -862,9 +864,10 @@ static int32_t GetUserCertList(enum CertManagerInterfaceCode type, const uint32_
     return ret;
 }
 
-int32_t CmClientGetUserCertList(const uint32_t store, struct CertList *certificateList)
+int32_t CmClientGetUserCertList(const struct UserCAProperty *property, const uint32_t store,
+    struct CertList *certificateList)
 {
-    return GetUserCertList(CM_MSG_GET_USER_CERTIFICATE_LIST, store, certificateList);
+    return GetUserCertList(CM_MSG_GET_USER_CERTIFICATE_LIST, property, store, certificateList);
 }
 
 static int32_t GetUserCertInfo(enum CertManagerInterfaceCode type, const struct CmBlob *certUri,

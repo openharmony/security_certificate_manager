@@ -61,7 +61,8 @@ int32_t CmClientFinish(const struct CmBlob *handle, const struct CmBlob *inData,
 
 int32_t CmClientAbort(const struct CmBlob *handle);
 
-int32_t CmClientGetUserCertList(const uint32_t store, struct CertList *certificateList);
+int32_t CmClientGetUserCertList(const struct UserCAProperty *property, const uint32_t store,
+    struct CertList *certificateList);
 
 int32_t CmClientGetUserCertInfo(const struct CmBlob *certUri, const uint32_t store,
     struct CertInfo *certificateInfo);
