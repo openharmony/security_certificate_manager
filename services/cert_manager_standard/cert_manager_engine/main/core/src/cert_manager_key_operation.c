@@ -53,6 +53,7 @@ static struct PropertyToHuks g_cmDigestProperty[] = {
     { CM_DIGEST_SHA256, HKS_DIGEST_SHA256 },
     { CM_DIGEST_SHA384, HKS_DIGEST_SHA384 },
     { CM_DIGEST_SHA512, HKS_DIGEST_SHA512 },
+    { CM_DIGEST_SM3, HKS_DIGEST_SM3 },
 };
 
 #define INVALID_PROPERTY_VALUE 0xFFFF
