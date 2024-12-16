@@ -51,7 +51,8 @@ int32_t CmServiceFinish(const struct CmContext *context, const struct CmBlob *ha
 
 int32_t CmServiceAbort(const struct CmContext *context, const struct CmBlob *handle);
 
-int32_t CmServiceGetCertList(const struct CmContext *context, uint32_t store, struct CmMutableBlob *certFileList);
+int32_t CmServiceGetCertList(const struct CmContext *context, const struct UserCAProperty *prop,
+    uint32_t store, struct CmMutableBlob *certFileList);
 
 int32_t CmServiceGetCertInfo(struct CmContext *context, const struct CmBlob *certUri,
     uint32_t store, struct CmBlob *certificateData, uint32_t *status);

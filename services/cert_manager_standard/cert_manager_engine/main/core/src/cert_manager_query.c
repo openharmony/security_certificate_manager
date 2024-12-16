@@ -64,10 +64,10 @@ static int32_t ConstrutPathList(const char *useridPath, struct CmMutableBlob *cP
         return CM_FAILURE;
     }
 
-    uint32_t i = 0;
+    uint32_t dealCert = 0;
     struct CmFileDirentInfo dire = {0};
     while (CmGetSubDir(d, &dire) == CMR_OK) {
-        if (i >= dirCount) {
+        if (dealCert >= dirCount) {
             CM_LOG_E("uid dir count beyond dirCount");
             break;
         }
@@ -79,20 +79,20 @@ static int32_t ConstrutPathList(const char *useridPath, struct CmMutableBlob *cP
             break;
         }
 
-        ret = MallocCertPath(&cPathList[i], pathBuf); /* uniformly free memory by caller */
+        ret = MallocCertPath(&cPathList[dealCert], pathBuf); /* uniformly free memory by caller */
         if (ret != CM_SUCCESS) {
             break;
         }
 
-        if (sprintf_s((char *)cPathList[i].data, cPathList[i].size, "%s", pathBuf) < 0) {
+        if (sprintf_s((char *)cPathList[dealCert].data, cPathList[dealCert].size, "%s", pathBuf) < 0) {
             ret = CM_FAILURE;
             break;
         }
-        i++;
+        dealCert++;
     }
 
     (void) CmCloseDir(d);
-    if (i != dirCount) { /* real dir count less than dirCount */
+    if (dealCert != dirCount) { /* real dir count less than dirCount */
         ret = CM_FAILURE;
     }
     return ret;
@@ -264,32 +264,31 @@ static int32_t CreateCertFile(struct CertFileInfo *cFileList, const char *path, 
         return CM_FAILURE;
     }
 
-    void *d = CmOpenDir(path);
-    if (d == NULL) {
+    void *isOpen = CmOpenDir(path);
+    if (isOpen == NULL) {
         CM_LOG_E("Failed to open directory");
         return CM_FAILURE;
     }
 
     int32_t ret;
-    uint32_t i = *certCount;
+    uint32_t getCount = *certCount;
     struct CmFileDirentInfo dire = {0};
-    while (CmGetDirFile(d, &dire) == CMR_OK) {
-        if (i >= MAX_COUNT_CERTIFICATE) {
+    while (CmGetDirFile(isOpen, &dire) == CMR_OK) {
+        if (getCount >= MAX_COUNT_CERTIFICATE_ALL) {
             CM_LOG_E("cert count beyond MAX");
             break;
         }
-
-        ret = GetCertNameAndPath(&cFileList[i], path, dire.fileName);
+        ret = GetCertNameAndPath(&cFileList[getCount], path, dire.fileName);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("malloc certfile for cert failed");
             break;
         }
 
-        i++;
+        getCount++;
     }
 
-    (void) CmCloseDir(d);
-    uint32_t realCount = i - *certCount;
+    (void) CmCloseDir(isOpen);
+    uint32_t realCount = getCount - *certCount;
     *certCount += realCount;
     if (realCount != (uint32_t)fileNums) {
         return CM_FAILURE;
@@ -303,7 +302,7 @@ int32_t CreateCertFileList(const struct CmMutableBlob *pathList, struct CmMutabl
         return CM_SUCCESS;
     }
 
-    uint32_t arraySize = sizeof(struct CertFileInfo) * MAX_COUNT_CERTIFICATE;
+    uint32_t arraySize = sizeof(struct CertFileInfo) * MAX_COUNT_CERTIFICATE_ALL;
     struct CertFileInfo *cFileList = (struct CertFileInfo *)CMMalloc(arraySize);
     if (cFileList == NULL) {
         CM_LOG_E("malloc cFileList failed");
@@ -491,6 +490,7 @@ int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
             CM_LOG_E("Failed to get cert uri");
             return CM_FAILURE;
         }
+
         certBlob->uri[i].size = cFileList[i].fileName.size; /* uri */
 
         struct CmBlob certData = { 0, NULL };

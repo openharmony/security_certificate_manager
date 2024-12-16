@@ -26,7 +26,8 @@
 #include "cm_mem.h"
 #include "os_account_manager.h"
 
-#define MAX_SIZE_CAPACITY 409600
+
+#define MAX_SIZE_CAPACITY 819200 /* Prevent sendrequest from failing to send due to memory limitations */
 
 using namespace OHOS;
 

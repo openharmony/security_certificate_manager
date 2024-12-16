@@ -63,6 +63,7 @@ static int32_t CmCertListGetCertCount(const struct CmBlob *outData, struct CertL
         return ret;
     }
 
+    /* Avoid applying for less memory than returned */
     if (certsCount > certificateList->certsCount) {
         CM_LOG_E("Caller Buffer too small");
         return CMR_ERROR_BUFFER_TOO_SMALL;
