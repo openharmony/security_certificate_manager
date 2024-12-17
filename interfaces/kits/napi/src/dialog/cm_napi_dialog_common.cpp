@@ -21,6 +21,20 @@
 #include "cm_log.h"
 #include "cm_type.h"
 
+#define BYTE_SHIFT_16           0x10
+#define BYTE_SHIFT_8            0x08
+#define BYTE_SHIFT_6            6
+#define BASE64_URL_TABLE_SIZE   0x3F
+#define BASE64_GROUP_NUM        3
+#define BYTE_INDEX_ZONE         0
+#define BYTE_INDEX_ONE          1
+#define BYTE_INDEX_TWO          2
+#define BYTE_INDEX_THREE        3
+#define BASE64_PADDING          "="
+#define BYTE_END_ONE            1
+#define BYTE_END_TWO            2
+
+static const char g_base64Table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 namespace CMNapi {
 namespace {
 constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M
@@ -28,6 +42,10 @@ constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M
 static const std::string DIALOG_NO_PERMISSION_MSG = "the caller has no permission";
 static const std::string DIALOG_INVALID_PARAMS_MSG = "the input parameters is invalid";
 static const std::string DIALOG_GENERIC_MSG = "there is an internal error";
+static const std::string DIALOG_OPERATION_CANCELS_MSG = "the user cancels the installation operation";
+static const std::string DIALOG_INSTALL_FAILED_MSG = "the user install certificate failed"
+    " in the certificate manager dialog";
+static const std::string DIALOG_NOT_SUPPORTED_MSG = "the API is not supported on this device";
 
 static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
     // invalid params
@@ -36,14 +54,124 @@ static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
     { CMR_DIALOG_ERROR_PERMISSION_DENIED, HAS_NO_PERMISSION },
     // internal error
     { CMR_DIALOG_ERROR_INTERNAL, DIALOG_ERROR_GENERIC },
+    // the user cancels the installation operation
+    { CMR_DIALOG_ERROR_OPERATION_CANCELS, DIALOG_ERROR_OPERATION_CANCELED },
+    // the user install certificate failed in the certificate manager dialog
+    { CMR_DIALOG_ERROR_INSTALL_FAILED, DIALOG_ERROR_INSTALL_FAILED },
+    // the API is not supported on this device
+    { CMR_DIALOG_ERROR_NOT_SUPPORTED, DIALOG_ERROR_NOT_SUPPORTED },
 };
 
 static const std::unordered_map<int32_t, std::string> DIALOG_CODE_TO_MSG_MAP = {
     { CMR_DIALOG_ERROR_INVALID_ARGUMENT, DIALOG_INVALID_PARAMS_MSG },
     { CMR_DIALOG_ERROR_PERMISSION_DENIED, DIALOG_NO_PERMISSION_MSG },
     { CMR_DIALOG_ERROR_INTERNAL, DIALOG_GENERIC_MSG },
+    { CMR_DIALOG_ERROR_OPERATION_CANCELS, DIALOG_OPERATION_CANCELS_MSG },
+    { CMR_DIALOG_ERROR_INSTALL_FAILED, DIALOG_INSTALL_FAILED_MSG },
+    { CMR_DIALOG_ERROR_NOT_SUPPORTED, DIALOG_NOT_SUPPORTED_MSG },
 };
 }  // namespace
+
+void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::AAFwk::Want want, std::shared_ptr<CmUIExtensionCallback> uiExtCallback)
+{
+    CM_LOG_D("begin StartUIExtensionAbility");
+    auto abilityContext = asyncContext->context;
+    if (abilityContext == nullptr) {
+        CM_LOG_E("abilityContext is null");
+        ThrowError(asyncContext->env, PARAM_ERROR, "abilityContext is null");
+        return;
+    }
+    auto uiContent = abilityContext->GetUIContent();
+    if (uiContent == nullptr) {
+        CM_LOG_E("uiContent is null");
+        ThrowError(asyncContext->env, PARAM_ERROR, "uiContent is null");
+        return;
+    }
+
+    OHOS::Ace::ModalUIExtensionCallbacks extensionCallbacks = {
+        [uiExtCallback](int32_t releaseCode) { uiExtCallback->OnRelease(releaseCode); },
+        [uiExtCallback](int32_t resultCode, const OHOS::AAFwk::Want& result) {
+            uiExtCallback->OnResult(resultCode, result); },
+        [uiExtCallback](const OHOS::AAFwk::WantParams& request) { uiExtCallback->OnReceive(request); },
+        [uiExtCallback](int32_t errorCode, const std::string& name, const std::string& message) {
+            uiExtCallback->OnError(errorCode, name, message); },
+        [uiExtCallback](const std::shared_ptr<OHOS::Ace::ModalUIExtensionProxy>& uiProxy) {
+            uiExtCallback->OnRemoteReady(uiProxy); },
+        [uiExtCallback]() { uiExtCallback->OnDestroy(); }
+    };
+
+    OHOS::Ace::ModalUIExtensionConfig uiExtConfig;
+    uiExtConfig.isProhibitBack = false;
+    int32_t sessionId = uiContent->CreateModalUIExtension(want, extensionCallbacks, uiExtConfig);
+    CM_LOG_I("end CreateModalUIExtension");
+    if (sessionId == 0) {
+        CM_LOG_E("CreateModalUIExtension failed");
+        ThrowError(asyncContext->env, PARAM_ERROR, "CreateModalUIExtension failed");
+    }
+    uiExtCallback->SetSessionId(sessionId);
+    return;
+}
+
+static std::string EncodeBase64(const uint8_t *indata, const uint32_t length)
+{
+    std::string encodeStr("");
+    if (indata == nullptr) {
+        CM_LOG_E("input param is invalid");
+        return encodeStr;
+    }
+    int i = 0;
+    while (i < (int)length) {
+        unsigned int octeta = i < (int)length ? *(indata + (i++)) : 0;
+        unsigned int octetb = i < (int)length ? *(indata + (i++)) : 0;
+        unsigned int octetc = i < (int)length ? *(indata + (i++)) : 0;
+
+        unsigned int triple = (octeta << BYTE_SHIFT_16) + (octetb << BYTE_SHIFT_8) + octetc;
+
+        encodeStr += g_base64Table[(triple >> BYTE_INDEX_THREE * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
+        encodeStr += g_base64Table[(triple >> BYTE_INDEX_TWO   * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
+        encodeStr += g_base64Table[(triple >> BYTE_INDEX_ONE   * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
+        encodeStr += g_base64Table[(triple >> BYTE_INDEX_ZONE  * BYTE_SHIFT_6) & BASE64_URL_TABLE_SIZE];
+    }
+    
+    switch (BASE64_GROUP_NUM - (i % BASE64_GROUP_NUM)) {
+        case BYTE_END_TWO:
+            encodeStr.replace(encodeStr.length() - BYTE_END_TWO, 1, BASE64_PADDING);
+            encodeStr.replace(encodeStr.length() - BYTE_END_ONE, 1, BASE64_PADDING);
+            break;
+        case BYTE_END_ONE:
+            encodeStr.replace(encodeStr.length() - BYTE_END_ONE, 1, BASE64_PADDING);
+            break;
+        default:
+            break;
+    }
+    return encodeStr;
+}
+
+bool ParseCmUIAbilityContextReq(
+    napi_env env, const napi_value& obj, std::shared_ptr<OHOS::AbilityRuntime::AbilityContext>& abilityContext)
+{
+    bool stageMode = false;
+    napi_status status = OHOS::AbilityRuntime::IsStageContext(env, obj, stageMode);
+    if (status != napi_ok || !stageMode) {
+        CM_LOG_E("not stage mode");
+        return false;
+    }
+
+    auto context = OHOS::AbilityRuntime::GetStageModeContext(env, obj);
+    if (context == nullptr) {
+        CM_LOG_E("get context failed");
+        return false;
+    }
+
+    abilityContext = OHOS::AbilityRuntime::Context::ConvertTo<OHOS::AbilityRuntime::AbilityContext>(context);
+    if (abilityContext == nullptr) {
+        CM_LOG_E("get abilityContext failed");
+        return false;
+    }
+    CM_LOG_I("end ParseUIAbilityContextReq");
+    return true;
+}
 
 napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store)
 {
@@ -89,7 +217,6 @@ napi_value ParseString(napi_env env, napi_value obj, CmBlob *&blob)
         return nullptr;
     }
 
-    // add 0 length check
     if ((length == 0) || (length > CM_MAX_DATA_LEN)) {
         CM_LOG_E("input string length is 0 or too large, length: %d", length);
         return nullptr;
@@ -122,6 +249,51 @@ napi_value ParseString(napi_env env, napi_value obj, CmBlob *&blob)
     blob->data = reinterpret_cast<uint8_t *>(data);
     blob->size = static_cast<uint32_t>((length + 1) & UINT32_MAX);
 
+    return GetInt32(env, 0);
+}
+
+napi_value GetUint8ArrayToBase64Str(napi_env env, napi_value object, std::string &certArray)
+{
+    napi_typedarray_type arrayType;
+    napi_value arrayBuffer = nullptr;
+    size_t length = 0;
+    size_t offset = 0;
+    void *certData = nullptr;
+
+    napi_status status = napi_get_typedarray_info(
+        env, object, &arrayType, &length, static_cast<void **>(&certData), &arrayBuffer, &offset);
+    if (arrayType != napi_uint8_array) {
+        return nullptr;
+    }
+    if (status != napi_ok) {
+        CM_LOG_E("the type of param is not uint8_array");
+        return nullptr;
+    }
+    if (length > CM_MAX_DATA_LEN) {
+        CM_LOG_E("certData is too large, length = %x", length);
+        return nullptr;
+    }
+    uint8_t *data = nullptr;
+    if (length == 0) {
+        CM_LOG_D("The memory length created is only 1 Byte");
+        // The memory length created is only 1 Byte
+        data = static_cast<uint8_t *>(CmMalloc(1));
+    } else {
+        data = static_cast<uint8_t *>(CmMalloc(length));
+    }
+    if (data == nullptr) {
+        CM_LOG_E("Malloc failed");
+        return nullptr;
+    }
+    (void)memset_s(data, length, 0, length);
+    if (memcpy_s(data, length, certData, length) != EOK) {
+        CmFree(data);
+        CM_LOG_E("memcpy_s fail, length = %x", length);
+        return nullptr;
+    }
+    std::string encode = EncodeBase64(data, length);
+    certArray = encode;
+    CmFree(data);
     return GetInt32(env, 0);
 }
 
