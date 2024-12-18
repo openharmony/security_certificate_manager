@@ -159,6 +159,9 @@ enum CMDialogErrorCode {
     CMR_DIALOG_ERROR = -1,
     CMR_DIALOG_ERROR_INVALID_ARGUMENT = -2,
     CMR_DIALOG_ERROR_INTERNAL = -3,
+    CMR_DIALOG_ERROR_OPERATION_CANCELS = -4,
+    CMR_DIALOG_ERROR_INSTALL_FAILED = -5,
+    CMR_DIALOG_ERROR_NOT_SUPPORTED = -6,
     CMR_DIALOG_ERROR_PERMISSION_DENIED = 1011,
 };
 
@@ -378,11 +381,6 @@ struct CertName {
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)
 {
     return (UINT32_MAX - a) < b;
-}
-
-static inline bool CmIsInvalidLength(uint32_t length)
-{
-    return (length == 0) || (length > MAX_OUT_BLOB_SIZE);
 }
 
 static inline int32_t CmCheckBlob(const struct CmBlob *blob)

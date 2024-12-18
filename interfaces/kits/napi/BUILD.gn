@@ -56,7 +56,9 @@ ohos_shared_library("certmanager") {
 
   external_deps = [
     "c_utils:utils",
+    "ipc:ipc_core",
     "napi:ace_napi",
+    "samgr:samgr_proxy",
   ]
   cflags_cc = [
     "-Wall",
@@ -94,6 +96,7 @@ ohos_shared_library("certmanagerdialog") {
     "src/dialog/cm_napi_dialog.cpp",
     "src/dialog/cm_napi_dialog_common.cpp",
     "src/dialog/cm_napi_open_dialog.cpp",
+    "src/dialog/cm_napi_open_install_dialog.cpp",
   ]
 
   external_deps = [
@@ -107,7 +110,9 @@ ohos_shared_library("certmanagerdialog") {
     "ability_runtime:napi_common",
     "ace_engine:ace_uicontent",
     "c_utils:utils",
+    "ipc:ipc_core",
     "napi:ace_napi",
+    "samgr:samgr_proxy",
   ]
   cflags_cc = [
     "-Wall",

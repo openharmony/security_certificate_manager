@@ -25,16 +25,6 @@
 #include "want_params_wrapper.h"
 
 namespace CMNapi {
-namespace {
-const std::string PARAM_UI_EXTENSION_TYPE = "ability.want.params.uiExtensionType";
-const std::string SYS_COMMON_UI = "sys/commonUI";
-const std::string CERT_MANAGER_BUNDLENAME = "com.ohos.certmanager";
-const std::string CERT_MANAGER_ABILITYNAME = "CertPickerUIExtAbility";
-const std::string CERT_MANAGER_PAGE_TYPE = "pageType";
-constexpr int32_t PARAM0 = 0;
-constexpr int32_t PARAM1 = 1;
-constexpr int32_t PARAM_SIZE_TWO = 2;
-} // namespace
 
 CommonAsyncContext::CommonAsyncContext(napi_env env)
 {
@@ -50,6 +40,11 @@ CommonAsyncContext::~CommonAsyncContext()
 CmUIExtensionCallback::CmUIExtensionCallback(std::shared_ptr<CmUIExtensionRequestContext>& reqContext)
 {
     this->reqContext_ = reqContext;
+}
+
+CmUIExtensionCallback::~CmUIExtensionCallback()
+{
+    CM_LOG_D("~CmUIExtensionCallback");
 }
 
 void CmUIExtensionCallback::SetSessionId(const int32_t sessionId)
@@ -120,7 +115,7 @@ void CmUIExtensionCallback::OnDestroy()
     }
 }
 
-void ProcessCallback(napi_env env, const CommonAsyncContext* asyncContext)
+void CmUIExtensionCallback::ProcessCallback(napi_env env, const CommonAsyncContext* asyncContext)
 {
     napi_value args[PARAM_SIZE_TWO] = {nullptr};
 
@@ -156,73 +151,6 @@ void CmUIExtensionCallback::SendMessageBack()
 
     CM_LOG_D("ProcessCallback");
     ProcessCallback(this->reqContext_->env, this->reqContext_.get());
-}
-
-bool ParseCmUIAbilityContextReq(
-    napi_env env, const napi_value& obj, std::shared_ptr<OHOS::AbilityRuntime::AbilityContext>& abilityContext)
-{
-    bool stageMode = false;
-    napi_status status = OHOS::AbilityRuntime::IsStageContext(env, obj, stageMode);
-    if (status != napi_ok || !stageMode) {
-        CM_LOG_E("not stage mode");
-        return false;
-    }
-
-    auto context = OHOS::AbilityRuntime::GetStageModeContext(env, obj);
-    if (context == nullptr) {
-        CM_LOG_E("get context failed");
-        return false;
-    }
-
-    abilityContext = OHOS::AbilityRuntime::Context::ConvertTo<OHOS::AbilityRuntime::AbilityContext>(context);
-    if (abilityContext == nullptr) {
-        CM_LOG_E("get abilityContext failed");
-        return false;
-    }
-    CM_LOG_I("end ParseUIAbilityContextReq");
-    return true;
-}
-
-static void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
-    OHOS::AAFwk::Want want)
-{
-    CM_LOG_D("begin StartUIExtensionAbility");
-    auto abilityContext = asyncContext->context;
-    if (abilityContext == nullptr) {
-        CM_LOG_E("abilityContext is null");
-        ThrowError(asyncContext->env, PARAM_ERROR, "abilityContext is null");
-        return;
-    }
-    auto uiContent = abilityContext->GetUIContent();
-    if (uiContent == nullptr) {
-        CM_LOG_E("uiContent is null");
-        ThrowError(asyncContext->env, PARAM_ERROR, "uiContent is null");
-        return;
-    }
-
-    auto uiExtCallback = std::make_shared<CmUIExtensionCallback>(asyncContext);
-    OHOS::Ace::ModalUIExtensionCallbacks extensionCallbacks = {
-        [uiExtCallback](int32_t releaseCode) { uiExtCallback->OnRelease(releaseCode); },
-        [uiExtCallback](int32_t resultCode, const OHOS::AAFwk::Want& result) {
-            uiExtCallback->OnResult(resultCode, result); },
-        [uiExtCallback](const OHOS::AAFwk::WantParams& request) { uiExtCallback->OnReceive(request); },
-        [uiExtCallback](int32_t errorCode, const std::string& name, const std::string& message) {
-            uiExtCallback->OnError(errorCode, name, message); },
-        [uiExtCallback](const std::shared_ptr<OHOS::Ace::ModalUIExtensionProxy>& uiProxy) {
-            uiExtCallback->OnRemoteReady(uiProxy); },
-        [uiExtCallback]() { uiExtCallback->OnDestroy(); }
-    };
-
-    OHOS::Ace::ModalUIExtensionConfig uiExtConfig;
-    uiExtConfig.isProhibitBack = false;
-    int32_t sessionId = uiContent->CreateModalUIExtension(want, extensionCallbacks, uiExtConfig);
-    CM_LOG_I("end CreateModalUIExtension");
-    if (sessionId == 0) {
-        CM_LOG_E("CreateModalUIExtension failed");
-        ThrowError(asyncContext->env, PARAM_ERROR, "CreateModalUIExtension failed");
-    }
-    uiExtCallback->SetSessionId(sessionId);
-    return;
 }
 
 static bool IsCmDialogPageTypeEnum(const uint32_t value)
@@ -283,8 +211,9 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
     want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
 
+    auto uiExtCallback = std::make_shared<CmUIExtensionCallback>(asyncContext);
     // Start ui extension by context.
-    StartUIExtensionAbility(asyncContext, want);
+    StartUIExtensionAbility(asyncContext, want, uiExtCallback);
     CM_LOG_D("cert manager dialog end");
     return result;
 }
