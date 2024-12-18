@@ -18,18 +18,26 @@ cert_manager_root_dir = "//base/security/certificate_manager"
 declare_args() {
   # depend on the definition of huks security level in base/security/huks/build/config.gni
   certificate_manager_deps_huks_enabled = "software"
+
+  certificate_manager_feature_ca_enabled = true
+
+  certificate_manager_feature_credential_enabled = true
+
+  certificate_manager_feature_dialog_enabled = false
+  if (defined(global_parts_info) &&
+      defined(global_parts_info.arkui_ace_engine)) {
+    certificate_manager_feature_dialog_enabled = true
+  }
 }
 
-if (!defined(global_parts_info) ||
+has_os_account_part = false
+if (defined(global_parts_info) &&
     defined(global_parts_info.account_os_account)) {
   has_os_account_part = true
-} else {
-  has_os_account_part = false
 }
 
-if (!defined(global_parts_info) ||
+support_security_guard = false
+if (defined(global_parts_info) &&
     defined(global_parts_info.security_security_guard)) {
   support_security_guard = true
-} else {
-  support_security_guard = false
 }

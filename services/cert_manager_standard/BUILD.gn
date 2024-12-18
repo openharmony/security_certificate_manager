@@ -11,15 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
-
-declare_args() {
-  certificate_manager_feature_ca_enabled = "true"
-}
-
-declare_args() {
-  certificate_manager_feature_credential_enabled = "true"
-}
 
 ohos_prebuilt_etc("cert_manager_service.rc") {
   source = "cert_manager_service.cfg"
@@ -42,10 +35,10 @@ ohos_shared_library("cert_manager_service") {
   part_name = "certificate_manager"
   defines = []
 
-  if (certificate_manager_feature_ca_enabled == "false") {
+  if (!certificate_manager_feature_ca_enabled) {
     defines += [ "CERTIFICATE_MANAGER_FEATURE_CA_DISABLED" ]
   }
-  if (certificate_manager_feature_credential_enabled == "false") {
+  if (!certificate_manager_feature_credential_enabled) {
     defines += [ "CERTIFICATE_MANAGER_FEATURE_CREDENTIAL_DISABLED" ]
   }
 
