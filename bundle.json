@@ -16,7 +16,10 @@
     "component": {
       "name": "certificate_manager",
       "subsystem": "security",
-      "syscap": [ "SystemCapability.Security.CertificateManager" ],
+      "syscap": [
+        "SystemCapability.Security.CertificateManagerDialog",
+        "SystemCapability.Security.CertificateManager"
+      ],
       "features": [
         "certificate_manager_deps_huks_enabled",
         "certificate_manager_feature_ca_enabled",
