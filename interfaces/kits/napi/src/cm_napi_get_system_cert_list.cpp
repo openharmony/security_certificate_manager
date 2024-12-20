@@ -36,6 +36,7 @@ struct GetCertListAsyncContextT {
 
     int32_t result = 0;
     uint32_t store = 0;
+    enum CmCertScope scope = CM_ALL_USER;
     struct CertList *certificateList = nullptr;
 };
 using GetCertListAsyncContext = GetCertListAsyncContextT *;
@@ -67,6 +68,24 @@ static void DeleteGetCertListAsyncContext(napi_env env, GetCertListAsyncContext 
     context = nullptr;
 }
 
+static int32_t GetAndCheckScope(napi_env env, napi_value arg, enum CmCertScope &certScope)
+{
+    uint32_t scope = 0;
+    napi_value result = ParseUint32(env, arg, scope);
+    if (result == nullptr) {
+        CM_LOG_E("Failed to get scope value");
+        return CM_FAILURE;
+    }
+
+    if (!IsValidCertScope(scope)) {
+        CM_LOG_E("scope[%u] is invalid", scope);
+        return CM_FAILURE;
+    }
+
+    certScope = static_cast<enum CmCertScope>(scope);
+    return CM_SUCCESS;
+}
+
 static napi_value GetCertListParseParams(    napi_env env, napi_callback_info info,
     GetCertListAsyncContext context, uint32_t store)
 {
@@ -74,19 +93,30 @@ static napi_value GetCertListParseParams(    napi_env env, napi_callback_info in
     napi_value argv[CM_NAPI_GET_CERT_LIST_MAX_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
+    /* get system ca list */
+    if (store == CM_SYSTEM_TRUSTED_STORE) {
+        if (argc != CM_NAPI_GET_CERT_LIST_MIN_ARGS) { /* no args when get system ca list */
+            ThrowError(env, PARAM_ERROR, "arguments count invalid when getting system trusted certificate list");
+            CM_LOG_E("arguments count is not expected when getting system trusted certificate list");
+            return nullptr;
+        }
+        context->store = store;
+        return GetInt32(env, 0);
+    }
+
+    /* get user ca list */
     if ((argc != CM_NAPI_GET_CERT_LIST_MIN_ARGS) &&
         (argc != CM_NAPI_GET_CERT_LIST_MAX_ARGS)) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid when getting trusted certificate list");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid when getting user trusted certificate list");
         CM_LOG_E("arguments count is not expected when getting trusted certificate list");
         return nullptr;
     }
 
-    size_t index = 0;
-    if (index < argc) {
-        int32_t ret = GetCallback(env, argv[index], context->callback);
+    if (argc == CM_NAPI_GET_CERT_LIST_MAX_ARGS) {
+        int32_t ret = GetAndCheckScope(env, argv[0], context->scope);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
-            CM_LOG_E("get callback function failed when get certlist function");
+            ThrowError(env, PARAM_ERROR, "Failed to get scope");
+            CM_LOG_E("Failed to get scope when get certlist function");
             return nullptr;
         }
     }
@@ -122,7 +152,7 @@ static void GetCertListExecute(napi_env env, void *data)
     context->certificateList->certAbstract = nullptr;
     context->certificateList->certsCount = 0;
 
-    uint32_t buffSize = MAX_COUNT_CERTIFICATE * sizeof(struct CertAbstract);
+    uint32_t buffSize = MAX_COUNT_CERTIFICATE_ALL * sizeof(struct CertAbstract);
     context->certificateList->certAbstract = static_cast<struct CertAbstract *>(CmMalloc(buffSize));
     if (context->certificateList->certAbstract == nullptr) {
         CM_LOG_E("malloc certificateList certAbstract fail");
@@ -130,10 +160,16 @@ static void GetCertListExecute(napi_env env, void *data)
         return;
     }
     (void)memset_s(context->certificateList->certAbstract, buffSize, 0, buffSize);
-    context->certificateList->certsCount = MAX_COUNT_CERTIFICATE;
+    context->certificateList->certsCount = MAX_COUNT_CERTIFICATE_ALL;
 
     if (context->store == CM_SYSTEM_TRUSTED_STORE) {
         context->result = CmGetCertList(context->store, context->certificateList);
+        return;
+    }
+
+    if (context->scope == CM_CURRENT_USER || context->scope == CM_GLOBAL_USER) {
+        struct UserCAProperty prop = { INIT_INVALID_VALUE, context->scope };
+        context->result = CmGetUserCACertList(&prop, context->certificateList);
     } else {
         context->result = CmGetUserCertList(context->store, context->certificateList);
     }
