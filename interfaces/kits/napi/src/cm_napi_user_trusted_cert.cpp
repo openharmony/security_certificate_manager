@@ -26,6 +26,7 @@
 namespace CMNapi {
 namespace {
 constexpr int CM_NAPI_USER_INSTALL_ARGS_CNT = 2;
+constexpr int CM_NAPI_USER_INSTALL_SYNC_ARGS_CNT = 2;
 constexpr int CM_NAPI_USER_UNINSTALL_ARGS_CNT = 2;
 constexpr int CM_NAPI_USER_UNINSTALL_ALL_ARGS_CNT = 1;
 constexpr int CM_NAPI_CALLBACK_ARG_CNT = 1;
@@ -67,21 +68,23 @@ static void FreeUserCertAsyncContext(napi_env env, UserCertAsyncContext &context
     CM_FREE_PTR(context);
 }
 
-static int32_t GetUserCertData(napi_env env, napi_value object, UserCertAsyncContext context)
+static int32_t GetUserCertData(napi_env env, napi_value object, CmBlob **outCert)
 {
-    context->userCert = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
-    if (context->userCert == nullptr) {
+    CmBlob *userCert = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
+    if (userCert == nullptr) {
         CM_LOG_E("could not alloc userCert blob memory");
         return CMR_ERROR_MALLOC_FAIL;
     }
-    (void)memset_s(context->userCert, sizeof(CmBlob), 0, sizeof(CmBlob));
+    (void)memset_s(userCert, sizeof(CmBlob), 0, sizeof(CmBlob));
 
-    napi_value result = GetUint8Array(env, object, *(context->userCert));
+    napi_value result = GetUint8Array(env, object, *(userCert));
     if (result == nullptr) {
         CM_LOG_E("could not get userCert data");
-        return CMR_ERROR_INVALID_OPERATION;
+        CM_FREE_PTR(userCert);
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
+    *outCert = userCert;
     return CM_SUCCESS;
 }
 
@@ -119,7 +122,7 @@ static napi_value ParseCertInfo(napi_env env, napi_value object, UserCertAsyncCo
         return nullptr;
     }
 
-    int32_t ret = GetUserCertData(env, userCertValue, context);
+    int32_t ret = GetUserCertData(env, userCertValue, &context->userCert);
     if (ret != CM_SUCCESS) {
         return nullptr;
     }
@@ -198,6 +201,36 @@ static napi_value ParseUninstallUserCertParams(napi_env env, napi_callback_info 
     }
 
     return GetInt32(env, 0);
+}
+
+static int32_t ParseInstallUserCertSyncParams(napi_env env, napi_callback_info info, CmBlob **userCert,
+    CmCertScope &installScope)
+{
+    size_t argc = CM_NAPI_USER_INSTALL_SYNC_ARGS_CNT;
+    napi_value argv[CM_NAPI_USER_INSTALL_SYNC_ARGS_CNT] = { nullptr };
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    if (argc != CM_NAPI_USER_INSTALL_SYNC_ARGS_CNT) {
+        CM_LOG_E("arguments count is not expected when installing user cert sync");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    size_t index = 0;
+    int32_t ret = GetUserCertData(env, argv[index], userCert);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("could not get userCert");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    index++;
+    uint32_t scope = CM_ALL_USER;
+    napi_value result = ParseUint32(env, argv[index], scope);
+    if (result == nullptr) {
+        CM_LOG_E("could not get install scope");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    installScope = static_cast<CmCertScope>(scope);
+    return CM_SUCCESS;
 }
 
 static napi_value ParseUninstallAllUserCertParams(napi_env env, napi_callback_info info, UserCertAsyncContext context)
@@ -386,6 +419,31 @@ static napi_value UninstallAllUserCertAsyncWork(napi_env env, UserCertAsyncConte
     return promise;
 }
 
+static int32_t InstallUserCertSyncExecute(CmBlob *userCert, const CmCertScope scope, CmBlob *certUri)
+{
+    int32_t ret;
+    // alias is empty string
+    uint8_t alias[1] = { 0 };
+    CmBlob certAlias = { .size = sizeof(alias), .data = alias };
+
+    uint32_t userId = 0;
+    if (scope == CM_CURRENT_USER) {
+        userId = INIT_INVALID_VALUE;
+    } else if (scope == CM_GLOBAL_USER) {
+        userId = 0;
+    } else {
+        CM_LOG_E("invalid certificate scope");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    ret = CmInstallUserCACert(userCert, &certAlias, userId, true, certUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("install user cert sync, init certUri failed");
+        return ret;
+    }
+    return ret;
+}
+
 napi_value CMNapiInstallUserTrustedCert(napi_env env, napi_callback_info info)
 {
     UserCertAsyncContext context = InitUserCertAsyncContext();
@@ -408,6 +466,38 @@ napi_value CMNapiInstallUserTrustedCert(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
+    return result;
+}
+
+napi_value CMNapiInstallUserTrustedCertSync(napi_env env, napi_callback_info info)
+{
+    CmBlob *userCert = nullptr;
+    CmCertScope installScope;
+    uint8_t uri[OUT_AUTH_URI_SIZE] = { 0 };
+    CmBlob certUri = { sizeof(uri), uri };
+
+    int32_t ret = CM_SUCCESS;
+    do {
+        ret = ParseInstallUserCertSyncParams(env, info, &userCert, installScope);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("parse install user cert sync params failed");
+            break;
+        }
+
+        ret = InstallUserCertSyncExecute(userCert, installScope, &certUri);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("install user cert sync execute failed");
+            break;
+        }
+    } while (0);
+
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("install user cert sync failed, ret = %d", ret);
+        napi_throw(env, GenerateBusinessError(env, ret));
+        return nullptr;
+    }
+    napi_value result = ConvertResultCertUri(env, &certUri);
+    FreeCmBlob(userCert);
     return result;
 }
 

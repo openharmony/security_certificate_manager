@@ -453,16 +453,16 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode)
         return nullptr;
     }
 
-    napi_value businessError = nullptr;
-    NAPI_CALL(env, napi_create_object(env, &businessError));
-
     napi_value code = nullptr;
     int32_t outCode = TranformErrorCode(errorCode);
     NAPI_CALL(env, napi_create_int32(env, outCode, &code));
-    NAPI_CALL(env, napi_set_named_property(env, businessError, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
+
     napi_value message = nullptr;
     NAPI_CALL(env, napi_create_string_utf8(env, errorMsg, NAPI_AUTO_LENGTH, &message));
-    NAPI_CALL(env, napi_set_named_property(env, businessError, BUSINESS_ERROR_PROPERTY_MESSAGE.c_str(), message));
+
+    napi_value businessError = nullptr;
+    NAPI_CALL(env, napi_create_error(env, nullptr, message, &businessError));
+    NAPI_CALL(env, napi_set_named_property(env, businessError, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
     return businessError;
 }
 

@@ -169,7 +169,7 @@ static napi_value CMCheckArgvAndInitContext(std::shared_ptr<CmUIExtensionRequest
         CM_LOG_E("certificateScope invalid");
         return nullptr;
     }
-    
+
     // Parse fourth argument for cert.
     if (GetUint8ArrayToBase64Str(asyncContext->env, argv[PARAM3], asyncContext->certStr) == nullptr) {
         CM_LOG_E("cert is not a uint8Array or the length is 0 or too long.");
