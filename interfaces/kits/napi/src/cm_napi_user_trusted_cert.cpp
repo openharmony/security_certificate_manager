@@ -29,6 +29,7 @@ constexpr int CM_NAPI_USER_INSTALL_ARGS_CNT = 2;
 constexpr int CM_NAPI_USER_INSTALL_SYNC_ARGS_CNT = 2;
 constexpr int CM_NAPI_USER_UNINSTALL_ARGS_CNT = 2;
 constexpr int CM_NAPI_USER_UNINSTALL_ALL_ARGS_CNT = 1;
+constexpr int CM_NAPI_USER_UNINSTALL_SYNC_ARGS_CNT = 1;
 constexpr int CM_NAPI_CALLBACK_ARG_CNT = 1;
 constexpr uint32_t OUT_AUTH_URI_SIZE = 1000;
 } // namespace
@@ -201,6 +202,26 @@ static napi_value ParseUninstallUserCertParams(napi_env env, napi_callback_info 
     }
 
     return GetInt32(env, 0);
+}
+
+static int32_t ParseUninstallUserCertSyncParams(napi_env env, napi_callback_info info, UserCertAsyncContext context)
+{
+    size_t argc = CM_NAPI_USER_UNINSTALL_SYNC_ARGS_CNT;
+    napi_value argv[CM_NAPI_USER_UNINSTALL_SYNC_ARGS_CNT] = { nullptr };
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    if (argc != CM_NAPI_USER_UNINSTALL_SYNC_ARGS_CNT) {
+        CM_LOG_E("arguments count is not expected when uninstalling user cert sync");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    napi_value result = ParseString(env, argv[0], context->certUri);
+    if (result == nullptr) {
+        CM_LOG_E("get certUri failed when uninstalling user cert sync");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    
+    return CM_SUCCESS;
 }
 
 static int32_t ParseInstallUserCertSyncParams(napi_env env, napi_callback_info info, CmBlob **userCert,
@@ -549,6 +570,39 @@ napi_value CMNapiUninstallAllUserTrustedCert(napi_env env, napi_callback_info in
     }
 
     return result;
+}
+
+napi_value CMNapiUninstallUserCertSync(napi_env env, napi_callback_info info)
+{
+    UserCertAsyncContext context = InitUserCertAsyncContext();
+    int32_t ret;
+    do {
+        if (context == nullptr) {
+            ret = CMR_ERROR_NULL_POINTER;
+            CM_LOG_E("init uninstall user cert context failed");
+            break;
+        }
+
+        ret = ParseUninstallUserCertSyncParams(env, info, context);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("parse uninstall user cert params failed");
+            break;
+        }
+
+        ret = CmUninstallUserTrustedCert(context->certUri);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("start uninstall user cert sync work failed");
+            break;
+        }
+    } while (0);
+
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("uninstall user cert sync failed, ret = %d", ret);
+        napi_throw(env, GenerateBusinessError(env, ret));
+    }
+    
+    FreeUserCertAsyncContext(env, context);
+    return nullptr;
 }
 }  // namespace CMNapi
 

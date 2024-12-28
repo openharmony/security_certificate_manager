@@ -155,6 +155,7 @@ extern "C" {
             DECLARE_NAPI_FUNCTION("uninstallUserTrustedCertificate", CMNapiUninstallUserTrustedCert),
             DECLARE_NAPI_FUNCTION("getAllUserTrustedCertificates", CMNapiGetAllUserTrustedCertList),
             DECLARE_NAPI_FUNCTION("getUserTrustedCertificate", CMNapiGetUserTrustedCertInfo),
+            DECLARE_NAPI_FUNCTION("uninstallUserTrustedCertificateSync", CMNapiUninstallUserCertSync),
 
             /* private cred */
             DECLARE_NAPI_FUNCTION("installPrivateCertificate", CMNapiInstallPrivateAppCert),

@@ -863,7 +863,7 @@ HWTEST_F(CmUserCertTest, UninstallUserCertTest004, TestSize.Level0)
     struct CmBlob invalidUri = { strlen(invalidUriBuf) + 1, reinterpret_cast<uint8_t *>(invalidUriBuf) };
 
     ret = CmUninstallUserTrustedCert(&invalidUri);
-    EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall test failed, recode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_NOT_EXIST) << "Normal user cert Uninstall test failed, recode:" << ret;
 }
 
 /**

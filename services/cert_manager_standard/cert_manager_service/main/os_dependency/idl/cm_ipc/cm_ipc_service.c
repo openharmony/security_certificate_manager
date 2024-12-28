@@ -263,13 +263,8 @@ void CmIpcServiceUninstallAppCert(const struct CmBlob *paramSetBlob, struct CmBl
     struct CmContext cmContext = {0};
 
     struct CmParamOut params[] = {
-        {
-            .tag = CM_TAG_PARAM0_BUFFER,
-            .blob = &keyUri
-        }, {
-            .tag = CM_TAG_PARAM0_UINT32,
-            .uint32Param = &store
-        },
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = &keyUri },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store },
     };
 
     do {
@@ -1166,6 +1161,7 @@ void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlo
     uint32_t userId = 0;
     uint32_t status = CERT_STATUS_ENANLED;
     struct CmContext cmContext = {0};
+    struct CmContext oriContext = {0};
     struct CmParamSet *paramSet = NULL;
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = &userCert },
@@ -1180,6 +1176,8 @@ void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlo
             CM_LOG_E("InstallUserCert get input params failed, ret = %d", ret);
             break;
         }
+        oriContext.userId = cmContext.userId;
+        oriContext.uid = cmContext.uid;
 
         ret = CmServiceInstallUserCertCheck(&cmContext, &userCert, &certAlias, userId);
         if (ret != CM_SUCCESS) {
@@ -1197,12 +1195,12 @@ void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlo
     } while (0);
 
     struct CmBlob tempBlob = { 0, NULL };
-    CmReport(__func__, &cmContext, &tempBlob, ret);
+    CmReport(__func__, &oriContext, &tempBlob, ret);
 
     if (ret != CM_SUCCESS) {
         CmSendResponse(context, ret, NULL);
     }
-    CmReportSGInstallUserCert(&certAlias, ret);
+    CmReportSGInstallUserCert(&certAlias, outData, ret);
     CmFreeParamSet(&paramSet);
 }
 
@@ -1213,6 +1211,7 @@ void CmIpcServiceUninstallUserCert(const struct CmBlob *paramSetBlob, struct CmB
     int32_t ret = CM_SUCCESS;
     struct CmBlob certUri = { 0, NULL };
     struct CmContext cmContext = {0};
+    struct CmContext oriContext = {0};
     struct CmParamSet *paramSet = NULL;
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = &certUri },
@@ -1224,6 +1223,8 @@ void CmIpcServiceUninstallUserCert(const struct CmBlob *paramSetBlob, struct CmB
             CM_LOG_E("UninstallUserCert get input params failed, ret = %d", ret);
             break;
         }
+        oriContext.userId = cmContext.userId;
+        oriContext.uid = cmContext.uid;
 
         ret = CmServiceUninstallUserCertCheck(&cmContext, &certUri);
         if (ret != CM_SUCCESS) {
@@ -1238,7 +1239,7 @@ void CmIpcServiceUninstallUserCert(const struct CmBlob *paramSetBlob, struct CmB
         }
     } while (0);
 
-    CmReport(__func__, &cmContext, &certUri, ret);
+    CmReport(__func__, &oriContext, &certUri, ret);
     CmSendResponse(context, ret, NULL);
     CmReportSGUninstallUserCert(&certUri, false, ret);
     CmFreeParamSet(&paramSet);

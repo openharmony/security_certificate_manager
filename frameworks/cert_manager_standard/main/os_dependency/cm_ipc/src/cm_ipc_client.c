@@ -241,10 +241,8 @@ static int32_t UninstallAppCert(enum CertManagerInterfaceCode type, const struct
     struct CmParamSet *sendParamSet = NULL;
 
     struct CmParam params[] = {
-        { .tag = CM_TAG_PARAM0_BUFFER,
-          .blob = *keyUri },
-        { .tag = CM_TAG_PARAM0_UINT32,
-          .uint32Param = store },
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *keyUri },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = store },
     };
 
     do {

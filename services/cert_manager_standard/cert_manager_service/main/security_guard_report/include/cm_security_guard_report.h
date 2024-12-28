@@ -25,6 +25,7 @@ struct CmReportSGInfo {
     uint32_t uid;
     int32_t result;
     char *name;
+    char *subjectName;
     bool isSetGrantUid;
     uint32_t grantUid;
     bool isSetStatus;

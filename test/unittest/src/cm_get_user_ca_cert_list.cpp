@@ -374,6 +374,8 @@ HWTEST_F(CmGetUserCertListTest, CmGetUserCACertList006, TestSize.Level0)
 
     struct CertList *certList006 = nullptr;
     InitCertList(&certList006);
+    struct CertList *certList007 = nullptr;
+    InitCertList(&certList007);
     struct UserCAProperty prop = { SA_USERID, CM_ALL_USER };
     ret = CmGetUserCACertList(&prop, certList006);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal get user ca cert list test failed, recode:" << ret;
@@ -381,11 +383,13 @@ HWTEST_F(CmGetUserCertListTest, CmGetUserCACertList006, TestSize.Level0)
     uint32_t certsCount006 = certList006->certsCount;
     EXPECT_EQ(certsCount006, size) << "Get certs count wrong, recode:" << ret;
 
-    ret = CmUninstallAllUserTrustedCert();
-    EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall All test failed, recode:" << ret;
-    CmUninstallCACertList(certList006);
+    prop = { TEST_USERID, CM_ALL_USER };
+    ret = CmGetUserCACertList(&prop, certList007);
+
+    CmUninstallCACertList(certList007);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall CA test cert failed, recode:" << ret;
     FreeCertList(certList006);
+    FreeCertList(certList007);
 }
 
 // /**

@@ -279,8 +279,17 @@ static int32_t CheckAndUpdateCallerAndUri(struct CmContext *cmContext, const str
     }
 
     (void)CertManagerFreeUri(&uriObj);
-    if ((cmContext->userId != 0) && (cmContext->userId != userId)) {
-        CM_LOG_E("caller userid is not producer");
+    if (type == CM_URI_TYPE_SYS_KEY) {
+        if ((cmContext->userId != 0) && (cmContext->userId != userId)) {
+            CM_LOG_E("caller is hap, current user is %u, userid[%u] is invalid", cmContext->userId, userId);
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+    } else if (type == CM_URI_TYPE_CERTIFICATE) {
+        if ((cmContext->userId != 0) && (cmContext->userId != userId) && (userId != 0)) {
+            CM_LOG_E("caller is hap, current user is %u, userid[%u] is invalid", cmContext->userId, userId);
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+    } else {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -520,14 +529,9 @@ int32_t CmServiceUninstallUserCertCheck(struct CmContext *cmContext, const struc
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (!CmHasCommonPermission() || !CmHasUserTrustedPermission()) {
+    if (!CmHasEnterpriseUserTrustedPermission() && !CmHasUserTrustedPermission()) {
         CM_LOG_E("uninstall user cert: caller no permission");
         return CMR_ERROR_PERMISSION_DENIED;
-    }
-
-    if (!CmIsSystemApp()) {
-        CM_LOG_E("uninstall user cert: caller is not system app");
-        return CMR_ERROR_NOT_SYSTEMP_APP;
     }
 
     int32_t ret = CheckAndUpdateCallerAndUri(cmContext, certUri, CM_URI_TYPE_CERTIFICATE, true);
