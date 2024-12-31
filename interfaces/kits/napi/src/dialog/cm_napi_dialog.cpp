@@ -37,6 +37,8 @@ static napi_value CreateCmErrorCode(napi_env env)
     AddInt32Property(env, dialogErrorCode, "ERROR_OPERATION_CANCELED", DIALOG_ERROR_OPERATION_CANCELED);
     AddInt32Property(env, dialogErrorCode, "ERROR_OPERATION_FAILED", DIALOG_ERROR_INSTALL_FAILED);
     AddInt32Property(env, dialogErrorCode, "ERROR_DEVICE_NOT_SUPPORTED", DIALOG_ERROR_NOT_SUPPORTED);
+    AddInt32Property(env, dialogErrorCode, "ERROR_NOT_COMPLY_SECURITY_POLICY",
+        DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY);
 
     return dialogErrorCode;
 }
@@ -69,7 +71,9 @@ static napi_value CreateCmCertificateScope(napi_env env)
     napi_value certificateScope = nullptr;
     NAPI_CALL(env, napi_create_object(env, &certificateScope));
 
+    AddInt32Property(env, certificateScope, "NOT_SPECIFIED", NOT_SPECIFIED);
     AddInt32Property(env, certificateScope, "CURRENT_USER", CURRENT_USER);
+    AddInt32Property(env, certificateScope, "GLOBAL_USER", GLOBAL_USER);
 
     return certificateScope;
 }

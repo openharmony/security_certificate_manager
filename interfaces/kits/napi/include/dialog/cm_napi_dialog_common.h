@@ -66,7 +66,9 @@ enum CmCertificateType {
 };
 
 enum CertificateScope {
-    CURRENT_USER = 1
+    NOT_SPECIFIED = 0,
+    CURRENT_USER = 1,
+    GLOBAL_USER = 2
 };
 
 enum ErrorCode {
@@ -78,6 +80,12 @@ enum ErrorCode {
     DIALOG_ERROR_OPERATION_CANCELED = 29700002,
     DIALOG_ERROR_INSTALL_FAILED = 29700003,
     DIALOG_ERROR_NOT_SUPPORTED = 29700004,
+    DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY = 29700005,
+};
+
+enum OperationType {
+    DIALOG_OPERATION_INSTALL = 1,
+    DIALOG_OPERATION_UNINSTALL = 2,
 };
 
 }  // namespace CertManagerNapi

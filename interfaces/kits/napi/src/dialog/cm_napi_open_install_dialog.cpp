@@ -56,7 +56,7 @@ public:
         CM_LOG_D("InstallUIExtensionComponent OnResult(), resultCode = %d", resultCode);
         this->resultCode_ = resultCode;
         this->resultWant_ = result;
-        if (SetErrorCode(CMR_DIALOG_ERROR_INSTALL_FAILED)) {
+        if (SetErrorCode(this->resultCode_)) {
             SendMessageBack();
         }
     }
@@ -117,12 +117,7 @@ private:
 
 static bool IsCmCertificateScopeEnum(const uint32_t value)
 {
-    switch (static_cast<CertificateScope>(value)) {
-        case CertificateScope::CURRENT_USER:
-            return true;
-        default:
-            return false;
-    }
+    return value >= NOT_SPECIFIED && value <= GLOBAL_USER;
 }
 
 static bool IsCmCertificateTypeAndConvert(const uint32_t value, uint32_t &pageType)
@@ -187,6 +182,7 @@ static OHOS::AAFwk::Want CMGetInstallCertWant(std::shared_ptr<CmUIExtensionReque
     want.SetParam(CERT_MANAGER_CERTSCOPE_TYPE, static_cast<int32_t>(asyncContext->certificateScope));
     want.SetParam(CERT_MANAGER_CALLER_BUNDLENAME, asyncContext->labelName);
     want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
+    want.SetParam(CERT_MANAGER_OPERATION_TYPE, static_cast<int32_t>(DIALOG_OPERATION_INSTALL));
     return want;
 }
 

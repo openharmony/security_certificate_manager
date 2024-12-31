@@ -47,11 +47,17 @@ static const std::string DIALOG_INSTALL_FAILED_MSG = "the user install certifica
     " in the certificate manager dialog";
 static const std::string DIALOG_NOT_SUPPORTED_MSG = "the API is not supported on this device";
 
+static const std::string DIOLOG_OPERATION_FAILED_MSG = "the user operation failed "
+    "in the certification manager dialog: ";
+static const std::string PARSE_CERT_FAILED_MSG = "parse the certificate failed.";
+static const std::string ADVANCED_SECURITY_MSG = "the device enters advanced security mode.";
+static const std::string INCORRECT_FORMAT_MSG = "the certificate is in an invalid format.";
+static const std::string MAX_QUANTITY_REACHED_MSG = "the number of certificates or credentials "
+    "reaches the maxinum allowed.";
+static const std::string SA_INTERNAL_ERROR_MSG = "sa internal error.";
+static const std::string NOT_EXIST_MSG = "the certificate dose not exist.";
+
 static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
-    // invalid params
-    { CMR_DIALOG_ERROR_INVALID_ARGUMENT, PARAM_ERROR },
-    // no permission
-    { CMR_DIALOG_ERROR_PERMISSION_DENIED, HAS_NO_PERMISSION },
     // internal error
     { CMR_DIALOG_ERROR_INTERNAL, DIALOG_ERROR_GENERIC },
     // the user cancels the installation operation
@@ -60,15 +66,27 @@ static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
     { CMR_DIALOG_ERROR_INSTALL_FAILED, DIALOG_ERROR_INSTALL_FAILED },
     // the API is not supported on this device
     { CMR_DIALOG_ERROR_NOT_SUPPORTED, DIALOG_ERROR_NOT_SUPPORTED },
+
+    { CMR_DIALOG_ERROR_PARSE_CERT_FAILED, DIALOG_ERROR_INSTALL_FAILED },
+    { CMR_DIALOG_ERROR_ADVANCED_SECURITY, DIALOG_ERROR_INSTALL_FAILED },
+    { CMR_DIALOG_ERROR_INCORRECT_FORMAT, DIALOG_ERROR_INSTALL_FAILED },
+    { CMR_DIALOG_ERROR_MAX_QUANTITY_REACHED, DIALOG_ERROR_INSTALL_FAILED },
+    { CMR_DIALOG_ERROR_SA_INTERNAL_ERROR, DIALOG_ERROR_INSTALL_FAILED },
+    { CMR_DIALOG_ERROR_NOT_EXIST, DIALOG_ERROR_INSTALL_FAILED },
 };
 
 static const std::unordered_map<int32_t, std::string> DIALOG_CODE_TO_MSG_MAP = {
-    { CMR_DIALOG_ERROR_INVALID_ARGUMENT, DIALOG_INVALID_PARAMS_MSG },
-    { CMR_DIALOG_ERROR_PERMISSION_DENIED, DIALOG_NO_PERMISSION_MSG },
     { CMR_DIALOG_ERROR_INTERNAL, DIALOG_GENERIC_MSG },
     { CMR_DIALOG_ERROR_OPERATION_CANCELS, DIALOG_OPERATION_CANCELS_MSG },
     { CMR_DIALOG_ERROR_INSTALL_FAILED, DIALOG_INSTALL_FAILED_MSG },
     { CMR_DIALOG_ERROR_NOT_SUPPORTED, DIALOG_NOT_SUPPORTED_MSG },
+
+    { CMR_DIALOG_ERROR_PARSE_CERT_FAILED, DIOLOG_OPERATION_FAILED_MSG + PARSE_CERT_FAILED_MSG },
+    { CMR_DIALOG_ERROR_ADVANCED_SECURITY, DIOLOG_OPERATION_FAILED_MSG + ADVANCED_SECURITY_MSG },
+    { CMR_DIALOG_ERROR_INCORRECT_FORMAT, DIOLOG_OPERATION_FAILED_MSG + INCORRECT_FORMAT_MSG },
+    { CMR_DIALOG_ERROR_MAX_QUANTITY_REACHED, DIOLOG_OPERATION_FAILED_MSG + MAX_QUANTITY_REACHED_MSG },
+    { CMR_DIALOG_ERROR_SA_INTERNAL_ERROR, DIOLOG_OPERATION_FAILED_MSG + SA_INTERNAL_ERROR_MSG },
+    { CMR_DIALOG_ERROR_NOT_EXIST, DIOLOG_OPERATION_FAILED_MSG + NOT_EXIST_MSG },
 };
 }  // namespace
 
@@ -322,16 +340,16 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode)
         return nullptr;
     }
 
-    napi_value businessErrorMsg = nullptr;
-    NAPI_CALL(env, napi_create_object(env, &businessErrorMsg));
-
     napi_value code = nullptr;
     int32_t outputCode = TranformErrorCode(errorCode);
     NAPI_CALL(env, napi_create_int32(env, outputCode, &code));
-    NAPI_CALL(env, napi_set_named_property(env, businessErrorMsg, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
+
     napi_value message = nullptr;
     NAPI_CALL(env, napi_create_string_utf8(env, errorMessage, NAPI_AUTO_LENGTH, &message));
-    NAPI_CALL(env, napi_set_named_property(env, businessErrorMsg, BUSINESS_ERROR_PROPERTY_MESSAGE.c_str(), message));
+
+    napi_value businessErrorMsg = nullptr;
+    NAPI_CALL(env, napi_create_error(env, nullptr, message, &businessErrorMsg));
+    NAPI_CALL(env, napi_set_named_property(env, businessErrorMsg, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
     return businessErrorMsg;
 }
 
