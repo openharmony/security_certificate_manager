@@ -315,7 +315,7 @@ static napi_value GenerateAarrayBuffer(napi_env env, uint8_t *data, uint32_t siz
 
 napi_value GenerateCertAbstractArray(napi_env env, const struct CertAbstract *certAbstract, const uint32_t certCount)
 {
-    if (certAbstract == nullptr) {
+    if (certCount == 0 || certAbstract == nullptr) {
         return nullptr;
     }
     napi_value array = nullptr;
@@ -349,7 +349,7 @@ napi_value GenerateCertAbstractArray(napi_env env, const struct CertAbstract *ce
 napi_value GenerateCredentialAbstractArray(napi_env env,
     const struct CredentialAbstract *credentialAbstract, const uint32_t credentialCount)
 {
-    if (credentialAbstract == nullptr) {
+    if (credentialCount == 0 || credentialAbstract == nullptr) {
         return nullptr;
     }
     napi_value array = nullptr;
