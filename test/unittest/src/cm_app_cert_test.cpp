@@ -687,6 +687,21 @@ HWTEST_F(CmAppCertTest, AppCertUnInstallAbnormalTest003, TestSize.Level0)
 }
 
 /**
+ * @tc.name: AppCertUnInstallAbnormalTest004
+ * @tc.desc: Test CertManager unInstall app cert interface abnormal function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmAppCertTest, AppCertUnInstallAbnormalTest004, TestSize.Level0)
+{
+    uint8_t keyUriBuf[] = "oh:t=ak;o=NOTEXIST;u=0;a=0";
+    struct CmBlob keyUri = { sizeof(keyUriBuf), keyUriBuf };
+
+    int32_t ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CMR_ERROR_NOT_EXIST) << "AppCertUnInstallAbnormalTest004 test failed, retcode:" << ret;
+}
+
+/**
  * @tc.name: AppCertUnInstallAllAppCertBaseTest001
  * @tc.desc: Test CertManager unInstall all app cert interface base function
  * @tc.type: FUNC

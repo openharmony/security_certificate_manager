@@ -18,6 +18,7 @@
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_security_guard_report.h"
+#include "cm_cert_property_rdb.h"
 
 #ifdef SUPPORT_SECURITY_GUARD
 #define CM_INVALID_NAME "nameInvalid"
@@ -40,28 +41,6 @@ static bool IsNameValid(const struct CmBlob *name)
 
 #define ANONYMOUS_LEN 4
 
-static void AnonymousName(char *name, uint32_t nameLen)
-{
-    char p = '*';
-    uint32_t offset = strlen("o=");
-    char *substr = strstr(name, "o=");
-    if (substr == NULL || strlen(substr) == offset) {
-        if (nameLen <= ANONYMOUS_LEN) {
-            (void)memset_s(name, nameLen, p, nameLen);
-        } else {
-            (void)memset_s(name + nameLen - ANONYMOUS_LEN, ANONYMOUS_LEN, p, ANONYMOUS_LEN);
-        }
-        return;
-    }
-
-    uint32_t substrLen = strlen(substr);
-    if (substrLen <= ANONYMOUS_LEN + offset) {
-        (void)memset_s(substr + offset, substrLen - offset, p, substrLen - offset);
-    } else {
-        (void)memset_s(substr + offset, ANONYMOUS_LEN, p, ANONYMOUS_LEN);
-    }
-}
-
 static int32_t ConstructInfoName(const struct CmBlob *input, char **name)
 {
     bool isNameValid = IsNameValid(input);
@@ -73,9 +52,6 @@ static int32_t ConstructInfoName(const struct CmBlob *input, char **name)
     (void)memset_s(*name, nameLen, 0, nameLen); /* initialized to 0 to avoid that input does not end with '\0' */
     (void)strcpy_s(*name, nameLen, isNameValid ? (char *)input->data : CM_INVALID_NAME);
 
-    if (isNameValid) {
-        AnonymousName(*name, nameLen - 1); /* nameLen is bigger than 1 and exclude end '\0' */
-    }
     return CM_SUCCESS;
 }
 
@@ -89,6 +65,54 @@ static void ConstructInfoAndReport(const struct CmBlob *input, const char *actio
     }
     CmReportSGRecord(info);
     CM_FREE_PTR(info->name);
+}
+
+static int32_t ConstructInfoSubjectName(const struct CmBlob *input, char **name)
+{
+    if (!IsNameValid(input)) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    struct CertProperty certProperty;
+    (void)memset_s(&certProperty, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
+    int32_t ret = QueryCertProperty((const char *)input->data, &certProperty);
+    if (ret != CM_SUCCESS) {
+        return ret;
+    }
+
+    if (strlen(certProperty.subjectName) > MAX_LEN_SUBJECT_NAME) {
+        return CM_FAILURE;
+    }
+
+    uint32_t nameLen = strlen(certProperty.subjectName) + 1;
+    *name = (char *)CmMalloc(nameLen);
+    if (*name == NULL) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    (void)memset_s(*name, nameLen, 0, nameLen);
+    if (strcpy_s(*name, nameLen, certProperty.subjectName) != EOK) {
+        CM_FREE_PTR(*name);
+        return CMR_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    return ret;
+}
+
+static void ConstructSubjectAndReport(const struct CmBlob *input, const char *action, struct CmReportSGInfo *info)
+{
+    if (strcpy_s(info->action, sizeof(info->action), action) != EOK) {
+        return;
+    }
+    if (ConstructInfoName(input, &info->name) != CM_SUCCESS) {
+        return;
+    }
+    if (ConstructInfoSubjectName(input, &info->subjectName) != CM_SUCCESS) {
+        return;
+    }
+
+    CmReportSGRecord(info);
+    CM_FREE_PTR(info->name);
+    CM_FREE_PTR(info->subjectName);
 }
 #endif
 
@@ -114,7 +138,7 @@ void CmReportSGSetCertStatus(const struct CmBlob *certUri, uint32_t store, uint3
 #endif
 }
 
-void CmReportSGInstallUserCert(const struct CmBlob *certAlias, int32_t result)
+void CmReportSGInstallUserCert(const struct CmBlob *certAlias, struct CmBlob *certUri, int32_t result)
 {
 #ifdef SUPPORT_SECURITY_GUARD
     struct CmReportSGInfo info;
@@ -126,7 +150,11 @@ void CmReportSGInstallUserCert(const struct CmBlob *certAlias, int32_t result)
     info.isSetStatus = false;
 
     char *action = "CmInstallUserCert";
-    ConstructInfoAndReport(certAlias, action, &info);
+    if (result != CM_SUCCESS) {
+        ConstructInfoAndReport(certAlias, action, &info);
+    } else {
+        ConstructSubjectAndReport(certUri, action, &info);
+    }
 #else
     (void)certAlias;
     (void)result;

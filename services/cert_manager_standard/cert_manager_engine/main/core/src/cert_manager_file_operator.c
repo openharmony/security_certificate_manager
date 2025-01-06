@@ -209,8 +209,14 @@ int32_t CmFileRemove(const char *path, const char *fileName)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
+    int32_t ret = CmIsFileExist(path, fileName);
+    if (ret != CMR_OK) {
+        CM_LOG_E("target file not exist");
+        return ret;
+    }
+
     char *fullFileName = NULL;
-    int32_t ret = GetFullFileName(path, fileName, &fullFileName);
+    ret = GetFullFileName(path, fileName, &fullFileName);
     if (ret != CMR_OK) {
         return ret;
     }

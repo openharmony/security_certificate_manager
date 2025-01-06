@@ -24,7 +24,7 @@ extern "C" {
 
 void CmReportSGSetCertStatus(const struct CmBlob *certUri, uint32_t store, uint32_t status, int32_t result);
 
-void CmReportSGInstallUserCert(const struct CmBlob *certAlias, int32_t result);
+void CmReportSGInstallUserCert(const struct CmBlob *certAlias, struct CmBlob *certUri, int32_t result);
 
 void CmReportSGUninstallUserCert(const struct CmBlob *certUri, bool isUninstallAll, int32_t result);
 
