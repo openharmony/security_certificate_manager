@@ -32,6 +32,7 @@ const std::string CERT_MANAGER_PAGE_TYPE = "pageType";
 const std::string CERT_MANAGER_CERTSCOPE_TYPE = "certScope";
 const std::string CERT_MANAGER_CERTIFICATE_DATA = "cert";
 const std::string CERT_MANAGER_CALLER_BUNDLENAME = "bundleName";
+const std::string CERT_MANAGER_OPERATION_TYPE = "operationType";
 constexpr int32_t PARAM0 = 0;
 constexpr int32_t PARAM1 = 1;
 constexpr int32_t PARAM2 = 2;
