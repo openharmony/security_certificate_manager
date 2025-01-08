@@ -22,6 +22,7 @@
 #include "napi_base_context.h"
 #include "napi_common_want.h"
 #include "ui_content.h"
+#include "cm_type.h"
 
 namespace CMNapi {
 const std::string PARAM_UI_EXTENSION_TYPE = "ability.want.params.uiExtensionType";
@@ -32,16 +33,19 @@ const std::string CERT_MANAGER_PAGE_TYPE = "pageType";
 const std::string CERT_MANAGER_CERTSCOPE_TYPE = "certScope";
 const std::string CERT_MANAGER_CERTIFICATE_DATA = "cert";
 const std::string CERT_MANAGER_CALLER_BUNDLENAME = "bundleName";
+const std::string CERT_MANAGER_CERT_URI = "certUri";
 const std::string CERT_MANAGER_OPERATION_TYPE = "operationType";
 constexpr int32_t PARAM0 = 0;
 constexpr int32_t PARAM1 = 1;
 constexpr int32_t PARAM2 = 2;
 constexpr int32_t PARAM3 = 3;
 constexpr int32_t PARAM_SIZE_TWO = 2;
+constexpr int32_t PARAM_SIZE_THREE = 3;
 constexpr int32_t PARAM_SIZE_FOUR = 4;
 
 napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info);
 napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info);
+napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info);
 
 struct CommonAsyncContext {
     explicit CommonAsyncContext(napi_env env);
@@ -61,6 +65,7 @@ struct CmUIExtensionRequestContext : public CommonAsyncContext {
     uint32_t certificateScope = 0;
     std::string certStr = "";
     std::string labelName = "";
+    CmBlob *certUri = nullptr;
 };
 
 class CmUIExtensionCallback {

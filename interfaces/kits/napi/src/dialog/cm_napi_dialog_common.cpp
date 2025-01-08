@@ -20,6 +20,9 @@
 
 #include "cm_log.h"
 #include "cm_type.h"
+#include "iservice_registry.h"
+#include "bundle_mgr_proxy.h"
+#include "system_ability_definition.h"
 
 #define BYTE_SHIFT_16           0x10
 #define BYTE_SHIFT_8            0x08
@@ -56,6 +59,8 @@ static const std::string MAX_QUANTITY_REACHED_MSG = "the number of certificates 
     "reaches the maxinum allowed.";
 static const std::string SA_INTERNAL_ERROR_MSG = "sa internal error.";
 static const std::string NOT_EXIST_MSG = "the certificate dose not exist.";
+static const std::string NOT_ENTERPRISE_DEVICE_MSG = "The operation does not comply with the device security policy,"
+    "such as the device does not allow users to manage the ca certificate of the global user.";
 
 static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
     // internal error
@@ -73,6 +78,7 @@ static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
     { CMR_DIALOG_ERROR_MAX_QUANTITY_REACHED, DIALOG_ERROR_INSTALL_FAILED },
     { CMR_DIALOG_ERROR_SA_INTERNAL_ERROR, DIALOG_ERROR_INSTALL_FAILED },
     { CMR_DIALOG_ERROR_NOT_EXIST, DIALOG_ERROR_INSTALL_FAILED },
+    { CMR_DIALOG_ERROR_NOT_ENTERPRISE_DEVICE, DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY },
 };
 
 static const std::unordered_map<int32_t, std::string> DIALOG_CODE_TO_MSG_MAP = {
@@ -80,6 +86,7 @@ static const std::unordered_map<int32_t, std::string> DIALOG_CODE_TO_MSG_MAP = {
     { CMR_DIALOG_ERROR_OPERATION_CANCELS, DIALOG_OPERATION_CANCELS_MSG },
     { CMR_DIALOG_ERROR_INSTALL_FAILED, DIALOG_INSTALL_FAILED_MSG },
     { CMR_DIALOG_ERROR_NOT_SUPPORTED, DIALOG_NOT_SUPPORTED_MSG },
+    { CMR_DIALOG_ERROR_NOT_ENTERPRISE_DEVICE, NOT_ENTERPRISE_DEVICE_MSG },
 
     { CMR_DIALOG_ERROR_PARSE_CERT_FAILED, DIOLOG_OPERATION_FAILED_MSG + PARSE_CERT_FAILED_MSG },
     { CMR_DIALOG_ERROR_ADVANCED_SECURITY, DIOLOG_OPERATION_FAILED_MSG + ADVANCED_SECURITY_MSG },
@@ -343,7 +350,6 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode)
     napi_value code = nullptr;
     int32_t outputCode = TranformErrorCode(errorCode);
     NAPI_CALL(env, napi_create_int32(env, outputCode, &code));
-
     napi_value message = nullptr;
     NAPI_CALL(env, napi_create_string_utf8(env, errorMessage, NAPI_AUTO_LENGTH, &message));
 
@@ -377,6 +383,55 @@ void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
     } else {
         NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, deferred, result[0]));
     }
+}
+
+static OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
+{
+    auto systemAbilityManager = OHOS::SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (!systemAbilityManager) {
+        CM_LOG_E("fail to get system ability mgr.");
+        return nullptr;
+    }
+
+    auto remoteObject = systemAbilityManager->GetSystemAbility(OHOS::BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (!remoteObject) {
+        CM_LOG_E("fail to get bundle manager proxy.");
+        return nullptr;
+    }
+    return OHOS::iface_cast<OHOS::AppExecFwk::BundleMgrProxy>(remoteObject);
+}
+
+int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncContext)
+{
+    OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> bundleMgrProxy = GetBundleMgrProxy();
+    if (bundleMgrProxy == nullptr) {
+        CM_LOG_E("Failed to get bundle manager proxy.");
+        return CM_FAILURE;
+    }
+
+    OHOS::AppExecFwk::BundleInfo bundleInfo;
+    int32_t flags = static_cast<int32_t>(OHOS::AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_DEFAULT) |
+        static_cast<int32_t>(OHOS::AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_APPLICATION) |
+        static_cast<int32_t>(OHOS::AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE) |
+        static_cast<int32_t>(OHOS::AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_ABILITY);
+    int32_t resCode = bundleMgrProxy->GetBundleInfoForSelf(flags, bundleInfo);
+    if (resCode != CM_SUCCESS) {
+        CM_LOG_E("Failed to get bundleInfo, resCode is %d", resCode);
+        return CM_FAILURE;
+    }
+
+    if (asyncContext->context->GetResourceManager() == nullptr) {
+        CM_LOG_E("context get resourcemanager faild");
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    resCode = asyncContext->context->GetResourceManager()->GetStringById(bundleInfo.applicationInfo.labelId,
+        asyncContext->labelName);
+    if (resCode != CM_SUCCESS) {
+        CM_LOG_E("getStringById is faild, resCode is %d", resCode);
+        return CM_FAILURE;
+    }
+    return CM_SUCCESS;
 }
 
 
