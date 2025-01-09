@@ -53,6 +53,8 @@ inline napi_value GetInt32(napi_env env, int32_t value)
     return result;
 }
 
+int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncContext);
+
 enum CmDialogPageType {
     PAGE_MAIN = 1,
     PAGE_CA_CERTIFICATE = 2,
