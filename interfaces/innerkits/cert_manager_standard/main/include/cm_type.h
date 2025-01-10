@@ -173,6 +173,7 @@ enum CMDialogErrorCode {
     CMR_DIALOG_ERROR_SA_INTERNAL_ERROR = -1007,
     CMR_DIALOG_ERROR_NOT_EXIST = -1008,
     CMR_DIALOG_ERROR_NOT_SUPPORTED = -1009,
+    CMR_DIALOG_ERROR_PERMISSION_DENIED = 1011, /* UIExtension will return 1011 if permission check failed */
 };
 
 enum CMErrorCode { /* temp use */

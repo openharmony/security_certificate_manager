@@ -63,6 +63,8 @@ static const std::string NOT_ENTERPRISE_DEVICE_MSG = "The operation does not com
     "such as the device does not allow users to manage the ca certificate of the global user.";
 
 static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
+    // no permission
+    { CMR_DIALOG_ERROR_PERMISSION_DENIED, HAS_NO_PERMISSION },
     // internal error
     { CMR_DIALOG_ERROR_INTERNAL, DIALOG_ERROR_GENERIC },
     // the user cancels the installation operation
@@ -82,6 +84,7 @@ static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
 };
 
 static const std::unordered_map<int32_t, std::string> DIALOG_CODE_TO_MSG_MAP = {
+    { CMR_DIALOG_ERROR_PERMISSION_DENIED, DIALOG_NO_PERMISSION_MSG },
     { CMR_DIALOG_ERROR_INTERNAL, DIALOG_GENERIC_MSG },
     { CMR_DIALOG_ERROR_OPERATION_CANCELS, DIALOG_OPERATION_CANCELS_MSG },
     { CMR_DIALOG_ERROR_INSTALL_FAILED, DIALOG_INSTALL_FAILED_MSG },
