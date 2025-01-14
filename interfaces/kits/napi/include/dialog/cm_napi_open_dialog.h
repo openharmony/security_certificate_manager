@@ -35,6 +35,8 @@ const std::string CERT_MANAGER_CERTIFICATE_DATA = "cert";
 const std::string CERT_MANAGER_CALLER_BUNDLENAME = "bundleName";
 const std::string CERT_MANAGER_CERT_URI = "certUri";
 const std::string CERT_MANAGER_OPERATION_TYPE = "operationType";
+const std::string CERT_MANAGER_SHOW_INSTALL_BUTTON = "showInstallButton";
+
 constexpr int32_t PARAM0 = 0;
 constexpr int32_t PARAM1 = 1;
 constexpr int32_t PARAM2 = 2;
@@ -44,8 +46,6 @@ constexpr int32_t PARAM_SIZE_THREE = 3;
 constexpr int32_t PARAM_SIZE_FOUR = 4;
 
 napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info);
-napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info);
-napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info);
 
 struct CommonAsyncContext {
     explicit CommonAsyncContext(napi_env env);
@@ -55,6 +55,7 @@ struct CommonAsyncContext {
     int32_t errCode = 0;
     napi_deferred deferred = nullptr;  // promise handle
     std::string uri = "";
+    int32_t opType = 0;
 };
 
 struct CmUIExtensionRequestContext : public CommonAsyncContext {
@@ -66,6 +67,7 @@ struct CmUIExtensionRequestContext : public CommonAsyncContext {
     std::string certStr = "";
     std::string labelName = "";
     CmBlob *certUri = nullptr;
+    bool showInstallButton = false;
 };
 
 class CmUIExtensionCallback {

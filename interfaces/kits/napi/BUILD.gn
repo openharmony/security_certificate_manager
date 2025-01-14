@@ -87,6 +87,8 @@ ohos_shared_library("certmanagerdialog") {
   sources = [
     "src/dialog/cm_napi_dialog.cpp",
     "src/dialog/cm_napi_dialog_common.cpp",
+    "src/dialog/cm_napi_open_certificate_operation.cpp",
+    "src/dialog/cm_napi_open_detail_dialog.cpp",
     "src/dialog/cm_napi_open_dialog.cpp",
     "src/dialog/cm_napi_open_install_dialog.cpp",
     "src/dialog/cm_napi_open_uninstall_dialog.cpp",
