@@ -106,6 +106,9 @@ napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext 
         [](napi_env env, void *data) {
             UninstallAppCertAsyncContext context = static_cast<UninstallAppCertAsyncContext>(data);
             context->result = CmUninstallAppCert(context->keyUri, context->store);
+            if (context->store == APPLICATION_PRIVATE_CERTIFICATE_STORE && context->result == CMR_ERROR_NOT_EXIST) {
+                context->result = CM_SUCCESS;
+            }
         },
         [](napi_env env, napi_status status, void *data) {
             UninstallAppCertAsyncContext context = static_cast<UninstallAppCertAsyncContext>(data);
