@@ -88,6 +88,7 @@ enum ErrorCode {
 enum OperationType {
     DIALOG_OPERATION_INSTALL = 1,
     DIALOG_OPERATION_UNINSTALL = 2,
+    DIALOG_OPERATION_DETAIL = 3,
 };
 
 }  // namespace CertManagerNapi
