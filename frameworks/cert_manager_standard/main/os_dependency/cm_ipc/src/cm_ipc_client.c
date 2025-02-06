@@ -309,7 +309,7 @@ static int32_t CmAppCertListGetCertCount(const struct CmBlob *outData,
     uint32_t credCount = 0;
     int32_t ret = GetUint32FromBuffer(&credCount, outData, offset);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("App cert get list faild ret:%d", ret);
+        CM_LOG_E("App cert get list failed ret:%d", ret);
         return ret;
     }
 
