@@ -76,19 +76,41 @@ static napi_value GetCredAlias(napi_env env, napi_value napiObject, CmBlob *&cer
     return ParseCertAlias(env, napiObject, certAlias);
 }
 
+static napi_value GetLevelOrCallback(napi_env env, InstallAppCertAsyncContext context, napi_value napiObject)
+{
+    napi_valuetype type = napi_undefined;
+    NAPI_CALL(env, napi_typeof(env, napiObject, &type));
+    if (type == napi_number) {
+        uint32_t level = CM_AUTH_STORAGE_LEVEL_EL1;
+        napi_value result = ParseUint32(env, napiObject, level);
+        if (result == nullptr || CM_LEVEL_CHECK(level)) {
+            ThrowError(env, PARAM_ERROR, "level is not a uint32 or level is invalid.");
+            CM_LOG_E("could not get level");
+            return nullptr;
+        }
+        context->level = (enum CmAuthStorageLevel)level;
+    } else {
+        int32_t ret = GetCallback(env, napiObject, context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
+            CM_LOG_E("get callback function faild when install application cert");
+            return nullptr;
+        }
+    }
+    return GetInt32(env, 0);
+}
+
 napi_value InstallAppCertParseParams(
     napi_env env, napi_callback_info info, InstallAppCertAsyncContext context, uint32_t store)
 {
     size_t argc = CM_NAPI_INSTALL_APP_CERT_MAX_ARGS;
     napi_value argv[CM_NAPI_INSTALL_APP_CERT_MAX_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-
     if ((argc != CM_NAPI_INSTALL_APP_CERT_MIN_ARGS) && (argc != CM_NAPI_INSTALL_APP_CERT_MAX_ARGS)) {
         ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need between 3 and 4.");
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
     }
-
     size_t index = 0;
     context->keystore = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
     if (context->keystore == nullptr) {
@@ -96,7 +118,6 @@ napi_value InstallAppCertParseParams(
         return nullptr;
     }
     (void)memset_s(context->keystore, sizeof(CmBlob), 0, sizeof(CmBlob));
-
     napi_value result = GetUint8Array(env, argv[index], *context->keystore);
     if (result == nullptr) {
         ThrowError(env, PARAM_ERROR, "keystore is not a uint8Array or the length is 0 or too long.");
@@ -121,15 +142,12 @@ napi_value InstallAppCertParseParams(
     }
 
     index++;
+    context->level = CM_AUTH_STORAGE_LEVEL_EL1;
     if (index < argc) {
-        int32_t ret = GetCallback(env, argv[index], context->callback);
-        if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
-            CM_LOG_E("get callback function faild when install application cert");
+        if (GetLevelOrCallback(env, context, argv[index]) == nullptr) {
             return nullptr;
         }
     }
-
     return GetInt32(env, 0);
 }
 
@@ -175,6 +193,40 @@ static napi_value GenAppCertBusinessError(napi_env env, int32_t errorCode, uint3
     return GenerateBusinessError(env, errorCode);
 }
 
+static void InstallAppCertExecute(napi_env env, void *data)
+{
+    InstallAppCertAsyncContext context = static_cast<InstallAppCertAsyncContext>(data);
+    InitKeyUri(context->keyUri);
+    if (context->store == CM_PRI_CREDENTIAL_STORE) {
+        struct CmAppCertParam certParam = { (struct CmBlob *)context->keystore, (struct CmBlob *)context->keystorePwd,
+            (struct CmBlob *)context->keyAlias, context->store, INIT_INVALID_VALUE, context->level };
+
+        context->result = CmInstallAppCertEx(&certParam, context->keyUri);
+    } else {
+        context->result = CmInstallAppCert(context->keystore,
+            context->keystorePwd, context->keyAlias, context->store, context->keyUri);
+    }
+}
+
+static void InstallAppCertComplete(napi_env env, napi_status status, void *data)
+{
+    InstallAppCertAsyncContext context = static_cast<InstallAppCertAsyncContext>(data);
+    napi_value result[RESULT_NUMBER] = { nullptr };
+    if (context->result == CM_SUCCESS) {
+        NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
+        result[1] = InstallAppCertWriteResult(env, context);
+    } else {
+        result[0] = GenAppCertBusinessError(env, context->result, context->store);
+        NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
+    }
+    if (context->deferred != nullptr) {
+        GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+    } else {
+        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
+    }
+    DeleteInstallAppCertAsyncContext(env, context);
+}
+
 napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
@@ -184,32 +236,9 @@ napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext asyn
     NAPI_CALL(env, napi_create_string_latin1(env, "InstallAppCertAsyncWork", NAPI_AUTO_LENGTH, &resourceName));
 
     NAPI_CALL(env, napi_create_async_work(
-        env,
-        nullptr,
-        resourceName,
-        [](napi_env env, void *data) {
-            InstallAppCertAsyncContext context = static_cast<InstallAppCertAsyncContext>(data);
-            InitKeyUri(context->keyUri);
-            context->result = CmInstallAppCert(context->keystore,
-                context->keystorePwd, context->keyAlias, context->store, context->keyUri);
-        },
-        [](napi_env env, napi_status status, void *data) {
-            InstallAppCertAsyncContext context = static_cast<InstallAppCertAsyncContext>(data);
-            napi_value result[RESULT_NUMBER] = { nullptr };
-            if (context->result == CM_SUCCESS) {
-                NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
-                result[1] = InstallAppCertWriteResult(env, context);
-            } else {
-                result[0] = GenAppCertBusinessError(env, context->result, context->store);
-                NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
-            }
-            if (context->deferred != nullptr) {
-                GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
-            } else {
-                GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
-            }
-            DeleteInstallAppCertAsyncContext(env, context);
-        },
+        env, nullptr, resourceName,
+        InstallAppCertExecute,
+        InstallAppCertComplete,
         static_cast<void *>(asyncContext),
         &asyncContext->asyncWork));
 

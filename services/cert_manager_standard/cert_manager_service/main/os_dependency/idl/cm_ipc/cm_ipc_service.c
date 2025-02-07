@@ -217,12 +217,14 @@ void CmIpcServiceInstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob
     struct CmBlob appCert = { 0, NULL };
     struct CmBlob appCertPwd = { 0, NULL };
     struct CmBlob certAlias = { 0, NULL };
+    enum CmAuthStorageLevel level;
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = &appCert },
         { .tag = CM_TAG_PARAM1_BUFFER, .blob = &appCertPwd },
         { .tag = CM_TAG_PARAM2_BUFFER, .blob = &certAlias },
         { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &userId },
+        { .tag = CM_TAG_PARAM2_UINT32, .uint32Param = &level },
     };
 
     int32_t ret;
@@ -235,7 +237,7 @@ void CmIpcServiceInstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob
             break;
         }
 
-        struct CmAppCertParam certParam = { &appCert, &appCertPwd, &certAlias, store, userId };
+        struct CmAppCertParam certParam = { &appCert, &appCertPwd, &certAlias, store, userId, level };
         ret = CmServicInstallAppCert(&cmContext, &certParam, outData);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("service install app cert failed, ret = %d", ret);

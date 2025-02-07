@@ -85,7 +85,7 @@ static int32_t Ikhmac(uint8_t *data, uint32_t len, uint8_t *mac)
 
     char aliasData[] = CM_INTEGRITY_KEY_URI;
     struct CmBlob alias = { strlen(aliasData), (uint8_t *)aliasData };
-    return CmKeyOpCalcMac(&alias, &dataBlob, &macBlob);
+    return CmKeyOpCalcMac(&alias, &dataBlob, &macBlob, CM_AUTH_STORAGE_LEVEL_EL1);
 }
 
 static void FreeStatus(struct CertStatus *cs)

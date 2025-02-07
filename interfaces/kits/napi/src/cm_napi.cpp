@@ -121,6 +121,17 @@ namespace CMNapi {
         AddInt32Property(env, scope, "GLOBAL_USER", CM_GLOBAL_USER);
         return scope;
     }
+
+    static napi_value CreateAuthStorageLevel(napi_env env)
+    {
+        napi_value level = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &level));
+
+        AddInt32Property(env, level, "EL1", CM_AUTH_STORAGE_LEVEL_EL1);
+        AddInt32Property(env, level, "EL2", CM_AUTH_STORAGE_LEVEL_EL2);
+        AddInt32Property(env, level, "EL4", CM_AUTH_STORAGE_LEVEL_EL4);
+        return level;
+    }
 }  // namespace CertManagerNapi
 
 using namespace CMNapi;
@@ -135,6 +146,7 @@ extern "C" {
             DECLARE_NAPI_PROPERTY("CmKeyPadding", CreateCMKeyPadding(env)),
             DECLARE_NAPI_PROPERTY("CertType", CreateCertType(env)),
             DECLARE_NAPI_PROPERTY("CertScope", CreateCertScope(env)),
+            DECLARE_NAPI_PROPERTY("AuthStorageLevel", CreateAuthStorageLevel(env)),
 
             /* system ca */
             DECLARE_NAPI_FUNCTION("getSystemTrustedCertificateList", CMNapiGetSystemCertList),

@@ -33,6 +33,8 @@ CM_API_EXPORT int32_t CmSetCertStatus(const struct CmBlob *certUri, const uint32
 CM_API_EXPORT int32_t CmInstallAppCert(const struct CmBlob *appCert, const struct CmBlob *appCertPwd,
     const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri);
 
+CM_API_EXPORT int32_t CmInstallAppCertEx(const struct CmAppCertParam *certParam, struct CmBlob *keyUri);
+
 CM_API_EXPORT int32_t CmUninstallAppCert(const struct CmBlob *keyUri, const uint32_t store);
 
 CM_API_EXPORT int32_t CmUninstallAllAppCert(void);

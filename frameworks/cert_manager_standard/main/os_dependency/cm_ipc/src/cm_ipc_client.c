@@ -191,7 +191,7 @@ int32_t CmClientSetCertStatus(const struct CmBlob *certUri, const uint32_t store
     return SetCertificateStatus(CM_MSG_SET_CERTIFICATE_STATUS, certUri, store, status);
 }
 
-static int32_t InstallAppCert(const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
+int32_t CmClientInstallAppCert(const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
 {
     int32_t ret;
     struct CmParamSet *sendParamSet = NULL;
@@ -201,6 +201,7 @@ static int32_t InstallAppCert(const struct CmAppCertParam *certParam, struct CmB
         { .tag = CM_TAG_PARAM2_BUFFER, .blob = *(certParam->certAlias) },
         { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = certParam->store },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = certParam->userId },
+        { .tag = CM_TAG_PARAM2_UINT32, .uint32Param = certParam->level },
     };
 
     do {
@@ -224,14 +225,6 @@ static int32_t InstallAppCert(const struct CmAppCertParam *certParam, struct CmB
 
     CmFreeParamSet(&sendParamSet);
     return ret;
-}
-
-int32_t CmClientInstallAppCert(const struct CmBlob *appCert, const struct CmBlob *appCertPwd,
-    const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri)
-{
-    struct CmAppCertParam certParam = { (struct CmBlob *)appCert, (struct CmBlob *)appCertPwd,
-        (struct CmBlob *)certAlias, store, INIT_INVALID_VALUE };
-    return InstallAppCert(&certParam, keyUri);
 }
 
 static int32_t UninstallAppCert(enum CertManagerInterfaceCode type, const struct CmBlob *keyUri,
@@ -309,7 +302,7 @@ static int32_t CmAppCertListGetCertCount(const struct CmBlob *outData,
     uint32_t credCount = 0;
     int32_t ret = GetUint32FromBuffer(&credCount, outData, offset);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("App cert get list faild ret:%d", ret);
+        CM_LOG_E("App cert get list failed ret:%d", ret);
         return ret;
     }
 
@@ -1038,5 +1031,14 @@ int32_t CmClientUninstallAllUserTrustedCert(void)
 
 int32_t CmClientInstallSystemAppCert(const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
 {
-    return InstallAppCert(certParam, keyUri);
+    struct CmAppCertParam certParamEx = {
+        certParam->appCert,
+        certParam->appCertPwd,
+        certParam->certAlias,
+        certParam->store,
+        certParam->userId,
+        /* this is only valid for installing private credentials and is used for filling here. */
+        CM_AUTH_STORAGE_LEVEL_EL1
+    };
+    return CmClientInstallAppCert(&certParamEx, keyUri);
 }

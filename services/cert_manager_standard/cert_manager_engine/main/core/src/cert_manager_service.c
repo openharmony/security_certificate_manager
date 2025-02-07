@@ -281,7 +281,15 @@ int32_t CmServiceInit(const struct CmContext *context, const struct CmBlob *auth
         return ret;
     }
 
-    ret = CmKeyOpInit(context, &commonUri, spec, handle);
+    enum CmAuthStorageLevel level;
+    ret = GetRdbAuthStorageLevel(&commonUri, &level);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
+        CM_FREE_PTR(commonUri.data);
+        return ret;
+    }
+
+    ret = CmKeyOpInit(context, &commonUri, spec, level, handle);
     CM_FREE_PTR(commonUri.data);
     return ret;
 }
@@ -526,7 +534,7 @@ int32_t CmServiceGetCertList(const struct CmContext *context, const struct UserC
 
     int32_t ret = CM_SUCCESS;
     struct CmMutableBlob pathList = { 0, NULL };
-    
+
     do {
         if (store == CM_USER_TRUSTED_STORE) {
             if (context->userId != 0 && prop->userId != INIT_INVALID_VALUE) {
@@ -783,7 +791,10 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
             break;
         }
 
-        ret = RdbInsertCertProperty(context, certUri, &displayName, &subjectName, CM_USER_TRUSTED_STORE);
+        struct CertPropertyOri propertyOri = { context, certUri, &displayName, &subjectName,
+            CM_USER_TRUSTED_STORE, CM_AUTH_STORAGE_LEVEL_EL1 };
+
+        ret = RdbInsertCertProperty(&propertyOri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to RdbInsertCertProperty");
             break;

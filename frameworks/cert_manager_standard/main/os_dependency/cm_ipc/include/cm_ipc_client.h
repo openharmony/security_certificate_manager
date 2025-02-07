@@ -32,8 +32,7 @@ int32_t CmClientGetCertInfo(const struct CmBlob *certUri, const uint32_t store,
 int32_t CmClientSetCertStatus(const struct CmBlob *certUri, const uint32_t store,
     const uint32_t status);
 
-int32_t CmClientInstallAppCert(const struct CmBlob *appCert, const struct CmBlob *appCertPwd,
-    const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri);
+int32_t CmClientInstallAppCert(const struct CmAppCertParam *certParam, struct CmBlob *keyUri);
 
 int32_t CmClientUninstallAppCert(const struct CmBlob *keyUri, const uint32_t store);
 

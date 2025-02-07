@@ -22,8 +22,13 @@
 #include "cm_mem.h"
 #include "cm_test_common.h"
 
+#include "accesstoken_kit.h"
+#include "token_setproc.h"
+#include "access_token.h"
+
 using namespace testing::ext;
 using namespace CertmanagerTest;
+using namespace OHOS::Security::AccessToken;
 namespace {
 struct CredentialResult {
     struct Credential certificate;
@@ -139,11 +144,17 @@ HWTEST_F(CmAppCertTest, AppCertInstallBaseTest001, TestSize.Level0)
     int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "AppCertInstallBaseTest001 credentail test failed, retcode:" << ret;
 
+    ret = CmUninstallAllAppCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAllTest test failed, retcode:" << ret;
+
     ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "AppCertInstallBaseTest001 pri_credentail test failed, retcode:" << ret;
 
     char uriBuf[] = "oh:t=ak;o=keyA;u=0;a=0";
     EXPECT_EQ(strcmp(uriBuf, (char *)keyUri.data), 0) << "strcmp failed";
+
+    ret = CmUninstallAllAppCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAllTest test failed, retcode:" << ret;
 }
 
 /**
@@ -214,6 +225,9 @@ HWTEST_F(CmAppCertTest, AppCertInstallAbnormalTest004, TestSize.Level0)
 
     ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_SYS_CREDENTIAL_STORE + 1, &keyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "AppCertInstallAbnormalTest004 privite test failed, retcode:" << ret;
+
+    ret = CmUninstallAllAppCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAllTest 005 test failed, retcode:" << ret;
 }
 
 /**
@@ -232,6 +246,9 @@ HWTEST_F(CmAppCertTest, AppCertInstallBaseEccTest005, TestSize.Level0)
 
     int32_t ret = CmInstallAppCert(&g_eccAppCert, &g_appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "AppCertInstallBaseEccTest005 test failed, retcode:" << ret;
+
+    ret = CmUninstallAllAppCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAllTest 005 test failed, retcode:" << ret;
 
     ret = CmInstallAppCert(&g_eccAppCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "AppCertInstallBaseEccTest005 privite test failed, retcode:" << ret;
@@ -256,6 +273,9 @@ HWTEST_F(CmAppCertTest, AppCertInstallBaseSM2Test001, TestSize.Level0)
     int32_t ret = CmInstallAppCert(&g_sm2AppCert, &g_appSM2CertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "BaseSM2Test001 public test failed, retcode:" << ret;
 
+    ret = CmUninstallAllAppCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "BaseSM2Test001 test failed, retcode:" << ret;
+
     keyUri.size = sizeof(keyUriBuf);
     ret = CmInstallAppCert(&g_sm2AppCert, &g_appSM2CertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "BaseSM2Test001 privite test failed, retcode:" << ret;
@@ -279,6 +299,9 @@ HWTEST_F(CmAppCertTest, AppCertInstallBaseSM2Test002, TestSize.Level0)
 
     int32_t ret = CmInstallAppCert(&g_sm2AppCert2, &g_appSM2CertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "BaseSM2Test002 public test failed, retcode:" << ret;
+
+    ret = CmUninstallAllAppCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "BaseSM2Test001 test failed, retcode:" << ret;
 
     keyUri.size = sizeof(keyUriBuf);
     ret = CmInstallAppCert(&g_sm2AppCert2, &g_appSM2CertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
@@ -501,6 +524,9 @@ HWTEST_F(CmAppCertTest, CmGetAppCertListPerformanceTest001, TestSize.Level0)
     int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmGetAppCertListPerformanceTest001 install failed, retcode:" << ret;
 
+    ret = CmUninstallAllAppCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmGetAppCertListPerformanceTest001 test failed, retcode:" << ret;
+
     ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmGetAppCertListPerformanceTest001 private install failed, retcode:" << ret;
 
@@ -717,6 +743,9 @@ HWTEST_F(CmAppCertTest, AppCertUnInstallAllAppCertBaseTest001, TestSize.Level0)
 
     int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAllAppCertBaseTest001 1 failed, retcode:" << ret;
+
+    ret = CmUninstallAllAppCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAllAppCertBaseTest001 test failed, retcode:" << ret;
 
     ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAllAppCertBaseTest001 2 failed, retcode:" << ret;
