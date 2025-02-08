@@ -139,6 +139,15 @@ static uint32_t FileSize(const char *fileName)
     return (uint32_t)fileStat.st_size;
 }
 
+static uint64_t CreateFdsanOwnTag(void* addr)
+{
+    uint64_t tag = 0;
+    if (addr != NULL) {
+        tag = fdsan_create_owner_tag(FDSAN_OWNER_TYPE_FILE, (uint64_t)addr);
+    }
+    return tag;
+}
+
 static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *buf, uint32_t len, bool isWriteBakFile)
 {
     (void)offset;
@@ -163,19 +172,20 @@ static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *b
         CM_LOG_E("open file failed, errno = 0x%x", errno);
         return CMR_ERROR_OPEN_FILE_FAIL;
     }
+    uint64_t new_tag = CreateFdsanOwnTag(&fd);
+    fdsan_exchange_owner_tag(fd, 0, new_tag);
 
-    int32_t size = write(fd, buf, len);
-    if (size < 0) {
+    if (write(fd, buf, len) < 0) {
         CM_LOG_E("write file failed, errno = 0x%x", errno);
-        close(fd);
+        fdsan_close_with_tag(fd, new_tag);
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
     if (fsync(fd) < 0) {
         CM_LOG_E("sync file failed");
-        close(fd);
+        fdsan_close_with_tag(fd, new_tag);
         return CMR_ERROR_WRITE_FILE_FAIL;
     }
-    close(fd);
+    fdsan_close_with_tag(fd, new_tag);
     return CMR_OK;
 }
 
