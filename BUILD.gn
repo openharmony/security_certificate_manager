@@ -121,6 +121,7 @@ group("cert_manager_type_base") {
       "./config:trusted_system_certificate65",
       "./config:trusted_system_certificate66",
       "./config:trusted_system_certificate67",
+      "./config:trusted_system_certificate68",
       "./config:trusted_system_certificate7",
       "./config:trusted_system_certificate8",
       "./config:trusted_system_certificate9",
