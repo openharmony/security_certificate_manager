@@ -760,3 +760,14 @@ ohos_prebuilt_etc("trusted_system_certificate67") {
     "updater",
   ]
 }
+
+ohos_prebuilt_etc("trusted_system_certificate68") {
+  source = "systemCertificates/ce5e74ef.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
