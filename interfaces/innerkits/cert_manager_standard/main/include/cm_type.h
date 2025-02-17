@@ -65,6 +65,8 @@ extern "C" {
 #define CERT_STATUS_ENABLED    ((uint32_t) 0)
 #define CERT_STATUS_DISABLED   ((uint32_t) 1)
 
+#define ERROR_LEVEL 0
+
 /*
  * Align to 4-tuple
  * Before calling this function, ensure that the size does not overflow after 3 is added.
@@ -82,6 +84,8 @@ extern "C" {
 #define CM_SYS_CREDENTIAL_STORE         4
 #define CM_STORE_CHECK(a) \
     (((a) != CM_CREDENTIAL_STORE) && ((a) != CM_PRI_CREDENTIAL_STORE) && ((a) != CM_SYS_CREDENTIAL_STORE))
+#define CM_LEVEL_CHECK(a) \
+    (((a) != CM_AUTH_STORAGE_LEVEL_EL1) && ((a) != CM_AUTH_STORAGE_LEVEL_EL2) && ((a) != CM_AUTH_STORAGE_LEVEL_EL4))
 
 #define CA_STORE_PATH_SYSTEM              "/etc/security/certificates"
 #define CA_STORE_PATH_USER_SANDBOX_BASE   "/data/certificates/user_cacerts/"
@@ -376,12 +380,19 @@ struct CmSignatureSpec {
     uint32_t digest;
 };
 
+enum CmAuthStorageLevel {
+    CM_AUTH_STORAGE_LEVEL_EL1 = 1,
+    CM_AUTH_STORAGE_LEVEL_EL2 = 2,
+    CM_AUTH_STORAGE_LEVEL_EL4 = 4,
+};
+
 struct CmAppCertParam {
     struct CmBlob *appCert;
     struct CmBlob *appCertPwd;
     struct CmBlob *certAlias;
     uint32_t store;
     uint32_t userId;
+    enum CmAuthStorageLevel level;
 };
 
 struct CertName {

@@ -27,6 +27,8 @@
 #include "cert_manager_session_mgr.h"
 #include "cert_manager_status.h"
 #include "cert_manager_storage.h"
+#include "cert_manager_query.h"
+#include "cm_cert_property_rdb.h"
 #include "cm_log.h"
 #include "cm_type.h"
 #include "cm_util.h"
@@ -57,11 +59,17 @@ static int32_t CmTraversalDirActionCredential(const char *filePath, const char *
     }
 
     struct CmBlob keyUri = { strlen(fileName) + 1, (uint8_t *)fileName };
-    ret = CmKeyOpDeleteKey(&keyUri);
+    enum CmAuthStorageLevel level;
+    ret = GetRdbAuthStorageLevel(&keyUri, &level);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get storage level failed, ret: %d", ret);
+        return ret;
+    }
+
+    ret = CmKeyOpDeleteKey(&keyUri, level);
     if (ret != CM_SUCCESS) { /* ignore the return of delete key */
         CM_LOG_E("App key delete failed ret: %d", ret);
     }
-
     return CM_SUCCESS;
 }
 
@@ -75,6 +83,12 @@ static int32_t CmTraversalDirActionUserCa(const struct CmContext *context, const
     }
 
     struct CmBlob certUri = { strlen(fileName) + 1, (uint8_t *)fileName }; /* include '\0' at end. */
+    ret = DeleteCertProperty(fileName);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("delete user ca cert property failed, ret: %d", ret);
+        return ret;
+    }
+
     struct CmMutableBlob pathBlob = { strlen(filePath) + 1, (uint8_t *)filePath };
     ret = CmSetStatusEnable(context, &pathBlob, &certUri, store);
     if (ret != CM_SUCCESS) {

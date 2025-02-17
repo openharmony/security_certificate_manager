@@ -25,6 +25,7 @@
 #include "cert_manager_session_mgr.h"
 #include "cert_manager_crypto_operation.h"
 #include "cert_manager_uri.h"
+#include "cert_manager_query.h"
 #include "cm_log.h"
 #include "cm_util.h"
 
@@ -190,7 +191,8 @@ static int32_t ConstructCommonUri(const struct CMUri *uriObj, struct CmBlob *com
 
     return CmConstructUri(&uri, commonUri);
 }
-static int32_t CalcUriMac(const struct CMUri *uriObj, uint32_t clientUid, struct CmBlob *mac, bool isNeedGenKey)
+static int32_t CalcUriMac(const struct CMUri *uriObj, uint32_t clientUid, struct CmBlob *mac,
+    bool isNeedGenKey, enum CmAuthStorageLevel level)
 {
     struct CmBlob toBeAuthedUri = { 0, NULL };
     struct CmBlob macKeyUri = { 0, NULL };
@@ -212,14 +214,14 @@ static int32_t CalcUriMac(const struct CMUri *uriObj, uint32_t clientUid, struct
         }
 
         if (isNeedGenKey) {
-            ret = CmKeyOpGenMacKey(&macKeyUri);
+            ret = CmKeyOpGenMacKey(&macKeyUri, level);
             if (ret != CM_SUCCESS) {
                 CM_LOG_E("generate mac key failed, ret = %d", ret);
                 break;
             }
         }
 
-        ret = CmKeyOpCalcMac(&macKeyUri, &toBeAuthedUri, mac);
+        ret = CmKeyOpCalcMac(&macKeyUri, &toBeAuthedUri, mac, level);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("calc mac failed, ret = %d", ret);
             break;
@@ -231,7 +233,7 @@ static int32_t CalcUriMac(const struct CMUri *uriObj, uint32_t clientUid, struct
     return ret;
 }
 
-static int32_t DeleteMacKey(const struct CMUri *uriObj, uint32_t clientUid)
+static int32_t DeleteMacKey(const struct CMUri *uriObj, uint32_t clientUid, enum CmAuthStorageLevel level)
 {
     struct CmBlob macKeyUri = { 0, NULL };
     int32_t ret;
@@ -244,7 +246,7 @@ static int32_t DeleteMacKey(const struct CMUri *uriObj, uint32_t clientUid)
             break;
         }
 
-        ret = CmKeyOpDeleteKey(&macKeyUri);
+        ret = CmKeyOpDeleteKey(&macKeyUri, level);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("delete mac key failed, ret = %d", ret);
             break;
@@ -294,7 +296,8 @@ static int32_t ConstructAuthUri(const struct CMUri *uriObj, uint32_t clientUid, 
     return ret;
 }
 
-static int32_t GenerateAuthUri(const struct CMUri *uriObj, uint32_t clientUid, struct CmBlob *authUri)
+static int32_t GenerateAuthUri(const struct CMUri *uriObj, uint32_t clientUid,
+    struct CmBlob *authUri, enum CmAuthStorageLevel level)
 {
     struct CmBlob tempAuthUri = { 0, NULL };
     int32_t ret;
@@ -302,7 +305,7 @@ static int32_t GenerateAuthUri(const struct CMUri *uriObj, uint32_t clientUid, s
         /* calc uri mac */
         uint8_t macData[MAC_SHA256_LEN] = {0};
         struct CmBlob mac = { sizeof(macData), macData };
-        ret = CalcUriMac(uriObj, clientUid, &mac, true);
+        ret = CalcUriMac(uriObj, clientUid, &mac, true, level);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("calc uri mac failed, ret = %d", ret);
             break;
@@ -354,6 +357,13 @@ int32_t CmAuthGrantAppCertificate(const struct CmContext *context, const struct 
     }
 
     do {
+        enum CmAuthStorageLevel level;
+        ret = GetRdbAuthStorageLevel(keyUri, &level);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
+            break;
+        }
+
         ret = CheckCallerIsProducer(context, &uriObj);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("check caller userId/uid failed when grant, ret = %d", ret);
@@ -361,7 +371,7 @@ int32_t CmAuthGrantAppCertificate(const struct CmContext *context, const struct 
         }
 
         /* auth URI */
-        ret = GenerateAuthUri(&uriObj, appUid, authUri);
+        ret = GenerateAuthUri(&uriObj, appUid, authUri, level);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("construct auth URI failed, ret = %d", ret);
             break;
@@ -458,7 +468,7 @@ static int32_t GetMacByteFromString(const char *macString, struct CmBlob *macByt
     return CM_SUCCESS;
 }
 
-static int32_t CheckIsAuthorizedApp(const struct CMUri *uriObj)
+static int32_t CheckIsAuthorizedApp(const struct CMUri *uriObj, enum CmAuthStorageLevel level)
 {
     if ((uriObj->clientApp == NULL) || (uriObj->mac == NULL)) {
         CM_LOG_E("invalid input auth uri");
@@ -482,7 +492,7 @@ static int32_t CheckIsAuthorizedApp(const struct CMUri *uriObj)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    ret = CalcUriMac(uriObj, clientUid, &mac, false);
+    ret = CalcUriMac(uriObj, clientUid, &mac, false, level);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("calc uri mac failed, ret = %d", ret);
         CM_FREE_PTR(macByte.data);
@@ -509,10 +519,28 @@ int32_t CmAuthIsAuthorizedApp(const struct CmContext *context, const struct CmBl
         return ret;
     }
 
-    ret = CheckIsAuthorizedApp(&uriObj);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("check is authed app failed, ret = %d", ret);
-    }
+    do {
+        struct CmBlob commonUri = { 0, NULL };
+        ret = ConstructCommonUri(&uriObj, &commonUri, CM_CREDENTIAL_STORE);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("construct common uri failed, ret = %d", ret);
+            break;
+        }
+
+        enum CmAuthStorageLevel level;
+        ret = GetRdbAuthStorageLevel(&commonUri, &level);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CheckIsAuthorizedApp(&uriObj, level);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("check is authed app failed, ret = %d", ret);
+            break;
+        }
+    } while (0);
+
     (void)CertManagerFreeUri(&uriObj);
     return ret;
 }
@@ -530,6 +558,13 @@ int32_t CmAuthRemoveGrantedApp(const struct CmContext *context, const struct CmB
     }
 
     do {
+        enum CmAuthStorageLevel level;
+        ret = GetRdbAuthStorageLevel(keyUri, &level);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
+            break;
+        }
+
         ret = CheckCallerIsProducer(context, &uriObj);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("check caller userId/uid failed when remove grant, ret = %d", ret);
@@ -537,7 +572,7 @@ int32_t CmAuthRemoveGrantedApp(const struct CmContext *context, const struct CmB
         }
 
         /* delete mac key */
-        ret = DeleteMacKey(&uriObj, appUid);
+        ret = DeleteMacKey(&uriObj, appUid, level);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("delete mac key failed, ret = %d", ret);
             break;
@@ -560,7 +595,8 @@ int32_t CmAuthRemoveGrantedApp(const struct CmContext *context, const struct CmB
     return ret;
 }
 
-static int32_t DeleteAuthInfo(uint32_t userId, const struct CmBlob *uri, const struct CmAppUidList *appUidList)
+static int32_t DeleteAuthInfo(uint32_t userId, const struct CmBlob *uri, const struct CmAppUidList *appUidList,
+    enum CmAuthStorageLevel level)
 {
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
@@ -572,7 +608,7 @@ static int32_t DeleteAuthInfo(uint32_t userId, const struct CmBlob *uri, const s
 
     do {
         for (uint32_t i = 0; i < appUidList->appUidCount; ++i) {
-            ret = DeleteMacKey(&uriObj, appUidList->appUid[i]);
+            ret = DeleteMacKey(&uriObj, appUidList->appUid[i], level);
             if (ret != CM_SUCCESS) {
                 CM_LOG_E("delete mac key failed, ret = %d", ret);
                 break;
@@ -585,7 +621,7 @@ static int32_t DeleteAuthInfo(uint32_t userId, const struct CmBlob *uri, const s
 }
 
 /* clear auth info when delete public credential */
-int32_t CmAuthDeleteAuthInfo(const struct CmContext *context, const struct CmBlob *uri)
+int32_t CmAuthDeleteAuthInfo(const struct CmContext *context, const struct CmBlob *uri, enum CmAuthStorageLevel level)
 {
     pthread_mutex_lock(&g_authMgrLock);
     struct CmAppUidList appUidList = { 0, NULL };
@@ -597,7 +633,7 @@ int32_t CmAuthDeleteAuthInfo(const struct CmContext *context, const struct CmBlo
             break;
         }
 
-        ret = DeleteAuthInfo(context->userId, uri, &appUidList);
+        ret = DeleteAuthInfo(context->userId, uri, &appUidList, level);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("delete auth failed, ret = %d", ret);
             break;
@@ -624,6 +660,7 @@ int32_t CmAuthDeleteAuthInfoByUserId(uint32_t userId, const struct CmBlob *uri)
 {
     pthread_mutex_lock(&g_authMgrLock);
     struct CmAppUidList appUidList = { 0, NULL };
+    enum CmAuthStorageLevel level;
     int32_t ret;
     do {
         ret = CmGetAuthListByUserId(userId, uri, &appUidList);
@@ -632,7 +669,13 @@ int32_t CmAuthDeleteAuthInfoByUserId(uint32_t userId, const struct CmBlob *uri)
             break;
         }
 
-        ret = DeleteAuthInfo(userId, uri, &appUidList);
+        ret = GetRdbAuthStorageLevel(uri, &level);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
+            break;
+        }
+
+        ret = DeleteAuthInfo(userId, uri, &appUidList, level);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("delete auth failed, ret = %d", ret);
             break;
@@ -654,39 +697,56 @@ int32_t CmAuthDeleteAuthInfoByUserId(uint32_t userId, const struct CmBlob *uri)
 int32_t CmAuthDeleteAuthInfoByUid(uint32_t userId, uint32_t targetUid, const struct CmBlob *uri)
 {
     pthread_mutex_lock(&g_authMgrLock);
-    bool isInAuthList = false;
-    int32_t ret = CmCheckIsAuthUidExistByUserId(userId, targetUid, uri, &isInAuthList);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("check is in auth list failed, ret = %d", ret);
-        pthread_mutex_unlock(&g_authMgrLock);
-        return ret;
-    }
+    int32_t ret;
+    do {
+        bool isInAuthList = false;
+        ret = CmCheckIsAuthUidExistByUserId(userId, targetUid, uri, &isInAuthList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("check is in auth list failed, ret = %d", ret);
+            break;
+        }
 
-    if (!isInAuthList) {
-        pthread_mutex_unlock(&g_authMgrLock);
-        return CM_SUCCESS;
-    }
+        if (!isInAuthList) {
+            ret = CM_SUCCESS;
+            break;
+        }
 
-    uint32_t appUid[] = { targetUid };
-    struct CmAppUidList appUidList = { sizeof(appUid) / sizeof(uint32_t), appUid };
-    ret = DeleteAuthInfo(userId, uri, &appUidList);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("delete mac key info failed, ret = %d", ret);
-        pthread_mutex_unlock(&g_authMgrLock);
-        return ret;
-    }
+        enum CmAuthStorageLevel level;
+        ret = GetRdbAuthStorageLevel(uri, &level);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
+            break;
+        }
 
-    ret = CmRemoveAuthUidByUserId(userId, targetUid, uri);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("remove auth uid by user id failed, ret = %d", ret);
-    }
+        uint32_t appUid[] = { targetUid };
+        struct CmAppUidList appUidList = { sizeof(appUid) / sizeof(uint32_t), appUid };
+        ret = DeleteAuthInfo(userId, uri, &appUidList, level);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("delete mac key info failed, ret = %d", ret);
+            break;
+        }
+
+        ret = CmRemoveAuthUidByUserId(userId, targetUid, uri);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("remove auth uid by user id failed, ret = %d", ret);
+            break;
+        }
+    } while (0);
     pthread_mutex_unlock(&g_authMgrLock);
     return ret;
 }
 
-static int32_t CheckCommonPermission(const struct CmContext *context, const struct CMUri *uriObj)
+static int32_t CheckCommonPermission(const struct CmContext *context, const struct CMUri *uriObj,
+    const struct CmBlob *commonUri)
 {
-    int32_t ret = CheckCallerIsProducer(context, uriObj);
+    enum CmAuthStorageLevel level;
+    int32_t ret = GetRdbAuthStorageLevel(commonUri, &level);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
+        return ret;
+    }
+
+    ret = CheckCallerIsProducer(context, uriObj);
     if (ret == CM_SUCCESS) {
         return ret;
     }
@@ -708,7 +768,7 @@ static int32_t CheckCommonPermission(const struct CmContext *context, const stru
     }
 
     CM_LOG_D("caller may be authed app, need check");
-    return CheckIsAuthorizedApp(uriObj);
+    return CheckIsAuthorizedApp(uriObj, level);
 }
 
 int32_t CmCheckAndGetCommonUri(const struct CmContext *context, uint32_t store, const struct CmBlob *uri,
@@ -725,17 +785,18 @@ int32_t CmCheckAndGetCommonUri(const struct CmContext *context, uint32_t store, 
     }
 
     do {
-        if (store != CM_SYS_CREDENTIAL_STORE) {
-            ret = CheckCommonPermission(context, &uriObj);
-            if (ret != CM_SUCCESS) {
-                break;
-            }
-        }
-
         ret = ConstructCommonUri(&uriObj, commonUri, store);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("construct common uri failed, ret = %d", ret);
             break;
+        }
+
+        if (store != CM_SYS_CREDENTIAL_STORE) {
+            ret = CheckCommonPermission(context, &uriObj, commonUri);
+            if (ret != CM_SUCCESS) {
+                CM_FREE_PTR(commonUri->data);
+                break;
+            }
         }
     } while (0);
 

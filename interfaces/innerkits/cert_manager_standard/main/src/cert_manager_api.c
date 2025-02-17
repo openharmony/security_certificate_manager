@@ -80,16 +80,40 @@ CM_API_EXPORT int32_t CmSetCertStatus(const struct CmBlob *certUri, const uint32
     return ret;
 }
 
+CM_API_EXPORT int32_t CmInstallAppCertEx(const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
+{
+    CM_LOG_D("enter install app certificate extension");
+    /* The store must be private, and the userid must be invalid */
+    if (certParam == NULL || certParam->appCert == NULL || certParam->appCertPwd == NULL||
+        certParam->certAlias == NULL || keyUri == NULL || certParam->userId != INIT_INVALID_VALUE ||
+        keyUri->data == NULL || certParam->store != CM_PRI_CREDENTIAL_STORE || CM_LEVEL_CHECK(certParam->level)) {
+        CM_LOG_E("an error in the parameters of installing the application certificate ex.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CmClientInstallAppCert(certParam, keyUri);
+    CM_LOG_D("leave install app certificate extension, result = %d", ret);
+    return ret;
+}
+
 CM_API_EXPORT int32_t CmInstallAppCert(const struct CmBlob *appCert, const struct CmBlob *appCertPwd,
     const struct CmBlob *certAlias, const uint32_t store, struct CmBlob *keyUri)
 {
     CM_LOG_D("enter install app certificate");
     if (appCert == NULL || appCertPwd == NULL || certAlias == NULL ||
         keyUri == NULL || keyUri->data == NULL || CM_STORE_CHECK(store)) {
+        CM_LOG_E("an error in the parameters of installing the application certificate.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    int32_t ret = CmClientInstallAppCert(appCert, appCertPwd, certAlias, store, keyUri);
+    /* The public credentials are at the EL2 level. */
+    enum CmAuthStorageLevel level = (store == CM_CREDENTIAL_STORE) ? CM_AUTH_STORAGE_LEVEL_EL2 :
+        CM_AUTH_STORAGE_LEVEL_EL1;
+
+    struct CmAppCertParam certParam = { (struct CmBlob *)appCert, (struct CmBlob *)appCertPwd,
+        (struct CmBlob *)certAlias, store, INIT_INVALID_VALUE, level };
+
+    int32_t ret = CmClientInstallAppCert(&certParam, keyUri);
     CM_LOG_D("leave install app certificate, result = %d", ret);
     return ret;
 }

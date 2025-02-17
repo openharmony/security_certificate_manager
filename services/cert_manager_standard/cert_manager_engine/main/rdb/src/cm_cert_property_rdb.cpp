@@ -25,16 +25,6 @@
 using namespace OHOS;
 using namespace OHOS::Security::CertManager;
 
-const std::string CERT_MANAGER_RDB_NAME = "/cert_manager.db";
-const std::string CERT_PROPERTY_TABLE_NAME = "cert_property";
-const std::string COLUMN_URI = "URI";
-const std::string COLUMN_ALIAS = "ALIAS";
-const std::string COLUMN_SUBJECT_NAME = "SUBJECT_NAME";
-const std::string COLUMN_CERT_TYPE = "CERT_TYPE";
-const std::string COLUMN_CERT_STORE = "CERT_STORE";
-const std::string COLUMN_USERID = "USERID";
-const std::string COLUMN_UID = "UID";
-
 static std::shared_ptr<CmRdbDataManager> cmRdbDataManager = nullptr;
 
 int32_t CreateCertPropertyRdb(void)
@@ -45,7 +35,8 @@ int32_t CreateCertPropertyRdb(void)
     rdbConfig.tableName = CERT_PROPERTY_TABLE_NAME;
     rdbConfig.createTableSql = std::string("CREATE TABLE IF NOT EXISTS " + CERT_PROPERTY_TABLE_NAME +
         "(URI TEXT PRIMARY KEY, ALIAS TEXT NOT NULL, SUBJECT_NAME TEXT NOT NULL, CERT_TYPE TEXT NOT NULL, " +
-        "CERT_STORE INTEGER NOT NULL, USERID INTEGER NOT NULL, UID INTEGER NOT NULL)");
+        "CERT_STORE INTEGER NOT NULL, USERID INTEGER NOT NULL, UID INTEGER NOT NULL, " +
+        "AUTH_STORAGE_LEVEL INTEGER NOT NULL)");
     cmRdbDataManager = std::make_shared<CmRdbDataManager>(rdbConfig);
     bool ret = cmRdbDataManager->CreateTable();
     if (!ret) {
@@ -75,6 +66,7 @@ int32_t InsertCertProperty(const struct CertProperty *certProperty)
     insertBucket.PutInt(COLUMN_CERT_STORE, certProperty->certStore);
     insertBucket.PutInt(COLUMN_USERID, certProperty->userId);
     insertBucket.PutInt(COLUMN_UID, certProperty->uid);
+    insertBucket.PutInt(COLUMN_AUTH_STORAGE_LEVEL, certProperty->level);
     bool ret = cmRdbDataManager->InsertData(insertBucket);
     if (!ret) {
         CM_LOG_E("Failed to insert cert:%s property data", certProperty->uri);
@@ -176,6 +168,7 @@ static int32_t GetIntValue(const std::shared_ptr<NativeRdb::AbsSharedResultSet> 
 static int32_t GetCertProperty(const std::shared_ptr<NativeRdb::AbsSharedResultSet> &resultSet,
     struct CertProperty *certProperty)
 {
+    CM_LOG_D("enter GetCertProperty");
     int32_t ret = GetStringValue(resultSet, COLUMN_URI, certProperty->uri, MAX_LEN_URI);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed to get uri");
@@ -217,6 +210,14 @@ static int32_t GetCertProperty(const std::shared_ptr<NativeRdb::AbsSharedResultS
         CM_LOG_E("Failed to get uid");
         return ret;
     }
+
+    int32_t level;
+    ret = GetIntValue(resultSet, COLUMN_AUTH_STORAGE_LEVEL, level);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to get uid");
+        return ret;
+    }
+    certProperty->level = (enum CmAuthStorageLevel)level;
     return ret;
 }
 

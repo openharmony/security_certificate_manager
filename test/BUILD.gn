@@ -29,6 +29,7 @@ ohos_unittest("cm_sdk_test") {
     "unittest/src/cm_grant_test.cpp",
     "unittest/src/cm_init_test.cpp",
     "unittest/src/cm_is_authed_test.cpp",
+    "unittest/src/cm_pri_app_cert_test.cpp",
     "unittest/src/cm_remove_grant_test.cpp",
     "unittest/src/cm_set_status_test.cpp",
     "unittest/src/cm_sys_app_cert_test.cpp",

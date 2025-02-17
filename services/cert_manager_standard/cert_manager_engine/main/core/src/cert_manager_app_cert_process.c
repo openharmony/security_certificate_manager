@@ -14,6 +14,7 @@
  */
 
 #include "cert_manager_app_cert_process.h"
+#include "cert_manager_auth_list_mgr.h"
 
 #include <openssl/bn.h>
 #include <openssl/bio.h>
@@ -34,6 +35,7 @@
 #include "cert_manager_crypto_operation.h"
 #include "cert_manager_service.h"
 #include "cert_manager_uri.h"
+#include "cert_manager_query.h"
 #include "cm_log.h"
 #include "cm_pfx.h"
 #include "cm_type.h"
@@ -230,7 +232,7 @@ static int32_t SaveKeyMaterialCurve25519(uint32_t algType, const EVP_PKEY *pKey,
     return CM_SUCCESS;
 }
 
-static int32_t ImportRsaKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri)
+static int32_t ImportRsaKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri, enum CmAuthStorageLevel level)
 {
     struct CmBlob keyPair = { 0, NULL };
     int32_t ret;
@@ -253,6 +255,7 @@ static int32_t ImportRsaKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri)
             .algType = HKS_ALG_RSA,
             .keySize = keySize,
             .purpose = CM_KEY_PURPOSE_SIGN | CM_KEY_PURPOSE_VERIFY,
+            .level = level,
         };
 
         ret = CmKeyOpImportKey(keyUri, &props, &keyPair);
@@ -268,7 +271,7 @@ static int32_t ImportRsaKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri)
     return ret;
 }
 
-static int32_t ImportEccKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri)
+static int32_t ImportEccKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri, enum CmAuthStorageLevel level)
 {
     struct CmBlob keyPair = { 0, NULL };
     int32_t ret;
@@ -296,6 +299,7 @@ static int32_t ImportEccKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri)
             .algType = (uint32_t)algType,
             .keySize = keyLen,
             .purpose = CM_KEY_PURPOSE_SIGN | CM_KEY_PURPOSE_VERIFY,
+            .level = level,
         };
 
         ret = CmKeyOpImportKey(keyUri, &props, &keyPair);
@@ -312,7 +316,7 @@ static int32_t ImportEccKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri)
     return ret;
 }
 
-static int32_t ImportEd25519Key(const EVP_PKEY *priKey, const struct CmBlob *keyUri)
+static int32_t ImportEd25519Key(const EVP_PKEY *priKey, const struct CmBlob *keyUri, enum CmAuthStorageLevel level)
 {
     struct CmBlob keyPair = { 0, NULL };
     int32_t ret = SaveKeyMaterialCurve25519(HKS_ALG_ED25519, priKey, &keyPair);
@@ -325,6 +329,7 @@ static int32_t ImportEd25519Key(const EVP_PKEY *priKey, const struct CmBlob *key
         .algType = HKS_ALG_ED25519,
         .keySize = HKS_CURVE25519_KEY_SIZE_256,
         .purpose = CM_KEY_PURPOSE_SIGN | CM_KEY_PURPOSE_VERIFY,
+        .level = level,
     };
     ret = CmKeyOpImportKey(keyUri, &props, &keyPair);
     if (ret != CMR_OK) {
@@ -338,15 +343,16 @@ static int32_t ImportEd25519Key(const EVP_PKEY *priKey, const struct CmBlob *key
     return ret;
 }
 
-static int32_t ImportKeyPair(const EVP_PKEY *priKey, const struct CmBlob *keyUri)
+static int32_t ImportKeyPair(const EVP_PKEY *priKey, const struct CmBlob *keyUri,
+    enum CmAuthStorageLevel level)
 {
     switch (EVP_PKEY_base_id(priKey)) {
         case EVP_PKEY_RSA:
-            return ImportRsaKey(priKey, keyUri);
+            return ImportRsaKey(priKey, keyUri, level);
         case EVP_PKEY_EC:
-            return ImportEccKey(priKey, keyUri);
+            return ImportEccKey(priKey, keyUri, level);
         case EVP_PKEY_ED25519:
-            return ImportEd25519Key(priKey, keyUri);
+            return ImportEd25519Key(priKey, keyUri, level);
         case NID_undef:
             CM_LOG_E("key's baseid is not specified");
             return CMR_ERROR_INVALID_CERT_FORMAT;
@@ -444,22 +450,51 @@ static int32_t GetCredCertName(const struct CmContext *context, const struct CmA
     return ret;
 }
 
-static int32_t StoreKeyAndCert(const struct CmContext *context, uint32_t store,
+static int32_t StoreKeyAndCert(const struct CmContext *context, const struct CmAppCertParam *param,
     struct AppCert *appCert, EVP_PKEY *priKey, struct CmBlob *keyUri)
 {
-    int32_t ret = CmCheckCertCount(context, store, (char *)keyUri->data);
+    int32_t ret = CmCheckCertCount(context, param->store, (char *)keyUri->data);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("cert count beyond maxcount, can't install");
         return CMR_ERROR_MAX_CERT_COUNT_REACHED;
     }
+    enum CmAuthStorageLevel level;
+    ret = GetRdbAuthStorageLevel(keyUri, &level);
+    /* Return "CM_SUCCESS" when no results are found in the query. */
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
+        return ret;
+    }
 
-    ret = ImportKeyPair(priKey, keyUri);
+    switch (param->store) {
+        case CM_PRI_CREDENTIAL_STORE:
+            /* The result is found, but the level does not match. */
+            if (level != ERROR_LEVEL && level != param->level) {
+                ret = CmRemoveAppCert(context, keyUri, CM_PRI_CREDENTIAL_STORE);
+                if (ret != CM_SUCCESS) {
+                    /* Don't return when the deletion fails to increase fault tolerance. */
+                    CM_LOG_E("remove private app cert failed, ret = %d", ret);
+                }
+            }
+            level = param->level;
+            break;
+        case CM_CREDENTIAL_STORE:
+            if (level == ERROR_LEVEL) {
+                level = CM_AUTH_STORAGE_LEVEL_EL2;
+            }
+            break;
+        default:
+            level = CM_AUTH_STORAGE_LEVEL_EL1;
+            break;
+    }
+
+    ret = ImportKeyPair(priKey, keyUri, level);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("import key pair failed");
         return ret;
     }
 
-    ret = StoreAppCert(context, appCert, store, keyUri);
+    ret = StoreAppCert(context, appCert, param->store, keyUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("store App Cert failed");
         return ret;
@@ -494,13 +529,15 @@ int32_t CmInstallAppCertPro(
             break;
         }
 
-        ret = StoreKeyAndCert(context, certParam->store, &appCert, priKey, keyUri);
+        ret = StoreKeyAndCert(context, certParam, &appCert, priKey, keyUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("StoreKeyAndCert fail");
             break;
         }
+        struct CertPropertyOri propertyOri = { context, keyUri, &displayName, &subjectName,
+            certParam->store, certParam->level };
 
-        ret = RdbInsertCertProperty(context, keyUri, &displayName, &subjectName, certParam->store);
+        ret = RdbInsertCertProperty(&propertyOri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to RdbInsertCertProperty");
             break;

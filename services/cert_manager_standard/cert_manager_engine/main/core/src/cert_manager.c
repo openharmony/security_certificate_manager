@@ -27,6 +27,7 @@
 #include "cert_manager_status.h"
 #include "cert_manager_storage.h"
 #include "cert_manager_uri.h"
+#include "cert_manager_query.h"
 #include "cm_cert_property_rdb.h"
 #include "cert_manager_crypto_operation.h"
 #include "cm_log.h"
@@ -214,9 +215,16 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
     const uint32_t store)
 {
     ASSERT_ARGS(context && keyUri && keyUri->data && keyUri->size);
-    int32_t ret;
+
+    enum CmAuthStorageLevel level;
+    int32_t ret = GetRdbAuthStorageLevel(keyUri, &level);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
+        return ret;
+    }
+
     if (store == CM_CREDENTIAL_STORE) {
-        ret = CmAuthDeleteAuthInfo(context, keyUri);
+        ret = CmAuthDeleteAuthInfo(context, keyUri, level);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("delete auth info failed when remove app certificate."); /* ignore ret code, only record log */
         }
@@ -241,7 +249,7 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
         CM_LOG_E("CertManagerFileRemove failed ret: %d", ret);
         return ret;
     }
-    ret = CmKeyOpDeleteKey(keyUri);
+    ret = CmKeyOpDeleteKey(keyUri, level);
     if (ret != CM_SUCCESS) { /* ignore the return of deleteKey */
         CM_LOG_E("CertManagerKeyRemove failed, ret: %d", ret);
     }
@@ -249,13 +257,14 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
     return CMR_OK;
 }
 
-static void ClearAuthInfo(const struct CmContext *context, const struct CmBlob *keyUri, const uint32_t store)
+static void ClearAuthInfo(const struct CmContext *context, const struct CmBlob *keyUri, const uint32_t store,
+    enum CmAuthStorageLevel level)
 {
     if (store != CM_CREDENTIAL_STORE) {
         return;
     }
 
-    int32_t ret = CmAuthDeleteAuthInfo(context, keyUri);
+    int32_t ret = CmAuthDeleteAuthInfo(context, keyUri, level);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("delete auth info failed."); /* ignore ret code, only record log */
     }
@@ -361,11 +370,17 @@ int32_t CmGetUri(const char *filePath, struct CmBlob *uriBlob)
     return CM_SUCCESS;
 }
 
-static int32_t GetUriAndDeleteRdbData(const char *filePath, struct CmBlob *uriBlob)
+static int32_t GetUriAndDeleteRdbData(const char *filePath, struct CmBlob *uriBlob, enum CmAuthStorageLevel *level)
 {
     int32_t ret = CmGetUri(filePath, uriBlob);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get uri failed");
+        return ret;
+    }
+
+    ret = GetRdbAuthStorageLevel(uriBlob, level);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
         return ret;
     }
 
@@ -396,8 +411,12 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
             break;
         }
 
-        if (CmUserIdLayerGetFileCountAndNames(pathBuf, fileNames, MAX_COUNT_CERTIFICATE, &fileCount) != CM_SUCCESS) {
-            ret = CM_FAILURE;
+        if (store == CM_CREDENTIAL_STORE) {
+            ret = CmUidLayerGetFileCountAndNames(pathBuf, fileNames, MAX_COUNT_CERTIFICATE, &fileCount);
+        } else {
+            ret = CmUserIdLayerGetFileCountAndNames(pathBuf, fileNames, MAX_COUNT_CERTIFICATE, &fileCount);
+        }
+        if (ret != CM_SUCCESS) {
             CM_LOG_E("Get file count and names from path faild");
             break;
         }
@@ -410,19 +429,19 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
 
             uriBlob.size = sizeof(uriBuf);
             (void)memset_s(uriBuf, uriBlob.size, 0, uriBlob.size);
-            if (GetUriAndDeleteRdbData((char *)fileNames[i].data, &uriBlob) != CM_SUCCESS) {
+            enum CmAuthStorageLevel level;
+            if (GetUriAndDeleteRdbData((char *)fileNames[i].data, &uriBlob, &level) != CM_SUCCESS) {
                 CM_LOG_E("Get uri failed");
                 continue;
             }
 
-            int32_t retCode = CmKeyOpDeleteKey(&uriBlob);
+            int32_t retCode = CmKeyOpDeleteKey(&uriBlob, level);
             if (retCode != CM_SUCCESS) { /* ignore the return of deleteKey */
                 CM_LOG_E("App key %u remove failed ret: %d", i, retCode);
             }
-            ClearAuthInfo(context, &uriBlob, store);
+            ClearAuthInfo(context, &uriBlob, store, level);
         }
     } while (0);
-
     CmFreeFileNames(fileNames, MAX_COUNT_CERTIFICATE);
     return ret;
 }
@@ -496,7 +515,7 @@ int32_t CmServiceGetCallingAppCertList(const struct CmContext *context, uint32_t
         CM_LOG_E("Get file path for store:%u faild", store);
         return CM_FAILURE;
     }
-    
+
     ret = CmUidLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get file count and names from path faild ret:%d", ret);
@@ -684,35 +703,36 @@ static const char* GetCertType(uint32_t store)
     return NULL;
 }
 
-int32_t RdbInsertCertProperty(const struct CmContext *context, const struct CmBlob *uri,
-    const struct CmBlob *alias, const struct CmBlob *subjectName, uint32_t store)
+int32_t RdbInsertCertProperty(const struct CertPropertyOri *propertyOri)
 {
     struct CertProperty certProp;
     (void)memset_s(&certProp, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
-    certProp.userId = (int32_t)context->userId;
-    certProp.uid = (int32_t)context->uid;
+    certProp.userId = (int32_t)propertyOri->context->userId;
+    certProp.uid = (int32_t)propertyOri->context->uid;
+    certProp.level = propertyOri->level;
 
-    const char *certType = GetCertType(store);
+    const char *certType = GetCertType(propertyOri->store);
     if (certType == NULL) {
-        CM_LOG_E("Type %d does not support installation", store);
+        CM_LOG_E("Type does not support installation");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    certProp.certStore = (int32_t)store;
-    if (memcpy_s(certProp.certType, MAX_LEN_CERT_TYPE, certType, strlen(certType)) != CM_SUCCESS) {
+    certProp.certStore = (int32_t)propertyOri->store;
+    if (memcpy_s(certProp.certType, MAX_LEN_CERT_TYPE, certType, strlen(certType)) != EOK) {
         CM_LOG_E("memcpy certType fail");
         return CMR_ERROR_INVALID_OPERATION;
     }
 
-    if (memcpy_s(certProp.uri, MAX_LEN_URI, (char *)uri->data, uri->size) != CM_SUCCESS) {
+    if (memcpy_s(certProp.uri, MAX_LEN_URI, (char *)propertyOri->uri->data, propertyOri->uri->size) != EOK) {
         CM_LOG_E("memcpy uri fail");
         return CMR_ERROR_INVALID_OPERATION;
     }
-    if (memcpy_s(certProp.alias, MAX_LEN_CERT_ALIAS, (char *)alias->data, alias->size) != CM_SUCCESS) {
+    if (memcpy_s(certProp.alias, MAX_LEN_CERT_ALIAS, (char *)propertyOri->alias->data, propertyOri->alias->size)
+        != EOK) {
         CM_LOG_E("memcpy subjectName fail");
         return CMR_ERROR_INVALID_OPERATION;
     }
-    if (memcpy_s(certProp.subjectName, MAX_LEN_SUBJECT_NAME, (char *)subjectName->data, subjectName->size)
-        != CM_SUCCESS) {
+    if (memcpy_s(certProp.subjectName, MAX_LEN_SUBJECT_NAME, (char *)propertyOri->subjectName->data,
+        propertyOri->subjectName->size) != EOK) {
         CM_LOG_E("memcpy subjectName fail");
         return CMR_ERROR_INVALID_OPERATION;
     }

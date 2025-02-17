@@ -557,3 +557,26 @@ uint32_t CmGetMatchedCertIndex(const struct CmMutableBlob *certFileList, const s
     }
     return matchIndex;
 }
+
+int32_t GetRdbAuthStorageLevel(const struct CmBlob *keyUri, enum CmAuthStorageLevel *level)
+{
+    CM_LOG_D("enter GetRdbAuthStorageLevel");
+    if (keyUri == NULL || level == NULL) {
+        CM_LOG_E("Invalid input parameters: keyUri or level is NULL");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    struct CertProperty certProp;
+    (void)memset_s(&certProp, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
+
+    certProp.level = ERROR_LEVEL;
+    int32_t ret = QueryCertProperty((char *)keyUri->data, &certProp);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to QueryCertProperty, ret: %d", ret);
+        return ret;
+    }
+    /* If the return value of level is ERROR_LEVEL, nothing is found */
+    *level = certProp.level;
+
+    return ret;
+}

@@ -219,6 +219,11 @@ int32_t CmServiceInstallAppCertCheck(const struct CmAppCertParam *certParam, str
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
+    if (CM_LEVEL_CHECK(certParam->level)) {
+        CM_LOG_E("CmInstallAppCertCheck level check fail, level:%u", certParam->level);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     int32_t ret = CmCheckAppCert(certParam->appCert);
     if (ret != CM_SUCCESS) {
         return ret;

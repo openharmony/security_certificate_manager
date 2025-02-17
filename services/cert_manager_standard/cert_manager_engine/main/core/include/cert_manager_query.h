@@ -41,6 +41,8 @@ uint32_t CmGetMatchedCertIndex(const struct CmMutableBlob *certFileList, const s
 void CmFreeCertFiles(struct CertFileInfo *cFileList, uint32_t certCount);
 
 void CmFreePathList(struct CmMutableBlob *pList, uint32_t pathCount);
+
+int32_t GetRdbAuthStorageLevel(const struct CmBlob *keyUri, enum CmAuthStorageLevel *level);
 #ifdef __cplusplus
 }
 #endif

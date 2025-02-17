@@ -32,7 +32,7 @@ int32_t CmAuthIsAuthorizedApp(const struct CmContext *context, const struct CmBl
 
 int32_t CmAuthRemoveGrantedApp(const struct CmContext *context, const struct CmBlob *keyUri, uint32_t appUid);
 
-int32_t CmAuthDeleteAuthInfo(const struct CmContext *context, const struct CmBlob *uri);
+int32_t CmAuthDeleteAuthInfo(const struct CmContext *context, const struct CmBlob *uri, enum CmAuthStorageLevel level);
 
 int32_t CmAuthDeleteAuthInfoByUserId(uint32_t userId, const struct CmBlob *uri);
 

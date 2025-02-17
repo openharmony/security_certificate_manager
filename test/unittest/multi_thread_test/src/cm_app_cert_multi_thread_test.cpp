@@ -114,15 +114,20 @@ HWTEST_F(CmAppCertMultiThreadTest, CmAppCertMultiThreadTest004, TestSize.Level0)
 {
     uint8_t certAliasBuf[] = "keyB";
     struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+    uint8_t certAliasBuf04[] = "keyC";
+    struct CmBlob certAlias04 = { sizeof(certAliasBuf04), certAliasBuf04 };
 
     uint8_t uriBuf[MAX_LEN_URI] = {0};
     struct CmBlob keyUri = { sizeof(uriBuf), uriBuf };
 
     int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
-    EXPECT_EQ(ret, CM_SUCCESS) << "CmAppCertMultiThreadTest004 1 failed, retcode:" << ret;
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmAppCertMultiThreadTest 1 failed, retcode:" << ret;
 
-    ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
-    EXPECT_EQ(ret, CM_SUCCESS) << "CmAppCertMultiThreadTest004 2 failed, retcode:" << ret;
+    ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias04, CM_PRI_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmAppCertMultiThreadTest 2 failed, retcode:" << ret;
+
+    ret = CmUninstallAllAppCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAllTest 2 test failed, retcode:" << ret;
 
     SET_THREAD_NUM(MULTI_THREAD_NUM);
     GTEST_RUN_TASK(TestUninstallAppCertMultiThread);

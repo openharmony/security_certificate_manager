@@ -30,6 +30,16 @@ extern "C" {
 #define APP_CA_STORE        "/data/service/el1/public/cert_manager_service/certificates/priv_credential/"
 #define CREDENTIAL_STORE    "./certificates/credential/"
 
+/* Store it in the database. */
+struct CertPropertyOri {
+    const struct CmContext *context;
+    struct CmBlob *uri;
+    struct CmBlob *alias;
+    struct CmBlob *subjectName;
+    uint32_t store;
+    enum CmAuthStorageLevel level;
+};
+
 int32_t CertManagerInitialize(void);
 
 int32_t CertManagerFindCertFileNameByUri(
@@ -85,8 +95,7 @@ int32_t CmRemoveBackupUserCert(const struct CmContext *context, const struct CmB
 
 int32_t CmGetDisplayNameByURI(const struct CmBlob *uri, const char *object, struct CmBlob *displayName);
 
-int32_t RdbInsertCertProperty(const struct CmContext *context, const struct CmBlob *uri,
-    const struct CmBlob *alias, const struct CmBlob *subjectName, uint32_t store);
+int32_t RdbInsertCertProperty(const struct CertPropertyOri *propertyOri);
 
 int32_t GetObjNameFromCertData(const struct CmBlob *certData, const struct CmBlob *certAlias,
     struct CmBlob *objectName);

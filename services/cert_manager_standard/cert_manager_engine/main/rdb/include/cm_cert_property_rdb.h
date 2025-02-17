@@ -30,6 +30,7 @@ struct CertProperty {
     int32_t certStore;
     int32_t userId;
     int32_t uid;
+    enum CmAuthStorageLevel level;
 };
 
 int32_t CreateCertPropertyRdb(void);

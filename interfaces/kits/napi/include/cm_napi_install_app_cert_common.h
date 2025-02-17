@@ -18,6 +18,7 @@
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "cm_type.h"
 
 struct InstallAppCertAsyncContextT {
     napi_async_work asyncWork = nullptr;
@@ -30,6 +31,9 @@ struct InstallAppCertAsyncContextT {
     struct CmBlob *keyAlias = nullptr;
     struct CmBlob *keyUri = nullptr;
     uint32_t store = 0;
+
+    /* add auth storage level: default el1, only valid while install private cert */
+    enum CmAuthStorageLevel level = CM_AUTH_STORAGE_LEVEL_EL1;
 };
 using InstallAppCertAsyncContext = InstallAppCertAsyncContextT *;
 
