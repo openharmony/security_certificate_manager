@@ -38,7 +38,7 @@ if (os_level == "standard") {
     part_name = "certificate_manager"
     public_configs = [ ":cert_manager_config" ]
 
-    sources = [ "src/cert_manager_api.c" ]
+    sources = [ "../source/cert_manager_api.c" ]
 
     cflags = [
       "-Wall",
