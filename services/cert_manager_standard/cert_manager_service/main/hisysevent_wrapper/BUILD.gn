@@ -46,8 +46,10 @@ ohos_static_library("libcert_manager_hisysevent_wrapper_static") {
     "${cert_manager_root_dir}/services/cert_manager_standard/cert_manager_engine/main/core:cert_manager_engine_core_standard",
   ]
   external_deps = [
+    "access_token:libaccesstoken_sdk",
     "bounds_checking_function:libsec_shared",
     "hisysevent:libhisysevent",
+    "ipc:ipc_single",
   ]
   complete_static_lib = true
 }

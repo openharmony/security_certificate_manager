@@ -104,7 +104,7 @@ void CmFillSGRecord(char *objectInfoJson, char *recordJson, int32_t recordJsonLe
         CM_LOG_E("Failed to get caller bundle name");
         return;
     }
-    
+
     char constant[] = "";
     content.type = 0;
     content.subType = 0;
