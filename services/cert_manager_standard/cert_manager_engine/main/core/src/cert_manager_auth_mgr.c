@@ -518,9 +518,9 @@ int32_t CmAuthIsAuthorizedApp(const struct CmContext *context, const struct CmBl
         CM_LOG_E("uri decode failed, ret = %d", ret);
         return ret;
     }
+    struct CmBlob commonUri = { 0, NULL };
 
     do {
-        struct CmBlob commonUri = { 0, NULL };
         ret = ConstructCommonUri(&uriObj, &commonUri, CM_CREDENTIAL_STORE);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("construct common uri failed, ret = %d", ret);
@@ -541,6 +541,7 @@ int32_t CmAuthIsAuthorizedApp(const struct CmContext *context, const struct CmBl
         }
     } while (0);
 
+    CM_FREE_PTR(commonUri.data);
     (void)CertManagerFreeUri(&uriObj);
     return ret;
 }
