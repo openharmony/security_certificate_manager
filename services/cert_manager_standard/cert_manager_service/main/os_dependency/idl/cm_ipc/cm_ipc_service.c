@@ -1109,6 +1109,7 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
     int32_t ret = CM_SUCCESS;
     uint32_t store = CM_USER_TRUSTED_STORE;
     uint32_t status = INIT_INVALID_VALUE;
+    struct CmContext oriContext = {0};
     struct CmBlob certUri = { 0, NULL };
     struct CmContext cmContext = {0};
     struct CmParamSet *paramSet = NULL;
@@ -1119,20 +1120,17 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
     };
 
     do {
-        if (!CmHasCommonPermission() || !CmHasUserTrustedPermission()) {
-            CM_LOG_E("caller no permission");
-            ret = CMR_ERROR_PERMISSION_DENIED;
-            break;
-        }
-        if (!CmIsSystemApp()) {
-            CM_LOG_E("set user status: caller is not system app");
-            ret = CMR_ERROR_NOT_SYSTEMP_APP;
-            break;
-        }
-
         ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
             CM_LOG_E("SetUserCertStatus get input params failed, ret = %d", ret);
+            break;
+        }
+        oriContext.userId = cmContext.userId;
+        oriContext.uid = cmContext.uid;
+
+        ret = CmServiceSetUserCertStatusCheck(&cmContext, &certUri);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmServiceSetUserCertStatusCheck fail, ret = %d", ret);
             break;
         }
 
