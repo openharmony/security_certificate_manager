@@ -1427,7 +1427,7 @@ HWTEST_F(CmUserCertTest, SetUserCertStatusTest005, TestSize.Level0)
 HWTEST_F(CmUserCertTest, SetUserCertStatusTest006, TestSize.Level0)
 {
     int32_t ret;
-    uint8_t invalidUriBuf[] = "invaliduri";
+    uint8_t invalidUriBuf[] = "oh:t=c;o=abcdefg;u=0;a=00000000";
     struct CmBlob invalidCertUri = { sizeof(invalidUriBuf), invalidUriBuf };
 
     ret = CmSetUserCertStatus(&invalidCertUri, CM_USER_TRUSTED_STORE, true);
