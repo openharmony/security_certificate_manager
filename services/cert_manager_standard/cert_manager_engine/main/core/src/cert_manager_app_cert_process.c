@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -52,7 +52,7 @@ static int32_t TransEccKeyToKeyBlob(const EC_KEY *eccKey, const struct HksKeyMat
     struct CmBlob *rawMaterial)
 {
     /* rawMaterial size ensure enougth */
-    int32_t ret = CM_FAILURE;
+    int32_t ret = CMR_ERROR_OPENSSL_FAIL;
     BIGNUM *pubX = BN_new();
     BIGNUM *pubY = BN_new();
     do {
@@ -153,7 +153,7 @@ static int32_t SaveKeyMaterialRsa(const RSA *rsa, const uint32_t keySize, struct
     keyMaterial->keySize = keySize;
 
     uint8_t tmpBuff[HKS_RSA_KEY_SIZE_4096] = {0};
-    int32_t ret = CMR_ERROR_INVALID_OPERATION;
+    int32_t ret = CMR_ERROR_MEM_OPERATION_COPY;
     do {
         uint32_t offset = sizeof(*keyMaterial);
         keyMaterial->nSize = (uint32_t)BN_bn2bin(RSA_get0_n(rsa), tmpBuff);
@@ -208,7 +208,7 @@ static int32_t SaveKeyMaterialCurve25519(uint32_t algType, const EVP_PKEY *pKey,
         CM_LOG_E("EVP_PKEY_get_raw_public_key failed");
         (void)memset_s(buffer, totalSize, 0, totalSize);
         CMFree(buffer);
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_OPENSSL_FAIL;
     }
     uint32_t pubKeyLen = (uint32_t)tmpPubKeyLen;
 
@@ -217,7 +217,7 @@ static int32_t SaveKeyMaterialCurve25519(uint32_t algType, const EVP_PKEY *pKey,
         CM_LOG_E("EVP_PKEY_get_raw_private_key");
         (void)memset_s(buffer, totalSize, 0, totalSize);
         CMFree(buffer);
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_OPENSSL_FAIL;
     }
     uint32_t priKeyLen = (uint32_t)tmpPriKeyLen;
 
@@ -240,7 +240,7 @@ static int32_t ImportRsaKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri,
         const RSA *rsa = EVP_PKEY_get0_RSA((EVP_PKEY *)priKey);
         if (rsa == NULL) {
             CM_LOG_E("EVP_PKEY_get1_RSA error %s", ERR_reason_error_string(ERR_get_error()));
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_OPENSSL_FAIL;
             break;
         }
         uint32_t keySize = ((uint32_t)RSA_size(rsa)) * CM_BITS_PER_BYTE;
@@ -279,7 +279,7 @@ static int32_t ImportEccKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri,
         const EC_KEY *eccKey = EVP_PKEY_get0_EC_KEY((EVP_PKEY *)priKey);
         if (eccKey == NULL) {
             CM_LOG_E("EVP_PKEY_get0_EC_KEY faild");
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_OPENSSL_FAIL;
             break;
         }
 
@@ -358,7 +358,7 @@ static int32_t ImportKeyPair(const EVP_PKEY *priKey, const struct CmBlob *keyUri
             return CMR_ERROR_INVALID_CERT_FORMAT;
         default:
             CM_LOG_E("Import key type not suported");
-            return CMR_ERROR_INVALID_ARGUMENT;
+            return CMR_ERROR_INVALID_ARGUMENT_APP_CERT;
     }
 }
 
@@ -409,7 +409,7 @@ static int32_t ConstructKeyUri(
 
         if (memcpy_s(keyUri->data, keyUri->size, commonUri.data, commonUri.size) != EOK) {
             CM_LOG_E("copy key uri failed");
-            ret = CMR_ERROR_INVALID_OPERATION;
+            ret = CMR_ERROR_MEM_OPERATION_COPY;
             break;
         }
 

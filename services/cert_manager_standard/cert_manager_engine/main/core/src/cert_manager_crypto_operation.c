@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -94,7 +94,7 @@ int32_t CmGetRandom(struct CmBlob *random)
     int ret = RAND_bytes(random->data, random->size);
     if (ret <= 0) {
         CM_LOG_E("Get random failed");
-        return CMR_ERROR_KEY_OPERATION_FAILED;
+        return CMR_ERROR_OPENSSL_FAIL;
     }
 
     return CM_SUCCESS;
@@ -111,13 +111,13 @@ int32_t CmGetHash(const struct CmBlob *inData, struct CmBlob *hash)
     const EVP_MD *opensslAlg = EVP_sha256();
     if (opensslAlg == NULL) {
         CM_LOG_E("get openssl alg failed");
-        return CMR_ERROR_KEY_OPERATION_FAILED;
+        return CMR_ERROR_OPENSSL_FAIL;
     }
 
     int32_t ret = EVP_Digest(inData->data, inData->size, hash->data, &hash->size, opensslAlg, NULL);
     if (ret <= 0) {
         CM_LOG_E("digest failed");
-        return CMR_ERROR_KEY_OPERATION_FAILED;
+        return CMR_ERROR_OPENSSL_FAIL;
     }
     return CM_SUCCESS;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -51,7 +51,7 @@ static int32_t GetNumberOfFiles(const char *path)
     void *dir = CmOpenDir(path);
     if (dir == NULL) {
         CM_LOG_W("can't open directory");
-        return -1;
+        return CMR_ERROR_FILE_OPEN_DIR;
     }
 
     int32_t count = 0;
@@ -85,12 +85,12 @@ static int32_t MallocFileNames(struct CmMutableBlob **fNames, const char *path, 
 
     if (fileNums < 0) {
         CM_LOG_E("Failed to obtain number of files from: path");
-        return CM_FAILURE;
+        return CMR_ERROR_FILE_OPEN_DIR; /* when open dir failed return value will smaller than 0 */
     }
 
     if (fileNums > MAX_COUNT_CERTIFICATE) {
         CM_LOG_E("cert count %d beyond MAX", fileNums);
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_MAX_CERT_COUNT_REACHED;
     }
 
     uint32_t bufSize = sizeof(struct CmMutableBlob) * (uint32_t)fileNums;
@@ -112,7 +112,7 @@ static int32_t GetFileNames(const char *path, struct CmMutableBlob *fNames, uint
     void *d = CmOpenDir(path);
     if (d == NULL) {
         CM_LOG_E("Failed to open directory");
-        return CM_FAILURE;
+        return CMR_ERROR_FILE_OPEN_DIR;
     }
 
     int32_t ret = CM_SUCCESS;
@@ -137,7 +137,7 @@ static int32_t GetFileNames(const char *path, struct CmMutableBlob *fNames, uint
         (void)memset_s(fNames[i].data, nameSize, 0, nameSize);
         if (sprintf_s((char *)fNames[i].data, nameSize, "%s", dire.fileName) < 0) {
             CM_LOG_E("copy file name failed");
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_MEM_OPERATION_PRINT;
             break;
         }
 
@@ -146,8 +146,8 @@ static int32_t GetFileNames(const char *path, struct CmMutableBlob *fNames, uint
 
     (void) CmCloseDir(d);
     if (i != fileCount) {
-        CM_LOG_E("get certfiles no enough");
-        ret = CM_FAILURE;
+        CM_LOG_E("get certfiles no enough, i(%u), fileCount(%u)", i, fileCount);
+        ret = CMR_ERROR_CERT_COUNT_MISMATCH;
     }
 
     return ret;
@@ -185,7 +185,7 @@ int32_t GetNumberOfDirs(const char *userIdPath)
     void *dir = CmOpenDir(userIdPath);
     if (dir == NULL) {
         CM_LOG_W("can't open directory");
-        return CM_FAILURE;
+        return CMR_ERROR_FILE_OPEN_DIR;
     }
 
     int32_t fileCount = 0;

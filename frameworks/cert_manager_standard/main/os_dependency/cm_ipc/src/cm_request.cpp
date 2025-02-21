@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -78,7 +78,7 @@ static int32_t CmReadRequestReply(MessageParcel &reply, struct CmBlob *outBlob)
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
     if (memcpy_s(outBlob->data, outBlob->size, outData, outLen) != EOK) {
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_MEM_OPERATION_COPY;
     }
     outBlob->size = outLen;
     return CM_SUCCESS;

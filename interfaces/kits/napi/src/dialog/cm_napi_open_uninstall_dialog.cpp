@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -82,7 +82,7 @@ static OHOS::AAFwk::Want CMGetUninstallCertWant(std::shared_ptr<CmUIExtensionReq
 napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
 {
     //determine the type of device
-    CM_LOG_D("enter uninstall cert dialog");
+    CM_LOG_I("enter uninstall cert dialog");
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
     if (OHOS::system::GetParameter("const.product.devicetype", "") != "2in1") {
@@ -125,7 +125,7 @@ napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
     //set want params
     auto uiExtCallback = std::make_shared<CmOperationUIExtensionCallback>(asyncContext);
     StartUIExtensionAbility(asyncContext, CMGetUninstallCertWant(asyncContext), uiExtCallback);
-    CM_LOG_D("cert install dialog end");
+    CM_LOG_I("cert uninstall dialog end");
     return result;
 }
 } // namespace CMNapi

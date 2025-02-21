@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2021-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -128,15 +128,15 @@ static int32_t CmTraversalDirAction(const struct CmContext *context, const char 
 static int32_t GetNextLayerPath(const char *path, const char *name, char *outPath, uint32_t outPathLen)
 {
     if (strncpy_s(outPath, outPathLen, path, strlen(path)) != EOK) {
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_MEM_OPERATION_PRINT;
     }
     if (outPath[strlen(outPath) - 1] != '/') {
         if (strncat_s(outPath, outPathLen, "/", strlen("/")) != EOK) {
-            return CMR_ERROR_INVALID_OPERATION;
+            return CMR_ERROR_MEM_OPERATION_PRINT;
         }
     }
     if (strncat_s(outPath, outPathLen, name, strlen(name)) != EOK) {
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_MEM_OPERATION_PRINT;
     }
     return CM_SUCCESS;
 }
@@ -146,16 +146,16 @@ static int32_t RemoveDir(const char *dirPath)
     struct stat fileStat;
     int32_t ret = stat(dirPath, &fileStat);
     if (ret != 0) {
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_FILE_STAT;
     }
 
     if (!S_ISDIR(fileStat.st_mode)) {
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     DIR *dir = opendir(dirPath);
     if (dir  == NULL) {
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_FILE_OPEN_DIR;
     }
 
     struct dirent *dire = readdir(dir);
@@ -222,7 +222,7 @@ static int32_t CmTraversalUidLayerDir(const struct CmContext *context, const cha
         char uidPath[CM_MAX_FILE_NAME_LEN] = {0};
         if (GetNextLayerPath(path, dire->d_name, uidPath, sizeof(uidPath)) != CM_SUCCESS) {
             closedir(dir);
-            return CMR_ERROR_INVALID_OPERATION;
+            return CMR_ERROR_MEM_OPERATION_PRINT;
         }
 
         if ((strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0) && (dire->d_type == DT_REG)) {
@@ -290,7 +290,7 @@ static int32_t CmTraversalUserIdLayerDir(const struct CmContext *context, const 
         char userIdPath[CM_MAX_FILE_NAME_LEN] = {0};
         if (GetNextLayerPath(path, dire->d_name, userIdPath, sizeof(userIdPath)) != CM_SUCCESS) {
             closedir(dir);
-            return CMR_ERROR_INVALID_OPERATION;
+            return CMR_ERROR_MEM_OPERATION_PRINT;
         }
 
         if (dire->d_type == DT_DIR && (strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0)) {
@@ -331,7 +331,7 @@ static int32_t CmTraversalDir(const struct CmContext *context, const char *path,
         char deletePath[CM_MAX_FILE_NAME_LEN] = { 0 };
         if (GetNextLayerPath(path, dire->d_name, deletePath, sizeof(deletePath)) != CM_SUCCESS) {
             closedir(dir);
-            return CMR_ERROR_INVALID_OPERATION;
+            return CMR_ERROR_MEM_OPERATION_PRINT;
         }
 
         if (CmIsNumeric(dire->d_name, strlen(dire->d_name) + 1, &uid) != CM_SUCCESS) {

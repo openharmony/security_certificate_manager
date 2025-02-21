@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -39,13 +39,13 @@ static int32_t CmGetAppCertChain(X509 *cert, STACK_OF(X509) *caCert, struct AppC
         out = BIO_new(BIO_s_mem());
         if (out == NULL) {
             CM_LOG_E("BIO_new_mem_buf faild");
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_OPENSSL_FAIL;
             break;
         }
         /* copy app terminal cert to bio */
         if (PEM_write_bio_X509(out, cert) == 0) {
             CM_LOG_E("Copy app cert to bio faild");
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_OPENSSL_FAIL;
             break;
         }
         certCount++;
@@ -54,7 +54,7 @@ static int32_t CmGetAppCertChain(X509 *cert, STACK_OF(X509) *caCert, struct AppC
             xCert = sk_X509_value(caCert, i);
             if (PEM_write_bio_X509(out, xCert) == 0) {
                 CM_LOG_E("Copy app ca cert to bio faild");
-                ret = CM_FAILURE;
+                ret = CMR_ERROR_OPENSSL_FAIL;
                 break;
             }
             certCount++;
@@ -63,12 +63,12 @@ static int32_t CmGetAppCertChain(X509 *cert, STACK_OF(X509) *caCert, struct AppC
         long len = BIO_get_mem_data(out, &data);
         if (len <= 0) {
             CM_LOG_E("BIO_get_mem_data faild");
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_OPENSSL_FAIL;
             break;
         }
         if (memcpy_s(appCert->appCertdata, MAX_LEN_CERTIFICATE_CHAIN, data, len) != EOK) {
             CM_LOG_E("Copy appCert->appCertdata faild");
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_MEM_OPERATION_COPY;
             break;
         }
         /* default certificate chain is packaged as a whole */
@@ -92,13 +92,13 @@ int32_t CmParsePkcs12Cert(const struct CmBlob *p12Cert, char *passWd, EVP_PKEY *
     STACK_OF(X509) *caCert = NULL;
 
     if (p12Cert == NULL || p12Cert->data == NULL || p12Cert->size > MAX_LEN_CERTIFICATE_CHAIN) {
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_APP_CERT;
     }
 
     do {
         bio = BIO_new_mem_buf(p12Cert->data, p12Cert->size);
         if (bio == NULL) {
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_OPENSSL_FAIL;
             CM_LOG_E("BIO_new_mem_buf faild");
             break;
         }

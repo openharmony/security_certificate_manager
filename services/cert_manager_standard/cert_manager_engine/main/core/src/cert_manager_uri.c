@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -296,7 +296,7 @@ int32_t CertManagerUriEncode(char *encoded, uint32_t *encodedLen, const struct C
     uint32_t avail = *encodedLen;
 
     if (memcpy_s(encoded, avail, SCHEME, strlen(SCHEME)) != EOK) {
-        return CM_FAILURE;
+        return CMR_ERROR_MEM_OPERATION_COPY;
     }
     off += strlen(SCHEME);
     avail -= strlen(SCHEME);
@@ -395,7 +395,7 @@ static int32_t DecodePath(struct CMUri *uri, const char *path, uint32_t start, u
         if (i <= start) {
             // something is wrong
             CM_LOG_W("Invalid uri path\n");
-            return CMR_ERROR_INVALID_ARGUMENT;
+            return CMR_ERROR_INVALID_ARGUMENT_URI;
         }
 
         uint32_t valueOff = 0;
@@ -439,7 +439,7 @@ static int32_t DecodePath(struct CMUri *uri, const char *path, uint32_t start, u
             *e = DecodeEnum(path, valueOff, valueLen, values, valueCount);
         } else {
             CM_LOG_W("Invalid field in path\n");
-            return CMR_ERROR_INVALID_ARGUMENT;
+            return CMR_ERROR_INVALID_ARGUMENT_URI;
         }
 
         start = i + 1;
@@ -455,7 +455,7 @@ static int32_t DecodeQuery(struct CMUri *uri, const char *query, uint32_t start,
         if (i <= start) {
             // something is wrong
             CM_LOG_W("Invalid uri query\n");
-            return CMR_ERROR_INVALID_ARGUMENT;
+            return CMR_ERROR_INVALID_ARGUMENT_URI;
         }
 
         uint32_t valueOff = 0;
@@ -483,7 +483,7 @@ static int32_t DecodeQuery(struct CMUri *uri, const char *query, uint32_t start,
             }
         } else {
             CM_LOG_W("Invalid field in query\n");
-            return CMR_ERROR_INVALID_ARGUMENT;
+            return CMR_ERROR_INVALID_ARGUMENT_URI;
         }
 
         start = i + 1;
@@ -495,7 +495,7 @@ int32_t CertManagerUriDecode(struct CMUri *uri, const char *encoded)
 {
     if (uri == NULL || encoded == NULL) {
         CM_LOG_E("input params is invaild");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     (void)memset_s(uri, sizeof(*uri), 0, sizeof(*uri));
@@ -504,13 +504,13 @@ int32_t CertManagerUriDecode(struct CMUri *uri, const char *encoded)
     uint32_t len = strlen(encoded);
     if (len > MAX_AUTH_LEN_URI) {
         CM_LOG_E("invalid uri len[%u]", len);
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     uint32_t off = 0;
     if (len < strlen(SCHEME) || memcmp(encoded, SCHEME, strlen(SCHEME))) {
         CM_LOG_E("Scheme mismatch. Not a cert manager URI");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
     off += strlen(SCHEME);
 
@@ -547,13 +547,13 @@ int32_t CertManagerGetUidFromUri(const struct CmBlob *uri, uint32_t *uid)
     if (uriObj.app == NULL) {
         CM_LOG_E("uri app invalid");
         (void)CertManagerFreeUri(&uriObj);
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     if (CmIsNumeric(uriObj.app, strlen(uriObj.app) + 1, uid) != CM_SUCCESS) {
         CM_LOG_E("parse string to uint32 failed.");
         (void)CertManagerFreeUri(&uriObj);
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     (void)CertManagerFreeUri(&uriObj);
@@ -571,13 +571,13 @@ int32_t CmConstructUri(const struct CMUri *uriObj, struct CmBlob *outUri)
 
     if ((outLen == 0) || (outLen > MAX_OUT_BLOB_SIZE)) {
         CM_LOG_E("invalid outLen[%u]", outLen);
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     char *data = (char *)CMMalloc(outLen);
     if (data == NULL) {
         CM_LOG_E("malloc uri buf failed");
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_MALLOC_FAIL;
     }
     (void)memset_s(data, outLen, 0, outLen);
     outUri->size = outLen; /* include 1 byte: the terminator('\0')  */
@@ -597,7 +597,7 @@ int32_t CmConstructUri(const struct CMUri *uriObj, struct CmBlob *outUri)
 static int32_t UintToStr(uint32_t input, char *out, uint32_t outLen)
 {
     if (snprintf_s(out, outLen, outLen - 1, "%u", input) < 0) {
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_MEM_OPERATION_PRINT;
     }
     return CM_SUCCESS;
 }

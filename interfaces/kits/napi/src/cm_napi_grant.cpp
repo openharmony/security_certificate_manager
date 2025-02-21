@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -435,6 +435,8 @@ static napi_value GetUidListAsyncWork(napi_env env, GrantAsyncContext context)
 
 napi_value CMNapiGrantPublicCertificate(napi_env env, napi_callback_info info)
 {
+    CM_LOG_I("grant publice cert enter");
+
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init grant uid context failed");
@@ -455,11 +457,14 @@ napi_value CMNapiGrantPublicCertificate(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
+    CM_LOG_I("grant publice cert end");
     return result;
 }
 
 napi_value CMNapiIsAuthorizedApp(napi_env env, napi_callback_info info)
 {
+    CM_LOG_I("is authed app enter");
+
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init is authed uid context failed");
@@ -480,11 +485,14 @@ napi_value CMNapiIsAuthorizedApp(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
+    CM_LOG_I("is authed app end");
     return result;
 }
 
 napi_value CMNapiGetAuthorizedAppList(napi_env env, napi_callback_info info)
 {
+    CM_LOG_I("get auth app list enter");
+
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init get authed uid list context failed");
@@ -505,11 +513,14 @@ napi_value CMNapiGetAuthorizedAppList(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
+    CM_LOG_I("get auth app list end");
     return result;
 }
 
 napi_value CMNapiRemoveGrantedPublic(napi_env env, napi_callback_info info)
 {
+    CM_LOG_I("remove granted app enter");
+
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init remove uid context failed");
@@ -530,6 +541,7 @@ napi_value CMNapiRemoveGrantedPublic(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
+    CM_LOG_I("remove granted app end");
     return result;
 }
 }  // namespace CMNapi

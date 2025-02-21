@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -68,6 +68,7 @@ static const std::unordered_map<int32_t, std::string> NATIVE_CODE_TO_MSG_MAP = {
     { CMR_ERROR_AUTH_CHECK_FAILED, NO_AUTHORIZATION_MSG },
     { CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT, ALIAS_LENGTH_REACHED_LIMIT_MSG },
     { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE_MSG },
+    { CMR_ERROR_PASSWORD_IS_ERR, PASSWORD_IS_ERROR_MSG },
 };
 }  // namespace
 
