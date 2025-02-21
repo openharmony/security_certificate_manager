@@ -26,6 +26,7 @@
 #include "cert_manager_storage.h"
 #include "cert_manager_status.h"
 #include "cert_manager_file_operator.h"
+#include "cm_util.h"
 
 #define MAX_PATH_LEN                  256
 
@@ -466,6 +467,37 @@ static int32_t CmGetCertSubjectName(const struct CmBlob *certData, struct CmBlob
     return CM_SUCCESS;
 }
 
+static int32_t GetCertContext(const struct CmBlob *fileName, struct CmContext *certContext,
+    const struct CmContext *context, uint32_t store)
+{
+    if (store != CM_USER_TRUSTED_STORE) {
+        certContext->userId = context->userId;
+        certContext->uid = context->uid;
+        return CM_SUCCESS;
+    }
+    
+    struct CMUri uriObj;
+    int32_t ret = CertManagerUriDecode(&uriObj, (char *)fileName->data);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to decode uri, ret = %d", ret);
+        return ret;
+    }
+
+    uint32_t userId = 0;
+    uint32_t uid = 0;
+    if (CmIsNumeric(uriObj.user, strlen(uriObj.user) + 1, &userId) != CM_SUCCESS ||
+        CmIsNumeric(uriObj.app, strlen(uriObj.app) + 1, &uid) != CM_SUCCESS) {
+        CM_LOG_E("parse string to uint32 failed.");
+        (void)CertManagerFreeUri(&uriObj);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    (void)CertManagerFreeUri(&uriObj);
+    
+    certContext->userId = userId;
+    certContext->uid = uid;
+    return CM_SUCCESS;
+}
+
 int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
     const struct CmMutableBlob *certFileList, struct CertBlob *certBlob, uint32_t *status)
 {
@@ -479,7 +511,14 @@ int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
     }
 
     for (uint32_t i = 0; i < certFileList->size; i++) {
-        ret = CmGetCertStatus(context, &cFileList[i], store, &status[i]); /* status */
+        struct CmContext certContext = {0};
+        ret = GetCertContext(&cFileList[i].fileName, &certContext, context, store);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed to get cert context");
+            return ret;
+        }
+
+        ret = CmGetCertStatus(&certContext, &cFileList[i], store, &status[i]); /* status */
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get cert status");
             return CM_FAILURE;
@@ -503,14 +542,12 @@ int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
         ret = CmGetCertAlias(store, (char *)cFileList[i].fileName.data, &certData,
             &(certBlob->certAlias[i])); /* alias */
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed to get cert certAlias");
             CM_FREE_BLOB(certData);
             return CM_FAILURE;
         }
 
         ret = CmGetCertSubjectName(&certData, &(certBlob->subjectName[i])); /* subjectName */
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed to get cert subjectName");
             CM_FREE_BLOB(certData);
             return CM_FAILURE;
         }

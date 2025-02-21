@@ -546,3 +546,33 @@ int32_t CmServiceUninstallUserCertCheck(struct CmContext *cmContext, const struc
     }
     return CM_SUCCESS;
 }
+
+int32_t CmServiceSetUserCertStatusCheck(struct CmContext *cmContext, const struct CmBlob *certUri)
+{
+    if (cmContext == NULL) {
+        CM_LOG_E("CmServiceUninstallUserCertCheck: context is null");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (!CmHasCommonPermission() || !CmHasUserTrustedPermission()) {
+        CM_LOG_E("caller no permission");
+        return CMR_ERROR_PERMISSION_DENIED;
+    }
+
+    if (!CmIsSystemApp()) {
+        CM_LOG_E("set user status: caller is not system app");
+        return CMR_ERROR_NOT_SYSTEMP_APP;
+    }
+
+    if (CmCheckBlob(certUri) != CM_SUCCESS || CheckUri(certUri) != CM_SUCCESS) {
+        CM_LOG_E("certUri is invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CheckAndUpdateCallerAndUri(cmContext, certUri, CM_URI_TYPE_CERTIFICATE, true);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("uninstall user cert: caller and uri check fail");
+        return ret;
+    }
+    return CM_SUCCESS;
+}
