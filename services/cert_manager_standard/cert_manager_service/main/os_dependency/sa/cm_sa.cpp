@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,6 +31,8 @@
 #include "cm_ipc_service.h"
 #include "ipc_skeleton.h"
 #include "cert_manager_updateflag.h"
+#include "cm_report_wrapper.h"
+#include "cm_response.h"
 
 namespace OHOS {
 namespace Security {
@@ -129,12 +131,12 @@ static int32_t ProcessMessage(uint32_t code, uint32_t outSize, const struct CmBl
             outData.size = outSize;
             if (outData.size > MAX_MALLOC_LEN) {
                 CM_LOG_E("outData size is invalid, size:%u", outData.size);
-                return CM_SYSTEM_ERROR;
+                return CMR_ERROR_IPC_PARAM_SIZE_INVALID;
             }
             outData.data = static_cast<uint8_t *>(CmMalloc(outData.size));
             if (outData.data == nullptr) {
                 CM_LOG_E("Malloc outData failed.");
-                return CM_SYSTEM_ERROR;
+                return CMR_ERROR_MALLOC_FAIL;
             }
             (void)memset_s(outData.data, outData.size, 0, outData.size);
         }
@@ -144,7 +146,7 @@ static int32_t ProcessMessage(uint32_t code, uint32_t outSize, const struct CmBl
         break;
     }
 
-    return NO_ERROR;
+    return CM_SUCCESS;
 }
 
 CertManagerService::CertManagerService()
@@ -158,7 +160,7 @@ CertManagerService::~CertManagerService()
     CM_LOG_D("~CertManagerService");
 }
 
-bool CertManagerService::Init()
+int32_t CertManagerService::Init()
 {
     CM_LOG_D("CertManagerService::Init Ready to init");
 
@@ -171,19 +173,23 @@ bool CertManagerService::Init()
         DelayUnload();
         if (!Publish(this)) {
             CM_LOG_E("CertManagerService::Init Publish Failed");
-            return false;
+            return CMR_ERROR_SA_START_PUBLISH_FAILED;
         }
         CM_LOG_D("CertManagerService::Init Publish service success");
         registerToService_ = true;
     }
 
     CM_LOG_D("CertManagerService::Init success.");
-    return true;
+    return CM_SUCCESS;
 }
 
 int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     MessageParcel &reply, MessageOption &option)
 {
+    struct CmContext context = { 0, 0, {0} };
+    (void)CmGetProcessInfoForIPC(&context);
+    CM_LOG_I("OnRemoteRequest code: %u, callingUid = %u, userId = %u", code, context.uid, context.userId);
+
     // this is the temporary version which comments the descriptor check
     std::u16string descriptor = CertManagerService::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
@@ -194,6 +200,7 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
 
     // check the code is valid
     if (code < static_cast<uint32_t>(CM_MSG_BASE) || code >= static_cast<uint32_t>(CM_MSG_MAX)) {
+        CM_LOG_E("code[%u] invalid", code);
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
 
@@ -203,13 +210,13 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     srcData.size = static_cast<uint32_t>(data.ReadUint32());
     if (IsInvalidLength(srcData.size)) {
         CM_LOG_E("srcData size is invalid, size:%u", srcData.size);
-        return CM_SYSTEM_ERROR;
+        return CMR_ERROR_IPC_PARAM_SIZE_INVALID;
     }
 
     srcData.data = static_cast<uint8_t *>(CmMalloc(srcData.size));
     if (srcData.data == nullptr) {
         CM_LOG_E("Malloc srcData failed.");
-        return CM_SYSTEM_ERROR;
+        return CMR_ERROR_MALLOC_FAIL;
     }
     const uint8_t *pdata = data.ReadBuffer(static_cast<size_t>(srcData.size));
     if (pdata == nullptr) {
@@ -220,13 +227,14 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     if (memcpy_s(srcData.data, srcData.size, pdata, srcData.size) != EOK) {
         CM_LOG_E("copy remote data failed!");
         CM_FREE_BLOB(srcData);
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_MEM_OPERATION_COPY;
     }
-    if (ProcessMessage(code, outSize, srcData, reply) != NO_ERROR) {
+
+    int32_t ret = ProcessMessage(code, outSize, srcData, reply);
+    if (ret != CM_SUCCESS) {
         CM_LOG_E("process message!");
         CM_FREE_BLOB(srcData);
-        CM_LOG_E("copy remote data failed!");
-        return CMR_ERROR_INVALID_OPERATION;
+        return ret;
     }
     CM_FREE_BLOB(srcData);
     return NO_ERROR;
@@ -234,25 +242,29 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
 
 void CertManagerService::OnStart(const SystemAbilityOnDemandReason& startReason)
 {
-    CM_LOG_D("CertManagerService OnStart startReason");
+    CM_LOG_I("CertManagerService OnStart Begin");
 
     if (runningState_ == STATE_RUNNING) {
-        CM_LOG_D("CertManagerService has already Started");
+        CM_LOG_I("CertManagerService has already Started");
         return;
     }
 
-    if (CertManagerInitialize() != CMR_OK) {
+    struct CmContext context = { 0, 0, {0} };
+    int32_t ret = CertManagerInitialize();
+    if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed to init CertManagerService");
-        return;
-    }
-    CM_LOG_D("CertManager init success");
-
-    if (!Init()) {
-        CM_LOG_E("Failed to init CertManagerService");
+        CmReport(__func__, &context, nullptr, ret);
         return;
     }
 
-    CM_LOG_D("certmanager start reason %s", startReason.GetName().c_str());
+    ret = Init();
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to publish");
+        CmReport(__func__, &context, nullptr, ret);
+        return;
+    }
+
+    CM_LOG_I("certmanager start reason %s", startReason.GetName().c_str());
     if (startReason.GetId() == OnDemandReasonId::COMMON_EVENT &&
         startReason.GetName() == USER_REMOVED_EVENT) {
         struct CmContext context = { 0, INVALID_VALUE, {0} };
@@ -265,7 +277,7 @@ void CertManagerService::OnStart(const SystemAbilityOnDemandReason& startReason)
     (void)AddSystemAbilityListener(COMMON_EVENT_SERVICE_ID);
 
     runningState_ = STATE_RUNNING;
-    CM_LOG_D("CertManagerService start success.");
+    CM_LOG_I("CertManagerService start success.");
 
     (void)CmBackupAllSaUserCerts();
 }

@@ -75,6 +75,58 @@ static const std::string CMR_ERROR_DELETE_RDB_DATA_FAIL_MSG = "failed to delete 
 static const std::string CMR_ERROR_QUERY_RDB_DATA_FAIL_MSG = "failed to query data from rdb table";
 static const std::string CMR_ERROR_PASSWORD_IS_ERR_MSG = "the password is incorrect";
 
+static const std::string CMR_ERROR_OPENSSL_FAIL_MSG = "failed to call openssl API";
+static const std::string CMR_ERROR_MAX_GRANT_COUNT_REACHED_MSG = "reach the max grant uid count";
+static const std::string CMR_ERROR_SA_START_STATUS_INIT_FAILED_MSG = "failed to init status when sa start";
+static const std::string CMR_ERROR_SA_START_HUKS_INIT_FAILED_MSG = "failed to init huks when sa start";
+static const std::string CMR_ERROR_SA_START_PUBLISH_FAILED_MSG = "failed to publish sa when sa start";
+static const std::string CMR_ERROR_IPC_PARAM_SIZE_INVALID_MSG = "the ipc param size is invalid";
+static const std::string CMR_ERROR_GET_LOCAL_TIME_FAILED_MSG = "failed to get local time";
+static const std::string CMR_ERROR_MEM_OPERATION_COPY_MSG = "failed to copy data, maybe invalid buffer length";
+static const std::string CMR_ERROR_MEM_OPERATION_PRINT_MSG = "failed to sprintf data, maybe invalid buffer length";
+static const std::string CMR_ERROR_FILE_OPEN_DIR_MSG = "failed to open dir";
+static const std::string CMR_ERROR_FILE_STAT_MSG = "failed to stat file";
+static const std::string CMR_ERROR_CERT_COUNT_MISMATCH_MSG = "the file count is not same";
+static const std::string CMR_ERROR_GET_CERT_STATUS_MSG = "failed to get cert status";
+static const std::string CMR_ERROR_GET_CERT_SUBJECT_ITEM_MSG = "failed to get cert subject item";
+
+/* invalid argument msg */
+static const std::string CMR_ERROR_INVALID_PARAMSET_ARG_MSG = "the paramset argument is invalid";
+static const std::string CMR_ERROR_INVALID_ARGUMENT_STORE_TYPE_MSG = "the store type argument is invalid";
+static const std::string CMR_ERROR_INVALID_ARGUMENT_SCOPE_MSG = "the scope argument is invalid";
+static const std::string CMR_ERROR_INVALID_ARGUMENT_USER_ID_MSG = "the user id argument is invalid";
+static const std::string CMR_ERROR_INVALID_ARGUMENT_UID_MSG = "the uid argument is invalid";
+static const std::string CMR_ERROR_INVALID_ARGUMENT_URI_MSG = "the uri argument is invalid";
+static const std::string CMR_ERROR_INVALID_ARGUMENT_STATUS_MSG = "the statue argument is invalid";
+static const std::string CMR_ERROR_INVALID_ARGUMENT_APP_CERT_MSG = "the app cert data is invalid";
+static const std::string CMR_ERROR_INVALID_ARGUMENT_APP_PWD_MSG = "the app pwd data is invalid";
+static const std::string CMR_ERROR_INVALID_ARGUMENT_ALIAS_MSG = "the alias argument is invalid";
+static const std::string CMR_ERROR_INVALID_ARGUMENT_SIGN_SPEC_MSG = "the sign verify spec argument is invalid";
+static const std::string CMR_ERROR_INVALID_ARGUMENT_HANDLE_MSG = "the handle argument is invalid";
+
+/* key operation failed msg */
+static const std::string CMR_ERROR_KEY_IMPORT_PARAM_FAILED_MSG = "failed to construct import key param";
+static const std::string CMR_ERROR_KEY_IMPORT_FAILED_MSG = "failed to import key to huks";
+static const std::string CMR_ERROR_KEY_DELETE_PARAM_FAILED_MSG = "failed to construct delete key param";
+static const std::string CMR_ERROR_KEY_DELETE_FAILED_MSG = "failed to delete key from huks";
+static const std::string CMR_ERROR_KEY_MAC_PARAM_FAILED_MSG = "failed to construct mac param";
+static const std::string CMR_ERROR_KEY_MAC_INIT_FAILED_MSG = "failed to calc mac when call huks init";
+static const std::string CMR_ERROR_KEY_MAC_FINISH_FAILED_MSG = "failed to calc mac when call huks finish";
+static const std::string CMR_ERROR_KEY_GENERATE_PARAM_FAILED_MSG = "failed to construct generate key param";
+static const std::string CMR_ERROR_KEY_GENERATE_FAILED_MSG = "failed to generate key from huks";
+static const std::string CMR_ERROR_KEY_INIT_PARAM_FAILED_MSG = "failed to construct init key param";
+static const std::string CMR_ERROR_KEY_INIT_FAILED_MSG = "failed to init from huks";
+static const std::string CMR_ERROR_KEY_PROCESS_PARAM_FAILED_MSG = "failed to construct update or finish or abort param";
+static const std::string CMR_ERROR_KEY_UPDATE_FAILED_MSG = "failed to do update operation from huks";
+static const std::string CMR_ERROR_KEY_FINISH_FAILED_MSG = "failed to do finish operation from huks";
+static const std::string CMR_ERROR_KEY_ABORT_FAILED_MSG = "failed to do abort operation from huks";
+static const std::string CMR_ERROR_KEY_CHECK_EXIST_PARAM_FAILED_MSG = "failed to construct check key exist param";
+static const std::string CMR_ERROR_KEY_CHECK_EXIST_FAILED_MSG = "failed to check key exist from huks";
+
+/* auth check failed msg */
+static const std::string CMR_ERROR_AUTH_FAILED_MAC_FAILED_MSG = "failed to calc the mac value";
+static const std::string CMR_ERROR_AUTH_FAILED_MAC_MISMATCH_MSG = "the auth result is not same with mac value";
+
 static const std::unordered_map<int32_t, std::string> ERROR_CODE_TO_MSG_MAP = {
     { CM_FAILURE, CM_UNKNOWN_MSG },
     { CMR_ERROR_NOT_PERMITTED, CMR_ERROR_NOT_PERMITTED_MSG },
@@ -112,6 +164,58 @@ static const std::unordered_map<int32_t, std::string> ERROR_CODE_TO_MSG_MAP = {
     { CMR_ERROR_DELETE_RDB_DATA_FAIL, CMR_ERROR_DELETE_RDB_DATA_FAIL_MSG },
     { CMR_ERROR_QUERY_RDB_DATA_FAIL, CMR_ERROR_QUERY_RDB_DATA_FAIL_MSG },
     { CMR_ERROR_PASSWORD_IS_ERR, CMR_ERROR_PASSWORD_IS_ERR_MSG },
+
+    { CMR_ERROR_OPENSSL_FAIL, CMR_ERROR_OPENSSL_FAIL_MSG },
+    { CMR_ERROR_MAX_GRANT_COUNT_REACHED, CMR_ERROR_MAX_GRANT_COUNT_REACHED_MSG },
+    { CMR_ERROR_SA_START_STATUS_INIT_FAILED, CMR_ERROR_SA_START_STATUS_INIT_FAILED_MSG },
+    { CMR_ERROR_SA_START_HUKS_INIT_FAILED, CMR_ERROR_SA_START_HUKS_INIT_FAILED_MSG },
+    { CMR_ERROR_SA_START_PUBLISH_FAILED, CMR_ERROR_SA_START_PUBLISH_FAILED_MSG },
+    { CMR_ERROR_IPC_PARAM_SIZE_INVALID, CMR_ERROR_IPC_PARAM_SIZE_INVALID_MSG },
+    { CMR_ERROR_GET_LOCAL_TIME_FAILED, CMR_ERROR_GET_LOCAL_TIME_FAILED_MSG },
+    { CMR_ERROR_MEM_OPERATION_COPY, CMR_ERROR_MEM_OPERATION_COPY_MSG },
+    { CMR_ERROR_MEM_OPERATION_PRINT, CMR_ERROR_MEM_OPERATION_PRINT_MSG },
+    { CMR_ERROR_FILE_OPEN_DIR, CMR_ERROR_FILE_OPEN_DIR_MSG },
+    { CMR_ERROR_FILE_STAT, CMR_ERROR_FILE_STAT_MSG },
+    { CMR_ERROR_CERT_COUNT_MISMATCH, CMR_ERROR_CERT_COUNT_MISMATCH_MSG },
+    { CMR_ERROR_GET_CERT_STATUS, CMR_ERROR_GET_CERT_STATUS_MSG },
+    { CMR_ERROR_GET_CERT_SUBJECT_ITEM, CMR_ERROR_GET_CERT_SUBJECT_ITEM_MSG },
+
+    /* invalid argument */
+    { CMR_ERROR_INVALID_PARAMSET_ARG, CMR_ERROR_INVALID_PARAMSET_ARG_MSG },
+    { CMR_ERROR_INVALID_ARGUMENT_STORE_TYPE, CMR_ERROR_INVALID_ARGUMENT_STORE_TYPE_MSG },
+    { CMR_ERROR_INVALID_ARGUMENT_SCOPE, CMR_ERROR_INVALID_ARGUMENT_SCOPE_MSG },
+    { CMR_ERROR_INVALID_ARGUMENT_USER_ID, CMR_ERROR_INVALID_ARGUMENT_USER_ID_MSG },
+    { CMR_ERROR_INVALID_ARGUMENT_UID, CMR_ERROR_INVALID_ARGUMENT_UID_MSG },
+    { CMR_ERROR_INVALID_ARGUMENT_URI, CMR_ERROR_INVALID_ARGUMENT_URI_MSG },
+    { CMR_ERROR_INVALID_ARGUMENT_STATUS, CMR_ERROR_INVALID_ARGUMENT_STATUS_MSG },
+    { CMR_ERROR_INVALID_ARGUMENT_APP_CERT, CMR_ERROR_INVALID_ARGUMENT_APP_CERT_MSG },
+    { CMR_ERROR_INVALID_ARGUMENT_APP_PWD, CMR_ERROR_INVALID_ARGUMENT_APP_PWD_MSG },
+    { CMR_ERROR_INVALID_ARGUMENT_ALIAS, CMR_ERROR_INVALID_ARGUMENT_ALIAS_MSG },
+    { CMR_ERROR_INVALID_ARGUMENT_SIGN_SPEC, CMR_ERROR_INVALID_ARGUMENT_SIGN_SPEC_MSG },
+    { CMR_ERROR_INVALID_ARGUMENT_HANDLE, CMR_ERROR_INVALID_ARGUMENT_HANDLE_MSG },
+
+    /* key operation failed */
+    { CMR_ERROR_KEY_IMPORT_PARAM_FAILED, CMR_ERROR_KEY_IMPORT_PARAM_FAILED_MSG },
+    { CMR_ERROR_KEY_IMPORT_FAILED, CMR_ERROR_KEY_IMPORT_FAILED_MSG },
+    { CMR_ERROR_KEY_DELETE_PARAM_FAILED, CMR_ERROR_KEY_DELETE_PARAM_FAILED_MSG },
+    { CMR_ERROR_KEY_DELETE_FAILED, CMR_ERROR_KEY_DELETE_FAILED_MSG },
+    { CMR_ERROR_KEY_MAC_PARAM_FAILED, CMR_ERROR_KEY_MAC_PARAM_FAILED_MSG },
+    { CMR_ERROR_KEY_MAC_INIT_FAILED, CMR_ERROR_KEY_MAC_INIT_FAILED_MSG },
+    { CMR_ERROR_KEY_MAC_FINISH_FAILED, CMR_ERROR_KEY_MAC_FINISH_FAILED_MSG },
+    { CMR_ERROR_KEY_GENERATE_PARAM_FAILED, CMR_ERROR_KEY_GENERATE_PARAM_FAILED_MSG },
+    { CMR_ERROR_KEY_GENERATE_FAILED, CMR_ERROR_KEY_GENERATE_FAILED_MSG },
+    { CMR_ERROR_KEY_INIT_PARAM_FAILED, CMR_ERROR_KEY_INIT_PARAM_FAILED_MSG },
+    { CMR_ERROR_KEY_INIT_FAILED, CMR_ERROR_KEY_INIT_FAILED_MSG },
+    { CMR_ERROR_KEY_PROCESS_PARAM_FAILED, CMR_ERROR_KEY_PROCESS_PARAM_FAILED_MSG },
+    { CMR_ERROR_KEY_UPDATE_FAILED, CMR_ERROR_KEY_UPDATE_FAILED_MSG },
+    { CMR_ERROR_KEY_FINISH_FAILED, CMR_ERROR_KEY_FINISH_FAILED_MSG },
+    { CMR_ERROR_KEY_ABORT_FAILED, CMR_ERROR_KEY_ABORT_FAILED_MSG },
+    { CMR_ERROR_KEY_CHECK_EXIST_PARAM_FAILED, CMR_ERROR_KEY_CHECK_EXIST_PARAM_FAILED_MSG },
+    { CMR_ERROR_KEY_CHECK_EXIST_FAILED, CMR_ERROR_KEY_CHECK_EXIST_FAILED_MSG },
+
+    /* auth check failed */
+    { CMR_ERROR_AUTH_FAILED_MAC_FAILED, CMR_ERROR_AUTH_FAILED_MAC_FAILED_MSG },
+    { CMR_ERROR_AUTH_FAILED_MAC_MISMATCH, CMR_ERROR_AUTH_FAILED_MAC_MISMATCH_MSG },
 };
 
 static const char *GetErrorMsg(int32_t errCode)
@@ -137,7 +241,8 @@ static void GetCallerName(std::string &callerName)
     int32_t ret = AccessTokenKit::GetHapTokenInfo(callingTokenId, hapTokenInfo);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed to get hap info from access token kit.");
-        return; /* when faile to get hap info, callName is empty string */
+        callerName += "NULL"; /* when faile to get hap info, callName is empty string */
+        return;
     }
     callerName += hapTokenInfo.bundleName;
     return;

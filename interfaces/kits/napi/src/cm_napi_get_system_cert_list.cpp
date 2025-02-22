@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -223,6 +223,7 @@ static napi_value GetCertListAsyncWork(napi_env env, GetCertListAsyncContext con
 
 napi_value CMNapiGetSystemCertList(napi_env env, napi_callback_info info)
 {
+    CM_LOG_I("get system cert list enter");
     GetCertListAsyncContext context = CreateGetCertListAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
@@ -240,11 +241,14 @@ napi_value CMNapiGetSystemCertList(napi_env env, napi_callback_info info)
         DeleteGetCertListAsyncContext(env, context);
         return nullptr;
     }
+    CM_LOG_I("get system cert list end");
     return result;
 }
 
 napi_value CMNapiGetAllUserTrustedCertList(napi_env env, napi_callback_info info)
 {
+    CM_LOG_I("get all user cert list enter");
+
     GetCertListAsyncContext context = CreateGetCertListAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("create context failed");
@@ -264,6 +268,8 @@ napi_value CMNapiGetAllUserTrustedCertList(napi_env env, napi_callback_info info
         DeleteGetCertListAsyncContext(env, context);
         return nullptr;
     }
+
+    CM_LOG_I("get all user cert list end");
     return result;
 }
 }  // namespace CertManagerNapi

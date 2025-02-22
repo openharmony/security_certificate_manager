@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -89,7 +89,7 @@ static int32_t GetCallerBundleName(char *callerName, uint32_t callerNameSize)
 
     if (strncpy_s(callerName, callerNameSize, caller.c_str(), caller.size() + 1) != EOK) {
         CM_LOG_E("Failed to copy caller");
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_MEM_OPERATION_COPY;
     }
     return CM_SUCCESS;
 }

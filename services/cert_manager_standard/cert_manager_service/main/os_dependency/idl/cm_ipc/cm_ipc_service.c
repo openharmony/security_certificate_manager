@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -114,6 +114,8 @@ void CmIpcServiceGetCertificateList(const struct CmBlob *paramSetBlob, struct Cm
         CmFreeCertFiles((struct CertFileInfo *)certFileList.data, certFileList.size);
     }
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceGetCertificateInfo(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -165,6 +167,8 @@ void CmIpcServiceGetCertificateInfo(const struct CmBlob *paramSetBlob, struct Cm
     }
     CM_FREE_BLOB(certificateData);
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceSetCertStatus(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -206,7 +210,8 @@ void CmIpcServiceSetCertStatus(const struct CmBlob *paramSetBlob, struct CmBlob 
     CmSendResponse(context, ret, NULL);
     CmReportSGSetCertStatus(&certUri, store, status, ret);
     CmFreeParamSet(&paramSet);
-    CM_LOG_D("CmIpcServiceSetCertStatus end:%d", ret);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceInstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -229,6 +234,7 @@ void CmIpcServiceInstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob
 
     int32_t ret;
     struct CmContext cmContext = { 0 };
+    struct CmContext oriContext = {0};
     struct CmParamSet *paramSet = NULL;
     do {
         ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
@@ -236,6 +242,8 @@ void CmIpcServiceInstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob
             CM_LOG_E("install app cert get input params failed, ret = %d", ret);
             break;
         }
+        oriContext.userId = cmContext.userId;
+        oriContext.uid = cmContext.uid;
 
         struct CmAppCertParam certParam = { &appCert, &appCertPwd, &certAlias, store, userId, level };
         ret = CmServicInstallAppCert(&cmContext, &certParam, outData);
@@ -246,12 +254,13 @@ void CmIpcServiceInstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob
     } while (0);
 
     struct CmBlob tempBlob = { 0, NULL };
-    CmReport(__func__, &cmContext, &tempBlob, ret);
+    CmReport(__func__, &oriContext, &tempBlob, ret);
 
     CmSendResponse(context, ret, outData);
     CmReportSGInstallAppCert(&certAlias, store, ret);
     CmFreeParamSet(&paramSet);
-    CM_LOG_D("CmIpcServiceInstallAppCert end:%d", ret);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceUninstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -263,6 +272,7 @@ void CmIpcServiceUninstallAppCert(const struct CmBlob *paramSetBlob, struct CmBl
     struct CmParamSet *paramSet = NULL;
     struct CmBlob keyUri = { 0, NULL };
     struct CmContext cmContext = {0};
+    struct CmContext oriContext = {0};
 
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = &keyUri },
@@ -275,6 +285,8 @@ void CmIpcServiceUninstallAppCert(const struct CmBlob *paramSetBlob, struct CmBl
             CM_LOG_E("UninstallAppCert get input params failed, ret = %d", ret);
             break;
         }
+        oriContext.userId = cmContext.userId;
+        oriContext.uid = cmContext.uid;
 
         ret = CmServiceUninstallAppCertCheck(&cmContext, store, &keyUri);
         if (ret != CM_SUCCESS) {
@@ -288,11 +300,12 @@ void CmIpcServiceUninstallAppCert(const struct CmBlob *paramSetBlob, struct CmBl
         }
     } while (0);
 
-    CmReport(__func__, &cmContext, &keyUri, ret);
+    CmReport(__func__, &oriContext, &keyUri, ret);
     CmSendResponse(context, ret, NULL);
     CmReportSGUninstallAppCert(&keyUri, store, false, ret);
     CmFreeParamSet(&paramSet);
-    CM_LOG_D("CmIpcServiceUninstallAppCert end:%d", ret);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceUninstallAllAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -316,7 +329,8 @@ void CmIpcServiceUninstallAllAppCert(const struct CmBlob *paramSetBlob, struct C
     CmReport(__func__, &cmContext, NULL, ret);
     CmSendResponse(context, ret, NULL);
     CmReportSGUninstallAppCert(NULL, INIT_INVALID_VALUE, true, ret);
-    CM_LOG_D("CmIpcServiceUninstallAllAppCert end:%d", ret);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 static int32_t GetAppCertInfo(const struct CmBlob *keyUri, struct CmBlob *certType,
@@ -334,20 +348,20 @@ static int32_t GetAppCertInfo(const struct CmBlob *keyUri, struct CmBlob *certTy
         }
         if ((uri.type >= TYPE_COUNT) || (uri.object == NULL)) {
             CM_LOG_E("uri's type[%u] or object is invalid after decode", uri.type);
-            ret = CMR_ERROR;
+            ret = CMR_ERROR_INVALID_ARGUMENT_URI;
             break;
         }
 
         if (memcpy_s(certType->data, certType->size, g_types[uri.type], strlen(g_types[uri.type]) + 1) != EOK) {
             CM_LOG_E("Failed to copy certType->data");
-            ret = CMR_ERROR;
+            ret = CMR_ERROR_MEM_OPERATION_COPY;
             break;
         }
         certType->size = strlen(g_types[uri.type]) + 1;
 
         if (memcpy_s(certUri->data, certUri->size, keyUri->data, keyUri->size) != EOK) {
             CM_LOG_E("Failed to copy certUri->data");
-            ret = CMR_ERROR;
+            ret = CMR_ERROR_MEM_OPERATION_COPY;
             break;
         }
         certUri->size = keyUri->size;
@@ -486,7 +500,8 @@ void CmIpcServiceGetAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob
     CmFreeParamSet(&paramSet);
     CmFreeFileNames(fileNames, fileCount);
     CM_FREE_BLOB(certificateList);
-    CM_LOG_D("CmIpcServiceGetAppCertList end:%d", ret);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceGetCallingAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -536,7 +551,8 @@ void CmIpcServiceGetCallingAppCertList(const struct CmBlob *paramSetBlob, struct
     CmFreeParamSet(&paramSets);
     CmFreeFileNames(fileNamesBlob, fileCount);
     CM_FREE_BLOB(certificateList);
-    CM_LOG_D("CmServiceGetCallingAppCertListCheck end:%d", ret);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 static int32_t CopyCertificateInfoToBuffer(const struct CmBlob *certBlob,
@@ -655,6 +671,7 @@ void CmIpcServiceGetAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *ou
     struct CmBlob certificateInfo = { 0, NULL };
     struct CmBlob certBlob = { 0, NULL };
     struct CmContext cmContext = {0};
+    struct CmContext oriContext = {0};
     struct CmParamSet *paramSet = NULL;
     struct CmParamOut params[] = {
         {
@@ -672,6 +689,8 @@ void CmIpcServiceGetAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *ou
             CM_LOG_E("CmIpcServiceGetAppCert get input params failed, ret = %d", ret);
             break;
         }
+        oriContext.userId = cmContext.userId;
+        oriContext.uid = cmContext.uid;
 
         ret = CmServiceGetAppCertCheck(&cmContext, store, &keyUri);
         if (ret != CM_SUCCESS) {
@@ -691,19 +710,20 @@ void CmIpcServiceGetAppCert(const struct CmBlob *paramSetBlob, struct CmBlob *ou
         }
     } while (0);
 
-    CmReport(__func__, &cmContext, &keyUri, ret);
+    CmReport(__func__, &oriContext, &keyUri, ret);
     CmSendResponse(context, ret, &certificateInfo);
     CmFreeParamSet(&paramSet);
     CM_FREE_BLOB(certBlob);
     CM_FREE_BLOB(certificateInfo);
-    CM_LOG_D("CmIpcServiceGetAppCert end:%d", ret);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 static int32_t GetAuthedList(const struct CmContext *context, const struct CmBlob *keyUri, struct CmBlob *outData)
 {
     if (outData->size < sizeof(uint32_t)) { /* appUidCount size */
         CM_LOG_E("invalid outData size[%u]", outData->size);
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_BUFFER_TOO_SMALL;
     }
 
     uint32_t count = (outData->size - sizeof(uint32_t)) / sizeof(uint32_t);
@@ -753,10 +773,11 @@ void CmIpcServiceGrantAppCertificate(const struct CmBlob *paramSetBlob, struct C
 
     CmReport(__func__, &cmContext, &keyUri, ret);
 
-    CM_LOG_D("CmIpcServiceGrantAppCertificate end:%d", ret);
     CmSendResponse(context, ret, outData);
     CmReportSGGrantAppCert(&keyUri, grantUid, false, ret);
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceGetAuthorizedAppList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -784,10 +805,10 @@ void CmIpcServiceGetAuthorizedAppList(const struct CmBlob *paramSetBlob, struct 
         }
     } while (0);
     CmReport(__func__, &cmContext, &keyUri, ret);
-
-    CM_LOG_D("CmIpcServiceGetAuthorizedAppList end:%d", ret);
     CmSendResponse(context, ret, outData);
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceIsAuthorizedApp(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -817,9 +838,10 @@ void CmIpcServiceIsAuthorizedApp(const struct CmBlob *paramSetBlob, struct CmBlo
     } while (0);
 
     CmReport(__func__, &cmContext, &authUri, ret);
-    CM_LOG_D("CmIpcServiceIsAuthorizedApp end:%d", ret);
     CmSendResponse(context, ret, NULL);
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceRemoveGrantedApp(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -850,10 +872,11 @@ void CmIpcServiceRemoveGrantedApp(const struct CmBlob *paramSetBlob, struct CmBl
     } while (0);
     CmReport(__func__, &cmContext, &keyUri, ret);
 
-    CM_LOG_D("CmIpcServiceRemoveGrantedApp end:%d", ret);
     CmSendResponse(context, ret, NULL);
     CmReportSGGrantAppCert(&keyUri, appUid, true, ret);
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceInit(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -879,7 +902,7 @@ void CmIpcServiceInit(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
         struct CmSignatureSpec spec = { 0 };
         if (specBlob.size < sizeof(struct CmSignatureSpec)) {
             CM_LOG_E("invalid input spec size");
-            ret = CMR_ERROR_INVALID_ARGUMENT;
+            ret = CMR_ERROR_INVALID_ARGUMENT_SIGN_SPEC;
             break;
         }
         (void)memcpy_s(&spec, sizeof(struct CmSignatureSpec), specBlob.data, sizeof(struct CmSignatureSpec));
@@ -892,9 +915,10 @@ void CmIpcServiceInit(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     } while (0);
 
     CmReport(__func__, &cmContext, &authUri, ret);
-    CM_LOG_D("CmIpcServiceInit end:%d", ret);
     CmSendResponse(context, ret, outData);
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceUpdate(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -926,9 +950,9 @@ void CmIpcServiceUpdate(const struct CmBlob *paramSetBlob, struct CmBlob *outDat
     } while (0);
 
     CmReport(__func__, &cmContext, NULL, ret);
-    CM_LOG_D("CmIpcServiceUpdate end:%d", ret);
     CmSendResponse(context, ret, NULL);
     CmFreeParamSet(&paramSet);
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceFinish(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -959,9 +983,10 @@ void CmIpcServiceFinish(const struct CmBlob *paramSetBlob, struct CmBlob *outDat
     } while (0);
 
     CmReport(__func__, &cmContext, NULL, ret);
-    CM_LOG_D("CmIpcServiceFinish end:%d", ret);
     CmSendResponse(context, ret, outData);
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceAbort(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -991,9 +1016,10 @@ void CmIpcServiceAbort(const struct CmBlob *paramSetBlob, struct CmBlob *outData
     } while (0);
 
     CmReport(__func__, &cmContext, NULL, ret);
-    CM_LOG_D("CmIpcServiceAbort end:%d", ret);
     CmSendResponse(context, ret, NULL);
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceGetUserCertList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -1013,15 +1039,15 @@ void CmIpcServiceGetUserCertList(const struct CmBlob *paramSetBlob, struct CmBlo
     };
 
     do {
-        if (!CmHasCommonPermission()) {
-            CM_LOG_E("caller no permission");
-            ret = CMR_ERROR_PERMISSION_DENIED;
-            break;
-        }
-
         ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
             CM_LOG_E("GetUserCertList get input params failed, ret = %d", ret);
+            break;
+        }
+
+        if (!CmHasCommonPermission()) {
+            CM_LOG_E("caller no permission");
+            ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
 
@@ -1052,6 +1078,8 @@ void CmIpcServiceGetUserCertList(const struct CmBlob *paramSetBlob, struct CmBlo
         CmFreeCertFiles((struct CertFileInfo *)certFileList.data, certFileList.size);
     }
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceGetUserCertInfo(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -1063,6 +1091,7 @@ void CmIpcServiceGetUserCertInfo(const struct CmBlob *paramSetBlob, struct CmBlo
     struct CmBlob certUri = { 0, NULL };
     struct CmBlob certificateData = { 0, NULL };
     struct CmContext cmContext = {0};
+    struct CmContext oriContext = {0};
     struct CmParamSet *paramSet = NULL;
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = &certUri},
@@ -1070,15 +1099,17 @@ void CmIpcServiceGetUserCertInfo(const struct CmBlob *paramSetBlob, struct CmBlo
     };
 
     do {
-        if (!CmHasCommonPermission()) {
-            CM_LOG_E("caller no permission");
-            ret = CMR_ERROR_PERMISSION_DENIED;
-            break;
-        }
-
         ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
         if (ret != CM_SUCCESS) {
             CM_LOG_E("GetUserCertInfo get input params failed, ret = %d", ret);
+            break;
+        }
+        oriContext.userId = cmContext.userId;
+        oriContext.uid = cmContext.uid;
+
+        if (!CmHasCommonPermission()) {
+            CM_LOG_E("caller no permission");
+            ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
 
@@ -1095,12 +1126,14 @@ void CmIpcServiceGetUserCertInfo(const struct CmBlob *paramSetBlob, struct CmBlo
         }
         CmSendResponse(context, ret, outData);
     } while (0);
-    CmReport(__func__, &cmContext, &certUri, ret);
+    CmReport(__func__, &oriContext, &certUri, ret);
     if (ret != CM_SUCCESS) {
         CmSendResponse(context, ret, NULL);
     }
     CM_FREE_BLOB(certificateData);
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -1146,10 +1179,12 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
         }
     } while (0);
 
-    CmReport(__func__, &cmContext, &certUri, ret);
+    CmReport(__func__, &oriContext, &certUri, ret);
     CmSendResponse(context, ret, NULL);
     CmReportSGSetCertStatus(&certUri, store, status, ret);
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -1202,6 +1237,8 @@ void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlo
     }
     CmReportSGInstallUserCert(&certAlias, outData, ret);
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceUninstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -1243,6 +1280,8 @@ void CmIpcServiceUninstallUserCert(const struct CmBlob *paramSetBlob, struct CmB
     CmSendResponse(context, ret, NULL);
     CmReportSGUninstallUserCert(&certUri, false, ret);
     CmFreeParamSet(&paramSet);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 
 void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
@@ -1253,6 +1292,12 @@ void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct 
     struct CmContext cmContext = {0};
 
     do {
+        ret = CmGetProcessInfoForIPC(&cmContext);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmGetProcessInfoForIPC fail, ret = %d", ret);
+            break;
+        }
+
         if (!CmHasCommonPermission() || !CmHasUserTrustedPermission()) {
             CM_LOG_E("caller no permission");
             ret = CMR_ERROR_PERMISSION_DENIED;
@@ -1263,13 +1308,6 @@ void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct 
             ret = CMR_ERROR_NOT_SYSTEMP_APP;
             break;
         }
-
-        ret = CmGetProcessInfoForIPC(&cmContext);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmGetProcessInfoForIPC fail, ret = %d", ret);
-            break;
-        }
-
         ret = CmUninstallAllUserCert(&cmContext);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CertManagerUninstallAllUserCert fail, ret = %d", ret);
@@ -1279,5 +1317,7 @@ void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct 
     CmReport(__func__, &cmContext, NULL, ret);
     CmSendResponse(context, ret, NULL);
     CmReportSGUninstallUserCert(NULL, true, ret);
+
+    CM_LOG_I("leave: ret = %d", ret);
 }
 

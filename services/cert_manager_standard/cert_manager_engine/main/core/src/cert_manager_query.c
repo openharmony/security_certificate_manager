@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -62,7 +62,7 @@ static int32_t ConstrutPathList(const char *useridPath, struct CmMutableBlob *cP
     void *d = CmOpenDir(useridPath);
     if (d == NULL) {
         CM_LOG_E("Failed to open directory");
-        return CM_FAILURE;
+        return CMR_ERROR_FILE_OPEN_DIR;
     }
 
     uint32_t dealCert = 0;
@@ -76,7 +76,7 @@ static int32_t ConstrutPathList(const char *useridPath, struct CmMutableBlob *cP
         char pathBuf[MAX_PATH_LEN] = {0};
         if (sprintf_s(pathBuf, MAX_PATH_LEN, "%s/%s", useridPath, dire.fileName) < 0) {
             CM_LOG_E("copy uid path failed");
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_MEM_OPERATION_PRINT;
             break;
         }
 
@@ -86,7 +86,7 @@ static int32_t ConstrutPathList(const char *useridPath, struct CmMutableBlob *cP
         }
 
         if (sprintf_s((char *)cPathList[dealCert].data, cPathList[dealCert].size, "%s", pathBuf) < 0) {
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_MEM_OPERATION_PRINT;
             break;
         }
         dealCert++;
@@ -94,7 +94,8 @@ static int32_t ConstrutPathList(const char *useridPath, struct CmMutableBlob *cP
 
     (void) CmCloseDir(d);
     if (dealCert != dirCount) { /* real dir count less than dirCount */
-        ret = CM_FAILURE;
+        CM_LOG_E("cert count mismatch, dealCert(%u), dirCount(%u)", dealCert, dirCount);
+        ret = CMR_ERROR_CERT_COUNT_MISMATCH;
     }
     return ret;
 }
@@ -104,7 +105,7 @@ static int32_t CreateCertPathList(const char *useridPath, struct CmMutableBlob *
     int32_t uidCount = GetNumberOfDirs(useridPath);
     if (uidCount < 0) {
         CM_LOG_E("Failed to obtain number of uid from path");
-        return CM_FAILURE;
+        return CMR_ERROR_FILE_OPEN_DIR; /* when open dir failed return value will smaller than 0 */
     }
 
     if (uidCount == 0) {
@@ -112,8 +113,8 @@ static int32_t CreateCertPathList(const char *useridPath, struct CmMutableBlob *
     }
 
     if (uidCount > MAX_COUNT_CERTIFICATE) {
-        CM_LOG_E("uidCount beyond max");
-        return CM_FAILURE;
+        CM_LOG_E("uidCount beyond max, uidCount: %d", uidCount);
+        return CMR_ERROR_MAX_CERT_COUNT_REACHED;
     }
 
     uint32_t arraySize = sizeof(struct CmMutableBlob) * (uint32_t)uidCount;
@@ -177,7 +178,7 @@ int32_t CmGetSysCertPathList(const struct CmContext *context, struct CmMutableBl
     if (sprintf_s((char *)cPathList[0].data, cPathList[0].size, "%s", SYSTEM_CA_STORE) < 0) {
         CM_LOG_E("sprintf_s path failed");
         CmFreePathList(cPathList, sysPathCnt);
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_MEM_OPERATION_PRINT;
     }
 
     pathList->data = (uint8_t *)cPathList;
@@ -262,13 +263,13 @@ static int32_t CreateCertFile(struct CertFileInfo *cFileList, const char *path, 
 
     if (fileNums < 0) {
         CM_LOG_E("Failed to obtain number of files");
-        return CM_FAILURE;
+        return CMR_ERROR_FILE_OPEN_DIR; /* when open dir failed return value will smaller than 0 */
     }
 
     void *isOpen = CmOpenDir(path);
     if (isOpen == NULL) {
         CM_LOG_E("Failed to open directory");
-        return CM_FAILURE;
+        return CMR_ERROR_FILE_OPEN_DIR;
     }
 
     int32_t ret;
@@ -292,7 +293,8 @@ static int32_t CreateCertFile(struct CertFileInfo *cFileList, const char *path, 
     uint32_t realCount = getCount - *certCount;
     *certCount += realCount;
     if (realCount != (uint32_t)fileNums) {
-        return CM_FAILURE;
+        CM_LOG_E("cert count mismatch, realCount(%u), fileCount(%d)", realCount, fileNums);
+        return CMR_ERROR_CERT_COUNT_MISMATCH;
     }
     return ret;
 }
@@ -373,7 +375,7 @@ static int32_t GetUserCertAlias(const char *uri, struct CmBlob *alias)
     if (certUri.object == NULL) {
         CM_LOG_E("uri's object is invalid after decode");
         (void)CertManagerFreeUri(&certUri);
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     struct CertProperty certProperty;
@@ -390,12 +392,12 @@ static int32_t GetUserCertAlias(const char *uri, struct CmBlob *alias)
         size = strlen(certUri.object) + 1;
         if (memcpy_s(alias->data, size, certUri.object, size) != EOK) {
             (void)CertManagerFreeUri(&certUri);
-            return CM_FAILURE;
+            return CMR_ERROR_MEM_OPERATION_COPY;
         }
     } else {
         if (memcpy_s(alias->data, size, (uint8_t *)certProperty.alias, size) != EOK) {
             (void)CertManagerFreeUri(&certUri);
-            return CM_FAILURE;
+            return CMR_ERROR_MEM_OPERATION_COPY;
         }
     }
     alias->size = size;
@@ -408,16 +410,16 @@ static int32_t GetSysCertAlias(const struct CmBlob *certData, struct CmBlob *ali
     X509 *cert = InitCertContext(certData->data, certData->size);
     if (cert == NULL) {
         CM_LOG_E("cert data can't convert x509 format");
-        return CM_FAILURE;
+        return CMR_ERROR_INVALID_CERT_FORMAT;
     }
 
     int32_t aliasLen = GetX509SubjectName(cert, CM_ORGANIZATION_NAME, (char *)alias->data, alias->size);
     if (aliasLen <= 0) {
         aliasLen = GetX509SubjectName(cert, CM_COMMON_NAME, (char *)alias->data, alias->size);
         if (aliasLen <= 0) {
-            CM_LOG_E("Failed to get certificates CN name");
+            CM_LOG_E("Failed to get certificates CN name, aliasLen = %d", aliasLen);
             FreeCertContext(cert);
-            return CM_FAILURE;
+            return CMR_ERROR_GET_CERT_SUBJECT_ITEM;
         }
     }
     alias->size = (uint32_t)aliasLen + 1;
@@ -436,7 +438,7 @@ int32_t CmGetCertAlias(const uint32_t store, const char *uri, const struct CmBlo
         ret = GetSysCertAlias(certData, alias);
     } else {
         CM_LOG_E("Invalid store");
-        return CM_FAILURE;
+        return CMR_ERROR_INVALID_ARGUMENT_STORE_TYPE;
     }
 
     if (ret != CM_SUCCESS) {
@@ -452,14 +454,14 @@ static int32_t CmGetCertSubjectName(const struct CmBlob *certData, struct CmBlob
     X509 *cert = InitCertContext(certData->data, certData->size);
     if (cert == NULL) {
         CM_LOG_E("cert data can't convert x509 format");
-        return CM_FAILURE;
+        return CMR_ERROR_INVALID_CERT_FORMAT;
     }
 
-    int32_t subjectLen = GetX509SubjectNameLongFormat(cert, (char *)subjectName->data, MAX_LEN_SUBJECT_NAME);
+    int32_t subjectLen = GetX509SubjectNameLongFormat(cert, (char *)subjectName->data, subjectName->size);
     if (subjectLen <= 0) {
-        CM_LOG_E("get cert subjectName failed");
+        CM_LOG_E("get cert subjectName failed, subjectLen = %d", subjectLen);
         FreeCertContext(cert);
-        return CM_FAILURE;
+        return CMR_ERROR_GET_CERT_SUBJECT_ITEM;
     }
     subjectName->size = (uint32_t)subjectLen + 1;
 
@@ -489,7 +491,7 @@ static int32_t GetCertContext(const struct CmBlob *fileName, struct CmContext *c
         CmIsNumeric(uriObj.app, strlen(uriObj.app) + 1, &uid) != CM_SUCCESS) {
         CM_LOG_E("parse string to uint32 failed.");
         (void)CertManagerFreeUri(&uriObj);
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
     (void)CertManagerFreeUri(&uriObj);
     
@@ -521,13 +523,13 @@ int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
         ret = CmGetCertStatus(&certContext, &cFileList[i], store, &status[i]); /* status */
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get cert status");
-            return CM_FAILURE;
+            return CMR_ERROR_GET_CERT_STATUS;
         }
 
         if (memcpy_s(certBlob->uri[i].data, MAX_LEN_URI, cFileList[i].fileName.data,
             cFileList[i].fileName.size) != EOK) {
             CM_LOG_E("Failed to get cert uri");
-            return CM_FAILURE;
+            return CMR_ERROR_MEM_OPERATION_COPY;
         }
 
         certBlob->uri[i].size = cFileList[i].fileName.size; /* uri */
@@ -536,20 +538,20 @@ int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
         ret = CmStorageGetBuf((char *)cFileList[i].path.data, (char *)cFileList[i].fileName.data, &certData);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("get cert data failed");
-            return CM_FAILURE;
+            return ret;
         }
 
         ret = CmGetCertAlias(store, (char *)cFileList[i].fileName.data, &certData,
             &(certBlob->certAlias[i])); /* alias */
         if (ret != CM_SUCCESS) {
             CM_FREE_BLOB(certData);
-            return CM_FAILURE;
+            return ret;
         }
 
         ret = CmGetCertSubjectName(&certData, &(certBlob->subjectName[i])); /* subjectName */
         if (ret != CM_SUCCESS) {
             CM_FREE_BLOB(certData);
-            return CM_FAILURE;
+            return ret;
         }
         CM_FREE_BLOB(certData);
     }

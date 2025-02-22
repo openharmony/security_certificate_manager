@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -405,7 +405,7 @@ HWTEST_F(CmCertParseTest, CmCertParseTest022, TestSize.Level0)
 
     char tmpFinggerOut[DEFAULT_SIZE] = {0};
     int32_t ret = GetX509Fingerprint(x509, nullptr, sizeof(tmpFinggerOut));
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_OPERATION);
+    EXPECT_EQ(ret, CMR_ERROR_MEM_OPERATION_PRINT);
 
     FreeCertContext(x509);
 }
@@ -452,7 +452,7 @@ HWTEST_F(CmCertParseTest, CmCertParseTest024, TestSize.Level0)
     if (cert != nullptr) {
         FreeCertContext(cert);
     }
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT_APP_CERT);
 
     EVP_PKEY_free(pkey);
 }
@@ -476,7 +476,7 @@ HWTEST_F(CmCertParseTest, CmCertParseTest025, TestSize.Level0)
     if (cert != nullptr) {
         FreeCertContext(cert);
     }
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT_APP_CERT);
 
     EVP_PKEY_free(pkey);
 }
@@ -500,7 +500,7 @@ HWTEST_F(CmCertParseTest, CmCertParseTest026, TestSize.Level0)
     if (cert != nullptr) {
         FreeCertContext(cert);
     }
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT_APP_CERT);
 
     EVP_PKEY_free(pkey);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -753,49 +753,12 @@ static int32_t CertManagerStatus(const struct CmContext *context, struct RbTree 
     return rc;
 }
 
-static int32_t CertManagerIsCallerPrivileged(const struct CmContext *context)
-{
-    (void) context;
-    return CMR_OK;
-}
-
-static int32_t CertManagerCheckStorePermission(const struct CmContext *context, uint32_t store, bool statusOnly)
-{
-    /* System Store is read-only therefore we don't even try to use it. */
-    if (store == CM_SYSTEM_TRUSTED_STORE) {
-        if (!statusOnly) {
-            CM_LOG_E("Storege type %u should be read on;y\n", store);
-            return CMR_ERROR_NOT_PERMITTED;
-        } else if (CertManagerIsCallerPrivileged(context) != CMR_OK) {
-            CM_LOG_W("Only privileged caller can change status in system stores.\n");
-            return CMR_ERROR_NOT_PERMITTED;
-        }
-    } else if (store == CM_CREDENTIAL_STORE) {
-        CM_LOG_E("Credential certificates should be set via CertManagerIsCallerPrivileged\n");
-        return CMR_ERROR_NOT_SUPPORTED;
-    } else if (store == CM_USER_TRUSTED_STORE) {
-        /* only priviled callers can update the user store */
-        if (CertManagerIsCallerPrivileged(context) != CMR_OK) {
-            CM_LOG_W("Only privileged caller can modify user stores.\n");
-            return CMR_ERROR_NOT_PERMITTED;
-        }
-    } else if (store == CM_PRI_CREDENTIAL_STORE) {
-        /* no additional checks here. context->caller can remove its own */
-    } else {
-        CM_LOG_W("Invalid store type. Only a single store should be indicated: %u\n", store);
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-
-    return CMR_OK;
-}
-
 static int32_t CertManagerStatusFile(const struct CmContext *context, struct CertFile certFile,
     uint32_t store, const uint32_t status, uint32_t *stp)
 {
     ASSERT_ARGS(context && certFile.path && certFile.fileName);
     ASSERT_ARGS(certFile.path->size && certFile.path->data && certFile.fileName->size && certFile.fileName->data);
     ASSERT_ARGS((status <= CERT_STATUS_MAX || stp != NULL));
-    ASSERT_FUNC(CertManagerCheckStorePermission(context, store, true));
 
     int rc = CMR_OK;
     uint32_t oldStatus = 0;

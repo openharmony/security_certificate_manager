@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,7 +32,7 @@ int32_t CopyUint32ToBuffer(uint32_t value, const struct CmBlob *destBlob, uint32
     }
 
     if (memcpy_s(destBlob->data + *destOffset, destBlob->size - *destOffset, &value, sizeof(value)) != EOK) {
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_MEM_OPERATION_COPY;
     }
     *destOffset += sizeof(value);
     return CM_SUCCESS;
@@ -50,13 +50,13 @@ int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlo
 
     if (memcpy_s(destBlob->data + *destOffset, destBlob->size - *destOffset,
                  &(blob->size), sizeof(blob->size)) != EOK) {
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_MEM_OPERATION_COPY;
     }
     *destOffset += sizeof(blob->size);
 
     if (memcpy_s(destBlob->data + *destOffset, destBlob->size - *destOffset, blob->data, blob->size) != EOK) {
         *destOffset -= sizeof(blob->size);
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_MEM_OPERATION_COPY;
     }
     *destOffset += ALIGN_SIZE(blob->size);
     return CM_SUCCESS;
@@ -82,7 +82,7 @@ static int32_t GetNormalParam(const struct CmParam *param, struct CmParamOut *ou
             break;
         default:
             CM_LOG_E("invalid tag type:%x", GetTagType(outParams->tag));
-            return CMR_ERROR_INVALID_ARGUMENT;
+            return CMR_ERROR_INVALID_PARAMSET_ARG;
     }
     return CM_SUCCESS;
 }
@@ -133,7 +133,7 @@ static int32_t CmGetCertListPack(const struct CertBlob *certBlob, uint32_t *stat
     uint32_t offset = 0;
     if (certCount > MAX_COUNT_CERTIFICATE_ALL) {
         CM_LOG_E("cert count is too large");
-        return CM_FAILURE;
+        return CMR_ERROR_MAX_CERT_COUNT_REACHED;
     }
     uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
         sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) + MAX_LEN_CERT_ALIAS) * certCount;
@@ -220,7 +220,7 @@ int32_t CmServiceGetCertInfoPack(const uint32_t store, const struct CmBlob *cert
         MAX_LEN_CERT_ALIAS + sizeof(uint32_t);
     if (certificateInfo->size < buffSize) {
         CM_LOG_E("outdata size too small");
-        return CMR_ERROR_MALLOC_FAIL;
+        return CMR_ERROR_BUFFER_TOO_SMALL;
     }
     certificateInfo->size = buffSize;
 
@@ -249,7 +249,7 @@ int32_t CmServiceGetCertInfoPack(const uint32_t store, const struct CmBlob *cert
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed to get cert certAlias");
         CM_FREE_BLOB(certAlias);
-        return CM_FAILURE;
+        return ret;
     }
 
     ret = CopyBlobToBuffer(&certAlias, certificateInfo, &offset); /* certAlias */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -1022,7 +1022,7 @@ HWTEST_F(CmUserCertTest, GetUserCertListTest003, TestSize.Level0)
     struct CertList *certList003 = nullptr;
     InitCertList(&certList003);
     ret = CmGetUserCertList(100, certList003); /* invalid store 100 */
-    EXPECT_EQ(ret, CM_FAILURE);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
     FreeCertList(certList003);
 
     ret = CmUninstallAllUserTrustedCert();
@@ -1185,7 +1185,7 @@ HWTEST_F(CmUserCertTest, GetUserCertInfoTest004, TestSize.Level0)
     struct CertInfo *certInfo004 = nullptr;
     InitUserCertInfo(&certInfo004);
     ret = CmGetUserCertInfo(&certUri, 100, certInfo004);  /* invalid store 100 */
-    EXPECT_EQ(ret, CM_FAILURE);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
     FreeCertInfo(certInfo004);
 }
 
@@ -1262,7 +1262,7 @@ HWTEST_F(CmUserCertTest, GetUserCertInfoTest007, TestSize.Level0)
     struct CertInfo *certInfo008 = nullptr;
     InitUserCertInfo(&certInfo008);
     ret = CmGetUserCertInfo(&testCertUri, CM_USER_TRUSTED_STORE, certInfo008);
-    
+
     EXPECT_EQ(CompareCertInfo(certInfo008, &(g_userCertInfoExpectResult[0].certInfo)), true) <<
             DumpCertInfo(certInfo008);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal get user cert info test failed, recode:" << ret;
@@ -1415,7 +1415,7 @@ HWTEST_F(CmUserCertTest, SetUserCertStatusTest005, TestSize.Level0)
         reinterpret_cast<uint8_t *>(g_certStatusExpectResult[1].uri) };
 
     ret = CmSetUserCertStatus(&certUri, 100, true); /* invalid store */
-    EXPECT_EQ(ret, CM_FAILURE) << "Normal set user cert status test failed, recode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "Normal set user cert status test failed, recode:" << ret;
 }
 
 /**

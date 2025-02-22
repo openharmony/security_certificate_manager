@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -103,12 +103,12 @@ static int32_t GetPublicAppCert(const struct CmContext *context, uint32_t store,
         /* remove authinfo from uri */
         if (keyUri->size < commonUri.size) {
             CM_LOG_E("keyUri size[%u] smaller than commonUri size[%u]", keyUri->size, commonUri.size);
-            ret = CMR_ERROR_INVALID_ARGUMENT;
+            ret = CMR_ERROR_BUFFER_TOO_SMALL;
             break;
         }
         if (memcpy_s(keyUri->data, keyUri->size, commonUri.data, commonUri.size) != EOK) {
             CM_LOG_E("copy keyUri failed");
-            ret = CMR_ERROR_INVALID_OPERATION;
+            ret = CMR_ERROR_MEM_OPERATION_COPY;
             break;
         }
         keyUri->size = commonUri.size;
@@ -156,7 +156,7 @@ int32_t CmServiceGrantAppCertificate(const struct CmContext *context, const stru
 {
     if (CheckUri(keyUri) != CM_SUCCESS || CmCheckBlob(authUri) != CM_SUCCESS || context == NULL) {
         CM_LOG_E("invalid input arguments");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     int32_t ret = CheckPermission(true, true);
@@ -172,7 +172,7 @@ int32_t CmServiceGetAuthorizedAppList(const struct CmContext *context, const str
 {
     if (CheckUri(keyUri) != CM_SUCCESS) {
         CM_LOG_E("invalid input arguments");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     int32_t ret = CheckPermission(true, true);
@@ -202,7 +202,7 @@ int32_t CmServiceRemoveGrantedApp(const struct CmContext *context, const struct 
 {
     if (CheckUri(keyUri) != CM_SUCCESS) {
         CM_LOG_E("invalid input arguments");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     int32_t ret = CheckPermission(true, true);
@@ -225,7 +225,7 @@ static int32_t CheckAndGetStore(const struct CmContext *context, const struct Cm
     if ((uriObj.object == NULL) || (uriObj.user == NULL) || (uriObj.app == NULL)) {
         CM_LOG_E("uri format invalid");
         (void)CertManagerFreeUri(&uriObj);
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     uint32_t type = uriObj.type;
@@ -233,7 +233,7 @@ static int32_t CheckAndGetStore(const struct CmContext *context, const struct Cm
     if (CmIsNumeric(uriObj.user, strlen(uriObj.user) + 1, &userId) != CM_SUCCESS) {
         CM_LOG_E("parse string to uint32 failed.");
         (void)CertManagerFreeUri(&uriObj);
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     (void)CertManagerFreeUri(&uriObj);
@@ -245,7 +245,7 @@ static int32_t CheckAndGetStore(const struct CmContext *context, const struct Cm
 
         if (context->userId != 0 && context->userId != userId) {
             CM_LOG_E("uri check userId failed");
-            return CMR_ERROR_INVALID_ARGUMENT;
+            return CMR_ERROR_INVALID_ARGUMENT_USER_ID;
         }
 
         *store = CM_SYS_CREDENTIAL_STORE;
@@ -257,9 +257,14 @@ static int32_t CheckAndGetStore(const struct CmContext *context, const struct Cm
 int32_t CmServiceInit(const struct CmContext *context, const struct CmBlob *authUri,
     const struct CmSignatureSpec *spec, struct CmBlob *handle)
 {
-    if (CheckUri(authUri) != CM_SUCCESS || CmCheckBlob(handle) != CM_SUCCESS) {
-        CM_LOG_E("invalid input arguments");
-        return CMR_ERROR_INVALID_ARGUMENT;
+    if (CheckUri(authUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments uri");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
+    if (CmCheckBlob(handle) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments handle");
+        return CMR_ERROR_INVALID_ARGUMENT_HANDLE;
     }
 
     int32_t ret = CheckPermission(false, true);
@@ -297,7 +302,12 @@ int32_t CmServiceInit(const struct CmContext *context, const struct CmBlob *auth
 int32_t CmServiceUpdate(const struct CmContext *context, const struct CmBlob *handle,
     const struct CmBlob *inData)
 {
-    if (CmCheckBlob(handle) != CM_SUCCESS || CmCheckBlob(inData) != CM_SUCCESS) {
+    if (CmCheckBlob(handle) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT_HANDLE;
+    }
+
+    if (CmCheckBlob(inData) != CM_SUCCESS) {
         CM_LOG_E("invalid input arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -315,7 +325,7 @@ int32_t CmServiceFinish(const struct CmContext *context, const struct CmBlob *ha
 {
     if (CmCheckBlob(handle) != CM_SUCCESS) { /* inData.data and outData.data can be null */
         CM_LOG_E("invalid input arguments");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_HANDLE;
     }
 
     int32_t ret = CheckPermission(false, true);
@@ -330,7 +340,7 @@ int32_t CmServiceAbort(const struct CmContext *context, const struct CmBlob *han
 {
     if (CmCheckBlob(handle) != CM_SUCCESS) {
         CM_LOG_E("invalid input arguments");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_HANDLE;
     }
 
     int32_t ret = CheckPermission(false, true);
@@ -365,7 +375,7 @@ static int32_t MergeUserPathList(const struct CmMutableBlob *callerPathList,
 
     if (uidCount > MAX_COUNT_CERTIFICATE_ALL) {
         CM_LOG_E("uid count beyond MAX");
-        return CM_FAILURE;
+        return CMR_ERROR_MAX_CERT_COUNT_REACHED;
     }
 
     uint32_t memSize = sizeof(struct CmMutableBlob) * uidCount;
@@ -529,7 +539,7 @@ int32_t CmServiceGetCertList(const struct CmContext *context, const struct UserC
     uint32_t scope = prop->scope;
     if (scope != CM_ALL_USER && scope != CM_CURRENT_USER && scope != CM_GLOBAL_USER) {
         CM_LOG_E("The scope is incorrect");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_SCOPE;
     }
 
     int32_t ret = CM_SUCCESS;
@@ -540,7 +550,7 @@ int32_t CmServiceGetCertList(const struct CmContext *context, const struct UserC
             if (context->userId != 0 && prop->userId != INIT_INVALID_VALUE) {
                 /* if caller is hap, the target userid must be invalid */
                 CM_LOG_E("The target userid is incorrect");
-                ret = CMR_ERROR_INVALID_ARGUMENT;
+                ret = CMR_ERROR_INVALID_ARGUMENT_USER_ID;
                 break;
             }
             /* get all uid path for caller and system service */
@@ -556,7 +566,7 @@ int32_t CmServiceGetCertList(const struct CmContext *context, const struct UserC
                 break;
             }
         } else {
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_INVALID_ARGUMENT_STORE_TYPE;
             CM_LOG_E("Invalid store");
             break;
         }
@@ -654,7 +664,7 @@ int32_t CmServiceGetCertInfo(struct CmContext *context, const struct CmBlob *cer
 {
     if (CmCheckBlob(certUri) != CM_SUCCESS || CheckUri(certUri) != CM_SUCCESS) {
         CM_LOG_E("input params invalid");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     int32_t ret = CM_SUCCESS;
@@ -672,7 +682,7 @@ int32_t CmServiceGetCertInfo(struct CmContext *context, const struct CmBlob *cer
         }
     } else {
         CM_LOG_E("Invalid store");
-        ret = CM_FAILURE;
+        ret = CMR_ERROR_INVALID_ARGUMENT_STORE_TYPE;
     }
     return ret;
 }
@@ -685,20 +695,20 @@ int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem)
     BIO *bio = BIO_new(BIO_s_mem());
     if (!bio) {
         CM_LOG_E("BIO_new failed!");
-        return CM_FAILURE;
+        return CMR_ERROR_OPENSSL_FAIL;
     }
 
     do {
         if (PEM_write_bio_X509(bio, (X509 *)x509) == 0) {
             CM_LOG_E("Error writing PEM");
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_OPENSSL_FAIL;
             break;
         }
 
         long pemCertLen = BIO_get_mem_data(bio, &pemCert);
         if (pemCertLen <= 0) {
             perror("Error getting PEM data");
-            ret = CM_FAILURE;
+            ret = CMR_ERROR_OPENSSL_FAIL;
             break;
         }
 
@@ -725,7 +735,7 @@ static int32_t TryBackupUserCert(const struct CmContext *context, const struct C
         if (CmRemoveUserCert(pathBlob, certUri) != CM_SUCCESS) {
             CM_LOG_E("CmBackupUserCert fail and CmRemoveUserCert fail");
         }
-        return CM_FAILURE;
+        return ret;
     }
     return ret;
 }
@@ -824,7 +834,7 @@ static int32_t CmComparisonCallerIdWithUri(const struct CmContext *context,
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
     if (CheckUri(certUri) != CM_SUCCESS) {
         CM_LOG_E("cert uri no end");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     int32_t ret = CertManagerUriDecode(&uriObj, (char *)certUri->data);
@@ -833,35 +843,35 @@ static int32_t CmComparisonCallerIdWithUri(const struct CmContext *context,
         return ret;
     }
 
-    if (uriObj.user == NULL) {
-        CM_LOG_E("uri user invalid");
-        (void)CertManagerFreeUri(&uriObj);
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    uint32_t userId = 0;
-    if (CmIsNumeric(uriObj.user, strlen(uriObj.user) + 1, &userId) != CM_SUCCESS) {
-        CM_LOG_E("parse string to uint32 failed.");
-        (void)CertManagerFreeUri(&uriObj);
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
+    ret = CMR_ERROR_INVALID_ARGUMENT_URI;
+    do {
+        if (uriObj.user == NULL) {
+            CM_LOG_E("uri user invalid");
+            break;
+        }
+        uint32_t userId = 0;
+        if (CmIsNumeric(uriObj.user, strlen(uriObj.user) + 1, &userId) != CM_SUCCESS) {
+            CM_LOG_E("parse string to uint32 failed.");
+            break;
+        }
 
-    if (uriObj.app == NULL) {
-        CM_LOG_E("uri app invalid");
-        (void)CertManagerFreeUri(&uriObj);
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    uint32_t uid = 0;
-    if (CmIsNumeric(uriObj.app, strlen(uriObj.app) + 1, &uid) != CM_SUCCESS) {
-        CM_LOG_E("parse string to uint32 failed.");
-        (void)CertManagerFreeUri(&uriObj);
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
+        if (uriObj.app == NULL) {
+            CM_LOG_E("uri app invalid");
+            break;
+        }
+        uint32_t uid = 0;
+        if (CmIsNumeric(uriObj.app, strlen(uriObj.app) + 1, &uid) != CM_SUCCESS) {
+            CM_LOG_E("parse string to uint32 failed.");
+            break;
+        }
 
-    if ((context->userId == userId) && (context->uid == uid)) {
-        ret = CM_SUCCESS;
-    } else {
-        ret =  CMR_ERROR_INVALID_ARGUMENT;
-    }
+        if ((context->userId == userId) && (context->uid == uid)) {
+            ret = CM_SUCCESS;
+            break;
+        }
+
+        CM_LOG_E("userid(%u) or uid(%u) is mismatch, uri: userid(%u), uid(%u)", userId, uid);
+    } while (0);
 
     (void)CertManagerFreeUri(&uriObj);
     return ret;
@@ -880,7 +890,7 @@ int32_t CmRmUserCert(const char *usrCertConfigFilepath)
     size = CmFileRead(NULL, usrCertConfigFilepath, 0, usrCertBackupFilePath, CERT_MAX_PATH_LEN);
     if (size == 0) {
         CM_LOG_E("CmFileRead read size 0 invalid ,fail");
-        return CM_FAILURE;
+        return CMR_ERROR_READ_FILE_ERROR;
     }
 
     ret = CmFileRemove(NULL, (const char *)usrCertBackupFilePath);
@@ -906,7 +916,7 @@ int32_t CmUninstallUserCert(const struct CmContext *context, const struct CmBlob
 {
     if (CmCheckBlob(certUri) != CM_SUCCESS || CheckUri(certUri) != CM_SUCCESS) {
         CM_LOG_E("input params invalid");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     int32_t ret = CM_SUCCESS;
@@ -986,7 +996,7 @@ int32_t CmServiceSetCertStatus(const struct CmContext *context, const struct CmB
 {
     if (CmCheckBlob(certUri) != CM_SUCCESS || CheckUri(certUri) != CM_SUCCESS) {
         CM_LOG_E("input params invalid");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
     return SetcertStatus(context, certUri, store, status, NULL);
 }
@@ -1001,7 +1011,7 @@ int32_t CmSetStatusBackupCert(
         ret = IsCertNeedBackup(context->userId, context->uid, certUri, &needUpdate);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Check cert is need update failed, ret = %d", ret);
-            return CMR_ERROR_INVALID_OPERATION;
+            return ret;
         } else if (needUpdate == false) {
             /* No need to update */
             return CM_SUCCESS;

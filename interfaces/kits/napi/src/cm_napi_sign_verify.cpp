@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -810,6 +810,8 @@ static napi_value CMAbortAsyncWork(napi_env env, SignVerifyAsyncContext context)
 
 napi_value CMNapiInit(napi_env env, napi_callback_info info)
 {
+    CM_LOG_I("cm napi init enter");
+
     SignVerifyAsyncContext context = InitSignVerifyAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init cm init context failed");
@@ -830,11 +832,13 @@ napi_value CMNapiInit(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
+    CM_LOG_I("cm napi init end");
     return result;
 }
 
 napi_value CMNapiUpdate(napi_env env, napi_callback_info info)
 {
+    CM_LOG_I("cm napi update enter");
     SignVerifyAsyncContext context = InitSignVerifyAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init cm update context failed");
@@ -855,11 +859,13 @@ napi_value CMNapiUpdate(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
+    CM_LOG_I("cm napi update end");
     return result;
 }
 
 napi_value CMNapiFinish(napi_env env, napi_callback_info info)
 {
+    CM_LOG_I("cm napi finish enter");
     SignVerifyAsyncContext context = InitSignVerifyAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init cm finish context failed");
@@ -880,11 +886,13 @@ napi_value CMNapiFinish(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
+    CM_LOG_I("cm napi finish end");
     return result;
 }
 
 napi_value CMNapiAbort(napi_env env, napi_callback_info info)
 {
+    CM_LOG_I("cm napi abort enter");
     SignVerifyAsyncContext context = InitSignVerifyAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init cm abort context failed");
@@ -906,6 +914,7 @@ napi_value CMNapiAbort(napi_env env, napi_callback_info info)
     }
 
     return result;
+    CM_LOG_I("cm napi abort end");
 }
 }  // namespace CMNapi
 

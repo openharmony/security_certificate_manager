@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,28 +15,27 @@
 
 #include "cm_report_wrapper.h"
 
-#include "cm_log.h"
 #include "cm_type.h"
+#include "hisysevent_wrapper.h"
 
 static int32_t ReportFaultEvent(const char *funcName, const struct CmContext *cmContext,
     const char *name, int32_t errorCode)
 {
     struct EventValues eventValues = { cmContext->userId, cmContext->uid, name, errorCode };
-    int32_t ret = WriteEvent(funcName, &eventValues);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("ReportFaultEvent failed, ret = %d", ret);
-    }
-    return ret;
+    return WriteEvent(funcName, &eventValues);
 }
 
-static bool CheckCertName(const char *certName, uint32_t len)
+static bool CheckCertName(const struct CmBlob *certName)
 {
-    if ((len == 0) || (len > MAX_LEN_URI)) {
+    if (CmCheckBlob(certName) != CM_SUCCESS) {
+        return false;
+    }
+    if (certName->size > MAX_LEN_URI) {
         return false;
     }
 
-    for (uint32_t i = 1; i < len; ++i) { /* from index 1 has '\0' */
-        if (certName[i] == 0) {
+    for (uint32_t i = 1; i < certName->size; ++i) { /* from index 1 has '\0' */
+        if (certName->data[i] == 0) {
             return true;
         }
     }
@@ -50,13 +49,8 @@ void CmReport(const char *funcName, const struct CmContext *cmContext,
         return;
     }
 
-    if ((certName == NULL) || (certName->data == NULL)) {
+    if (!CheckCertName(certName)) {
         (void)ReportFaultEvent(funcName, cmContext, "NULL", errorCode);
-        return;
-    }
-
-    if (!CheckCertName((char *)certName->data, certName->size)) {
-        CM_LOG_E("certName is invalid");
         return;
     }
 

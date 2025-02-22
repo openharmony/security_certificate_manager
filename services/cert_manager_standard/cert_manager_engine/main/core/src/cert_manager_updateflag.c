@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -73,7 +73,7 @@ static int32_t GetUpdateFlag(uint8_t *updateFlag)
         *updateFlag = updateFlagTmp;
     } else {
         CM_LOG_E("Failed read UpdateFlag");
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_STORAGE;
     }
 
     return CM_SUCCESS;
@@ -116,7 +116,7 @@ int32_t IsCertNeedBackup(uint32_t userId, uint32_t uid, const struct CmBlob *cer
     ret = CmGetCertConfPath(userId, uid, certUri, configPath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Construct cert config configPath failed.");
-        return CMR_ERROR_INVALID_OPERATION;
+        return ret;
     }
 
     do {
@@ -167,14 +167,14 @@ int32_t CmReadCertData(uint32_t store, const struct CmContext *context, const st
 
     if (snprintf_s(uriStr, CERT_MAX_PATH_LEN, CERT_MAX_PATH_LEN - 1, "%.*s", certUri->size, certUri->data) < 0) {
         CM_LOG_E("Construct cert uri string failed.");
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_MEM_OPERATION_PRINT;
     }
 
     /* Reading certificate data */
     ret = CmStorageGetBuf(uidPath, uriStr, userCertData);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Failed to get certificate data");
-        return CM_FAILURE;
+        CM_LOG_E("Failed to get certificate data, ret = %d", ret);
+        return ret;
     }
 
     return CM_SUCCESS;
@@ -187,7 +187,7 @@ static int32_t ConvertCertDataToPem(const struct CmBlob *userCertData, const X50
         int32_t ret = CmX509ToPEM(userCertX509, userCertPemData);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmX509ToPEM fail");
-            return CM_FAILURE;
+            return ret;
         }
         *userCertPemDataNeedFree = true;
     } else {
@@ -210,27 +210,27 @@ int32_t CmConstructContextFromUri(const char *certUri, struct CmContext *context
     int32_t ret = CertManagerUriDecode(&cmUri, certUri);
     if ((ret != CM_SUCCESS)) {
         CM_LOG_E("Failed to decode struct CMUri from certUri, ret = %d", ret);
-        return CMR_ERROR_INVALID_OPERATION;
+        return ret;
     }
 
     do {
         if ((cmUri.user == NULL) || (cmUri.app == NULL) || (cmUri.object == NULL)) {
             CM_LOG_E("cmUri.user or cmUri.app or cmUri.object is NULL error");
-            ret = CMR_ERROR_INVALID_ARGUMENT;
+            ret = CMR_ERROR_INVALID_ARGUMENT_URI;
             break;
         }
 
         if (CmIsNumeric(cmUri.user, strlen(cmUri.user) + 1, &(context->userId)) != CM_SUCCESS ||
             CmIsNumeric(cmUri.app, strlen(cmUri.app) + 1, &(context->uid)) != CM_SUCCESS) {
             CM_LOG_E("parse string to uint32 failed.");
-            ret = CMR_ERROR_INVALID_ARGUMENT;
+            ret = CMR_ERROR_INVALID_ARGUMENT_URI;
             break;
         }
 
         if (snprintf_s(context->packageName, sizeof(context->packageName), sizeof(context->packageName) - 1, "%s",
             cmUri.object) < 0) {
             CM_LOG_E("Failed to fill context->packageName");
-            ret = CMR_ERROR_INVALID_ARGUMENT;
+            ret = CMR_ERROR_MEM_OPERATION_PRINT;
             break;
         }
     } while (0);
@@ -249,7 +249,7 @@ static int32_t BackupUserCert(const X509 *userCertX509, const struct CmBlob *use
     int32_t ret = CmGetCertConfPath(context->userId, context->uid, certUri, userCertConfigFilePath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmGetCertConfPath fail");
-        return CM_FAILURE;
+        return ret;
     }
 
     ret = CmRemoveBackupUserCert(context, certUri, userCertConfigFilePath);
@@ -260,18 +260,18 @@ static int32_t BackupUserCert(const X509 *userCertX509, const struct CmBlob *use
     ret = CmGetCertBackupFilePath(userCertX509, context->userId, userCertBackupFilePath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmGetCertBackupFilePath fail");
-        return CM_FAILURE;
+        return ret;
     }
     ret = CmGenerateSaConf(userCertConfigFilePath, NULL, userCertBackupFilePath);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("GenerateSaConf: save CertBackupFilePath fail");
-        return CM_FAILURE;
+        return ret;
     }
 
     ret = CmStoreUserCert(NULL, userCert, userCertBackupFilePath);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("StoreUserCert fail");
-        return CM_FAILURE;
+        return ret;
     }
 
     return CM_SUCCESS;
@@ -297,14 +297,12 @@ int32_t CmBackupUserCert(const struct CmContext *context, const struct CmBlob *c
         ret = ConvertCertDataToPem(certData, userCertX509, &certPemData, &certPemDataNeedFree);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("ConvertCertDataToPem fail");
-            ret = CM_FAILURE;
             break;
         }
 
         ret = BackupUserCert(userCertX509, (const struct CmBlob *)&certPemData, context, certUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("BackupUserCert fail");
-            ret = CM_FAILURE;
             break;
         }
     } while (0);
@@ -335,7 +333,7 @@ static int32_t UpdateUserCert(uint32_t userId, uint32_t uid, const char *certPat
     ret = IsCertNeedBackup(userId, uid, &certUri, &needUpdate);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Check cert is need update failed, ret = %d", ret);
-        return CMR_ERROR_INVALID_OPERATION;
+        return ret;
     } else if (needUpdate == false) {
         /* No need to update */
         return CM_SUCCESS;

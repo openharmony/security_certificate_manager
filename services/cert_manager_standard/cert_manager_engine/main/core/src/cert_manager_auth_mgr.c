@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -76,14 +76,14 @@ static int32_t HexStringToByte(const char *hexStr, uint8_t *byte, uint32_t byteL
     uint32_t realHexLen = strlen(hexStr);
     /* odd number or len too small */
     if ((realHexLen % BYTE_TO_HEX_OPER_LENGTH != 0) || (byteLen < realHexLen / BYTE_TO_HEX_OPER_LENGTH)) {
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     for (uint32_t i = 0; i < realHexLen / BYTE_TO_HEX_OPER_LENGTH; ++i) {
         uint8_t high = CharToHex(hexStr[i * BYTE_TO_HEX_OPER_LENGTH]);
         uint8_t low = CharToHex(hexStr[i * BYTE_TO_HEX_OPER_LENGTH + 1]);
         if ((high == OUT_OF_HEX) || (low == OUT_OF_HEX)) {
-            return CMR_ERROR_INVALID_ARGUMENT;
+            return CMR_ERROR_INVALID_ARGUMENT_URI;
         }
         byte[i] = high << 4; /* 4: Set the high nibble */
         byte[i] |= low; /* Set the low nibble */
@@ -102,7 +102,7 @@ static int32_t GetAndCheckUriObj(struct CMUri *uriObj, const struct CmBlob *uri,
     if ((uriObj->object == NULL) || (uriObj->user == NULL) || (uriObj->app == NULL) || (uriObj->type != type)) {
         CM_LOG_E("uri format invalid");
         (void)CertManagerFreeUri(uriObj);
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     return CM_SUCCESS;
@@ -116,7 +116,7 @@ static int32_t CheckCallerIsProducer(const struct CmContext *context, const stru
     if (CmIsNumeric(uriObj->user, strlen(uriObj->user) + 1, &userId) != CM_SUCCESS ||
         CmIsNumeric(uriObj->app, strlen(uriObj->app) + 1, &uid) != CM_SUCCESS) {
         CM_LOG_E("parse string to uint32 failed.");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     if ((userId == context->userId) && (uid == context->uid)) {
@@ -124,13 +124,13 @@ static int32_t CheckCallerIsProducer(const struct CmContext *context, const stru
         return CM_SUCCESS;
     }
 
-    return CMR_ERROR_PERMISSION_DENIED;
+    return CMR_ERROR_NOT_PERMITTED;
 }
 
 static int32_t UintToString(uint32_t input, char *out, uint32_t outLen)
 {
     if (snprintf_s(out, outLen, outLen - 1, "%u", input) < 0) {
-        return CMR_ERROR_INVALID_OPERATION;
+        return CMR_ERROR_MEM_OPERATION_PRINT;
     }
     return CM_SUCCESS;
 }
@@ -319,13 +319,13 @@ static int32_t GenerateAuthUri(const struct CMUri *uriObj, uint32_t clientUid,
         }
 
         if (authUri->size < tempAuthUri.size) {
-            CM_LOG_E("auth uri out size too small");
+            CM_LOG_E("auth uri out size[%u] too small, need at least[%u]", authUri->size, tempAuthUri.size);
             ret = CMR_ERROR_BUFFER_TOO_SMALL;
             break;
         }
         if (memcpy_s(authUri->data, authUri->size, tempAuthUri.data, tempAuthUri.size) != EOK) {
             CM_LOG_E("copy auth uri failed");
-            ret = CMR_ERROR_INVALID_OPERATION;
+            ret = CMR_ERROR_MEM_OPERATION_COPY;
             break;
         }
         authUri->size = tempAuthUri.size;
@@ -429,7 +429,7 @@ int32_t CmAuthGetAuthorizedAppList(const struct CmContext *context, const struct
             }
             if (memcpy_s(appUidList->appUid, appUidList->appUidCount * sizeof(uint32_t),
                 tempAppUidList.appUid, tempAppUidList.appUidCount * sizeof(uint32_t)) != EOK) {
-                ret = CMR_ERROR_INVALID_OPERATION;
+                ret = CMR_ERROR_MEM_OPERATION_COPY;
                 break;
             }
         }
@@ -447,7 +447,7 @@ static int32_t GetMacByteFromString(const char *macString, struct CmBlob *macByt
 {
     uint32_t size = strlen(macString) / BYTE_TO_HEX_OPER_LENGTH;
     if ((size == 0) || (size > MAX_OUT_BLOB_SIZE)) {
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     uint8_t *data = (uint8_t *)CMMalloc(size);
@@ -472,7 +472,7 @@ static int32_t CheckIsAuthorizedApp(const struct CMUri *uriObj, enum CmAuthStora
 {
     if ((uriObj->clientApp == NULL) || (uriObj->mac == NULL)) {
         CM_LOG_E("invalid input auth uri");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     struct CmBlob macByte = { 0, NULL };
@@ -489,20 +489,20 @@ static int32_t CheckIsAuthorizedApp(const struct CMUri *uriObj, enum CmAuthStora
     if (CmIsNumeric(uriObj->clientApp, strlen(uriObj->clientApp) + 1, &clientUid) != CM_SUCCESS) {
         CM_LOG_E("parse string to uint32 failed.");
         CM_FREE_PTR(macByte.data);
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     ret = CalcUriMac(uriObj, clientUid, &mac, false, level);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("calc uri mac failed, ret = %d", ret);
         CM_FREE_PTR(macByte.data);
-        return CMR_ERROR_AUTH_CHECK_FAILED;
+        return CMR_ERROR_AUTH_FAILED_MAC_FAILED;
     }
 
     if ((macByte.size != mac.size) || (memcmp(macByte.data, mac.data, macByte.size) != 0)) {
         CM_LOG_E("mac size[%u] invalid or mac check failed", macByte.size);
         CM_FREE_PTR(macByte.data);
-        return CMR_ERROR_AUTH_CHECK_FAILED;
+        return CMR_ERROR_AUTH_FAILED_MAC_MISMATCH;
     }
 
     CM_FREE_PTR(macByte.data);
@@ -754,18 +754,18 @@ static int32_t CheckCommonPermission(const struct CmContext *context, const stru
 
     if (uriObj->clientApp == NULL) {
         CM_LOG_E("invalid uri client app");
-        return CMR_ERROR_PERMISSION_DENIED;
+        return CMR_ERROR_NOT_PERMITTED;
     }
 
     uint32_t clientUid = 0;
     if (CmIsNumeric(uriObj->clientApp, strlen(uriObj->clientApp) + 1, &clientUid) != CM_SUCCESS) {
         CM_LOG_E("parse string to uint32 failed.");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
     if (clientUid != context->uid) {
         CM_LOG_E("caller uid not match client uid");
-        return CMR_ERROR_PERMISSION_DENIED;
+        return CMR_ERROR_NOT_PERMITTED;
     }
 
     CM_LOG_D("caller may be authed app, need check");

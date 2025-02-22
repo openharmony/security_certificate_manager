@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -214,6 +214,8 @@ napi_value GetCallingAppCertListAsyncWork(napi_env env, GetAppCertListAsyncConte
 
 napi_value CMNapiGetAppCertListCommon(napi_env env, napi_callback_info info, uint32_t store)
 {
+    CM_LOG_I("get app cert list enter, store = %u", store);
+
     GetAppCertListAsyncContext context = CreateGetAppCertListAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
@@ -234,11 +236,15 @@ napi_value CMNapiGetAppCertListCommon(napi_env env, napi_callback_info info, uin
         DeleteGetAppCertListAsyncContext(env, context);
         return nullptr;
     }
+
+    CM_LOG_I("get app cert list end");
     return result;
 }
 
 napi_value CMNapiGetCallingAppCertListCommon(napi_env env, napi_callback_info info, uint32_t store)
 {
+    CM_LOG_I("get calling app cert list enter");
+
     GetAppCertListAsyncContext context = CreateGetAppCertListAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
@@ -259,6 +265,8 @@ napi_value CMNapiGetCallingAppCertListCommon(napi_env env, napi_callback_info in
         DeleteGetAppCertListAsyncContext(env, context);
         return nullptr;
     }
+
+    CM_LOG_I("get calling app cert list end");
     return result;
 }
 }  // namespace CertManagerNapi
