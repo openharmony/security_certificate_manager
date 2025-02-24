@@ -73,7 +73,7 @@ static struct PropertyToHuks g_cmLevelProperty[] = {
 static int32_t AddUserIdParam(struct HksParamSet *paramSet, enum CmAuthStorageLevel level, const struct CmBlob *uri)
 {
     if (level == CM_AUTH_STORAGE_LEVEL_EL1) {
-        CM_LOG_I("level is el1");
+        CM_LOG_D("level is el1");
         return CM_SUCCESS;
     }
     struct CMUri uriObj;

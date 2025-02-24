@@ -154,11 +154,14 @@ CM_API_EXPORT int32_t CmGetAppCertList(const uint32_t store, struct CredentialLi
 
 CM_API_EXPORT int32_t CmCallingGetAppCertList(const uint32_t store, struct CredentialList *certificateList)
 {
+    CM_LOG_I("enter get calling app certificate");
     if (certificateList == NULL || CM_STORE_CHECK(store)) {
+        CM_LOG_E("invalid input arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     int32_t ret = CmClientGetCallingAppCertList(store, certificateList);
+    CM_LOG_I("leave get calling app certificate, result = %d", ret);
     return ret;
 }
 
@@ -167,6 +170,7 @@ CM_API_EXPORT int32_t CmGetAppCert(const struct CmBlob *keyUri, const uint32_t s
 {
     CM_LOG_I("enter get app certificate");
     if (keyUri == NULL || certificate == NULL || CM_STORE_CHECK(store)) {
+        CM_LOG_E("invalid input arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
