@@ -913,8 +913,8 @@ napi_value CMNapiAbort(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    return result;
     CM_LOG_I("cm napi abort end");
+    return result;
 }
 }  // namespace CMNapi
 
