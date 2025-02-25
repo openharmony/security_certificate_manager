@@ -504,7 +504,7 @@ int32_t CmDeleteProcessInfo(const struct CmContext *context)
     }
 
     /* Delete private credentail */
-    ret = CmTraversalDir(context, APP_CA_STORE, CM_PRI_CREDENTIAL_STORE);
+    ret = CmTraversalDir(context, PRI_CREDNTIAL_STORE, CM_PRI_CREDENTIAL_STORE);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmDeletePrivateCredential failed");
     }

@@ -101,7 +101,7 @@ static int32_t GetFilePath(const struct CmContext *context, uint32_t store, char
             ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", USER_CA_STORE, context->userId);
             break;
         case CM_PRI_CREDENTIAL_STORE:
-            ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", APP_CA_STORE, context->userId);
+            ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", PRI_CREDNTIAL_STORE, context->userId);
             break;
         case CM_SYS_CREDENTIAL_STORE:
             ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", SYS_CREDNTIAL_STORE, context->userId);
@@ -192,12 +192,38 @@ static int32_t FindObjectCert(const struct CmBlob *certUri, const struct CmMutab
     return CMR_ERROR_NOT_FOUND;
 }
 
+static int32_t GetGmSystemCaCertPath(struct CmMutableBlob *path)
+{
+    if ((path == NULL) || (path->data == NULL) || (path->size == 0)) {
+        CM_LOG_E("Null pointer failure");
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    /* get gm system ca cert path */
+    char *pathStr = (char *)path->data;
+    if (sprintf_s(pathStr, path->size, "%s", SYSTEM_CA_STORE_GM) < 0) {
+        CM_LOG_E("sprintf gm system ca path failed");
+        return CMR_ERROR_MEM_OPERATION_PRINT;
+    }
+
+    path->size = strlen(pathStr) + 1;
+    return CM_SUCCESS;
+}
+
 int32_t CertManagerFindCertFileNameByUri(const struct CmContext *context, const struct CmBlob *certUri,
-    uint32_t store, struct CmMutableBlob *path)
+    uint32_t store, bool isGmSysCert, struct CmMutableBlob *path)
 {
     ASSERT_ARGS(context && certUri && certUri->data);
 
-    int32_t ret = CmGetFilePath(context, store, path);
+    int32_t ret;
+    if (!isGmSysCert) {
+        ret = CmGetFilePath(context, store, path);
+    } else {
+        if (CmIsDirExist(SYSTEM_CA_STORE_GM) != CM_SUCCESS) {
+            return CMR_ERROR_NOT_FOUND;
+        }
+        ret = GetGmSystemCaCertPath(path);
+    }
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed obtain path for store %x\n", store);
         return ret;
@@ -287,7 +313,7 @@ static int32_t CmAppCertGetFilePath(const struct CmContext *context, const uint3
             ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u/%u", CREDNTIAL_STORE, context->userId, context->uid);
             break;
         case CM_PRI_CREDENTIAL_STORE :
-            ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u", APP_CA_STORE, context->userId);
+            ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u", PRI_CREDNTIAL_STORE, context->userId);
             break;
         case CM_SYS_CREDENTIAL_STORE:
             ret = sprintf_s((char *)path->data, MAX_PATH_LEN, "%s%u", SYS_CREDNTIAL_STORE, context->userId);
@@ -315,7 +341,7 @@ static int32_t CmCallingAppCertGetFilePath(const struct CmContext *context, cons
             break;
         case CM_PRI_CREDENTIAL_STORE :
             ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u/%u",
-                APP_CA_STORE, context->userId, context->uid);
+                PRI_CREDNTIAL_STORE, context->userId, context->uid);
             break;
         case CM_SYS_CREDENTIAL_STORE:
             ret = sprintf_s((char *)path->data, MAX_PATH_LEN, "%s%u/%u",
