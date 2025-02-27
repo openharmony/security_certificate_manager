@@ -157,9 +157,19 @@ int32_t CmGetCertPathList(const struct CmContext *context, uint32_t store, struc
     return CM_SUCCESS;
 }
 
+static int32_t GetSysCertPathCount(void)
+{
+    if (CmIsDirExist(SYSTEM_CA_STORE_GM) == CM_SUCCESS) {
+        CM_LOG_D("exist gm system ca store path.");
+        return SYSTEM_CA_PATH_COUNT_2;
+    }
+
+    return SYSTEM_CA_PATH_COUNT_1;
+}
+
 int32_t CmGetSysCertPathList(const struct CmContext *context, struct CmMutableBlob *pathList)
 {
-    uint32_t sysPathCnt = 1; /* system root ca path only have one layer */
+    uint32_t sysPathCnt = GetSysCertPathCount();
     uint32_t listSize = sizeof(struct CmMutableBlob) * sysPathCnt;
     struct CmMutableBlob *cPathList = (struct CmMutableBlob *)CMMalloc(listSize);
     if (cPathList == NULL) {
@@ -168,22 +178,43 @@ int32_t CmGetSysCertPathList(const struct CmContext *context, struct CmMutableBl
     }
     (void)memset_s(cPathList, listSize, 0, listSize);
 
-    int32_t ret = MallocCertPath(&cPathList[0], SYSTEM_CA_STORE);
+    int32_t ret;
+    do {
+        ret = MallocCertPath(&cPathList[SYSTEM_CA_PATH_INDEX], SYSTEM_CA_STORE);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("malloc cPathList[0] failed");
+            break;
+        }
+
+        if (sprintf_s((char *)cPathList[SYSTEM_CA_PATH_INDEX].data, cPathList[SYSTEM_CA_PATH_INDEX].size,
+            "%s", SYSTEM_CA_STORE) < 0) {
+            CM_LOG_E("sprintf_s path failed");
+            ret = CMR_ERROR_MEM_OPERATION_PRINT;
+            break;
+        }
+
+        if (sysPathCnt == SYSTEM_CA_PATH_COUNT_2) { /* has gm system ca store path */
+            ret = MallocCertPath(&cPathList[SYSTEM_CA_GM_PATH_INDEX], SYSTEM_CA_STORE_GM);
+            if (ret != CM_SUCCESS) {
+                CM_LOG_E("malloc cPathList[1] failed");
+                break;
+            }
+
+            if (sprintf_s((char *)cPathList[SYSTEM_CA_GM_PATH_INDEX].data, cPathList[SYSTEM_CA_GM_PATH_INDEX].size,
+                "%s", SYSTEM_CA_STORE_GM) < 0) {
+                CM_LOG_E("sprintf_s path failed");
+                ret = CMR_ERROR_MEM_OPERATION_PRINT;
+                break;
+            }
+        }
+    } while (0);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("malloc cPathList[0] failed");
         CmFreePathList(cPathList, sysPathCnt);
         return ret;
     }
 
-    if (sprintf_s((char *)cPathList[0].data, cPathList[0].size, "%s", SYSTEM_CA_STORE) < 0) {
-        CM_LOG_E("sprintf_s path failed");
-        CmFreePathList(cPathList, sysPathCnt);
-        return CMR_ERROR_MEM_OPERATION_PRINT;
-    }
-
     pathList->data = (uint8_t *)cPathList;
     pathList->size = sysPathCnt;
-
     return CM_SUCCESS;
 }
 
@@ -477,7 +508,7 @@ static int32_t GetCertContext(const struct CmBlob *fileName, struct CmContext *c
         certContext->uid = context->uid;
         return CM_SUCCESS;
     }
-    
+
     struct CMUri uriObj;
     int32_t ret = CertManagerUriDecode(&uriObj, (char *)fileName->data);
     if (ret != CM_SUCCESS) {
@@ -494,7 +525,7 @@ static int32_t GetCertContext(const struct CmBlob *fileName, struct CmContext *c
         return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
     (void)CertManagerFreeUri(&uriObj);
-    
+
     certContext->userId = userId;
     certContext->uid = uid;
     return CM_SUCCESS;

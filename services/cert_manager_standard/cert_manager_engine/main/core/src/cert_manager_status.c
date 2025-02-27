@@ -804,10 +804,24 @@ int32_t SetcertStatus(const struct CmContext *context, const struct CmBlob *cert
     char pathBuf[CERT_MAX_PATH_LEN] = {0};
     struct CmMutableBlob path = { sizeof(pathBuf), (uint8_t *) pathBuf };
     struct CertFile certFile = { 0, 0 };
-    int32_t ret = CertManagerFindCertFileNameByUri(context, certUri, store, &path);
+    int32_t ret = CertManagerFindCertFileNameByUri(context, certUri, store, false, &path);
     if (ret != CMR_OK) {
+        /*
+         * If the store type is not CM_SYSTEM_TRUSTED_STORE, ret is returned.
+         * Otherwise, try to obtain the gm system ca path.
+         */
         CM_LOG_E("CertManagerFindCertFileNameByUri error = %d", ret);
-        return ret;
+        if (store != CM_SYSTEM_TRUSTED_STORE) {
+            return ret;
+        }
+
+        path.size = sizeof(pathBuf); /* clear path data and size */
+        (void)memset_s(path.data, path.size, 0, path.size);
+        ret = CertManagerFindCertFileNameByUri(context, certUri, store, true, &path);
+        if (ret != CMR_OK) {
+            CM_LOG_E("CertManagerFindCertFileNameByUri gm system ca error = %d", ret);
+            return ret;
+        }
     }
     certFile.path = &(CM_BLOB(&path));
     certFile.fileName = &(CM_BLOB(certUri));
