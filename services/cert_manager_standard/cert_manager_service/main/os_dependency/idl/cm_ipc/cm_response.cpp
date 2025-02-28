@@ -38,7 +38,7 @@ static bool IsBetween(int32_t result, int32_t resultBegin, int32_t resultEnd)
     return false;
 }
 
-int32_t ConvertErrorCode(int32_t result)
+static int32_t ConvertErrorCode(int32_t result)
 {
     if (IsBetween(result, CMR_ERROR_INVALID_ARGUMENT_BEGIN, CMR_ERROR_INVALID_ARGUMENT_END)) {
         return CMR_ERROR_INVALID_ARGUMENT;
