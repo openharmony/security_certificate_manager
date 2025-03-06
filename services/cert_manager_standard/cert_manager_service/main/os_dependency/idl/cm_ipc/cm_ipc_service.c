@@ -316,15 +316,19 @@ void CmIpcServiceUninstallAllAppCert(const struct CmBlob *paramSetBlob, struct C
     int32_t ret = CM_SUCCESS;
     struct CmContext cmContext = {0};
 
-    ret = CmGetProcessInfoForIPC(&cmContext);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("CmGetProcessInfoForIPC fail, ret = %d", ret);
-    }
+    do {
+        ret = CmGetProcessInfoForIPC(&cmContext);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmGetProcessInfoForIPC fail, ret = %d", ret);
+            break;
+        }
 
-    ret = CmRemoveAllAppCert(&cmContext);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("CmRemoveAllAppCert fail");
-    }
+        ret = CmRemoveAllAppCert(&cmContext);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmRemoveAllAppCert fail");
+            break;
+        }
+    } while (0);
 
     CmReport(__func__, &cmContext, NULL, ret);
     CmSendResponse(context, ret, NULL);
