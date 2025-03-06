@@ -870,7 +870,7 @@ static int32_t CmComparisonCallerIdWithUri(const struct CmContext *context,
             break;
         }
 
-        CM_LOG_E("userid(%u) or uid(%u) is mismatch, uri: userid(%u), uid(%u)", userId, uid);
+        CM_LOG_E("userid(%u)/uid(%u) mismatch, uri: userid(%u)/uid(%u)", context->userId, context->uid, userId, uid);
     } while (0);
 
     (void)CertManagerFreeUri(&uriObj);
