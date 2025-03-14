@@ -47,6 +47,7 @@ group("fuzztest") {
       "./cmipcservicegetappcert_fuzzer:fuzztest",
       "./cmipcservicegetappcertlist_fuzzer:fuzztest",
       "./cmipcservicegetauthorizedapplist_fuzzer:fuzztest",
+      "./cmipcservicegetcallingappcertlist_fuzzer:fuzztest",
       "./cmipcservicegetcertificateinfo_fuzzer:fuzztest",
       "./cmipcservicegetcertificatelist_fuzzer:fuzztest",
       "./cmipcservicegetusercertinfo_fuzzer:fuzztest",
