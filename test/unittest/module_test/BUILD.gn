@@ -14,7 +14,7 @@
 import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/test.gni")
 
-module_output_path = "certificate_manager/certificate_manager"
+module_output_path = "cert_manager_standard/cert_manager_standard_test"
 
 ohos_unittest("cm_module_test") {
   module_out_path = module_output_path
