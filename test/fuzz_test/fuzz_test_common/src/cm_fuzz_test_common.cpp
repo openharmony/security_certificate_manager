@@ -210,6 +210,12 @@ constexpr struct CmFuzzerCodeParams g_codeParams[] = {
             { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = 0 },
         }
     },
+    {   CM_MSG_GET_CALLING_APP_CERTIFICATE_LIST,
+        PARAM_COUNT_ONE,
+        {
+            { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = 0 },
+        }
+    },
     {   CM_MSG_GET_APP_CERTIFICATE,
         PARAM_COUNT_TWO,
         {
