@@ -169,7 +169,7 @@ static int32_t GetKeyAlias(struct HksBlob *keyAlias, struct CmBlob *encodeTarget
 static uint32_t TranslateToHuksLevel(enum CmAuthStorageLevel level)
 {
     uint32_t res = HKS_AUTH_STORAGE_LEVEL_DE;
-    for (int i = 0; i < CM_ARRAY_SIZE(g_cmLevelProperty); ++i) {
+    for (uint32_t i = 0; i < CM_ARRAY_SIZE(g_cmLevelProperty); ++i) {
         if (level == g_cmLevelProperty[i].cmProperty) {
             res = (uint32_t)g_cmLevelProperty[i].huksProperty;
         }
