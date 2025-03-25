@@ -220,7 +220,7 @@ static int32_t GetDisplayName(X509 *x509cert, const struct CmBlob *certAlias,
 }
 
 int32_t GetSubjectNameAndAlias(X509 *x509cert, const struct CmBlob *certAlias,
-    struct CmBlob *subjectName, struct CmBlob *displaytName)
+    struct CmBlob *subjectName, struct CmBlob *displayName)
 {
     if ((x509cert == NULL) || (CmCheckBlob(certAlias) != CM_SUCCESS) ||
         (subjectName == NULL) || (displaytName == NULL)) {
