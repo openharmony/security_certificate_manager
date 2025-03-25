@@ -120,7 +120,7 @@ static int EncodeStatus(RbTreeValue value, uint8_t *buf, uint32_t *size)
 
     struct CertStatus *cs = (struct CertStatus *) value;
     if (cs == NULL) {
-        CM_LOG_E("Unexpectef NULL value.\n");
+        CM_LOG_E("Unexpected NULL value.\n");
         return CMR_ERROR;
     }
 
