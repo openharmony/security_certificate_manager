@@ -83,6 +83,9 @@
               ],
               "header_base": "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main/include"
             }
+          },
+          {
+            "name": "//base/security/certificate_manager/interfaces/kits/cj:cj_cert_manager_ffi"
           }
         ],
         "test": [
