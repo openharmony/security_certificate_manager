@@ -38,7 +38,7 @@ static int32_t CmGetAppCertChain(X509 *cert, STACK_OF(X509) *caCert, struct AppC
     do {
         out = BIO_new(BIO_s_mem());
         if (out == NULL) {
-            CM_LOG_E("BIO_new_mem_buf faild");
+            CM_LOG_E("BIO_new_mem_buf failed");
             ret = CMR_ERROR_OPENSSL_FAIL;
             break;
         }
@@ -53,7 +53,7 @@ static int32_t CmGetAppCertChain(X509 *cert, STACK_OF(X509) *caCert, struct AppC
         for (int32_t i = 0; i < sk_X509_num(caCert); i++) {
             xCert = sk_X509_value(caCert, i);
             if (PEM_write_bio_X509(out, xCert) == 0) {
-                CM_LOG_E("Copy app ca cert to bio faild");
+                CM_LOG_E("Copy app ca cert to bio failed");
                 ret = CMR_ERROR_OPENSSL_FAIL;
                 break;
             }
