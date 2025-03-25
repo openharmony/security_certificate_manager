@@ -496,7 +496,7 @@ int32_t CmBackupAllSaUserCerts(void)
     /* Set the Update flag */
     ret = SetUpdateFlag(ALREADY_UPDATE);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("GetUpdateFlag failed");
+        CM_LOG_E("SetUpdateFlag failed");
         return ret;
     }
 
