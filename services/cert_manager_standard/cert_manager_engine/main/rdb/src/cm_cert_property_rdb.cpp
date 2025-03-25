@@ -214,7 +214,7 @@ static int32_t GetCertProperty(const std::shared_ptr<NativeRdb::AbsSharedResultS
     int32_t level;
     ret = GetIntValue(resultSet, COLUMN_AUTH_STORAGE_LEVEL, level);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Failed to get uid");
+        CM_LOG_E("Failed to get level");
         return ret;
     }
     certProperty->level = (enum CmAuthStorageLevel)level;
