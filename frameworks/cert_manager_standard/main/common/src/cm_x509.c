@@ -137,9 +137,9 @@ static int32_t GetX509IssueName(const X509 *x509cert, const char *issuerObjName,
     return ToStringName(X509_get_issuer_name, x509cert, issuerObjName, outBuf, outBufMaxSize);
 }
 
-static int32_t GetX509FirstSubjectName(const X509 *x509cert, struct CmBlob *displaytName)
+static int32_t GetX509FirstSubjectName(const X509 *x509cert, struct CmBlob *displayName)
 {
-    char *outBuf = (char *)displaytName->data;
+    char *outBuf = (char *)displayName->data;
     const char *subjectNameList[] = {CM_COMMON_NAME, CM_ORGANIZATION_UNIT_NAME, CM_ORGANIZATION_NAME};
     uint32_t sizeList = sizeof(subjectNameList) / sizeof(subjectNameList[0]);
     for (uint32_t j = 0; j < sizeList; ++j) {
@@ -148,25 +148,25 @@ static int32_t GetX509FirstSubjectName(const X509 *x509cert, struct CmBlob *disp
         length = GetX509SubjectName(x509cert, subjectNameList[j], subjectName, NAME_MAX_SIZE);
         if (length < 0) {
             return CMR_ERROR_INVALID_CERT_FORMAT;
-        } else if ((uint32_t)length >= displaytName->size) {
+        } else if ((uint32_t)length >= displayName->size) {
             return CMR_ERROR_BUFFER_TOO_SMALL;
         }
         if (strlen(subjectName) > 0) {
-            if (strncpy_s(outBuf, displaytName->size, subjectName, strlen(subjectName)) != EOK) {
+            if (strncpy_s(outBuf, displayName->size, subjectName, strlen(subjectName)) != EOK) {
                 return CMR_ERROR_MEM_OPERATION_COPY;
             }
             outBuf[length] = '\0';
-            displaytName->size = (uint32_t)(length + 1);
+            displayName->size = (uint32_t)(length + 1);
             break;
         }
     }
     return CM_SUCCESS;
 }
 
-static int32_t GetX509FirstSubjectProp(const X509 *x509cert, struct CmBlob *displaytName)
+static int32_t GetX509FirstSubjectProp(const X509 *x509cert, struct CmBlob *displayName)
 {
     int32_t length = 0;
-    char *outBuf = (char *)displaytName->data;
+    char *outBuf = (char *)displayName->data;
     X509_NAME *name = X509_get_subject_name(x509cert);
     if (name == NULL) {
         CM_LOG_E("X509_get_subject_name get name faild");
@@ -177,53 +177,53 @@ static int32_t GetX509FirstSubjectProp(const X509 *x509cert, struct CmBlob *disp
     length = ASN1_STRING_to_UTF8((unsigned char **)&data, X509_NAME_ENTRY_get_data(entry));
     if (length < 0) {
         return CMR_ERROR_INVALID_CERT_FORMAT;
-    } else if ((uint32_t)length >= displaytName->size) {
+    } else if ((uint32_t)length >= displayName->size) {
         OPENSSL_free(data);
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
-    if (strncpy_s(outBuf, displaytName->size, data, length) != EOK) {
+    if (strncpy_s(outBuf, displayName->size, data, length) != EOK) {
         OPENSSL_free(data);
         return CMR_ERROR_MEM_OPERATION_COPY;
     }
     outBuf[length] = '\0';
-    displaytName->size = (uint32_t)(length + 1);
+    displayName->size = (uint32_t)(length + 1);
     OPENSSL_free(data);
     return CM_SUCCESS;
 }
 
 static int32_t GetDisplayName(X509 *x509cert, const struct CmBlob *certAlias,
-    const char *subjectName, struct CmBlob *displaytName)
+    const char *subjectName, struct CmBlob *displayName)
 {
     int32_t ret = CM_SUCCESS;
     if (strcmp("", (char *)certAlias->data) == 0) {
         if (strcmp(CM_SUBJECT_NAME_NULL, subjectName) == 0) {
-            ret = GetX509FirstSubjectProp(x509cert, displaytName);
+            ret = GetX509FirstSubjectProp(x509cert, displayName);
             if (ret != CM_SUCCESS) {
                 CM_LOG_E("GetX509FirstSubjectProp failed");
                 return ret;
             }
         } else {
-            ret = GetX509FirstSubjectName(x509cert, displaytName);
+            ret = GetX509FirstSubjectName(x509cert, displayName);
             if (ret != CM_SUCCESS) {
                 CM_LOG_E("GetX509FirstSubjectName failed");
                 return ret;
             }
         }
     } else {
-        if (memcpy_s(displaytName->data, displaytName->size, certAlias->data, certAlias->size) != EOK) {
+        if (memcpy_s(displayName->data, displayName->size, certAlias->data, certAlias->size) != EOK) {
             CM_LOG_E("copy displayname failed");
             return CMR_ERROR_MEM_OPERATION_COPY;
         }
-        displaytName->size = certAlias->size;
+        displayName->size = certAlias->size;
     }
     return ret;
 }
 
 int32_t GetSubjectNameAndAlias(X509 *x509cert, const struct CmBlob *certAlias,
-    struct CmBlob *subjectName, struct CmBlob *displaytName)
+    struct CmBlob *subjectName, struct CmBlob *displayName)
 {
     if ((x509cert == NULL) || (CmCheckBlob(certAlias) != CM_SUCCESS) ||
-        (subjectName == NULL) || (displaytName == NULL)) {
+        (subjectName == NULL) || (displayName == NULL)) {
         CM_LOG_E("input param is invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -235,7 +235,7 @@ int32_t GetSubjectNameAndAlias(X509 *x509cert, const struct CmBlob *certAlias,
     }
     subjectName->size = (uint32_t)subjectLen + 1;
 
-    int32_t ret = GetDisplayName(x509cert, certAlias, (char *)subjectName->data, displaytName);
+    int32_t ret = GetDisplayName(x509cert, certAlias, (char *)subjectName->data, displayName);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("GetDisplayName failed");
         return ret;

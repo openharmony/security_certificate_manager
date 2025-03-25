@@ -65,7 +65,7 @@ int32_t GetX509SubjectName(const X509 *x509cert, const char *subjectObjName, cha
 int32_t GetX509SubjectNameLongFormat(const X509 *x509cert, char *outBuf, uint32_t outBufMaxSize);
 
 int32_t GetSubjectNameAndAlias(X509 *x509cert, const struct CmBlob *certAlias,
-    struct CmBlob *subjectName, struct CmBlob *displaytName);
+    struct CmBlob *subjectName, struct CmBlob *displayName);
 
 int32_t GetX509IssueNameLongFormat(const X509 *x509cert, char* outBuf, uint32_t outBufMaxSize);
 
