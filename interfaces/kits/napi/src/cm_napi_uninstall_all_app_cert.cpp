@@ -38,7 +38,7 @@ struct UninstallAllAppCertAsyncContextT {
 };
 using UninstallAllAppCertAsyncContext = UninstallAllAppCertAsyncContextT *;
 
-static UninstallAllAppCertAsyncContext CreateUinstallAllAppCertAsyncContext()
+static UninstallAllAppCertAsyncContext CreateUninstallAllAppCertAsyncContext()
 {
     UninstallAllAppCertAsyncContext context =
         static_cast<UninstallAllAppCertAsyncContext>(CmMalloc(sizeof(UninstallAllAppCertAsyncContextT)));
@@ -139,7 +139,7 @@ napi_value CMNapiUninstallAllAppCert(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("uninstall all app cert enter");
 
-    UninstallAllAppCertAsyncContext context = CreateUinstallAllAppCertAsyncContext();
+    UninstallAllAppCertAsyncContext context = CreateUninstallAllAppCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
         return nullptr;
