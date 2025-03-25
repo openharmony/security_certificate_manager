@@ -26,7 +26,6 @@
 #include "sg_collect_client.h"
 #include "accesstoken_kit.h"
 #include "hap_token_info.h"
-#include "ipc_skeleton.h"
 
 #define CM_INFO_JSON_MAX_LEN 512
 #define SG_JSON_MAX_LEN 1024

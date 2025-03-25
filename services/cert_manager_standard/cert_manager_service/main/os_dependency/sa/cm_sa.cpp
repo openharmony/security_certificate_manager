@@ -29,7 +29,6 @@
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_ipc_service.h"
-#include "ipc_skeleton.h"
 #include "cert_manager_updateflag.h"
 #include "cm_report_wrapper.h"
 #include "cm_response.h"
