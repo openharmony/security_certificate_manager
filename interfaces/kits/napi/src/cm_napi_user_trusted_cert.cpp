@@ -517,14 +517,14 @@ napi_value CMNapiInstallUserTrustedCertSync(napi_env env, napi_callback_info inf
         }
     } while (0);
 
+    FreeCmBlob(userCert);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("install user cert sync failed, ret = %d", ret);
         napi_throw(env, GenerateBusinessError(env, ret));
         return nullptr;
     }
+    
     napi_value result = ConvertResultCertUri(env, &certUri);
-    FreeCmBlob(userCert);
-
     CM_LOG_I("install user trusted cert sync end");
     return result;
 }
