@@ -66,6 +66,7 @@ napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store);
 napi_value ParseBoolean(napi_env env, napi_value object, bool &status);
 napi_value ParseCertAlias(napi_env env, napi_value napiObj, CmBlob *&certAlias);
 napi_value ParseString(napi_env env, napi_value object, CmBlob *&stringBlob);
+napi_value ParsePasswd(napi_env env, napi_value object, CmBlob *&stringBlob);
 napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob);
 
 napi_ref GetCallback(napi_env env, napi_value object);

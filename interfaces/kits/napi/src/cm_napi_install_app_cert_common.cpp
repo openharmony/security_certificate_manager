@@ -126,7 +126,7 @@ napi_value InstallAppCertParseParams(
     }
 
     index++;
-    result = ParseString(env, argv[index], context->keystorePwd);
+    result = ParsePasswd(env, argv[index], context->keystorePwd);
     if (result == nullptr) {
         ThrowError(env, PARAM_ERROR, "keystore Pwd is not a string or the length is 0 or too long.");
         CM_LOG_E("could not get keystore Pwd");
