@@ -134,7 +134,7 @@ static int32_t CmCheckAppCertPwd(const struct CmBlob *appCertPwd)
         return CMR_ERROR_INVALID_ARGUMENT_APP_PWD;
     }
 
-    for (uint32_t i = 0; i < appCertPwd->size; i++) { /* from index 1 has '\0' */
+    for (uint32_t i = 0; i < appCertPwd->size; i++) { /* from index 0 has '\0' */
         if (appCertPwd->data[i] == 0) {
             return CM_SUCCESS;
         }
