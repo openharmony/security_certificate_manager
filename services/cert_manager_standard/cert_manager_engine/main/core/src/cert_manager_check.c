@@ -134,11 +134,12 @@ static int32_t CmCheckAppCertPwd(const struct CmBlob *appCertPwd)
         return CMR_ERROR_INVALID_ARGUMENT_APP_PWD;
     }
 
-    if (CheckUri(appCertPwd) != CM_SUCCESS) {
-        CM_LOG_E("appCertPwd data check fail");
-        return CMR_ERROR_INVALID_ARGUMENT_APP_PWD;
+    for (uint32_t i = 0; i < appCertPwd->size; i++) { /* from index 0 has '\0' */
+        if (appCertPwd->data[i] == 0) {
+            return CM_SUCCESS;
+        }
     }
-    return CM_SUCCESS;
+    return CMR_ERROR_INVALID_ARGUMENT;
 }
 
 static bool AppCertCheckBlobValid(const struct CmBlob *data)
