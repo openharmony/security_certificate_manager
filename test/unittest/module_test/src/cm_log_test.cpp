@@ -345,10 +345,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest014, TestSize.Level0)
 
     /* get certCount failed */
     struct CertInfoLen infoLen = { false, 0, false, 0, false, 0, false, 0, false, 0 };
-    if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
-        return;
-    }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
+    int32_t ret = ConstructBuf(&infoLen, &outData);
+    ASSERT_EQ(ret, CM_SUCCESS);
+
+    ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -368,10 +368,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest015, TestSize.Level0)
 
     /* certCount invalid */
     struct CertInfoLen infoLen = { true, certificateList.certsCount + 1, false, 0, false, 0, false, 0, false, 0 };
-    if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
-        return;
-    }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
+    int32_t ret = ConstructBuf(&infoLen, &outData);
+    ASSERT_EQ(ret, CM_SUCCESS);
+
+    ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -391,10 +391,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest016, TestSize.Level0)
 
     /* get subjectNameLen failed */
     struct CertInfoLen infoLen = { true, certificateList.certsCount, false, 0, false, 0, false, 0, false, 0 };
-    if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
-        return;
-    }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
+    int32_t ret = ConstructBuf(&infoLen, &outData);
+    ASSERT_EQ(ret, CM_SUCCESS);
+
+    ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -416,10 +416,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest017, TestSize.Level0)
     struct CertInfoLen infoLen = {
         true, certificateList.certsCount, true, MAX_LEN_SUBJECT_NAME + 1, false, 0, false, 0, false, 0
     };
-    if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
-        return;
-    }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
+    int32_t ret = ConstructBuf(&infoLen, &outData);
+    ASSERT_EQ(ret, CM_SUCCESS);
+
+    ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -441,10 +441,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest018, TestSize.Level0)
     struct CertInfoLen infoLen = {
         true, certificateList.certsCount, true, MAX_LEN_SUBJECT_NAME, false, 0, false, 0, false, 0
     };
-    if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
-        return;
-    }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
+    int32_t ret = ConstructBuf(&infoLen, &outData);
+    ASSERT_EQ(ret, CM_SUCCESS);
+
+    ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -466,11 +466,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest019, TestSize.Level0)
     struct CertInfoLen infoLen = {
         true, certificateList.certsCount, true, MAX_LEN_SUBJECT_NAME, true, 0, false, 0, false, 0
     };
-    if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
-        return;
-    }
+    int32_t ret = ConstructBuf(&infoLen, &outData);
+    ASSERT_EQ(ret, CM_SUCCESS);
 
-    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
+    ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -492,10 +491,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest020, TestSize.Level0)
     struct CertInfoLen infoLen = {
         true, certificateList.certsCount, true, MAX_LEN_SUBJECT_NAME, true, 0, true, MAX_LEN_URI + 1, false, 0
     };
-    if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
-        return;
-    }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
+    int32_t ret = ConstructBuf(&infoLen, &outData);
+    ASSERT_EQ(ret, CM_SUCCESS);
+
+    ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -517,10 +516,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest021, TestSize.Level0)
     struct CertInfoLen infoLen = {
         true, certificateList.certsCount, true, MAX_LEN_SUBJECT_NAME, true, 0, true, MAX_LEN_URI, false, 0
     };
-    if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
-        return;
-    }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
+    int32_t ret = ConstructBuf(&infoLen, &outData);
+    ASSERT_EQ(ret, CM_SUCCESS);
+
+    ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -542,10 +541,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest022, TestSize.Level0)
     struct CertInfoLen infoLen = {
         true, 1, true, MAX_LEN_SUBJECT_NAME, true, 0, true, MAX_LEN_URI, true, MAX_LEN_CERT_ALIAS + 1
     };
-    if (ConstructBuf(&infoLen, &outData) != CM_SUCCESS) {
-        return;
-    }
-    int32_t ret = CmCertificateListUnpackFromService(&outData, &certificateList);
+    int32_t ret = ConstructBuf(&infoLen, &outData);
+    ASSERT_EQ(ret, CM_SUCCESS);
+
+    ret = CmCertificateListUnpackFromService(&outData, &certificateList);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -695,11 +694,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest028, TestSize.Level0)
     uint8_t outDataBuf[DEFAULT_SIZE] = {0};
     struct CmBlob outData = { sizeof(outDataBuf), outDataBuf };
     struct CertInfoLen infoLen = { false, 0, false, 0, false, 0, false, 0, false, 0 }; /* get status failed */
-    if (ConstructCertBuf(&infoLen, &outData) != CM_SUCCESS) {
-        return;
-    }
+    int32_t ret = ConstructCertBuf(&infoLen, &outData);
+    ASSERT_EQ(ret, CM_SUCCESS);
 
-    int32_t ret = CmCertificateInfoUnpackFromService(&outData, &certUri, &certInfoStr);
+    ret = CmCertificateInfoUnpackFromService(&outData, &certUri, &certInfoStr);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -724,11 +722,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest029, TestSize.Level0)
     uint8_t outDataBuf[DEFAULT_SIZE] = {0};
     struct CmBlob outData = { sizeof(outDataBuf), outDataBuf };
     struct CertInfoLen infoLen = { false, 0, false, 0, true, 0, false, 0, false, 0 }; /* get certAliasLen failed */
-    if (ConstructCertBuf(&infoLen, &outData) != CM_SUCCESS) {
-        return;
-    }
+    int32_t ret = ConstructCertBuf(&infoLen, &outData);
+    ASSERT_EQ(ret, CM_SUCCESS);
 
-    int32_t ret = CmCertificateInfoUnpackFromService(&outData, &certUri, &certInfoStr);
+    ret = CmCertificateInfoUnpackFromService(&outData, &certUri, &certInfoStr);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -755,11 +752,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest030, TestSize.Level0)
 
     /* certAlias len invalid */
     struct CertInfoLen infoLen = { false, 0, false, 0, true, 0, false, 0, true, MAX_LEN_CERT_ALIAS + 1 };
-    if (ConstructCertBuf(&infoLen, &outData) != CM_SUCCESS) {
-        return;
-    }
+    int32_t ret = ConstructCertBuf(&infoLen, &outData);
+    ASSERT_EQ(ret, CM_SUCCESS);
 
-    int32_t ret = CmCertificateInfoUnpackFromService(&outData, &certUri, &certInfoStr);
+    ret = CmCertificateInfoUnpackFromService(&outData, &certUri, &certInfoStr);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 
@@ -784,11 +780,10 @@ HWTEST_F(CmLogTest, CmIpcClientTest031, TestSize.Level0)
     uint8_t outDataBuf[DEFAULT_SIZE] = {0};
     struct CmBlob outData = { sizeof(outDataBuf), outDataBuf };
     struct CertInfoLen infoLen = { false, 0, false, 0, true, 0, false, 0, true, MAX_LEN_CERT_ALIAS };
-    if (ConstructCertBuf(&infoLen, &outData) != CM_SUCCESS) {
-        return;
-    }
+    int32_t ret = ConstructCertBuf(&infoLen, &outData);
+    ASSERT_EQ(ret, CM_SUCCESS);
 
-    int32_t ret = CmCertificateInfoUnpackFromService(&outData, &certUri, &certInfoStr);
+    ret = CmCertificateInfoUnpackFromService(&outData, &certUri, &certInfoStr);
     EXPECT_NE(ret, CM_SUCCESS);
 }
 }

@@ -351,9 +351,8 @@ HWTEST_F(CmCertParseTest, CmCertParseTest018, TestSize.Level0)
 HWTEST_F(CmCertParseTest, CmCertParseTest019, TestSize.Level0)
 {
     X509 *tempX509 = X509_new();
-    if (tempX509 == nullptr) {
-        return;
-    }
+    ASSERT_TRUE(tempX509 != nullptr);
+
     char tmpTimeOut[DEFAULT_SIZE] = {0};
     int32_t ret = GetX509NotBefore(tempX509, tmpTimeOut, sizeof(tmpTimeOut));
     EXPECT_EQ(ret, CMR_ERROR_INVALID_CERT_FORMAT);
