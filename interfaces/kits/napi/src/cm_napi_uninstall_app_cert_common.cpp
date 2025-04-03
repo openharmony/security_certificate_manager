@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -143,8 +143,6 @@ napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext 
 
 napi_value CMNapiUninstallAppCertCommon(napi_env env, napi_callback_info info, uint32_t store)
 {
-    CM_LOG_I("uninstall app cert enter, store = %u", store);
-
     UninstallAppCertAsyncContext context = CreateUninstallAppCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
@@ -165,8 +163,6 @@ napi_value CMNapiUninstallAppCertCommon(napi_env env, napi_callback_info info, u
         DeleteUninstallAppCertAsyncContext(env, context);
         return nullptr;
     }
-
-    CM_LOG_I("uninstall app cert end");
     return result;
 }
 }  // namespace CertManagerNapi

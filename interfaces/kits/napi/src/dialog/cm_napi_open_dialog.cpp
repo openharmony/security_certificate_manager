@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -214,7 +214,7 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
     auto uiExtCallback = std::make_shared<CmUIExtensionCallback>(asyncContext);
     // Start ui extension by context.
     StartUIExtensionAbility(asyncContext, want, uiExtCallback);
-    CM_LOG_I("cert manager dialog end");
+    CM_LOG_D("cert manager dialog end");
     return result;
 }
 }  // namespace CMNapi

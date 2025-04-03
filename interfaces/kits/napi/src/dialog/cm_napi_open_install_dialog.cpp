@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -98,7 +98,7 @@ static OHOS::AAFwk::Want CMGetInstallCertWant(std::shared_ptr<CmUIExtensionReque
 
 napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
 {
-    CM_LOG_I("cert install dialog enter");
+    CM_LOG_D("cert install dialog enter");
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
     if (OHOS::system::GetParameter("const.product.devicetype", "") != "2in1") {
@@ -137,7 +137,7 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
 
     auto uiExtCallback = std::make_shared<CmOperationUIExtensionCallback>(asyncContext);
     StartUIExtensionAbility(asyncContext, CMGetInstallCertWant(asyncContext), uiExtCallback);
-    CM_LOG_I("cert install dialog end");
+    CM_LOG_D("cert install dialog end");
     return result;
 }
 }  // namespace CMNapi

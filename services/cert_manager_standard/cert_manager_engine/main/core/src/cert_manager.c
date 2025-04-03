@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -50,32 +50,24 @@ static bool g_hksInitialized = false;
 
 int32_t CertManagerInitialize(void)
 {
-    int32_t ret;
     if (!g_hksInitialized) {
-        ret = HksInitialize();
-        if (ret != HKS_SUCCESS) {
-            CM_LOG_E("HUKS init failed, ret = %d", ret);
-            return CMR_ERROR_SA_START_HUKS_INIT_FAILED;
-        }
+        ASSERT_CM_CALL(HksInitialize());
         g_hksInitialized = true;
     }
 
     if (CmMakeDir(CERT_DIR) == CMR_ERROR_MAKE_DIR_FAIL) {
         CM_LOG_E("Failed to create folder\n");
-        return CMR_ERROR_MAKE_DIR_FAIL;
+        return CMR_ERROR_WRITE_FILE_FAIL;
     }
 
-    ret = CreateCertPropertyRdb();
+    int32_t ret = CreateCertPropertyRdb();
     if (ret != CM_SUCCESS) {
         return ret;
     }
 
-    ret = CertManagerStatusInit();
-    if (ret != CM_SUCCESS) {
-        return (ret == CM_FAILURE) ? CMR_ERROR_SA_START_STATUS_INIT_FAILED : ret;
-    }
+    ASSERT_FUNC(CertManagerStatusInit());
 
-    return CM_SUCCESS;
+    return CMR_OK;
 }
 
 static int32_t GetFilePath(const struct CmContext *context, uint32_t store, char *pathPtr,
@@ -101,7 +93,7 @@ static int32_t GetFilePath(const struct CmContext *context, uint32_t store, char
             ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", USER_CA_STORE, context->userId);
             break;
         case CM_PRI_CREDENTIAL_STORE:
-            ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", PRI_CREDNTIAL_STORE, context->userId);
+            ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", APP_CA_STORE, context->userId);
             break;
         case CM_SYS_CREDENTIAL_STORE:
             ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s%u", SYS_CREDNTIAL_STORE, context->userId);
@@ -110,12 +102,12 @@ static int32_t GetFilePath(const struct CmContext *context, uint32_t store, char
             ret = sprintf_s(pathPtr, MAX_PATH_LEN, "%s", SYSTEM_CA_STORE);
             break;
         default:
-            return CMR_ERROR_INVALID_ARGUMENT_STORE_TYPE;
+            return CMR_ERROR_NOT_SUPPORTED;
     }
 
     if (ret < 0) {
         CM_LOG_E("Construct file Path failed ret: %d", ret);
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CMR_ERROR;
     }
 
     // construct file suffix
@@ -123,7 +115,7 @@ static int32_t GetFilePath(const struct CmContext *context, uint32_t store, char
         ret = sprintf_s(suffix, MAX_SUFFIX_LEN, "%u", context->uid);
         if (ret < 0) {
             CM_LOG_E("Construct file suffix failed ret: %d", ret);
-            return CMR_ERROR_MEM_OPERATION_PRINT;
+            return CMR_ERROR;
         }
     }
 
@@ -144,13 +136,13 @@ static int32_t CmGetFilePath(const struct CmContext *context, uint32_t store, st
     int32_t ret = GetFilePath(context, store, pathPtr, suffixBuf, &suffixLen);
     if (ret != CMR_OK) {
         CM_LOG_E("Get file path faild");
-        return ret;
+        return CMR_ERROR;
     }
 
     /* Create folder if it does not exist */
     if (CmMakeDir(pathPtr) == CMR_ERROR_MAKE_DIR_FAIL) {
         CM_LOG_E("Failed to create path folder");
-        return CMR_ERROR_MAKE_DIR_FAIL;
+        return CMR_ERROR_WRITE_FILE_FAIL;
     }
 
     if (pathBlob->size - 1 < strlen(pathPtr) + suffixLen) {
@@ -161,18 +153,18 @@ static int32_t CmGetFilePath(const struct CmContext *context, uint32_t store, st
     char *path = (char *)pathBlob->data;
     if (suffixLen == 0) {
         if (sprintf_s(path, MAX_PATH_LEN, "%s", pathPtr) < 0) {
-            return CMR_ERROR_MEM_OPERATION_PRINT;
+            return CM_FAILURE;
         }
     } else {
         if (sprintf_s(path, MAX_PATH_LEN, "%s/%s", pathPtr, suffixBuf) < 0) {
-            return CMR_ERROR_MEM_OPERATION_PRINT;
+            return CM_FAILURE;
         }
     }
 
     pathBlob->size = strlen(path) + 1;
     if (CmMakeDir(path) == CMR_ERROR_MAKE_DIR_FAIL) {
         CM_LOG_E("Failed to create folder");
-        return CMR_ERROR_MAKE_DIR_FAIL;
+        return CMR_ERROR_WRITE_FILE_FAIL;
     }
     return CMR_OK;
 }
@@ -192,38 +184,12 @@ static int32_t FindObjectCert(const struct CmBlob *certUri, const struct CmMutab
     return CMR_ERROR_NOT_FOUND;
 }
 
-static int32_t GetGmSystemCaCertPath(struct CmMutableBlob *path)
-{
-    if ((path == NULL) || (path->data == NULL) || (path->size == 0)) {
-        CM_LOG_E("Null pointer failure");
-        return CMR_ERROR_NULL_POINTER;
-    }
-
-    /* get gm system ca cert path */
-    char *pathStr = (char *)path->data;
-    if (sprintf_s(pathStr, path->size, "%s", SYSTEM_CA_STORE_GM) < 0) {
-        CM_LOG_E("sprintf gm system ca path failed");
-        return CMR_ERROR_MEM_OPERATION_PRINT;
-    }
-
-    path->size = strlen(pathStr) + 1;
-    return CM_SUCCESS;
-}
-
 int32_t CertManagerFindCertFileNameByUri(const struct CmContext *context, const struct CmBlob *certUri,
-    uint32_t store, bool isGmSysCert, struct CmMutableBlob *path)
+    uint32_t store, struct CmMutableBlob *path)
 {
     ASSERT_ARGS(context && certUri && certUri->data);
 
-    int32_t ret;
-    if (!isGmSysCert) {
-        ret = CmGetFilePath(context, store, path);
-    } else {
-        if (CmIsDirExist(SYSTEM_CA_STORE_GM) != CM_SUCCESS) {
-            return CMR_ERROR_NOT_FOUND;
-        }
-        ret = GetGmSystemCaCertPath(path);
-    }
+    int32_t ret = CmGetFilePath(context, store, path);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed obtain path for store %x\n", store);
         return ret;
@@ -233,7 +199,7 @@ int32_t CertManagerFindCertFileNameByUri(const struct CmContext *context, const 
     ret = CertManagerGetFilenames(&fileNames, (char *)path->data);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed obtain filenames from path");
-        return ret;
+        return CMR_ERROR_STORAGE;
     }
 
     struct CmMutableBlob *fNames = (struct CmMutableBlob *)fileNames.data;
@@ -313,7 +279,7 @@ static int32_t CmAppCertGetFilePath(const struct CmContext *context, const uint3
             ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u/%u", CREDNTIAL_STORE, context->userId, context->uid);
             break;
         case CM_PRI_CREDENTIAL_STORE :
-            ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u", PRI_CREDNTIAL_STORE, context->userId);
+            ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u", APP_CA_STORE, context->userId);
             break;
         case CM_SYS_CREDENTIAL_STORE:
             ret = sprintf_s((char *)path->data, MAX_PATH_LEN, "%s%u", SYS_CREDNTIAL_STORE, context->userId);
@@ -322,10 +288,10 @@ static int32_t CmAppCertGetFilePath(const struct CmContext *context, const uint3
             ret = sprintf_s((char *)path->data, MAX_PATH_LEN, "%s%u", USER_CA_STORE, context->userId);
             break;
         default:
-            return CMR_ERROR_INVALID_ARGUMENT_STORE_TYPE;
+            break;
     }
     if (ret < 0) {
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CM_FAILURE;
     }
     return CM_SUCCESS;
 }
@@ -341,7 +307,7 @@ static int32_t CmCallingAppCertGetFilePath(const struct CmContext *context, cons
             break;
         case CM_PRI_CREDENTIAL_STORE :
             ret = sprintf_s((char*)path->data, MAX_PATH_LEN, "%s%u/%u",
-                PRI_CREDNTIAL_STORE, context->userId, context->uid);
+                APP_CA_STORE, context->userId, context->uid);
             break;
         case CM_SYS_CREDENTIAL_STORE:
             ret = sprintf_s((char *)path->data, MAX_PATH_LEN, "%s%u/%u",
@@ -352,10 +318,10 @@ static int32_t CmCallingAppCertGetFilePath(const struct CmContext *context, cons
                 USER_CA_STORE, context->userId, context->uid);
             break;
         default:
-            return CMR_ERROR_INVALID_ARGUMENT_STORE_TYPE;
+            break;
     }
     if (ret < 0) {
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CM_FAILURE;
     }
     return CM_SUCCESS;
 }
@@ -439,8 +405,8 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
     (void)memset_s(fileNames, len, 0, len);
 
     do {
-        ret = CmAppCertGetFilePath(context, store, &path);
-        if (ret != CM_SUCCESS) {
+        if (CmAppCertGetFilePath(context, store, &path) != CM_SUCCESS) {
+            ret = CM_FAILURE;
             CM_LOG_E("Get file path for store:%u faild", store);
             break;
         }
@@ -606,7 +572,7 @@ int32_t CmCheckCertCount(const struct CmContext *context, const uint32_t store, 
         char fullFileName[CM_MAX_FILE_NAME_LEN] = {0};
         if (snprintf_s(fullFileName, CM_MAX_FILE_NAME_LEN, CM_MAX_FILE_NAME_LEN - 1, "%s/%s", pathBuf, fileName) < 0) {
             CM_LOG_E("mkdir full name failed");
-            ret = CMR_ERROR_MEM_OPERATION_PRINT;
+            ret = CM_FAILURE;
             break;
         }
 
@@ -638,7 +604,7 @@ static int32_t ConstructCertUri(const struct CmContext *context, const struct Cm
 
         if (memcpy_s(certUri->data, certUri->size, commonUri.data, commonUri.size) != EOK) {
             CM_LOG_E("copy cert uri failed");
-            ret = CMR_ERROR_MEM_OPERATION_COPY;
+            ret = CMR_ERROR_INVALID_OPERATION;
             break;
         }
 
@@ -653,7 +619,7 @@ int32_t CmWriteUserCert(const struct CmContext *context, struct CmMutableBlob *p
     const struct CmBlob *userCert, const struct CmBlob *certAlias, struct CmBlob *certUri)
 {
     if (certAlias->size > MAX_LEN_CERT_ALIAS) {
-        CM_LOG_E("alias size[%u] is too large", certAlias->size);
+        CM_LOG_E("alias size is too large");
         return CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT;
     }
 
@@ -710,7 +676,7 @@ int32_t CmGetDisplayNameByURI(const struct CmBlob *uri, const char *object, stru
     }
     if (memcpy_s(displayName->data, displayName->size, temp, strlen(temp) + 1) != CM_SUCCESS) {
         CM_LOG_E("Failed to copy displayName->data");
-        ret = CMR_ERROR_MEM_OPERATION_COPY;
+        ret = CM_FAILURE;
     }
     displayName->size = strlen(temp) + 1;
     return ret;
@@ -753,22 +719,22 @@ int32_t RdbInsertCertProperty(const struct CertPropertyOri *propertyOri)
     certProp.certStore = (int32_t)propertyOri->store;
     if (memcpy_s(certProp.certType, MAX_LEN_CERT_TYPE, certType, strlen(certType)) != EOK) {
         CM_LOG_E("memcpy certType fail");
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     if (memcpy_s(certProp.uri, MAX_LEN_URI, (char *)propertyOri->uri->data, propertyOri->uri->size) != EOK) {
         CM_LOG_E("memcpy uri fail");
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
     if (memcpy_s(certProp.alias, MAX_LEN_CERT_ALIAS, (char *)propertyOri->alias->data, propertyOri->alias->size)
         != EOK) {
         CM_LOG_E("memcpy subjectName fail");
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
     if (memcpy_s(certProp.subjectName, MAX_LEN_SUBJECT_NAME, (char *)propertyOri->subjectName->data,
         propertyOri->subjectName->size) != EOK) {
         CM_LOG_E("memcpy subjectName fail");
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     int32_t ret = InsertCertProperty(&certProp);
@@ -797,13 +763,13 @@ int32_t CmGenerateSaConf(const char *userCertConfigPath, const char *userCertBak
     if (userCertBakupDirPath == NULL) {
         if (snprintf_s(userCertBackupFilePath, CERT_MAX_PATH_LEN, CERT_MAX_PATH_LEN - 1, "%s", userCertName) < 0) {
             CM_LOG_E("construct userCertBackupFilePath failed");
-            return CMR_ERROR_MEM_OPERATION_PRINT;
+            return CMR_ERROR_INVALID_OPERATION;
         }
     } else {
         if (snprintf_s(userCertBackupFilePath, CERT_MAX_PATH_LEN, CERT_MAX_PATH_LEN - 1, "%s/%s", userCertBakupDirPath,
                        userCertName) < 0) {
             CM_LOG_E("construct userCertBackupFilePath failed");
-            return CMR_ERROR_MEM_OPERATION_PRINT;
+            return CMR_ERROR_INVALID_OPERATION;
         }
     }
 
@@ -912,7 +878,7 @@ static int32_t RemoveAllConfUidDir(uint32_t userId, const char *uidPath)
     int32_t ret = CmGetCertConfUidDir(userId, uid, configUidDirPath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get user cert config file UidDirPath failed, ret = %d", ret);
-        return ret;
+        return CM_FAILURE;
     }
 
     ret = CmDirRemove(configUidDirPath);
@@ -964,7 +930,7 @@ int32_t CmRemoveBackupUserCert(const struct CmContext *context, const struct CmB
         ret = CmGetCertConfPath(context->userId, context->uid, certUri, userConfigFilePath, CERT_MAX_PATH_LEN);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmGetCertConfPath failed, ret = %d", ret);
-            return ret;
+            return CM_FAILURE;
         }
         userConfFilePath = userConfigFilePath;
     } else {
@@ -974,13 +940,13 @@ int32_t CmRemoveBackupUserCert(const struct CmContext *context, const struct CmB
     ret = CmRmUserCert(userConfFilePath);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("RmUserCertFile failed, ret = %d", ret);
-        return ret;
+        return CM_FAILURE;
     }
 
     ret = CmRmSaConf(userConfFilePath);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("RmSaConfFile fail, ret = %d", ret);
-        return ret;
+        return CM_FAILURE;
     }
 
     return CM_SUCCESS;
@@ -1008,7 +974,7 @@ int32_t GetObjNameFromCertData(const struct CmBlob *certData, const struct CmBlo
 
     if (memcpy_s(objectName->data, objectName->size, object.data, object.size) != CM_SUCCESS) {
         CM_LOG_E("memcpy object name failed");
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
     return CM_SUCCESS;
 }

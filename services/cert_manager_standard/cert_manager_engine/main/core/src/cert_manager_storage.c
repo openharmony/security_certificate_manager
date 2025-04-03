@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -47,12 +47,12 @@ int32_t GetRootPath(uint32_t store, char *rootPath, uint32_t pathLen)
             ret = memcpy_s(rootPath, pathLen - 1, SYS_CREDNTIAL_STORE, strlen(SYS_CREDNTIAL_STORE));
             break;
         default:
-            return CMR_ERROR_INVALID_ARGUMENT_STORE_TYPE;
+            return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     if (ret != EOK) {
         CM_LOG_E("copy path failed, store = %u", store);
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     return CM_SUCCESS;
@@ -69,7 +69,7 @@ int32_t ConstructUserIdPath(const struct CmContext *context, uint32_t store,
 
     if (snprintf_s(userIdPath, pathLen, pathLen - 1, "%s%u", rootPath, context->userId) < 0) {
         CM_LOG_E("construct user id path failed");
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     ret = CmMakeDir(userIdPath);
@@ -92,7 +92,7 @@ int32_t ConstructUidPath(const struct CmContext *context, uint32_t store,
 
     if (snprintf_s(uidPath, pathLen, pathLen - 1, "%s/%u", userIdPath, context->uid) < 0) {
         CM_LOG_E("construct uid path failed");
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     ret = CmMakeDir(uidPath);
@@ -115,7 +115,7 @@ int32_t ConstructAuthListPath(const struct CmContext *context, uint32_t store,
 
     if (snprintf_s(authListPath, pathLen, pathLen - 1, "%s/%s", uidPath, "authlist") < 0) {
         CM_LOG_E("construct authlist failed");
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     ret = CmMakeDir(authListPath);
@@ -132,7 +132,7 @@ int32_t CmStorageGetBuf(const char *path, const char *fileName, struct CmBlob *s
     uint32_t fileSize = CmFileSize(path, fileName);
     if (fileSize > MAX_OUT_BLOB_SIZE) {
         CM_LOG_E("file size[%u] invalid", fileSize);
-        return CMR_ERROR_STORAGE;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     if (fileSize == 0) {
@@ -189,12 +189,12 @@ int32_t CmGetCertFilePath(const struct CmContext *context, uint32_t store, struc
     int32_t ret = ConstructUidPath(context, store, pathPtr, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get file path faild");
-        return ret;
+        return CM_FAILURE;
     }
 
     char *path = (char *)pathBlob->data;
     if (sprintf_s(path, CERT_MAX_PATH_LEN, "%s", pathPtr) < 0) {
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CM_FAILURE;
     }
     pathBlob->size = strlen(path) + 1;
 
@@ -235,7 +235,7 @@ static int32_t GetCertConfRootDir(char *confRootDir, uint32_t dirLen)
 
     if (snprintf_s(confRootDir, dirLen, dirLen - 1, "%s", CERT_BACKUP_CONFIG_ROOT_DIR) < 0) {
         CM_LOG_E("Construct confRootDir failed");
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CM_FAILURE;
     }
 
     return CM_SUCCESS;
@@ -253,14 +253,14 @@ int32_t CmGetCertConfUserIdDir(uint32_t userId, char *confUserIdDir, uint32_t di
     ret = GetCertConfRootDir(rootPath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get user cert root path failed");
-        return ret;
+        return CM_FAILURE;
     }
 
     char pathTmp[CERT_MAX_PATH_LEN] = { 0 };
     /* Concatenate the {confRootDir}/{userid} directory */
     if (snprintf_s(pathTmp, CERT_MAX_PATH_LEN, CERT_MAX_PATH_LEN - 1, "%s/%u", rootPath, userId) < 0) {
         CM_LOG_E("Construct userIdPath failed, rootPath: %s, userId: %u", rootPath, userId);
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CM_FAILURE;
     }
     /* Create the {confRootDir}/{userid} directory */
     ret = CmUserBakupMakeDir(pathTmp, NULL);
@@ -271,7 +271,7 @@ int32_t CmGetCertConfUserIdDir(uint32_t userId, char *confUserIdDir, uint32_t di
 
     if (snprintf_s(confUserIdDir, dirLen, dirLen - 1, "%s", pathTmp) < 0) {
         CM_LOG_E("Failed to construct confUserIdDir");
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CM_FAILURE;
     }
 
     return CM_SUCCESS;
@@ -288,15 +288,15 @@ int32_t CmGetCertConfUidDir(uint32_t userId, uint32_t uid, char *certConfUidDir,
     char confUserIdDir[CERT_MAX_PATH_LEN] = { 0 };
     ret = CmGetCertConfUserIdDir(userId, confUserIdDir, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Construct confUserIdDir(userId: %u) failed, ret = %d", userId, ret);
-        return ret;
+        CM_LOG_E("Construct confUserIdDir(userId: %u) failed", userId);
+        return CM_FAILURE;
     }
 
     char pathTmp[CERT_MAX_PATH_LEN] = { 0 };
     /* Concatenate the {confRootDir}/{userid}/{uid} directory  */
     if (snprintf_s(pathTmp, CERT_MAX_PATH_LEN, CERT_MAX_PATH_LEN - 1, "%s/%u", confUserIdDir, uid) < 0) {
         CM_LOG_E("Construct uidPath failed, uid: %u", uid);
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CM_FAILURE;
     }
     /* Create the {confRootDir}/{userid}/{uid} directory */
     ret = CmUserBakupMakeDir(pathTmp, NULL);
@@ -307,7 +307,7 @@ int32_t CmGetCertConfUidDir(uint32_t userId, uint32_t uid, char *certConfUidDir,
 
     if (snprintf_s(certConfUidDir, dirLen, dirLen - 1, "%s", pathTmp) < 0) {
         CM_LOG_E("Failed to construct certConfUidDir");
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CM_FAILURE;
     }
 
     return CM_SUCCESS;
@@ -325,14 +325,14 @@ int32_t CmGetCertConfPath(uint32_t userId, uint32_t uid, const struct CmBlob *ce
     char certConfUidDir[CERT_MAX_PATH_LEN] = { 0 };
     ret = CmGetCertConfUidDir(userId, uid, certConfUidDir, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get user cert root path failed, ret = %d", ret);
-        return ret;
+        CM_LOG_E("Get user cert root path failed");
+        return CM_FAILURE;
     }
 
     if (snprintf_s(confFilePath, confFilePathLen, confFilePathLen - 1, "%s/%.*s%s", certConfUidDir, certUri->size,
                    certUri->data, CERT_CONFIG_FILE_SUFFIX) < 0) {
         CM_LOG_E("Failed to construct user cert config file path");
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CM_FAILURE;
     }
     return CM_SUCCESS;
 }
@@ -370,7 +370,7 @@ static int32_t GetCertBackupRootDir(char *certBackupRootDir, uint32_t dirLen)
 
     if (snprintf_s(certBackupRootDir, dirLen, dirLen - 1, "%s", CERT_BACKUP_ROOT_DIR) < 0) {
         CM_LOG_E("Construct certBackupRootDir failed");
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CM_FAILURE;
     }
 
     return CM_SUCCESS;
@@ -391,7 +391,7 @@ int32_t CmGetCertBackupDir(uint32_t userId, char *certBackupDir, uint32_t certBa
     /* Concatenate the {userId} directory for the certificate backup */
     if (snprintf_s(userIdPath, CERT_MAX_PATH_LEN, CERT_MAX_PATH_LEN - 1, "%s/%u", rootPath, userId) < 0) {
         CM_LOG_E("Construct userIdPath failed");
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CMR_ERROR_INVALID_OPERATION;
     }
     /* Create the {userId} directory for the certificate backup */
     ret = CmUserBakupMakeDir(userIdPath, NULL);
@@ -402,7 +402,7 @@ int32_t CmGetCertBackupDir(uint32_t userId, char *certBackupDir, uint32_t certBa
 
     if (snprintf_s(certBackupDir, certBackupDirLen, certBackupDirLen - 1, "%s", userIdPath) < 0) {
         CM_LOG_E("Construct certBackupDir failed");
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CMR_ERROR_INVALID_OPERATION;
     }
     return CM_SUCCESS;
 }
@@ -432,7 +432,7 @@ static int32_t CmGetCertMinSeqNum(uint32_t userId, unsigned long certSubjectName
         if (snprintf_s(backupFileSearchPath, CERT_MAX_PATH_LEN, CERT_MAX_PATH_LEN - 1,
                        "%s/" CERT_BACKUP_FILENAME_FORMAT, certBackupDir, certSubjectNameHash, seq) < 0) {
             CM_LOG_E("Call snprintf_s return failed");
-            return CMR_ERROR_MEM_OPERATION_PRINT;
+            return CM_FAILURE;
         }
 
         if (access(backupFileSearchPath, F_OK) == 0) {
@@ -472,7 +472,7 @@ int32_t CmGetCertBackupFileName(const X509 *userCertX509, uint32_t userId, char 
     if (snprintf_s(certBackupFileName, certBackupFileNameLen, certBackupFileNameLen - 1, CERT_BACKUP_FILENAME_FORMAT,
                    certSubjectNameHash, sequenceNumber) < 0) {
         CM_LOG_E("Call snprintf_s return failed");
-        return CMR_ERROR_MEM_OPERATION_PRINT;
+        return CMR_ERROR_INVALID_OPERATION;
     }
     return CM_SUCCESS;
 }
@@ -503,7 +503,7 @@ int32_t CmGetCertBackupFilePath(const X509 *userCertX509, uint32_t userId, char 
     if (snprintf_s(backupFilePath, backupFilePathLen, backupFilePathLen - 1, "%s/%s", certBackupDir,
                    certBackupFileName) < 0) {
         CM_LOG_E("Call snprintf_s return failed");
-        ret = CMR_ERROR_MEM_OPERATION_PRINT;
+        ret = CMR_ERROR_INVALID_OPERATION;
     }
     return ret;
 }

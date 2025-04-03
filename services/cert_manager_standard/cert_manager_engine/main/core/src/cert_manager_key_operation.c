@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -73,7 +73,7 @@ static struct PropertyToHuks g_cmLevelProperty[] = {
 static int32_t AddUserIdParam(struct HksParamSet *paramSet, enum CmAuthStorageLevel level, const struct CmBlob *uri)
 {
     if (level == CM_AUTH_STORAGE_LEVEL_EL1) {
-        CM_LOG_D("level is el1");
+        CM_LOG_I("level is el1");
         return CM_SUCCESS;
     }
     struct CMUri uriObj;
@@ -87,14 +87,14 @@ static int32_t AddUserIdParam(struct HksParamSet *paramSet, enum CmAuthStorageLe
     do {
         if (uriObj.user == NULL) {
             CM_LOG_E("uri format is invalid");
-            ret = CMR_ERROR_INVALID_ARGUMENT_URI;
+            ret = CMR_ERROR_INVALID_ARGUMENT;
             break;
         }
 
         uint32_t userId = 0;
         if (CmIsNumeric(uriObj.user, strlen(uriObj.user) + 1, &userId) != CM_SUCCESS) {
             CM_LOG_E("parse string to uint32 failed.");
-            ret = CMR_ERROR_INVALID_ARGUMENT_URI;
+            ret = CMR_ERROR_INVALID_ARGUMENT;
             break;
         }
         /* If the caller is SA and the level is not EL1,
@@ -122,27 +122,27 @@ static int32_t ConstructParamSet(const struct HksParam *params, uint32_t paramCo
     struct HksParamSet *paramSet = NULL;
     int32_t ret = HksInitParamSet(&paramSet);
     if (ret != HKS_SUCCESS) {
-        CM_LOG_E("init huks paramset failed, ret = %d", ret);
+        CM_LOG_E("init paramset failed");
         return ret;
     }
 
     ret = AddUserIdParam(paramSet, level, uri);
     if (ret != HKS_SUCCESS) {
-        CM_LOG_E("add userid param failed, ret = %d", ret);
+        CM_LOG_E("add userid param failed");
         HksFreeParamSet(&paramSet);
         return ret;
     }
 
     ret = HksAddParams(paramSet, params, paramCount);
     if (ret != HKS_SUCCESS) {
-        CM_LOG_E("add huks params failed, ret = %d", ret);
+        CM_LOG_E("add params failed");
         HksFreeParamSet(&paramSet);
         return ret;
     }
 
     ret = HksBuildParamSet(&paramSet);
     if (ret != HKS_SUCCESS) {
-        CM_LOG_E("build huks paramSet failed, ret = %d", ret);
+        CM_LOG_E("build paramSet failed");
         HksFreeParamSet(&paramSet);
         return ret;
     }
@@ -193,7 +193,7 @@ int32_t CmKeyOpGenMacKey(const struct CmBlob *alias, enum CmAuthStorageLevel lev
         &paramSet, level, alias);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("construct gen mac key paramSet failed");
-        return CMR_ERROR_KEY_GENERATE_PARAM_FAILED;
+        return CMR_ERROR_KEY_OPERATION_FAILED;
     }
 
     struct HksBlob keyAlias = { alias->size, alias->data };
@@ -211,7 +211,7 @@ int32_t CmKeyOpGenMacKey(const struct CmBlob *alias, enum CmAuthStorageLevel lev
     HksFreeParamSet(&paramSet);
     if (ret != HKS_SUCCESS) {
         CM_LOG_E("hks generate key failed, ret = %d", ret);
-        return CMR_ERROR_KEY_GENERATE_FAILED;
+        return CMR_ERROR_KEY_OPERATION_FAILED;
     }
     return CM_SUCCESS;
 }
@@ -226,7 +226,7 @@ int32_t CmKeyOpGenMacKeyIfNotExist(const struct CmBlob *alias)
         CM_AUTH_STORAGE_LEVEL_EL1, alias);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed to construct key exist paramSet");
-        return CMR_ERROR_KEY_CHECK_EXIST_PARAM_FAILED;
+        return CMR_ERROR_KEY_OPERATION_FAILED;
     }
 
     struct HksBlob keyAlias = { alias->size, alias->data };
@@ -247,7 +247,7 @@ int32_t CmKeyOpGenMacKeyIfNotExist(const struct CmBlob *alias)
     }
     if (ret != HKS_ERROR_NOT_EXIST) {
         CM_LOG_E("find mac key failed, ret = %d", ret);
-        return CMR_ERROR_KEY_CHECK_EXIST_FAILED;
+        return CMR_ERROR_KEY_OPERATION_FAILED;
     }
 
     return CmKeyOpGenMacKey(alias, CM_AUTH_STORAGE_LEVEL_EL1);
@@ -305,7 +305,7 @@ int32_t CmKeyOpCalcMac(const struct CmBlob *alias, const struct CmBlob *srcData,
         level, alias);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("construct mac init paramSet failed");
-        return CMR_ERROR_KEY_MAC_PARAM_FAILED;
+        return CMR_ERROR_KEY_OPERATION_FAILED;
     }
 
     do {
@@ -324,7 +324,6 @@ int32_t CmKeyOpCalcMac(const struct CmBlob *alias, const struct CmBlob *srcData,
         ret = HksInit(&keyAlias, paramSet, &handle, NULL);
         if (ret != HKS_SUCCESS) {
             CM_LOG_E("mac calc init failed, ret = %d", ret);
-            ret = CMR_ERROR_KEY_MAC_INIT_FAILED;
             break;
         }
 
@@ -333,14 +332,13 @@ int32_t CmKeyOpCalcMac(const struct CmBlob *alias, const struct CmBlob *srcData,
         ret = HksFinish(&handle, paramSet, &inData, &outMac);
         if (ret != HKS_SUCCESS) {
             CM_LOG_E("mac calc finish failed, ret = %d", ret);
-            ret = CMR_ERROR_KEY_MAC_FINISH_FAILED;
             break;
         }
         mac->size = outMac.size;
     } while (0);
 
     HksFreeParamSet(&paramSet);
-    return ret;
+    return (ret == HKS_SUCCESS) ? CM_SUCCESS : CMR_ERROR_KEY_OPERATION_FAILED;
 }
 
 int32_t CmKeyOpImportKey(const struct CmBlob *alias, const struct CmKeyProperties *properties,
@@ -360,7 +358,7 @@ int32_t CmKeyOpImportKey(const struct CmBlob *alias, const struct CmKeyPropertie
         properties->level, alias);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("construct import key paramSet failed");
-        return CMR_ERROR_KEY_IMPORT_PARAM_FAILED;
+        return CMR_ERROR_KEY_OPERATION_FAILED;
     }
 
     struct HksBlob keyAlias = { alias->size, alias->data };
@@ -379,7 +377,7 @@ int32_t CmKeyOpImportKey(const struct CmBlob *alias, const struct CmKeyPropertie
     HksFreeParamSet(&paramSet);
     if (ret != HKS_SUCCESS) {
         CM_LOG_E("hks import key failed, ret = %d", ret);
-        return CMR_ERROR_KEY_IMPORT_FAILED;
+        return CMR_ERROR_KEY_OPERATION_FAILED;
     }
     return CM_SUCCESS;
 }
@@ -574,7 +572,7 @@ static int32_t ServiceSignVerifyUpdate(const struct CmBlob *handle, const struct
     if (ret != HKS_SUCCESS) {
         CM_LOG_E("huks update fail, ret = %d", ret);
         CmDeleteSession(handle);
-        return CMR_ERROR_KEY_UPDATE_FAILED;
+        return CMR_ERROR_KEY_OPERATION_FAILED;
     }
     return CM_SUCCESS;
 }
@@ -590,7 +588,7 @@ static int32_t ServiceSignVerifyFinish(const struct CmBlob *handle, const struct
     CmDeleteSession(handle);
     if (ret != HKS_SUCCESS) {
         CM_LOG_E("huks finish fail, ret = %d", ret);
-        return CMR_ERROR_KEY_FINISH_FAILED;
+        return CMR_ERROR_KEY_OPERATION_FAILED;
     }
     outData->size = outDataHks.size;
     return CM_SUCCESS;
@@ -604,7 +602,7 @@ static int32_t ServiceSignVerifyAbort(const struct CmBlob *handle, const struct 
     CmDeleteSession(handle);
     if (ret != HKS_SUCCESS) {
         CM_LOG_E("huks abort fail, ret = %d", ret);
-        return CMR_ERROR_KEY_ABORT_FAILED;
+        return CMR_ERROR_KEY_OPERATION_FAILED;
     }
     return CM_SUCCESS;
 }
@@ -616,7 +614,7 @@ int32_t CmKeyOpInit(const struct CmContext *context, const struct CmBlob *alias,
     int32_t ret = ConstructInitParamSet(alias, spec, &paramSet, level);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("construct init paramSet failed, ret = %d", ret);
-        return CMR_ERROR_KEY_INIT_PARAM_FAILED;
+        return ret;
     }
 
     do {
@@ -633,7 +631,6 @@ int32_t CmKeyOpInit(const struct CmContext *context, const struct CmBlob *alias,
         ret = HksInit(&keyAlias, paramSet, &handleOut, NULL);
         if (ret != HKS_SUCCESS) {
             CM_LOG_E("Huks init failed, ret = %d", ret);
-            ret = CMR_ERROR_KEY_INIT_FAILED;
             break;
         }
         handle->size = handleOut.size;
@@ -647,7 +644,7 @@ int32_t CmKeyOpInit(const struct CmContext *context, const struct CmBlob *alias,
     } while (0);
 
     HksFreeParamSet(&paramSet);
-    return ret;
+    return (ret == HKS_SUCCESS) ? CM_SUCCESS : CMR_ERROR_KEY_OPERATION_FAILED;
 }
 
 int32_t CmKeyOpProcess(enum CmSignVerifyCmd cmdId, const struct CmContext *context, const struct CmBlob *handle,
@@ -669,7 +666,7 @@ int32_t CmKeyOpProcess(enum CmSignVerifyCmd cmdId, const struct CmContext *conte
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed to construct paramSet");
         CmDeleteSession(handle);
-        return CMR_ERROR_KEY_PROCESS_PARAM_FAILED;
+        return CMR_ERROR_KEY_OPERATION_FAILED;
     }
 
     switch (cmdId) {

@@ -23,6 +23,13 @@ extern "C" {
 
 #define CM_ERROR(rc)  (int32_t) (rc)
 
+#define CERT_DIR            "/data/service/el1/public/cert_manager_service/certificates"
+#define CREDNTIAL_STORE     "/data/service/el1/public/cert_manager_service/certificates/credential/"
+#define SYSTEM_CA_STORE     "/system/etc/security/certificates/"
+#define USER_CA_STORE       "/data/service/el1/public/cert_manager_service/certificates/user/"
+#define APP_CA_STORE        "/data/service/el1/public/cert_manager_service/certificates/priv_credential/"
+#define CREDENTIAL_STORE    "./certificates/credential/"
+
 /* Store it in the database. */
 struct CertPropertyOri {
     const struct CmContext *context;
@@ -35,8 +42,8 @@ struct CertPropertyOri {
 
 int32_t CertManagerInitialize(void);
 
-int32_t CertManagerFindCertFileNameByUri(const struct CmContext *context, const struct CmBlob *certUri,
-    uint32_t store, bool isGmSysCert, struct CmMutableBlob *path);
+int32_t CertManagerFindCertFileNameByUri(
+    const struct CmContext *context, const struct CmBlob *certUri, uint32_t store, struct CmMutableBlob *path);
 
 int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *keyUri,
     const uint32_t store);

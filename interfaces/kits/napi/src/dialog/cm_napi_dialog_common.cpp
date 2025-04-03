@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,10 +23,6 @@
 #include "iservice_registry.h"
 #include "bundle_mgr_proxy.h"
 #include "system_ability_definition.h"
-#include "accesstoken_kit.h"
-#include "ipc_skeleton.h"
-
-using namespace OHOS::Security::AccessToken;
 
 #define BYTE_SHIFT_16           0x10
 #define BYTE_SHIFT_8            0x08
@@ -107,31 +103,9 @@ static const std::unordered_map<int32_t, std::string> DIALOG_CODE_TO_MSG_MAP = {
 };
 }  // namespace
 
-static bool CheckBasicPermission(void)
-{
-    AccessTokenID tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
-
-    int result = AccessTokenKit::VerifyAccessToken(tokenId, "ohos.permission.ACCESS_CERT_MANAGER");
-    if (result == PERMISSION_GRANTED) {
-        return true;
-    }
-
-    return false;
-}
-
 void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
     OHOS::AAFwk::Want want, std::shared_ptr<CmUIExtensionCallback> uiExtCallback)
 {
-    /*
-     * Before starting the UIExtension, the permission is verified for interception.
-     * The verification will be performed again in the process of starting the com.ohos.certmanager application.
-     */
-    if (!CheckBasicPermission()) {
-        CM_LOG_E("not has basic permission");
-        ThrowError(asyncContext->env, HAS_NO_PERMISSION, DIALOG_NO_PERMISSION_MSG);
-        return;
-    }
-
     CM_LOG_D("begin StartUIExtensionAbility");
     auto abilityContext = asyncContext->context;
     if (abilityContext == nullptr) {

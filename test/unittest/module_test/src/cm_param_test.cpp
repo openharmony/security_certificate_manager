@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -56,7 +56,7 @@ void CmParamTest::TearDown()
 HWTEST_F(CmParamTest, CmParamTest001, TestSize.Level0)
 {
     int32_t ret = CmInitParamSet(nullptr);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 }
 
 /**
@@ -71,7 +71,7 @@ HWTEST_F(CmParamTest, CmParamTest002, TestSize.Level0)
         { .tag = CM_TAG_PARAM0_BOOL, .boolParam = false },
     };
     int32_t ret = CmAddParams(nullptr, param, sizeof(param) / sizeof(struct CmParam));
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 }
 
 /**
@@ -87,7 +87,7 @@ HWTEST_F(CmParamTest, CmParamTest003, TestSize.Level0)
     EXPECT_EQ(ret, CM_SUCCESS);
 
     ret = CmAddParams(paramSet, nullptr, 0);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     CmFreeParamSet(&paramSet);
 }
@@ -105,7 +105,7 @@ HWTEST_F(CmParamTest, CmParamTest004, TestSize.Level0)
         { .tag = CM_TAG_PARAM0_BOOL, .boolParam = false },
     };
     int32_t ret = CmAddParams(&paramSet, param, sizeof(param) / sizeof(struct CmParam));
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 }
 
 /**
@@ -124,7 +124,7 @@ HWTEST_F(CmParamTest, CmParamTest005, TestSize.Level0)
         { .tag = CM_TAG_PARAM0_BOOL, .boolParam = false },
     };
     ret = CmAddParams(paramSet, param, CM_DEFAULT_PARAM_CNT + 1);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     CmFreeParamSet(&paramSet);
 }
@@ -146,7 +146,7 @@ HWTEST_F(CmParamTest, CmParamTest006, TestSize.Level0)
         { .tag = CM_TAG_PARAM0_BOOL, .boolParam = false },
     };
     ret = CmAddParams(paramSet, param, sizeof(param) / sizeof(struct CmParam));
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     CmFreeParamSet(&paramSet);
 }
@@ -168,7 +168,7 @@ HWTEST_F(CmParamTest, CmParamTest007, TestSize.Level0)
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = tempBlob },
     };
     ret = CmAddParams(paramSet, param, sizeof(param) / sizeof(struct CmParam));
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     CmFreeParamSet(&paramSet);
 }
@@ -191,7 +191,7 @@ HWTEST_F(CmParamTest, CmParamTest008, TestSize.Level0)
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = tempBlob },
     };
     ret = CmAddParams(paramSet, param, sizeof(param) / sizeof(struct CmParam));
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     CmFreeParamSet(&paramSet);
 }
@@ -206,7 +206,7 @@ HWTEST_F(CmParamTest, CmParamTest009, TestSize.Level0)
 {
     struct CmParam *param = nullptr;
     int32_t ret = CmGetParam(nullptr, CM_TAG_PARAM0_BUFFER, &param);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 }
 
 /**
@@ -222,7 +222,7 @@ HWTEST_F(CmParamTest, CmParamTest010, TestSize.Level0)
     EXPECT_EQ(ret, CM_SUCCESS);
 
     ret = CmGetParam(paramSet, CM_TAG_PARAM0_BUFFER, nullptr);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     CmFreeParamSet(&paramSet);
 }
@@ -238,7 +238,7 @@ HWTEST_F(CmParamTest, CmParamTest011, TestSize.Level0)
     struct CmParamSet paramSet = {CM_PARAM_SET_MAX_SIZE + 1, 1 };
     struct CmParam *param = nullptr;
     int32_t ret = CmGetParam(&paramSet, CM_TAG_PARAM0_BUFFER, &param);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 }
 
 /**
@@ -252,7 +252,7 @@ HWTEST_F(CmParamTest, CmParamTest012, TestSize.Level0)
     struct CmParamSet paramSet = { sizeof(struct CmParamSet) - 1, 1 };
     struct CmParam *param = nullptr;
     int32_t ret = CmGetParam(&paramSet, CM_TAG_PARAM0_BUFFER, &param);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 }
 
 /**
@@ -266,7 +266,7 @@ HWTEST_F(CmParamTest, CmParamTest013, TestSize.Level0)
     struct CmParamSet paramSet = { sizeof(struct CmParamSet), 1 };
     struct CmParam *param = nullptr;
     int32_t ret = CmGetParam(&paramSet, CM_TAG_PARAM0_BUFFER, &param);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 }
 
 static void ConstrutParamSet(struct CmParamSet **paramSet)
@@ -365,7 +365,7 @@ HWTEST_F(CmParamTest, CmParamTest019, TestSize.Level0)
     paramSet->paramSetSize = sizeof(struct CmParamSet) - 1;
 
     ret = CmBuildParamSet(&paramSet);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     CmFreeParamSet(&paramSet);
 }
@@ -393,7 +393,7 @@ HWTEST_F(CmParamTest, CmParamTest020, TestSize.Level0)
     paramSet->params[0].blob.data = tempBuf;
 
     ret = CmBuildParamSet(&paramSet);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     CmFreeParamSet(&paramSet);
 }
@@ -421,7 +421,7 @@ HWTEST_F(CmParamTest, CmParamTest021, TestSize.Level0)
     paramSet->params[0].blob.data = nullptr;
 
     ret = CmBuildParamSet(&paramSet);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_OPERATION);
 
     CmFreeParamSet(&paramSet);
 }
@@ -449,7 +449,7 @@ HWTEST_F(CmParamTest, CmParamTest022, TestSize.Level0)
     paramSet->params[0].blob.data = tempBuf;
 
     ret = CmBuildParamSet(&paramSet);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     CmFreeParamSet(&paramSet);
 }
@@ -513,7 +513,7 @@ HWTEST_F(CmParamTest, CmParamTest025, TestSize.Level0)
 
     struct CmParamSet *outParamSet = nullptr;
     ret = CmGetParamSet(paramSet, paramSet->paramSetSize, &outParamSet);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     CmFreeParamSet(&paramSet);
     CmFreeParamSet(&outParamSet);
@@ -543,7 +543,7 @@ HWTEST_F(CmParamTest, CmParamTest026, TestSize.Level0)
 
     struct CmParamSet *outParamSet = nullptr;
     ret = CmGetParamSet(paramSet, paramSet->paramSetSize, &outParamSet);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_PARAMSET_ARG);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 
     CmFreeParamSet(&paramSet);
     CmFreeParamSet(&outParamSet);
