@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -33,20 +33,20 @@ static int32_t CheckAuthListFileSizeValid(const struct CmBlob *originList, uint3
 {
     if (originList->size < (sizeof(uint32_t) + sizeof(uint32_t))) { /* version and count size */
         CM_LOG_E("invalid authlist size[%u]", originList->size);
-        return CMR_ERROR_STORAGE;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     uint32_t count = 0;
     (void)memcpy_s(&count, sizeof(count), originList->data + sizeof(uint32_t), sizeof(count));
     if (count > MAX_OUT_BLOB_SIZE) {
         CM_LOG_E("invalid auth count[%u]", count);
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     uint32_t size = sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) * count;
     if (originList->size != size) {
         CM_LOG_E("invalid auth list file size[%u], count[%u]", originList->size, count);
-        return CMR_ERROR_STORAGE;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     *authCount = count;
@@ -99,8 +99,7 @@ static int32_t InsertUid(const struct CmBlob *originList, uint32_t uid, struct C
     }
 
     if (count >= MAX_AUTH_COUNT) {
-        CM_LOG_E("max granted uid count reached, count = %u", count);
-        return CMR_ERROR_MAX_GRANT_COUNT_REACHED;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     uint32_t size = originList->size + sizeof(uint32_t); /* add one uid */
@@ -110,7 +109,7 @@ static int32_t InsertUid(const struct CmBlob *originList, uint32_t uid, struct C
     }
 
     do {
-        ret = CMR_ERROR_MEM_OPERATION_COPY;
+        ret = CMR_ERROR_INVALID_OPERATION;
         if (memcpy_s(data, size, originList->data, originList->size) != EOK) {
             CM_LOG_E("copy origin list failed");
             break;
@@ -160,7 +159,7 @@ static int32_t RemoveUid(const struct CmBlob *originList, uint32_t uid, struct C
     }
 
     do {
-        ret = CMR_ERROR_MEM_OPERATION_COPY;
+        ret = CMR_ERROR_INVALID_OPERATION;
         uint32_t beforeSize = position - sizeof(uint32_t); /* positon >= 12 */
         if (memcpy_s(data, size, originList->data, beforeSize) != EOK) {
             CM_LOG_E("copy origin list before uid failed");
@@ -234,21 +233,21 @@ static int32_t InitAuthListBuf(uint32_t uid, struct CmBlob *authList)
     do {
         if (memcpy_s(data + offset, size - offset, &version, sizeof(version)) != EOK) {
             CM_LOG_E("copy count failed");
-            ret = CMR_ERROR_MEM_OPERATION_COPY;
+            ret = CMR_ERROR_INVALID_OPERATION;
             break;
         }
         offset += sizeof(version);
 
         if (memcpy_s(data + offset, size - offset, &count, sizeof(count)) != EOK) {
             CM_LOG_E("copy count failed");
-            ret = CMR_ERROR_MEM_OPERATION_COPY;
+            ret = CMR_ERROR_INVALID_OPERATION;
             break;
         }
         offset += sizeof(count);
 
         if (memcpy_s(data  + offset, size - offset, &uid, sizeof(uid)) != EOK) {
             CM_LOG_E("copy uid failed");
-            ret = CMR_ERROR_MEM_OPERATION_COPY;
+            ret = CMR_ERROR_INVALID_OPERATION;
             break;
         }
     } while (0);
@@ -271,7 +270,7 @@ static int32_t RefreshAuthList(const char *path, const char *fileName, uint32_t 
     }
 
     if (!isAuthListExist && !isAdd) {
-        CM_LOG_D("auth list file not exist when delete uid");
+        CM_LOG_D("auth list file not exit when delete uid");
         return CM_SUCCESS; /* auth list file not exit when delete uid */
     }
 

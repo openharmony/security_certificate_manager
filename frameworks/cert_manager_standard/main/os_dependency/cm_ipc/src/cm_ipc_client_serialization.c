@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,7 +28,7 @@ int32_t GetUint32FromBuffer(uint32_t *value, const struct CmBlob *srcBlob, uint3
     }
 
     if (memcpy_s(value, sizeof(uint32_t), srcBlob->data + *srcOffset, sizeof(uint32_t)) != EOK) {
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     *srcOffset += sizeof(uint32_t);
@@ -95,7 +95,7 @@ int32_t CmCertificateListUnpackFromService(const struct CmBlob *outData, struct 
         }
         if (memcpy_s(certificateList->certAbstract[i].subjectName, MAX_LEN_SUBJECT_NAME, blob.data, blob.size) != EOK) {
             CM_LOG_E("copy subjectName failed");
-            return CMR_ERROR_MEM_OPERATION_COPY;
+            return CMR_ERROR_INVALID_OPERATION;
         }
 
         uint32_t status = 0;
@@ -113,7 +113,7 @@ int32_t CmCertificateListUnpackFromService(const struct CmBlob *outData, struct 
         }
         if (memcpy_s(certificateList->certAbstract[i].uri, MAX_LEN_URI, blob.data, blob.size) != EOK) {
             CM_LOG_E("copy uri failed");
-            return CMR_ERROR_MEM_OPERATION_COPY;
+            return CMR_ERROR_INVALID_OPERATION;
         }
 
         ret = CmGetBlobFromBuffer(&blob, outData, &offset);
@@ -123,7 +123,7 @@ int32_t CmCertificateListUnpackFromService(const struct CmBlob *outData, struct 
         }
         if (memcpy_s(certificateList->certAbstract[i].certAlias, MAX_LEN_CERT_ALIAS, blob.data, blob.size) != EOK) {
             CM_LOG_E("copy certAlias failed");
-            return CMR_ERROR_MEM_OPERATION_COPY;
+            return CMR_ERROR_INVALID_OPERATION;
         }
     }
     return CM_SUCCESS;
@@ -204,7 +204,7 @@ int32_t CmCertificateInfoUnpackFromService(const struct CmBlob *outData, const s
     }
     if (memcpy_s(cInfo->certInfo.data, cInfo->certInfo.size, bufBlob.data, bufBlob.size) != EOK) {
         CM_LOG_E("copy cert data failed");
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
     cInfo->certInfo.size = bufBlob.size;
 
@@ -229,13 +229,13 @@ int32_t CmCertificateInfoUnpackFromService(const struct CmBlob *outData, const s
     (void)memset_s(cInfo->certAlias, MAX_LEN_CERT_ALIAS, 0, MAX_LEN_CERT_ALIAS);
     if (memcpy_s(cInfo->certAlias, MAX_LEN_CERT_ALIAS, bufBlob.data, bufBlob.size) != EOK) {
         CM_LOG_E("copy alias failed");
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     (void)memset_s(cInfo->uri, MAX_LEN_URI, 0, MAX_LEN_URI); /* uri */
     if (memcpy_s(cInfo->uri, MAX_LEN_URI, certUri->data, certUri->size) != EOK) {
         CM_LOG_E("copy uri failed");
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
     return CM_SUCCESS;
 }

@@ -1,4 +1,4 @@
-# Copyright (C) 2022-2025 Huawei Device Co., Ltd.
+# Copyright (C) 2022-2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -40,12 +40,14 @@ ohos_static_library("libcert_manager_hisysevent_wrapper_static") {
     "-Wall",
     "-Werror",
   ]
-  deps = [ "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static" ]
+  deps = [
+    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
+    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_ipc_client_static",
+    "${cert_manager_root_dir}/services/cert_manager_standard/cert_manager_engine/main/core:cert_manager_engine_core_standard",
+  ]
   external_deps = [
-    "access_token:libaccesstoken_sdk",
     "bounds_checking_function:libsec_shared",
     "hisysevent:libhisysevent",
-    "ipc:ipc_single",
   ]
   complete_static_lib = true
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -32,7 +32,7 @@ int32_t CmInitParamSet(struct CmParamSet **paramSet)
 {
     if (paramSet == NULL) {
         CM_LOG_E("invalid init params!");
-        return CMR_ERROR_INVALID_PARAMSET_ARG;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     *paramSet = (struct CmParamSet *)CmMalloc(CM_DEFAULT_PARAM_SET_SIZE);
@@ -55,7 +55,7 @@ static int32_t CmCheckParamSet(const struct CmParamSet *paramSet, uint32_t size)
         (paramSet->paramSetSize != size) ||
         (paramSet->paramsCnt > ((size - sizeof(struct CmParamSet)) / sizeof(struct CmParam)))) {
         CM_LOG_E("invalid param set!");
-        return CMR_ERROR_INVALID_PARAMSET_ARG;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
     return CM_SUCCESS;
 }
@@ -78,18 +78,18 @@ static int32_t CmFreshParamSet(struct CmParamSet *paramSet, bool isCopy)
     for (uint32_t i = 0; i < paramSet->paramsCnt; i++) {
         if (offset > size) {
             CM_LOG_E("invalid param set offset!");
-            return CMR_ERROR_INVALID_PARAMSET_ARG;
+            return CMR_ERROR_INVALID_ARGUMENT;
         }
         if (GetTagType(paramSet->params[i].tag) == CM_TAG_TYPE_BYTES) {
             if (CmIsAdditionOverflow(offset, paramSet->params[i].blob.size)) {
                 CM_LOG_E("blob size overflow!");
-                return CMR_ERROR_INVALID_PARAMSET_ARG;
+                return CMR_ERROR_INVALID_ARGUMENT;
             }
 
             if (isCopy && (memcpy_s((uint8_t *)paramSet + offset, size - offset,
                 paramSet->params[i].blob.data, paramSet->params[i].blob.size) != EOK)) {
                 CM_LOG_E("copy param blob failed!");
-                return CMR_ERROR_INVALID_PARAMSET_ARG;
+                return CMR_ERROR_INVALID_OPERATION;
             }
             paramSet->params[i].blob.data = (uint8_t *)paramSet + offset;
             offset += paramSet->params[i].blob.size;
@@ -98,7 +98,7 @@ static int32_t CmFreshParamSet(struct CmParamSet *paramSet, bool isCopy)
 
     if (paramSet->paramSetSize != offset) {
         CM_LOG_E("invalid param set size!");
-        return CMR_ERROR_INVALID_PARAMSET_ARG;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
     return CM_SUCCESS;
 }
@@ -118,7 +118,7 @@ static int32_t BuildParamSet(struct CmParamSet **paramSet)
         if (memcpy_s(freshParamSet, size, *paramSet, offset) != EOK) {
             CM_FREE_PTR(freshParamSet);
             CM_LOG_E("copy params failed!");
-            return CMR_ERROR_INVALID_PARAMSET_ARG;
+            return CMR_ERROR_INVALID_OPERATION;
         }
         CM_FREE_PTR(*paramSet);
         *paramSet = freshParamSet;
@@ -155,12 +155,12 @@ int32_t CmGetParam(const struct CmParamSet *paramSet, uint32_t tag, struct CmPar
 {
     if ((paramSet == NULL) || (param == NULL)) {
         CM_LOG_E("invalid params!");
-        return CMR_ERROR_INVALID_PARAMSET_ARG;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     if (CmCheckParamSet(paramSet, paramSet->paramSetSize) != CM_SUCCESS) {
         CM_LOG_E("invalid paramSet!");
-        return CMR_ERROR_INVALID_PARAMSET_ARG;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     for (uint32_t i = 0; i < paramSet->paramsCnt; i++) {
@@ -181,17 +181,17 @@ static int32_t FreshParamSet(struct CmParamSet *paramSet, bool isCopy)
     for (uint32_t i = 0; i < paramSet->paramsCnt; i++) {
         if (offset > size) {
             CM_LOG_E("FreshParamSet invalid param set offset!");
-            return CMR_ERROR_INVALID_PARAMSET_ARG;
+            return CMR_ERROR_INVALID_ARGUMENT;
         }
         if (GetTagType(paramSet->params[i].tag) == CM_TAG_TYPE_BYTES) {
             if (CmIsAdditionOverflow(offset, paramSet->params[i].blob.size)) {
                 CM_LOG_E("FreshParamSet blob size overflow!");
-                return CMR_ERROR_INVALID_PARAMSET_ARG;
+                return CMR_ERROR_INVALID_ARGUMENT;
             }
             if (isCopy && memcpy_s((uint8_t *)paramSet + offset, size - offset,
                 paramSet->params[i].blob.data, paramSet->params[i].blob.size) != EOK) {
                 CM_LOG_E("FreshParamSet copy param blob failed!");
-                return CMR_ERROR_INVALID_PARAMSET_ARG;
+                return CMR_ERROR_INVALID_OPERATION;
             }
             paramSet->params[i].blob.data = (uint8_t *)paramSet + offset;
             offset += paramSet->params[i].blob.size;
@@ -200,7 +200,7 @@ static int32_t FreshParamSet(struct CmParamSet *paramSet, bool isCopy)
 
     if (paramSet->paramSetSize != offset) {
         CM_LOG_E("FreshParamSet invalid param set size!");
-        return CMR_ERROR_INVALID_PARAMSET_ARG;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
     return CM_SUCCESS;
 }
@@ -235,14 +235,14 @@ static int32_t CheckBeforeAddParams(const struct CmParamSet *paramSet, const str
     if ((params == NULL) || (paramSet == NULL) || (paramSet->paramSetSize > CM_PARAM_SET_MAX_SIZE) ||
         (paramCnt > CM_DEFAULT_PARAM_CNT) || ((paramSet->paramsCnt + paramCnt) > CM_DEFAULT_PARAM_CNT)) {
         CM_LOG_E("invalid params or paramset!");
-        return CMR_ERROR_INVALID_PARAMSET_ARG;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     for (uint32_t i = 0; i < paramCnt; i++) {
         if ((GetTagType(params[i].tag) == CM_TAG_TYPE_BYTES) &&
             (params[i].blob.data == NULL)) {
             CM_LOG_E("invalid blob param!");
-            return CMR_ERROR_INVALID_PARAMSET_ARG;
+            return CMR_ERROR_INVALID_ARGUMENT;
         }
     }
     return CM_SUCCESS;
@@ -261,7 +261,7 @@ int32_t CmAddParams(struct CmParamSet *paramSet, const struct CmParam *params, u
             if (CmIsAdditionOverflow(paramSet->paramSetSize, params[i].blob.size)) {
                 CM_LOG_E("params size overflow!");
                 paramSet->paramSetSize -= sizeof(struct CmParam);
-                return CMR_ERROR_INVALID_PARAMSET_ARG;
+                return CMR_ERROR_INVALID_ARGUMENT;
             }
             paramSet->paramSetSize += params[i].blob.size;
         }

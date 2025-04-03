@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -220,7 +220,7 @@ static int32_t ParseUninstallUserCertSyncParams(napi_env env, napi_callback_info
         CM_LOG_E("get certUri failed when uninstalling user cert sync");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-
+    
     return CM_SUCCESS;
 }
 
@@ -467,8 +467,6 @@ static int32_t InstallUserCertSyncExecute(CmBlob *userCert, const CmCertScope sc
 
 napi_value CMNapiInstallUserTrustedCert(napi_env env, napi_callback_info info)
 {
-    CM_LOG_I("install user trusted cert enter");
-
     UserCertAsyncContext context = InitUserCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init install user cert context failed");
@@ -489,14 +487,11 @@ napi_value CMNapiInstallUserTrustedCert(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    CM_LOG_I("install user trusted cert end");
     return result;
 }
 
 napi_value CMNapiInstallUserTrustedCertSync(napi_env env, napi_callback_info info)
 {
-    CM_LOG_I("install user trusted cert sync enter");
-
     CmBlob *userCert = nullptr;
     CmCertScope installScope;
     uint8_t uri[OUT_AUTH_URI_SIZE] = { 0 };
@@ -524,15 +519,11 @@ napi_value CMNapiInstallUserTrustedCertSync(napi_env env, napi_callback_info inf
     }
     napi_value result = ConvertResultCertUri(env, &certUri);
     FreeCmBlob(userCert);
-
-    CM_LOG_I("install user trusted cert sync end");
     return result;
 }
 
 napi_value CMNapiUninstallUserTrustedCert(napi_env env, napi_callback_info info)
 {
-    CM_LOG_I("uninstall user trusted cert enter");
-
     UserCertAsyncContext context = InitUserCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init uninstall user cert context failed");
@@ -553,14 +544,11 @@ napi_value CMNapiUninstallUserTrustedCert(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    CM_LOG_I("uninstall user trusted cert end");
     return result;
 }
 
 napi_value CMNapiUninstallAllUserTrustedCert(napi_env env, napi_callback_info info)
 {
-    CM_LOG_I("uninstall all user trusted cert enter");
-
     UserCertAsyncContext context = InitUserCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init uninstall all user cert context failed");
@@ -581,14 +569,11 @@ napi_value CMNapiUninstallAllUserTrustedCert(napi_env env, napi_callback_info in
         return nullptr;
     }
 
-    CM_LOG_I("uninstall all user trusted cert end");
     return result;
 }
 
 napi_value CMNapiUninstallUserCertSync(napi_env env, napi_callback_info info)
 {
-    CM_LOG_I("uninstall user trusted cert sync enter");
-
     UserCertAsyncContext context = InitUserCertAsyncContext();
     int32_t ret;
     do {
@@ -615,10 +600,8 @@ napi_value CMNapiUninstallUserCertSync(napi_env env, napi_callback_info info)
         CM_LOG_E("uninstall user cert sync failed, ret = %d", ret);
         napi_throw(env, GenerateBusinessError(env, ret));
     }
-
+    
     FreeUserCertAsyncContext(env, context);
-
-    CM_LOG_I("uninstall user trusted cert sync end");
     return nullptr;
 }
 }  // namespace CMNapi

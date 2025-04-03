@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,7 +27,6 @@ static constexpr uint32_t INVALID_AUTH_URI_LEN = 100;
 static constexpr uint32_t DEFAULT_APP_ID = 1000;
 static constexpr uint32_t GRANT_ONE_APP_ID = 1;
 static constexpr uint32_t GRANT_MULTIPLE_APP_ID = 10;
-static constexpr uint32_t GRANT_MAX_APP_ID = 256;
 
 class CmGrantTest : public testing::Test {
 public:
@@ -341,12 +340,12 @@ HWTEST_F(CmGrantTest, CmGrantTest014, TestSize.Level0)
  */
 HWTEST_F(CmGrantTest, CmGrantTest015, TestSize.Level0)
 {
-    uint8_t aliasData[] = "CmGrantTest015";
+    uint8_t aliasData[] = "CmGrantTest014";
     struct CmBlob alias = { sizeof(aliasData), aliasData };
     int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_RSA, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert failed, retcode:" << ret;
 
-    uint8_t uriData[] = "oh:t=ak;o=CmGrantTest015;u=0;a=0";
+    uint8_t uriData[] = "oh:t=ak;o=CmGrantTest014;u=0;a=0";
     struct CmBlob keyUri = { sizeof(uriData), uriData };
     uint8_t authUriData[INVALID_AUTH_URI_LEN] = {0}; /* size too small */
     struct CmBlob authUri = { INVALID_AUTH_URI_LEN, authUriData };
@@ -354,47 +353,6 @@ HWTEST_F(CmGrantTest, CmGrantTest015, TestSize.Level0)
 
     ret = CmGrantAppCertificate(&keyUri, appId, &authUri);
     EXPECT_EQ(ret, CMR_ERROR_BUFFER_TOO_SMALL) << "CmGrantAppCertificate failed, retcode:" << ret;
-
-    ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
-    EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert failed, retcode:" << ret;
-}
-
-/**
- * @tc.name: CmGrantTest016
- * @tc.desc: Test CmGrantTest max grant test
- * @tc.type: FUNC
- * @tc.require: AR000H0MIA /SR000H09NA
- */
-HWTEST_F(CmGrantTest, CmGrantTest016, TestSize.Level0)
-{
-    uint8_t aliasData[] = "CmGrantTest016";
-    struct CmBlob alias = { sizeof(aliasData), aliasData };
-    int32_t ret = TestGenerateAppCert(&alias, CERT_KEY_ALG_ECC, CM_CREDENTIAL_STORE);
-    EXPECT_EQ(ret, CM_SUCCESS) << "TestGenerateAppCert ecc failed, retcode:" << ret;
-
-    uint8_t uriData[] = "oh:t=ak;o=CmGrantTest016;u=0;a=0";
-    struct CmBlob keyUri = { sizeof(uriData), uriData };
-    uint8_t authUriData[DEFAULT_AUTH_URI_LEN] = {0};
-    struct CmBlob authUri = { DEFAULT_AUTH_URI_LEN, authUriData };
-    uint32_t appId = DEFAULT_APP_ID;
-
-    for (uint32_t i = 0; i < GRANT_MAX_APP_ID; ++i) {
-        appId += i;
-        authUri.size = DEFAULT_AUTH_URI_LEN; /* clear authUri size */
-        ret = CmGrantAppCertificate(&keyUri, appId, &authUri);
-        EXPECT_EQ(ret, CM_SUCCESS) << "CmGrantAppCertificate failed, retcode:" << ret;
-    }
-
-    /* grant exist appUid: success */
-    authUri.size = DEFAULT_AUTH_URI_LEN; /* clear authUri size */
-    ret = CmGrantAppCertificate(&keyUri, appId, &authUri);
-    EXPECT_EQ(ret, CM_SUCCESS) << "CmGrantAppCertificate failed, retcode:" << ret;
-
-    /* grant 257 appUid: failed */
-    appId += 1;
-    authUri.size = DEFAULT_AUTH_URI_LEN; /* clear authUri size */
-    ret = CmGrantAppCertificate(&keyUri, appId, &authUri);
-    EXPECT_EQ(ret, CMR_ERROR_MAX_GRANT_COUNT_REACHED) << "CmGrantAppCertificate failed, retcode:" << ret;
 
     ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert failed, retcode:" << ret;

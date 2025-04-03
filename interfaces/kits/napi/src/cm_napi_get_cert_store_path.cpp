@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -188,7 +188,6 @@ static int32_t GetAndCheckCertScope(napi_env env, napi_value arg, const enum CmC
 
 napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
 {
-    CM_LOG_I("get cert store path enter");
     // get params
     size_t argc = CM_NAPI_GET_CERT_STORE_PATH_ARGS;
     napi_value argv[CM_NAPI_GET_CERT_STORE_PATH_ARGS] = { nullptr };
@@ -219,8 +218,6 @@ napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    napi_value res = GetCertStorePath(env, static_cast<CmCertType>(type), static_cast<CmCertScope>(scope));
-    CM_LOG_I("get cert store path end");
-    return res;
+    return GetCertStorePath(env, static_cast<CmCertType>(type), static_cast<CmCertScope>(scope));
 }
 }  // namespace CertManagerNapi

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -142,7 +142,7 @@ static int32_t GetStringValue(const std::shared_ptr<NativeRdb::AbsSharedResultSe
 
     if (memcpy_s(outBuf, outBufLen, value.c_str(), value.size() + 1) != EOK) {
         CM_LOG_E("memcpy_s fail");
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
     return CM_SUCCESS;
 }

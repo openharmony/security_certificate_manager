@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -85,7 +85,7 @@ int32_t GetX509SerialNumber(X509 *x509cert, char *outBuf, uint32_t outBufMaxSize
     if (strncpy_s(outBuf, outBufMaxSize, hex, len) != EOK) {
         OPENSSL_free(hex);
         BN_free(bn);
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     OPENSSL_free(hex);
@@ -123,7 +123,7 @@ static int32_t ToStringName(FUNC func, const X509 *x509cert, const char *objname
             }
             if (strncpy_s(outBuf, outBufMaxSize, data, length) != EOK) {
                 OPENSSL_free(data);
-                return CMR_ERROR_MEM_OPERATION_COPY;
+                return CMR_ERROR_INVALID_OPERATION;
             }
             OPENSSL_free(data);
             break;
@@ -153,7 +153,7 @@ static int32_t GetX509FirstSubjectName(const X509 *x509cert, struct CmBlob *disp
         }
         if (strlen(subjectName) > 0) {
             if (strncpy_s(outBuf, displaytName->size, subjectName, strlen(subjectName)) != EOK) {
-                return CMR_ERROR_MEM_OPERATION_COPY;
+                return CMR_ERROR_INVALID_OPERATION;
             }
             outBuf[length] = '\0';
             displaytName->size = (uint32_t)(length + 1);
@@ -183,7 +183,7 @@ static int32_t GetX509FirstSubjectProp(const X509 *x509cert, struct CmBlob *disp
     }
     if (strncpy_s(outBuf, displaytName->size, data, length) != EOK) {
         OPENSSL_free(data);
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
     outBuf[length] = '\0';
     displaytName->size = (uint32_t)(length + 1);
@@ -212,7 +212,7 @@ static int32_t GetDisplayName(X509 *x509cert, const struct CmBlob *certAlias,
     } else {
         if (memcpy_s(displaytName->data, displaytName->size, certAlias->data, certAlias->size) != EOK) {
             CM_LOG_E("copy displayname failed");
-            return CMR_ERROR_MEM_OPERATION_COPY;
+            return CMR_ERROR_INVALID_OPERATION;
         }
         displaytName->size = certAlias->size;
     }
@@ -264,7 +264,7 @@ int32_t GetX509SubjectNameLongFormat(const X509 *x509cert, char *outBuf, uint32_
         }
         if (snprintf_s(outBuf + offset, outBufMaxSize - offset, outBufMaxSize - offset - 1, "%s=%s%c",
             subjectNameList[j], subjectName, (char)(((j + 1) == sizeList) ? '\0' : ',')) < 0) {
-            return CMR_ERROR_MEM_OPERATION_PRINT;
+            return CMR_ERROR_INVALID_OPERATION;
         }
         offset += strlen(subjectNameList[j]) + strlen(subjectName) + NAME_DELIMITER_SIZE;
     }
@@ -288,7 +288,7 @@ int32_t GetX509IssueNameLongFormat(const X509 *x509cert, char *outBuf, uint32_t 
         }
         if (snprintf_s(outBuf + offset, outBufMaxSize - offset, outBufMaxSize - offset - 1, "%s=%s%c",
             issueNameList[j], issueName, (char)(((j + 1) == sizeList) ? '\0' : ',')) < 0) {
-            return CMR_ERROR_MEM_OPERATION_PRINT;
+            return CMR_ERROR_INVALID_OPERATION;
         }
         offset += strlen(issueNameList[j]) + strlen(issueName) + NAME_DELIMITER_SIZE;
     }
@@ -349,7 +349,7 @@ static int32_t GetX509Time(TIME_FUNC fuc, const X509 *x509cert, struct DataTime 
     struct tm *localTime = GetLocalTime(asn1Time);
     if (localTime == NULL) {
         CM_LOG_E("Failed to get local time by utc time");
-        return CMR_ERROR_GET_LOCAL_TIME_FAILED;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     pDataTime->year = (uint32_t)(localTime->tm_year + BASE_YEAR);
@@ -376,7 +376,7 @@ static int32_t GetX509TimeFormat(TIME_FUNC fuc, const X509 *x509cert, char *outB
     char buf[TIME_FORMAT_MAX_SIZE] = {0};
     if (snprintf_s(buf, TIME_FORMAT_MAX_SIZE, TIME_FORMAT_MAX_SIZE - 1,
         "%d-%d-%d", (int)dataTime.year, (int)dataTime.month, (int)dataTime.day) < 0) {
-        return  CMR_ERROR_MEM_OPERATION_PRINT;
+        return  CMR_ERROR_INVALID_OPERATION;
     }
 
     uint32_t length = (uint32_t)strlen(buf);
@@ -385,7 +385,7 @@ static int32_t GetX509TimeFormat(TIME_FUNC fuc, const X509 *x509cert, char *outB
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
     if (strncpy_s(outBuf, outBufMaxSize, buf, length) != EOK) {
-        return  CMR_ERROR_MEM_OPERATION_COPY;
+        return  CMR_ERROR_INVALID_OPERATION;
     }
     return (int32_t)length;
 }
@@ -416,7 +416,7 @@ int32_t GetX509Fingerprint(const X509 *x509cert, char *outBuf, uint32_t outBufMa
         if (snprintf_s(buf + 3 * i, FINGERPRINT_MAX_SIZE - 3 * i, /* 3 is  array index */
             FINGERPRINT_MAX_SIZE - 3 * i - 1,  /* 3 is  array index */
             "%02X%c", md[i], (char)(((i + 1) == size) ? '\0' : ':')) < 0) {
-            return  CMR_ERROR_MEM_OPERATION_PRINT;
+            return  CMR_ERROR_INVALID_OPERATION;
         }
     }
     uint32_t length = (uint32_t)strlen(buf);
@@ -426,7 +426,7 @@ int32_t GetX509Fingerprint(const X509 *x509cert, char *outBuf, uint32_t outBufMa
     }
 
     if (strncpy_s(outBuf, outBufMaxSize, buf, length) != EOK) {
-        return  CMR_ERROR_MEM_OPERATION_PRINT;
+        return  CMR_ERROR_INVALID_OPERATION;
     }
     return (int32_t)length;
 }

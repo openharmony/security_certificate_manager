@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -33,21 +33,21 @@ static int32_t GetFileName(const char *path, const char *fileName, char *fullFil
 {
     if (path != NULL && strlen(path) > 0) {
         if (strncpy_s(fullFileName, fullFileNameLen, path, strlen(path)) != EOK) {
-            return CMR_ERROR_MEM_OPERATION_PRINT;
+            return CMR_ERROR_INVALID_OPERATION;
         }
 
         if (path[strlen(path) - 1] != '/') {
             if (strncat_s(fullFileName, fullFileNameLen, "/", strlen("/")) != EOK) {
-                return CMR_ERROR_MEM_OPERATION_PRINT;
+                return CMR_ERROR_INVALID_OPERATION;
             }
         }
 
         if (strncat_s(fullFileName, fullFileNameLen, fileName, strlen(fileName)) != EOK) {
-            return CMR_ERROR_MEM_OPERATION_PRINT;
+            return CMR_ERROR_INVALID_OPERATION;
         }
     } else {
         if (strncpy_s(fullFileName, fullFileNameLen, fileName, strlen(fileName)) != EOK) {
-            return CMR_ERROR_MEM_OPERATION_PRINT;
+            return CMR_ERROR_INVALID_OPERATION;
         }
     }
     return CMR_OK;
@@ -153,7 +153,7 @@ static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *b
     (void)offset;
     char filePath[PATH_MAX + 1] = {0};
     if (memcpy_s(filePath, sizeof(filePath) - 1, fileName, strlen(fileName)) != EOK) {
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_OPERATION;
     }
     if (strstr(filePath, "../") != NULL) {
         CM_LOG_E("invalid filePath");
@@ -198,7 +198,7 @@ static int32_t FileRemove(const char *fileName)
 
     struct stat tmp;
     if (stat(fileName, &tmp) != 0) {
-        return CMR_ERROR_FILE_STAT;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     if (S_ISDIR(tmp.st_mode)) {
@@ -298,7 +298,7 @@ int32_t CmGetDirFile(void *dirp, struct CmFileDirentInfo *direntInfo)
 
         uint32_t len = strlen(dire->d_name);
         if (memcpy_s(direntInfo->fileName, sizeof(direntInfo->fileName) - 1, dire->d_name, len) != EOK) {
-            return CMR_ERROR_MEM_OPERATION_COPY;
+            return CMR_ERROR_INVALID_OPERATION;
         }
         direntInfo->fileName[len] = '\0';
         return CMR_OK;
@@ -413,7 +413,7 @@ int32_t CmUidLayerGetFileCountAndNames(const char *path, struct CmBlob *fileName
     DIR *dir = opendir(path);
     if (dir == NULL) {
         CM_LOG_E("open uid layer dir failed");
-        return CMR_ERROR_FILE_OPEN_DIR;
+        return CMR_ERROR_OPEN_FILE_FAIL;
     }
 
     int32_t ret = CM_SUCCESS;
@@ -422,19 +422,19 @@ int32_t CmUidLayerGetFileCountAndNames(const char *path, struct CmBlob *fileName
     while (dire != NULL) {
         char uidPath[CM_MAX_FILE_NAME_LEN] = {0};
         if (strncpy_s(uidPath, sizeof(uidPath), path, strlen(path)) != EOK) {
-            ret = CMR_ERROR_MEM_OPERATION_COPY;
+            ret = CMR_ERROR_INVALID_OPERATION;
             break;
         }
 
         if (uidPath[strlen(uidPath) - 1] != '/') {
             if (strncat_s(uidPath, sizeof(uidPath), "/", strlen("/")) != EOK) {
-                ret = CMR_ERROR_MEM_OPERATION_COPY;
+                ret = CMR_ERROR_INVALID_OPERATION;
                 break;
             }
         }
 
         if (strncat_s(uidPath, sizeof(uidPath), dire->d_name, strlen(dire->d_name)) != EOK) {
-            ret = CMR_ERROR_MEM_OPERATION_COPY;
+            ret = CMR_ERROR_INVALID_OPERATION;
             break;
         }
 
@@ -464,26 +464,26 @@ int32_t CmUserIdLayerGetFileCountAndNames(const char *path, struct CmBlob *fileN
     DIR *dir = opendir(path);
     if (dir  == NULL) {
         CM_LOG_E("open userId layer dir failed");
-        return CMR_ERROR_FILE_OPEN_DIR;
+        return CMR_ERROR_OPEN_FILE_FAIL;
     }
     struct dirent *dire = readdir(dir);
     while (dire != NULL) {
         (void)memset_s(userIdPath, CM_MAX_FILE_NAME_LEN, 0, CM_MAX_FILE_NAME_LEN);
         if (strncpy_s(userIdPath, sizeof(userIdPath), path, strlen(path)) != EOK) {
             closedir(dir);
-            return CMR_ERROR_MEM_OPERATION_COPY;
+            return CMR_ERROR_INVALID_OPERATION;
         }
 
         if (userIdPath[strlen(userIdPath) - 1] != '/') {
             if (strncat_s(userIdPath, sizeof(userIdPath), "/", strlen("/")) != EOK) {
                 closedir(dir);
-                return CMR_ERROR_MEM_OPERATION_COPY;
+                return CMR_ERROR_INVALID_OPERATION;
             }
         }
 
         if (strncat_s(userIdPath, sizeof(userIdPath), dire->d_name, strlen(dire->d_name)) != EOK) {
             closedir(dir);
-            return CMR_ERROR_MEM_OPERATION_COPY;
+            return CMR_ERROR_INVALID_OPERATION;
         }
 
         if ((dire->d_type == DT_DIR) && (strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0)) {
@@ -534,7 +534,7 @@ int32_t CmGetSubDir(void *dirp, struct CmFileDirentInfo *direntInfo)
 
         uint32_t dirLen = strlen(dire->d_name);
         if (memcpy_s(direntInfo->fileName, sizeof(direntInfo->fileName) - 1, dire->d_name, dirLen) != EOK) {
-            return CMR_ERROR_MEM_OPERATION_COPY;
+            return CMR_ERROR_INVALID_OPERATION;
         }
         direntInfo->fileName[dirLen] = '\0';
         return CMR_OK;
@@ -551,7 +551,7 @@ static int32_t DirRemove(const char *path)
 
     struct stat tmp;
     if (stat(path, &tmp) != 0) {
-        return CMR_ERROR_FILE_STAT;
+        return CMR_ERROR_INVALID_OPERATION;
     }
 
     if (S_ISDIR(tmp.st_mode)) {

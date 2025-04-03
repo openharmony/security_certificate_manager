@@ -25,7 +25,6 @@ extern "C" {
 #define CERT_DIR            "/data/service/el1/public/cert_manager_service/certificates"
 #define CREDNTIAL_STORE     "/data/service/el1/public/cert_manager_service/certificates/credential/"
 #define SYSTEM_CA_STORE     "/system/etc/security/certificates/"
-#define SYSTEM_CA_STORE_GM  "/system/etc/security/certificates_gm/"
 #define USER_CA_STORE       "/data/service/el1/public/cert_manager_service/certificates/user/"
 #define PRI_CREDNTIAL_STORE "/data/service/el1/public/cert_manager_service/certificates/priv_credential/"
 #define SYS_CREDNTIAL_STORE "/data/service/el1/public/cert_manager_service/certificates/sys_credential/"
@@ -35,11 +34,6 @@ extern "C" {
 #define CERT_BACKUP_DIR_NAME "cacerts"
 #define CERT_CONFIG_FILE_SUFFIX ".config"
 #define CERT_BACKUP_FILENAME_FORMAT "%08lx.%d"
-
-#define SYSTEM_CA_PATH_COUNT_2 2 /* system root ca path: common alg + gm */
-#define SYSTEM_CA_PATH_COUNT_1 1 /* system root ca path: common alg */
-#define SYSTEM_CA_PATH_INDEX 0
-#define SYSTEM_CA_GM_PATH_INDEX 1
 
 int32_t GetRootPath(uint32_t store, char *rootPath, uint32_t pathLen);
 
