@@ -91,9 +91,15 @@ std::shared_ptr<NativeRdb::AbsSharedResultSet> CmRdbDataManager::QueryData(const
 
     NativeRdb::AbsRdbPredicates queryPredicates(rdbConfig_.tableName);
     queryPredicates.EqualTo(keyColumn, primKey);
-    auto absSharedResultSet = rdbStore->Query(queryPredicates, std::vector<std::string>());
-    if ((absSharedResultSet == nullptr) || (!absSharedResultSet->HasBlock())) {
-        CM_LOG_E("absSharedResultSet is invalid");
+    std::shared_ptr<NativeRdb::AbsSharedResultSet> absSharedResultSet =
+        rdbStore->Query(queryPredicates, std::vector<std::string>());
+    if (absSharedResultSet == nullptr) {
+        CM_LOG_E("absSharedResultSet is nullptr");
+        return nullptr;
+    }
+    if (!absSharedResultSet->HasBlock()) {
+        CM_LOG_E("absSharedResultSet query failed");
+        absSharedResultSet->Close();
         return nullptr;
     }
     return absSharedResultSet;
