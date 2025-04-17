@@ -48,7 +48,8 @@ constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M
 
 static const std::string DIALOG_NO_PERMISSION_MSG = "the caller has no permission";
 static const std::string DIALOG_INVALID_PARAMS_MSG = "the input parameters is invalid";
-static const std::string DIALOG_GENERIC_MSG = "there is an internal error";
+static const std::string DIALOG_GENERIC_MSG = "There is an internal error. Possible causes: "
+    "1.IPC communication failed. 2.Memory operation error.";
 static const std::string DIALOG_OPERATION_CANCELS_MSG = "the user cancels the installation operation";
 static const std::string DIALOG_INSTALL_FAILED_MSG = "the user install certificate failed"
     " in the certificate manager dialog";

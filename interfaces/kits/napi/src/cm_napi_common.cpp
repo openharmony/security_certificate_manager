@@ -28,7 +28,6 @@ constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M
 static const std::string NO_PERMISSION_MSG = "the caller has no permission";
 static const std::string NOT_SYSTEM_APP_MSG = "the caller is not a system application";
 static const std::string INVALID_PARAMS_MSG = "the input parameters is invalid";
-static const std::string GENERIC_MSG = "there is an internal error";
 static const std::string NO_FOUND_MSG = "the certificate do not exist";
 static const std::string INCORRECT_FORMAT_MSG = "the input cert data is invalid";
 static const std::string MAX_CERT_COUNT_REACHED_MSG = "the count of certificates or credentials reach the max";
