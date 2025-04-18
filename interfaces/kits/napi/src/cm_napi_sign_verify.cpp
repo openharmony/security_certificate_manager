@@ -357,7 +357,7 @@ static napi_value MallocFinishOutData(napi_env env, SignVerifyAsyncContext conte
     context->signature = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
     if (context->signature == nullptr) { /* signature will free after all process */
         CM_LOG_E("malloc outData failed when process sign finish");
-        ThrowError(env, INNER_FAILURE, "malloc failed");
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG);
         return nullptr;
     }
     (void)memset_s(context->signature, sizeof(CmBlob), 0, sizeof(CmBlob));
@@ -365,7 +365,7 @@ static napi_value MallocFinishOutData(napi_env env, SignVerifyAsyncContext conte
     uint8_t *data = static_cast<uint8_t *>(CmMalloc(OUT_SIGNATURE_SIZE));
     if (data == nullptr) {
         CM_LOG_E("malloc outData.data failed when process sign finish");
-        ThrowError(env, INNER_FAILURE, "malloc failed");
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG);
         return nullptr;
     }
     (void)memset_s(data, OUT_SIGNATURE_SIZE, 0, OUT_SIGNATURE_SIZE);

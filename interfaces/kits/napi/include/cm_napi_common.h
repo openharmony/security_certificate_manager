@@ -57,6 +57,9 @@ static const std::string CM_RESULT_PRPPERTY_CREDENTIAL = "credential";
 static const std::string CM_CERT_SCOPE_STR = "certScope";
 static const std::string CM_CERT_TYPE_STR = "certType";
 
+static const std::string GENERIC_MSG = "There is an internal error. Possible causes: "
+    "1.IPC communication failed. 2.Memory operation error.";
+
 static const int32_t RESULT_NUMBER = 2;
 static const uint32_t APPLICATION_CERTIFICATE_STORE = 0;
 static const uint32_t APPLICATION_PRIVATE_CERTIFICATE_STORE = 3;
