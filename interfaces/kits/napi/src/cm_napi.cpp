@@ -52,6 +52,7 @@ namespace CMNapi {
         AddInt32Property(env, errorCode, "CM_ERROR_ALIAS_LENGTH_REACHED_LIMIT", ALIAS_LENGTH_REACHED_LIMIT);
         AddInt32Property(env, errorCode, "CM_ERROR_DEVICE_ENTER_ADVSECMODE", DEVICE_ENTER_ADVSECMODE);
         AddInt32Property(env, errorCode, "CM_ERROR_PASSWORD_IS_ERR", PASSWORD_IS_ERROR);
+        AddInt32Property(env, errorCode, "CM_ERROR_INCLUDE_TOO_MANY_CERTS", INCLUDE_TOO_MANY_CERTS);
     }
 
     static napi_value CreateCMErrorCode(napi_env env)
@@ -122,6 +123,16 @@ namespace CMNapi {
         return scope;
     }
 
+    static napi_value CreateCertFileFormat(napi_env env)
+    {
+        napi_value format = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &format));
+
+        AddInt32Property(env, format, "PEM_DER", PEM_DER);
+        AddInt32Property(env, format, "P7B", P7B);
+        return format;
+    }
+
     static napi_value CreateAuthStorageLevel(napi_env env)
     {
         napi_value level = nullptr;
@@ -146,6 +157,7 @@ extern "C" {
             DECLARE_NAPI_PROPERTY("CmKeyPadding", CreateCMKeyPadding(env)),
             DECLARE_NAPI_PROPERTY("CertType", CreateCertType(env)),
             DECLARE_NAPI_PROPERTY("CertScope", CreateCertScope(env)),
+            DECLARE_NAPI_PROPERTY("CertFileFormat", CreateCertFileFormat(env)),
             DECLARE_NAPI_PROPERTY("AuthStorageLevel", CreateAuthStorageLevel(env)),
 
             /* system ca */

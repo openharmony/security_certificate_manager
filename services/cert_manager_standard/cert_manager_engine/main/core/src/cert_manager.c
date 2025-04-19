@@ -559,7 +559,7 @@ int32_t CmServiceGetCallingAppCertList(const struct CmContext *context, uint32_t
     return CM_SUCCESS;
 }
 
-static int32_t GetCertOrCredCount(const struct CmContext *context, const uint32_t store, uint32_t *certCount)
+int32_t GetCertOrCredCount(const struct CmContext *context, const uint32_t store, uint32_t *certCount)
 {
     uint32_t fileCount = 0;
     struct CmBlob fileNames[MAX_COUNT_CERTIFICATE];

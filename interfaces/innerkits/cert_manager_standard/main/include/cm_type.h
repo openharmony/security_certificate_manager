@@ -40,6 +40,7 @@ extern "C" {
 #define MAX_SUFFIX_LEN           16
 #define MAX_COUNT_CERTIFICATE    256
 #define MAX_COUNT_CERTIFICATE_ALL  512
+#define MAX_P7B_INSTALL_COUNT    20
 #define MAX_LEN_URI              256
 #define MAX_AUTH_LEN_URI         256
 #define MAX_LEN_CERT_ALIAS       129    /* include 1 byte: the terminator('\0') */
@@ -177,6 +178,7 @@ enum CmErrorCode {
     CMR_ERROR_CERT_COUNT_MISMATCH = -48,
     CMR_ERROR_GET_CERT_STATUS = -49,
     CMR_ERROR_GET_CERT_SUBJECT_ITEM = -50,
+    CMR_ERROR_INCLUDE_TOO_MANY_CERTS = -51,
 
     /* invalid argument */
     CMR_ERROR_INVALID_ARGUMENT_BEGIN = -10000,
@@ -475,6 +477,18 @@ struct UserCAProperty {
     enum CmCertScope scope;
 };
 
+struct CmInstallCertInfo {
+    const struct CmBlob *userCert;
+    const struct CmBlob *certAlias;
+    uint32_t userId;
+};
+
+struct CertUriList {
+    uint32_t certCount;
+    uint32_t maxCapacity;
+    struct CmBlob *uriList;
+};
+
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)
 {
     return (UINT32_MAX - a) < b;
@@ -487,6 +501,11 @@ static inline int32_t CmCheckBlob(const struct CmBlob *blob)
     }
     return CM_SUCCESS;
 }
+
+enum CmCertFileFormat {
+    PEM_DER = 0,
+    P7B = 1,
+};
 
 #ifdef __cplusplus
 }

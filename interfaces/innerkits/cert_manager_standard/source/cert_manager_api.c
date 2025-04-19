@@ -373,28 +373,122 @@ CM_API_EXPORT int32_t CmInstallSystemAppCert(const struct CmAppCertParam *certPa
     return ret;
 }
 
-CM_API_EXPORT int32_t CmInstallUserCACert(const struct CmBlob *userCert,
-    const struct CmBlob *certAlias, const uint32_t userId, const bool status, struct CmBlob *certUri)
+static int32_t CheckInstallCertInfo(const struct CmInstallCertInfo *installCertInfo)
+{
+    if (installCertInfo == NULL) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if (installCertInfo->userCert == NULL || installCertInfo->certAlias == NULL) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    return CM_SUCCESS;
+}
+
+static int32_t CmInstallUserTrustedCertByFormat(const struct CmInstallCertInfo *installCertInfo, bool status,
+    struct CmBlob *certUri, const enum CmCertFileFormat certFormat)
 {
     CM_LOG_I("enter install user ca cert");
-    if ((userCert == NULL) || (certAlias == NULL) || (certUri == NULL)) {
-        return CMR_ERROR_INVALID_ARGUMENT;
+    int32_t ret = CheckInstallCertInfo(installCertInfo);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("check installCertInfo failed");
+        return ret;
     }
 
     bool isAdvSecMode = false;
-    int32_t ret = CheckAdvSecMode(&isAdvSecMode);
+    ret = CheckAdvSecMode(&isAdvSecMode);
     if (ret != CM_SUCCESS) {
         return ret;
     }
     if (isAdvSecMode) {
-        CM_LOG_E("InstallUserTrustedCert: the device enters advanced security mode");
+        CM_LOG_E("the device enters advanced security mode");
         return CMR_ERROR_DEVICE_ENTER_ADVSECMODE;
     }
 
     uint32_t uStatus = status ? 0 : 1; // 0 indicates the certificate enabled status
-    ret = CmClientInstallUserTrustedCert(userCert, certAlias, userId, uStatus, certUri);
+    ret = CmClientInstallUserTrustedCert(installCertInfo, certFormat, uStatus, certUri);
     CM_LOG_I("leave install user ca cert, result = %d", ret);
     return ret;
+}
+
+CM_API_EXPORT int32_t CmInstallUserCACert(const struct CmBlob *userCert,
+    const struct CmBlob *certAlias, const uint32_t userId, const bool status, struct CmBlob *certUri)
+{
+    struct CmInstallCertInfo installInfo = {
+        .userCert = userCert,
+        .certAlias = certAlias,
+        .userId = userId
+    };
+    int32_t ret = CmInstallUserTrustedCertByFormat(&installInfo, status, certUri, PEM_DER);
+    CM_LOG_I("leave install user ca cert, result = %d", ret);
+    return ret;
+}
+
+static int32_t UnpackCertUriList(struct CertUriList *certUriList, uint8_t *inData, uint32_t dataSize)
+{
+    if (certUriList == NULL || inData == NULL || dataSize < sizeof(uint32_t)) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    uint8_t *data = inData;
+    uint32_t certCount = (uint32_t)*data;
+    data += sizeof(uint32_t);
+    if (certCount > certUriList->maxCapacity) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    certUriList->certCount = certCount;
+
+    struct CmBlob *uriList = (struct CmBlob *)CmMalloc(sizeof(struct CmBlob) * certCount);
+    if (uriList == NULL) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    certUriList->uriList = uriList;
+
+    struct CmBlob *uri = uriList;
+    for (uint32_t i = 0; i < certCount; ++i) {
+        if (inData + dataSize - data < MAX_LEN_URI) {
+            CM_LOG_E("left buffer size less than MAX_LEN_URI, i = %u, size = %u", i, certCount);
+            return CMR_ERROR_BUFFER_TOO_SMALL;
+        }
+        uri->data = (uint8_t *)(CmMalloc(MAX_LEN_URI));
+        if (uri->data == NULL) {
+            return CMR_ERROR_MALLOC_FAIL;
+        }
+        uri->size = MAX_LEN_URI;
+        (void)memcpy_s(uri->data, MAX_LEN_URI, data, MAX_LEN_URI);
+        data += MAX_LEN_URI;
+        ++uri;
+    }
+    return CM_SUCCESS;
+}
+
+CM_API_EXPORT int32_t CmInstallUserTrustedP7BCert(const struct CmInstallCertInfo *installCertInfo, const bool status,
+    struct CertUriList *certUriList)
+{
+    if (installCertInfo == NULL || certUriList == NULL ||
+        certUriList->maxCapacity == 0 || certUriList->maxCapacity > MAX_P7B_INSTALL_COUNT) {
+        CM_LOG_E("invalid params");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    // calculate outDataSize: outData like [size][uri][uri]..., capacity is max uri count
+    uint32_t outDataSize = sizeof(uint32_t) + (MAX_LEN_URI * certUriList->maxCapacity);
+    uint8_t *outData = (uint8_t *)CmMalloc(outDataSize);
+    if (outData == NULL) {
+        CM_LOG_E("malloc failed");
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    struct CmBlob certUriListBlob = { outDataSize, outData };
+    int32_t ret = CmInstallUserTrustedCertByFormat(installCertInfo, status, &certUriListBlob, P7B);
+    if (ret != CM_SUCCESS) {
+        CM_FREE_PTR(outData);
+        return ret;
+    }
+    ret = UnpackCertUriList(certUriList, outData, outDataSize);
+    CM_FREE_PTR(outData);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("unpack certUriList failed, ret = %d", ret);
+        return ret;
+    }
+    return CM_SUCCESS;
 }
 
 CM_API_EXPORT int32_t CmGetUserCACertList(const struct UserCAProperty *property, struct CertList *certificateList)
@@ -435,4 +529,3 @@ CM_API_EXPORT int32_t CmGetCertStorePath(const enum CmCertType type, const uint3
 
     return CMR_ERROR_INVALID_ARGUMENT;
 }
-
