@@ -44,6 +44,9 @@ struct UserCertAsyncContextT {
     struct CmBlob *userCert = nullptr;
     struct CmBlob *certAlias = nullptr;
     struct CmBlob *certUri = nullptr;
+    struct CertUriList *certUriList = nullptr;
+    CmCertFileFormat certFormat = PEM_DER;
+    CmCertScope certScope = CM_ALL_USER;
 };
 using UserCertAsyncContext = UserCertAsyncContextT *;
 
@@ -56,6 +59,22 @@ static UserCertAsyncContext InitUserCertAsyncContext(void)
     return context;
 }
 
+static void FreeCertUriList(struct CertUriList *certUriList)
+{
+    if (certUriList == NULL || certUriList->uriList == NULL) {
+        return;
+    }
+    for (int32_t i = 0; i < certUriList->certCount; ++i) {
+        CM_FREE_BLOB(certUriList->uriList[i]);
+        certUriList->uriList[i].size = 0;
+        certUriList->uriList[i].data = NULL;
+    }
+    certUriList->uriList = NULL;
+    certUriList->certCount = 0;
+    certUriList->maxCapacity = 0;
+    CM_FREE_PTR(certUriList->uriList);
+}
+
 static void FreeUserCertAsyncContext(napi_env env, UserCertAsyncContext &context)
 {
     if (context == nullptr) {
@@ -66,6 +85,8 @@ static void FreeUserCertAsyncContext(napi_env env, UserCertAsyncContext &context
     FreeCmBlob(context->userCert);
     FreeCmBlob(context->certAlias);
     FreeCmBlob(context->certUri);
+    FreeCertUriList(context->certUriList);
+    CM_FREE_PTR(context->certUriList);
     CM_FREE_PTR(context);
 }
 
@@ -100,6 +121,53 @@ static int32_t GetCertAliasData(napi_env env, napi_value object, UserCertAsyncCo
     return CM_SUCCESS;
 }
 
+static napi_value ParseCertFormat(napi_env env, napi_value object, UserCertAsyncContext context) {
+    napi_value certFormatValue = nullptr;
+    napi_status status = napi_get_named_property(env, object, "certFormat", &certFormatValue);
+    if (status != napi_ok || certFormatValue == nullptr) {
+        return GetInt32(env, 0);
+    }
+    uint32_t certFormat = PEM_DER;
+    if (ParseUint32(env, certFormatValue, certFormat) == nullptr) {
+        return nullptr;
+    }
+    // check support certFormat
+    switch (certFormat) {
+        case PEM_DER:
+        case P7B:
+            break;
+        default:
+            CM_LOG_E("invalid cert format: %u", certFormat);
+            return nullptr;
+    }
+    context->certFormat = static_cast<enum CmCertFileFormat>(certFormat);
+    return GetInt32(env, 0);
+}
+
+static napi_value ParseCertScope(napi_env env, napi_value object, UserCertAsyncContext context) {
+    napi_value certScopeValue = nullptr;
+    napi_status status = napi_get_named_property(env, object, "certScope", &certScopeValue);
+    if (status != napi_ok || certScopeValue == nullptr) {
+        return GetInt32(env, 0);
+    }
+    uint32_t certScope = PEM_DER;
+    if (ParseUint32(env, certScopeValue, certScope) == nullptr) {
+        return nullptr;
+    }
+    // check support certScope
+    switch (certScope) {
+        case CM_ALL_USER:
+        case CM_GLOBAL_USER:
+        case CM_CURRENT_USER:
+            break;
+        default:
+            CM_LOG_E("invalid cert scope: %u", certScope);
+            return nullptr;
+    }
+    context->certScope = static_cast<enum CmCertScope>(certScope);
+    return GetInt32(env, 0);
+}
+
 static napi_value ParseCertInfo(napi_env env, napi_value object, UserCertAsyncContext context)
 {
     napi_valuetype type = napi_undefined;
@@ -120,6 +188,18 @@ static napi_value ParseCertInfo(napi_env env, napi_value object, UserCertAsyncCo
     status = napi_get_named_property(env, object, "alias", &certAliasValue);
     if (status != napi_ok || certAliasValue == nullptr) {
         CM_LOG_E("get cert alias failed");
+        return nullptr;
+    }
+
+    // parse certFormat
+    if (ParseCertFormat(env, object, context) == nullptr) {
+        CM_LOG_E("parse cert file format failed");
+        return nullptr;
+    }
+
+    // parse certScope
+    if (ParseCertScope(env, object, context) == nullptr) {
+        CM_LOG_E("parse cert scope failed");
         return nullptr;
     }
 
@@ -280,14 +360,13 @@ static napi_value ParseUninstallAllUserCertParams(napi_env env, napi_callback_in
     return GetInt32(env, 0);
 }
 
-static void InstallUserCertExecute(napi_env env, void *data)
+static int32_t InitCertUri(UserCertAsyncContext context)
 {
-    UserCertAsyncContext context = static_cast<UserCertAsyncContext>(data);
     context->certUri = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
     if (context->certUri == nullptr) {
         CM_LOG_E("malloc certUri failed");
         context->errCode = CMR_ERROR_MALLOC_FAIL;
-        return;
+        return CMR_ERROR_MALLOC_FAIL;
     }
     (void)memset_s(context->certUri, sizeof(CmBlob), 0, sizeof(CmBlob));
 
@@ -295,12 +374,66 @@ static void InstallUserCertExecute(napi_env env, void *data)
     if (context->certUri->data == nullptr) {
         CM_LOG_E("malloc certUri.data failed");
         context->errCode = CMR_ERROR_MALLOC_FAIL;
-        return;
+        return CMR_ERROR_MALLOC_FAIL;
     }
     (void)memset_s(context->certUri->data, OUT_AUTH_URI_SIZE, 0, OUT_AUTH_URI_SIZE);
     context->certUri->size = OUT_AUTH_URI_SIZE;
+    return CM_SUCCESS;
+}
 
-    context->errCode = CmInstallUserTrustedCert(context->userCert, context->certAlias, context->certUri);
+static int32_t InitCertUriList(UserCertAsyncContext context)
+{
+    CertUriList *certUriList = static_cast<CertUriList *>(CmMalloc(sizeof(CertUriList)));
+    if (certUriList == nullptr) {
+        context->errCode = CMR_ERROR_MALLOC_FAIL;
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    (void)memset_s(certUriList, sizeof(CertUriList), 0, sizeof(CertUriList));
+    certUriList->certCount = 0;
+    certUriList->maxCapacity = MAX_P7B_INSTALL_COUNT;
+    context->certUriList = certUriList;
+    return CM_SUCCESS;
+}
+
+static void InstallUserCertExecute(napi_env env, void *data)
+{
+    UserCertAsyncContext context = static_cast<UserCertAsyncContext>(data);
+    
+    int32_t ret = CM_SUCCESS;
+    uint32_t userId = 0;
+    if (context->certScope == CM_CURRENT_USER) {
+        userId = INIT_INVALID_VALUE;
+    } else if (context->certScope == CM_GLOBAL_USER) {
+        userId = 0;
+    } else {
+        CM_LOG_E("invalid certificate scope");
+        context->errCode = CMR_ERROR_INVALID_ARGUMENT;
+        return;
+    }
+
+    if (context->certFormat == P7B) {
+        ret = InitCertUriList(context);
+        if (ret != CM_SUCCESS) {
+            context->errCode = ret;
+            return;
+        }
+        CmInstallCertInfo installCertInfo = {
+            .userCert = context->userCert,
+            .certAlias = context->certAlias,
+            .userId = userId
+        };
+        context->errCode = CmInstallUserTrustedP7BCert(&installCertInfo, true, context->certUriList);
+        return;
+    }
+
+    ret = InitCertUri(context);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("init certUri failed");
+        context->errCode = ret;
+        return;
+    }
+    context->errCode = CmInstallUserCACert(context->userCert, context->certAlias, userId, true, context->certUri);
+    return;
 }
 
 static napi_value ConvertResultCertUri(napi_env env, const CmBlob *certUri)
@@ -316,13 +449,43 @@ static napi_value ConvertResultCertUri(napi_env env, const CmBlob *certUri)
     return result;
 }
 
+static napi_value ConvertResultCertUriList(napi_env env, const CertUriList *certUriList)
+{
+    if (certUriList == nullptr) {
+        return nullptr;
+    }
+    napi_value result = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &result));
+
+    napi_value uriArray = nullptr;
+    NAPI_CALL(env, napi_create_array(env, &uriArray));
+
+    for (uint32_t i = 0; i < certUriList->certCount; ++i) {
+        napi_value certUri = nullptr;
+        NAPI_CALL(env, napi_create_string_latin1(env, reinterpret_cast<const char *>(certUriList->uriList[i].data),
+            NAPI_AUTO_LENGTH, &certUri));
+        NAPI_CALL(env, napi_set_element(env, uriArray, i, certUri));
+    }
+
+    NAPI_CALL(env, napi_set_named_property(env, result, "uriList", uriArray));
+    return result;
+}
+
+static napi_value ConvertInstallCertResult(napi_env env, const UserCertAsyncContext context)
+{
+    if (context->certFormat == P7B) {
+        return ConvertResultCertUriList(env, context->certUriList);
+    }
+    return ConvertResultCertUri(env, context->certUri);
+}
+
 static void InstallUserCertComplete(napi_env env, napi_status status, void *data)
 {
     UserCertAsyncContext context = static_cast<UserCertAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
-        result[1] = ConvertResultCertUri(env, context->certUri);
+        result[1] = ConvertInstallCertResult(env, context);
     } else {
         result[0] = GenerateBusinessError(env, context->errCode);
         napi_get_undefined(env, &result[1]);
