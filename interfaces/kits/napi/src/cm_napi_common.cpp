@@ -148,7 +148,7 @@ napi_value ParseCertAlias(napi_env env, napi_value napiObj, CmBlob *&certAlias)
     return GetInt32(env, 0);
 }
 
-napi_value ParseString(napi_env env, napi_value object, CmBlob *&stringBlob)
+static napi_value ParseStringCommon(napi_env env, napi_value object, CmBlob *&stringBlob, bool canBeEmpty)
 {
     napi_valuetype valueType = napi_undefined;
     NAPI_CALL(env, napi_typeof(env, object, &valueType));
@@ -164,9 +164,14 @@ napi_value ParseString(napi_env env, napi_value object, CmBlob *&stringBlob)
         return nullptr;
     }
 
+    // add max length check
+    if (length > CM_MAX_DATA_LEN) {
+        CM_LOG_E("input string length is too large, length: %d", length);
+        return nullptr;
+    }
     // add 0 length check
-    if ((length == 0) || (length > CM_MAX_DATA_LEN)) {
-        CM_LOG_E("input string length is 0 or too large, length: %d", length);
+    if (!canBeEmpty && length == 0) {
+        CM_LOG_E("input string length is 0");
         return nullptr;
     }
 
@@ -198,6 +203,16 @@ napi_value ParseString(napi_env env, napi_value object, CmBlob *&stringBlob)
     stringBlob->size = static_cast<uint32_t>((length + 1) & UINT32_MAX);
 
     return GetInt32(env, 0);
+}
+
+napi_value ParseString(napi_env env, napi_value object, CmBlob *&stringBlob)
+{
+    return ParseStringCommon(env, object, stringBlob, false);
+}
+
+napi_value ParsePasswd(napi_env env, napi_value object, CmBlob *&stringBlob)
+{
+    return ParseStringCommon(env, object, stringBlob, true);
 }
 
 napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob)
