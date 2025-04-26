@@ -130,7 +130,7 @@ STACK_OF(X509) *InintCertStackContext(const uint8_t *certBuf, uint32_t size)
     }
     PKCS7 *p7 = d2i_PKCS7_bio(bio, NULL);
     BIO_free(bio);
-    if (p7 == NULL) {
+    if (p7 == NULL || p7->d.sign == NULL) {
         CM_LOG_E("p7 is null");
         return NULL;
     }

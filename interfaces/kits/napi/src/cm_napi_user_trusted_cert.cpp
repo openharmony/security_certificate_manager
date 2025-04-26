@@ -66,13 +66,10 @@ static void FreeCertUriList(struct CertUriList *certUriList)
     }
     for (int32_t i = 0; i < certUriList->certCount; ++i) {
         CM_FREE_BLOB(certUriList->uriList[i]);
-        certUriList->uriList[i].size = 0;
-        certUriList->uriList[i].data = NULL;
     }
-    certUriList->uriList = NULL;
+    CM_FREE_PTR(certUriList->uriList);
     certUriList->certCount = 0;
     certUriList->maxCapacity = 0;
-    CM_FREE_PTR(certUriList->uriList);
 }
 
 static void FreeUserCertAsyncContext(napi_env env, UserCertAsyncContext &context)

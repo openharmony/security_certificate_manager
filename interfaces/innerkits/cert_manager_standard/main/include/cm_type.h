@@ -472,6 +472,11 @@ enum CmCertScope {
     CM_GLOBAL_USER = 2,
 };
 
+enum CmCertFileFormat {
+    PEM_DER = 0,
+    P7B = 1,
+};
+
 struct UserCAProperty {
     uint32_t userId;
     enum CmCertScope scope;
@@ -489,6 +494,14 @@ struct CertUriList {
     struct CmBlob *uriList;
 };
 
+struct InstallUserCertParams {
+    struct CmContext *cmContext;
+    struct CmBlob *userCert;
+    struct CmBlob *certAlias;
+    struct CmBlob *outData;
+    uint32_t status;
+};
+
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)
 {
     return (UINT32_MAX - a) < b;
@@ -502,10 +515,14 @@ static inline int32_t CmCheckBlob(const struct CmBlob *blob)
     return CM_SUCCESS;
 }
 
-enum CmCertFileFormat {
-    PEM_DER = 0,
-    P7B = 1,
-};
+static inline int32_t CmCheckInstallCertInfo(const struct CmInstallCertInfo *installCertInfo)
+{
+    if (installCertInfo == NULL || CmCheckBlob(installCertInfo->certAlias) != CM_SUCCESS
+        || CmCheckBlob(installCertInfo->userCert) != CM_SUCCESS) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    return CM_SUCCESS;
+}
 
 #ifdef __cplusplus
 }
