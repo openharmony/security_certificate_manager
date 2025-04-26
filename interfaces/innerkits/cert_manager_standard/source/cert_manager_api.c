@@ -380,7 +380,7 @@ static int32_t CmInstallUserTrustedCertByFormat(const struct CmInstallCertInfo *
     CM_LOG_I("enter install user ca cert by format");
     if (CmCheckInstallCertInfo(installCertInfo) != CM_SUCCESS || CmCheckBlob(certUri) != CM_SUCCESS) {
         CM_LOG_E("check installCertInfo failed");
-        return ret;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     bool isAdvSecMode = false;
@@ -454,8 +454,6 @@ static int32_t UnpackCertUriList(struct CertUriList *certUriList, uint8_t *inDat
     return CM_SUCCESS;
 }
 
-static CheckInstallInfo()
-
 CM_API_EXPORT int32_t CmInstallUserTrustedP7BCert(const struct CmInstallCertInfo *installCertInfo, const bool status,
     struct CertUriList *certUriList)
 {
@@ -475,6 +473,7 @@ CM_API_EXPORT int32_t CmInstallUserTrustedP7BCert(const struct CmInstallCertInfo
     struct CmBlob certUriListBlob = { outDataSize, outData };
     int32_t ret = CmInstallUserTrustedCertByFormat(installCertInfo, status, &certUriListBlob, P7B);
     if (ret != CM_SUCCESS) {
+        CM_LOG_E("install certs failed, ret = %d", ret);
         CM_FREE_PTR(outData);
         return ret;
     }

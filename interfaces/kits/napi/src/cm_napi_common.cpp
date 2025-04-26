@@ -36,7 +36,7 @@ static const std::string NO_AUTHORIZATION_MSG = "the application is not authoriz
 static const std::string ALIAS_LENGTH_REACHED_LIMIT_MSG = "the input alias length reaches the max";
 static const std::string DEVICE_ENTER_ADVSECMODE_MSG = "the device enters advanced security mode";
 static const std::string PASSWORD_IS_ERROR_MSG = "the input password is error";
-static const std::string INCLUDE_TOO_MANY_CERTS_MSG = "the file is include too many certs";
+static const std::string INCLUDE_TOO_MANY_CERTS_MSG = "the file includes too many certs";
 
 static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     // invalid params
