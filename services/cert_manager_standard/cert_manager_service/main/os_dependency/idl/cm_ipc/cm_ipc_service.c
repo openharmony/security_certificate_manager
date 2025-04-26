@@ -1191,14 +1191,6 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
     CM_LOG_I("leave: ret = %d", ret);
 }
 
-struct InstallUserCertParams {
-    struct CmContext *cmContext;
-    struct CmBlob *userCert;
-    struct CmBlob *certAlias;
-    struct CmBlob *outData;
-    uint32_t status;
-};
-
 static int32_t CmInstallUserCertExecute(const struct InstallUserCertParams *installCertParams,
     const enum CmCertFileFormat certFormat)
 {
