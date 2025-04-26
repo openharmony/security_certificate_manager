@@ -1194,7 +1194,7 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
 static int32_t CmInstallUserCertExecute(const struct InstallUserCertParams *installCertParams,
     const enum CmCertFileFormat certFormat)
 {
-    if (installCertParams == NULL) {
+    if (CmCheckInstallUserCertParams(installCertParams) != CM_SUCCESS) {
         CM_LOG_E("invalid params");
         return CMR_ERROR_NULL_POINTER;
     }
@@ -1209,7 +1209,7 @@ static int32_t CmInstallUserCertExecute(const struct InstallUserCertParams *inst
         ret = CMR_ERROR_NOT_SUPPORTED;
     }
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("install user cert failed, ret = %d", ret);
+        CM_LOG_E("install user cert failed, certFormat = %u, ret = %d", certFormat, ret);
     }
     return ret;
 }
