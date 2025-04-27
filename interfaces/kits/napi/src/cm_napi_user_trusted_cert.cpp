@@ -107,7 +107,8 @@ static int32_t GetCertAliasData(napi_env env, napi_value object, UserCertAsyncCo
     return CM_SUCCESS;
 }
 
-static napi_value ParseCertFormat(napi_env env, napi_value object, UserCertAsyncContext context) {
+static napi_value ParseCertFormat(napi_env env, napi_value object, UserCertAsyncContext context)
+{
     napi_value certFormatValue = nullptr;
     napi_status status = napi_get_named_property(env, object, "certFormat", &certFormatValue);
     if (status != napi_ok || certFormatValue == nullptr) {
@@ -131,7 +132,8 @@ static napi_value ParseCertFormat(napi_env env, napi_value object, UserCertAsync
     return GetInt32(env, 0);
 }
 
-static napi_value ParseCertScope(napi_env env, napi_value object, UserCertAsyncContext context) {
+static napi_value ParseCertScope(napi_env env, napi_value object, UserCertAsyncContext context)
+{
     napi_value certScopeValue = nullptr;
     napi_status status = napi_get_named_property(env, object, "certScope", &certScopeValue);
     if (status != napi_ok || certScopeValue == nullptr) {
