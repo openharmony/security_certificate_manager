@@ -948,7 +948,7 @@ int32_t CmClientInstallUserTrustedCert(const struct CmInstallCertInfo *installIn
     const enum CmCertFileFormat certFormat, const uint32_t status, struct CmBlob *certUri)
 {
     if (CmCheckInstallCertInfo(installInfo) != CM_SUCCESS) {
-        CM_LOG_E("installInfo is nullptr");
+        CM_LOG_E("check installCertInfo invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     const struct CmBlob *userCert = installInfo->userCert;

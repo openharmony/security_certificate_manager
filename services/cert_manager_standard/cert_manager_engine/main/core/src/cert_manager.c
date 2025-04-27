@@ -561,6 +561,10 @@ int32_t CmServiceGetCallingAppCertList(const struct CmContext *context, uint32_t
 
 int32_t GetCertOrCredCount(const struct CmContext *context, const uint32_t store, uint32_t *certCount)
 {
+    if (context == NULL || certCount == NULL) {
+        CM_LOG_E("null pointer");
+        return CMR_ERROR_NULL_POINTER;
+    }
     uint32_t fileCount = 0;
     struct CmBlob fileNames[MAX_COUNT_CERTIFICATE];
     uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
