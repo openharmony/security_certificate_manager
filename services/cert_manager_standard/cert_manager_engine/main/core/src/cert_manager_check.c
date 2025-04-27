@@ -577,3 +577,18 @@ int32_t CmServiceSetUserCertStatusCheck(struct CmContext *cmContext, const struc
     }
     return CM_SUCCESS;
 }
+
+int32_t CheckInstallMultiCertCount(const struct CmContext *context, const uint32_t certNum)
+{
+    uint32_t certCount = 0;
+    int32_t ret = GetCertOrCredCount(context, CM_USER_TRUSTED_STORE, &certCount);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed obtain cert count for store muti user cert.");
+        return ret;
+    }
+    if (certCount + certNum > MAX_COUNT_CERTIFICATE) {
+        CM_LOG_E("cert count beyond maxcount, can't install user certs");
+        return CMR_ERROR_MAX_CERT_COUNT_REACHED;
+    }
+    return CM_SUCCESS;
+}

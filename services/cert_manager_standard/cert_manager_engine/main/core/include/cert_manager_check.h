@@ -50,6 +50,8 @@ int32_t CmServiceGetUserCertInfoCheck(struct CmContext *cmContext, const struct 
     const uint32_t type, bool isCheckUid);
 
 int32_t CmServiceSetUserCertStatusCheck(struct CmContext *cmContext, const struct CmBlob *certUri);
+
+int32_t CheckInstallMultiCertCount(const struct CmContext *context, const uint32_t certNum);
 #ifdef __cplusplus
 }
 #endif
