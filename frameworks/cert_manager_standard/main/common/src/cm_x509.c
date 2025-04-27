@@ -60,12 +60,14 @@ X509 *InitCertContext(const uint8_t *certBuf, uint32_t size)
 static int32_t FindStringInStack(STACK_OF(char) *sk, const char *target)
 {
     if (sk == NULL || target == NULL) {
+        CM_LOG_E("null pointer");
         return CMR_ERROR;
     }
     int num = sk_char_num(sk);
     for (int i = 0; i < num; i++) {
         char *str = sk_char_value(sk, i);
         if (str && strcmp(str, target) == 0) {
+            CM_LOG_I("found fingerprint");
             return i;
         }
     }
@@ -81,15 +83,15 @@ static int32_t DumplicateCerts(STACK_OF(X509) *certStack, STACK_OF(X509) *dedupl
     STACK_OF(char) *fingerprintStack = sk_char_new_null();
     if (fingerprintStack == NULL) {
         CM_LOG_E("fingerprintStack is null");
-        return CMR_ERROR_NULL_POINTER;
+        return CMR_ERROR_MALLOC_FAIL;
     }
     int32_t ret = CM_SUCCESS;
     int certNum = sk_X509_num(certStack);
     for (int i = 0; i < certNum; ++i) {
         X509 *cert = sk_X509_value(certStack, i);
         char fingerprint[FINGERPRINT_MAX_SIZE] = {0};
-        ret = GetX509Fingerprint(cert, fingerprint, sizeof(fingerprint));
-        if (ret < 0) {
+        int32_t fingerprintLength = GetX509Fingerprint(cert, fingerprint, sizeof(fingerprint));
+        if (fingerprintLength < 0) {
             continue;
         }
         // check is fingerprint exist or not.
@@ -117,7 +119,7 @@ static int32_t DumplicateCerts(STACK_OF(X509) *certStack, STACK_OF(X509) *dedupl
     return ret;
 }
 
-STACK_OF(X509) *InintCertStackContext(const uint8_t *certBuf, uint32_t size)
+STACK_OF(X509) *InitCertStackContext(const uint8_t *certBuf, uint32_t size)
 {
     if (certBuf == NULL || size > MAX_LEN_CERTIFICATE || size == 0) {
         CM_LOG_E("invalid params");
@@ -130,8 +132,13 @@ STACK_OF(X509) *InintCertStackContext(const uint8_t *certBuf, uint32_t size)
     }
     PKCS7 *p7 = d2i_PKCS7_bio(bio, NULL);
     BIO_free(bio);
-    if (p7 == NULL || p7->d.sign == NULL) {
+    if (p7 == NULL) {
         CM_LOG_E("p7 is null");
+        return NULL;
+    }
+    if (p7->d.sign == NULL) {
+        CM_LOG_E("p7->d.sign is null");
+        PKCS7_free(p7);
         return NULL;
     }
     STACK_OF(X509) *certStack = p7->d.sign->cert;
@@ -149,7 +156,7 @@ STACK_OF(X509) *InintCertStackContext(const uint8_t *certBuf, uint32_t size)
     int32_t ret = DumplicateCerts(certStack, deduplicateStack);
     PKCS7_free(p7);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("deduplicate certs failed");
+        CM_LOG_E("deduplicate certs failed, ret = %d", ret);
         sk_X509_pop_free(deduplicateStack, X509_free);
         return NULL;
     }
