@@ -439,7 +439,7 @@ static int32_t UnpackCertUriList(struct CertUriList *certUriList, uint8_t *inDat
 
     uint8_t *uriData = (uint8_t *)uriList + (sizeof(struct CmBlob) * certCount);
 
-    if (memcpy_s(uriData, MAX_LEN_URI * certCount, data, certCount * MAX_LEN_URI) != EOK) {
+    if (memcpy_s(uriData, MAX_LEN_URI * certCount, data, MAX_LEN_URI * certCount) != EOK) {
         CM_LOG_E("memory copy failed");
         return CMR_ERROR_MEM_OPERATION_COPY;
     }

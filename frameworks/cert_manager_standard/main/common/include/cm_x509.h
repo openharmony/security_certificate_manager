@@ -69,7 +69,7 @@ X509 *InitCertContext(const uint8_t *certBuf, uint32_t size);
  * @param[in] size Buffer's size.
  * @return STACK_OF(X509)* Stack of X509 certificate.
  */
-STACK_OF(X509) *InintCertStackContext(const uint8_t *certBuf, uint32_t size);
+STACK_OF(X509) *InitCertStackContext(const uint8_t *certBuf, uint32_t size);
 
 int32_t GetX509SerialNumber(X509 *x509cert, char *outBuf, uint32_t outBufMaxSize);
 

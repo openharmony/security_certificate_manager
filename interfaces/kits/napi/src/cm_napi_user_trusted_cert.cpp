@@ -69,9 +69,10 @@ static void FreeUserCertAsyncContext(napi_env env, UserCertAsyncContext &context
     FreeCmBlob(context->userCert);
     FreeCmBlob(context->certAlias);
     FreeCmBlob(context->certUri);
-    FreeCertUriList(context->certUriList);
-    CM_FREE_PTR(context->certUriList->uriList);
-    CM_FREE_PTR(context->certUriList);
+    if (context->certUriList != nullptr) {
+        CM_FREE_PTR(context->certUriList->uriList);
+        CM_FREE_PTR(context->certUriList);
+    }
     CM_FREE_PTR(context);
 }
 
@@ -106,7 +107,8 @@ static int32_t GetCertAliasData(napi_env env, napi_value object, UserCertAsyncCo
     return CM_SUCCESS;
 }
 
-static napi_value ParseCertFormat(napi_env env, napi_value object, UserCertAsyncContext context) {
+static napi_value ParseCertFormat(napi_env env, napi_value object, UserCertAsyncContext context)
+{
     napi_value certFormatValue = nullptr;
     napi_status status = napi_get_named_property(env, object, "certFormat", &certFormatValue);
     if (status != napi_ok || certFormatValue == nullptr) {
@@ -114,6 +116,7 @@ static napi_value ParseCertFormat(napi_env env, napi_value object, UserCertAsync
     }
     uint32_t certFormat = PEM_DER;
     if (ParseUint32(env, certFormatValue, certFormat) == nullptr) {
+        CM_LOG_E("parse uint32 failed");
         return nullptr;
     }
     // check support certFormat
@@ -129,7 +132,8 @@ static napi_value ParseCertFormat(napi_env env, napi_value object, UserCertAsync
     return GetInt32(env, 0);
 }
 
-static napi_value ParseCertScope(napi_env env, napi_value object, UserCertAsyncContext context) {
+static napi_value ParseCertScope(napi_env env, napi_value object, UserCertAsyncContext context)
+{
     napi_value certScopeValue = nullptr;
     napi_status status = napi_get_named_property(env, object, "certScope", &certScopeValue);
     if (status != napi_ok || certScopeValue == nullptr) {
@@ -137,6 +141,7 @@ static napi_value ParseCertScope(napi_env env, napi_value object, UserCertAsyncC
     }
     uint32_t certScope = PEM_DER;
     if (ParseUint32(env, certScopeValue, certScope) == nullptr) {
+        CM_LOG_E("parse uint32 failed");
         return nullptr;
     }
     // check support certScope
@@ -190,11 +195,13 @@ static napi_value ParseCertInfo(napi_env env, napi_value object, UserCertAsyncCo
 
     int32_t ret = GetUserCertData(env, userCertValue, &context->userCert);
     if (ret != CM_SUCCESS) {
+        CM_LOG_E("get user certData failed, ret = %d", ret);
         return nullptr;
     }
 
     ret = GetCertAliasData(env, certAliasValue, context);
     if (ret != CM_SUCCESS) {
+        CM_LOG_E("get cert aliasData failed, ret = %d", ret);
         return nullptr;
     }
 
@@ -370,6 +377,7 @@ static int32_t InitCertUriList(UserCertAsyncContext context)
 {
     CertUriList *certUriList = static_cast<CertUriList *>(CmMalloc(sizeof(CertUriList)));
     if (certUriList == nullptr) {
+        CM_LOG_E("malloc certUriList failed");
         context->errCode = CMR_ERROR_MALLOC_FAIL;
         return CMR_ERROR_MALLOC_FAIL;
     }
@@ -382,7 +390,10 @@ static int32_t InitCertUriList(UserCertAsyncContext context)
 static void InstallUserCertExecute(napi_env env, void *data)
 {
     UserCertAsyncContext context = static_cast<UserCertAsyncContext>(data);
-    
+    if (context == nullptr) {
+        CM_LOG_E("context is null");
+        return;
+    }
     int32_t ret = CM_SUCCESS;
     uint32_t userId = 0;
     if (context->certScope == CM_CURRENT_USER) {
@@ -398,6 +409,7 @@ static void InstallUserCertExecute(napi_env env, void *data)
     if (context->certFormat == P7B) {
         ret = InitCertUriList(context);
         if (ret != CM_SUCCESS) {
+            CM_LOG_E("init cert uriList failed, ret = %d", ret);
             context->errCode = ret;
             return;
         }
@@ -436,6 +448,7 @@ static napi_value ConvertResultCertUri(napi_env env, const CmBlob *certUri)
 static napi_value ConvertResultCertUriList(napi_env env, const CertUriList *certUriList)
 {
     if (certUriList == nullptr) {
+        CM_LOG_E("null pointer");
         return nullptr;
     }
     napi_value result = nullptr;

@@ -831,7 +831,8 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
 int32_t CmInstallMultiUserCert(const struct CmContext *context, const struct CmBlob *userCert,
     const struct CmBlob *certAlias, const uint32_t status, struct CmBlob *certUri)
 {
-    if (certUri->data == NULL || certUri->size < sizeof(uint32_t)) {
+    if (context == NULL || userCert == NULL || certAlias == NULL || certUri->data == NULL ||
+        certUri->size < sizeof(uint32_t)) {
         CM_LOG_E("invalid argument");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -839,7 +840,7 @@ int32_t CmInstallMultiUserCert(const struct CmContext *context, const struct CmB
     uint8_t *outData = certUri->data;
     uint32_t uriListSize = 0;
 
-    STACK_OF(X509) *certStack = InintCertStackContext(userCert->data, userCert->size);
+    STACK_OF(X509) *certStack = InitCertStackContext(userCert->data, userCert->size);
     if (certStack == NULL) {
         CM_LOG_E("init certStack failed");
         return CMR_ERROR_INVALID_CERT_FORMAT;
@@ -854,7 +855,7 @@ int32_t CmInstallMultiUserCert(const struct CmContext *context, const struct CmB
     }
     int32_t ret = CheckInstallMultiCertCount(context, (uint32_t)uriListSize);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("check install certs too many");
+        CM_LOG_E("check install certs too many, ret = %d", ret);
         sk_X509_pop_free(certStack, X509_free);
         return ret;
     }
@@ -866,9 +867,9 @@ int32_t CmInstallMultiUserCert(const struct CmContext *context, const struct CmB
     for (int32_t i = 0; i < uriListSize; ++i) {
         struct CmBlob certPemData = { 0, NULL };
         X509 *cert = sk_X509_value(certStack, i);
-        int32_t ret = CmX509ToPEM(cert, &certPemData);
+        ret = CmX509ToPEM(cert, &certPemData);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmX509ToPem failed");
+            CM_LOG_E("CmX509ToPem failed, ret = %d", ret);
             break;
         }
 
@@ -877,7 +878,7 @@ int32_t CmInstallMultiUserCert(const struct CmContext *context, const struct CmB
         ret = CmInstallUserCert(context, &certPemData, certAlias, status, &outUri);
         if (ret != CM_SUCCESS) {
             CM_FREE_BLOB(certPemData);
-            CM_LOG_E("CmInstallUserCert failed.");
+            CM_LOG_E("CmInstallUserCert failed, ret = %d", ret);
             break;
         }
         CM_FREE_BLOB(certPemData);
