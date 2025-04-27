@@ -490,7 +490,6 @@ struct CmInstallCertInfo {
 
 struct CertUriList {
     uint32_t certCount;
-    uint32_t maxCapacity;
     struct CmBlob *uriList;
 };
 

@@ -59,19 +59,6 @@ static UserCertAsyncContext InitUserCertAsyncContext(void)
     return context;
 }
 
-static void FreeCertUriList(struct CertUriList *certUriList)
-{
-    if (certUriList == NULL || certUriList->uriList == NULL) {
-        return;
-    }
-    for (int32_t i = 0; i < certUriList->certCount; ++i) {
-        CM_FREE_BLOB(certUriList->uriList[i]);
-    }
-    CM_FREE_PTR(certUriList->uriList);
-    certUriList->certCount = 0;
-    certUriList->maxCapacity = 0;
-}
-
 static void FreeUserCertAsyncContext(napi_env env, UserCertAsyncContext &context)
 {
     if (context == nullptr) {
@@ -83,6 +70,7 @@ static void FreeUserCertAsyncContext(napi_env env, UserCertAsyncContext &context
     FreeCmBlob(context->certAlias);
     FreeCmBlob(context->certUri);
     FreeCertUriList(context->certUriList);
+    CM_FREE_PTR(context->certUriList->uriList);
     CM_FREE_PTR(context->certUriList);
     CM_FREE_PTR(context);
 }
@@ -387,7 +375,6 @@ static int32_t InitCertUriList(UserCertAsyncContext context)
     }
     (void)memset_s(certUriList, sizeof(CertUriList), 0, sizeof(CertUriList));
     certUriList->certCount = 0;
-    certUriList->maxCapacity = MAX_P7B_INSTALL_COUNT;
     context->certUriList = certUriList;
     return CM_SUCCESS;
 }
