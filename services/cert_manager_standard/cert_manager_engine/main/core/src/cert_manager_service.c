@@ -849,11 +849,13 @@ int32_t CmInstallMultiUserCert(const struct CmContext *context, const struct CmB
     uint32_t capacity = (certUri->size - sizeof(uint32_t)) / MAX_LEN_URI;
     if (uriListSize > capacity) {
         CM_LOG_E("check certFile include too many certs");
+        sk_X509_pop_free(certStack, X509_free);
         return CMR_ERROR_INCLUDE_TOO_MANY_CERTS;
     }
     int32_t ret = CheckInstallMultiCertCount(context, (uint32_t)uriListSize);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("check install certs too many");
+        sk_X509_pop_free(certStack, X509_free);
         return ret;
     }
 

@@ -421,35 +421,32 @@ static int32_t UnpackCertUriList(struct CertUriList *certUriList, uint8_t *inDat
     }
     uint8_t *data = inData;
     uint32_t certCount = (uint32_t)*data;
-    data += sizeof(uint32_t);
-    if (certCount > certUriList->maxCapacity) {
-        CM_LOG_E("cert count large than maxCapacity");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    certUriList->certCount = certCount;
-
-    struct CmBlob *uriList = (struct CmBlob *)CmMalloc(sizeof(struct CmBlob) * certCount);
-    if (uriList == NULL) {
-        CM_LOG_E("memory operation failed");
-        return CMR_ERROR_MALLOC_FAIL;
-    }
-    certUriList->uriList = uriList;
-
     if (dataSize < (sizeof(uint32_t) + (certCount * MAX_LEN_URI))) {
         CM_LOG_E("buffer size too small");
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
-    struct CmBlob *uri = uriList;
+    data += sizeof(uint32_t);
+    certUriList->certCount = certCount;
+
+    uint32_t uriListSize = (sizeof(struct CmBlob) + MAX_LEN_URI) * certCount;
+    struct CmBlob *uriList = (struct CmBlob *)CmMalloc(uriListSize);
+    if (uriList == NULL) {
+        CM_LOG_E("memory operation failed");
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    (void)memset_s(uriList, uriListSize, 0, uriListSize);
+    certUriList->uriList = uriList;
+
+    uint8_t *uriData = (uint8_t *)uriList + (sizeof(struct CmBlob) * certCount);
+
+    if (memcpy_s(uriData, MAX_LEN_URI * certCount, data, certCount * MAX_LEN_URI) != EOK) {
+        CM_LOG_E("memory copy failed");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
     for (uint32_t i = 0; i < certCount; ++i) {
-        uri->data = (uint8_t *)(CmMalloc(MAX_LEN_URI));
-        if (uri->data == NULL) {
-            CM_LOG_E("memory operation failed");
-            return CMR_ERROR_MALLOC_FAIL;
-        }
-        uri->size = MAX_LEN_URI;
-        (void)memcpy_s(uri->data, MAX_LEN_URI, data, MAX_LEN_URI);
-        data += MAX_LEN_URI;
-        ++uri;
+        uriList[i].data = uriData;
+        uriList[i].size = MAX_LEN_URI;
+        uriData += MAX_LEN_URI;
     }
     return CM_SUCCESS;
 }
@@ -457,14 +454,12 @@ static int32_t UnpackCertUriList(struct CertUriList *certUriList, uint8_t *inDat
 CM_API_EXPORT int32_t CmInstallUserTrustedP7BCert(const struct CmInstallCertInfo *installCertInfo, const bool status,
     struct CertUriList *certUriList)
 {
-    if (CmCheckInstallCertInfo(installCertInfo) != CM_SUCCESS || certUriList == NULL ||
-        certUriList->maxCapacity == 0 || certUriList->maxCapacity > MAX_P7B_INSTALL_COUNT) {
+    if (CmCheckInstallCertInfo(installCertInfo) != CM_SUCCESS || certUriList == NULL) {
         CM_LOG_E("invalid params");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    // calculate outDataSize: outData like [size][uri][uri]..., capacity is max uri count
-    uint32_t outDataSize = sizeof(uint32_t) + (MAX_LEN_URI * certUriList->maxCapacity);
+    uint32_t outDataSize = sizeof(uint32_t) + (MAX_LEN_URI * MAX_P7B_INSTALL_COUNT);
     uint8_t *outData = (uint8_t *)CmMalloc(outDataSize);
     if (outData == NULL) {
         CM_LOG_E("malloc failed");
