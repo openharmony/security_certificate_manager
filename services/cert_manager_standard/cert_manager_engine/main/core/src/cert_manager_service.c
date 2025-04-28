@@ -19,6 +19,7 @@
 #include <openssl/x509v3.h>
 #include <openssl/bio.h>
 #include <openssl/pem.h>
+#include <openssl/safestack.h>
 
 #include "securec.h"
 
@@ -824,6 +825,67 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
             }
         }
     } while (0);
+    return ret;
+}
+
+int32_t CmInstallMultiUserCert(const struct CmContext *context, const struct CmBlob *userCert,
+    const struct CmBlob *certAlias, const uint32_t status, struct CmBlob *certUri)
+{
+    if (context == NULL || userCert == NULL || certAlias == NULL || certUri->data == NULL ||
+        certUri->size < sizeof(uint32_t)) {
+        CM_LOG_E("invalid argument");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    uint8_t *outData = certUri->data;
+    uint32_t uriListSize = 0;
+
+    STACK_OF(X509) *certStack = InitCertStackContext(userCert->data, userCert->size);
+    if (certStack == NULL) {
+        CM_LOG_E("init certStack failed");
+        return CMR_ERROR_INVALID_CERT_FORMAT;
+    }
+    uriListSize = (int32_t)sk_X509_num(certStack);
+    // check buffer size
+    uint32_t capacity = (certUri->size - sizeof(uint32_t)) / MAX_LEN_URI;
+    if (uriListSize > capacity) {
+        CM_LOG_E("check certFile include too many certs");
+        sk_X509_pop_free(certStack, X509_free);
+        return CMR_ERROR_INCLUDE_TOO_MANY_CERTS;
+    }
+    int32_t ret = CheckInstallMultiCertCount(context, (uint32_t)uriListSize);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("check install certs too many, ret = %d", ret);
+        sk_X509_pop_free(certStack, X509_free);
+        return ret;
+    }
+
+    // set uriListSize
+    *((uint32_t *)outData) = uriListSize;
+    outData += sizeof(uint32_t);
+
+    for (int32_t i = 0; i < uriListSize; ++i) {
+        struct CmBlob certPemData = { 0, NULL };
+        X509 *cert = sk_X509_value(certStack, i);
+        ret = CmX509ToPEM(cert, &certPemData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmX509ToPem failed, ret = %d", ret);
+            break;
+        }
+
+        // install an user cert
+        struct CmBlob outUri = { MAX_LEN_URI, outData };
+        ret = CmInstallUserCert(context, &certPemData, certAlias, status, &outUri);
+        if (ret != CM_SUCCESS) {
+            CM_FREE_BLOB(certPemData);
+            CM_LOG_E("CmInstallUserCert failed, ret = %d", ret);
+            break;
+        }
+        CM_FREE_BLOB(certPemData);
+        outData += MAX_LEN_URI;
+    }
+
+    sk_X509_pop_free(certStack, X509_free);
     return ret;
 }
 

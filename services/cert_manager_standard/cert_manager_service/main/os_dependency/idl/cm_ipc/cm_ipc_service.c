@@ -1191,6 +1191,29 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
     CM_LOG_I("leave: ret = %d", ret);
 }
 
+static int32_t CmInstallUserCertExecute(const struct InstallUserCertParams *installCertParams,
+    const enum CmCertFileFormat certFormat)
+{
+    if (CmCheckInstallUserCertParams(installCertParams) != CM_SUCCESS) {
+        CM_LOG_E("invalid params");
+        return CMR_ERROR_NULL_POINTER;
+    }
+    int32_t ret = CM_SUCCESS;
+    if (certFormat == PEM_DER) {
+        ret = CmInstallUserCert(installCertParams->cmContext, installCertParams->userCert,
+            installCertParams->certAlias, installCertParams->status, installCertParams->outData);
+    } else if (certFormat == P7B) {
+        ret = CmInstallMultiUserCert(installCertParams->cmContext, installCertParams->userCert,
+            installCertParams->certAlias, installCertParams->status, installCertParams->outData);
+    } else {
+        ret = CMR_ERROR_NOT_SUPPORTED;
+    }
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("install user cert failed, certFormat = %u, ret = %d", certFormat, ret);
+    }
+    return ret;
+}
+
 void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context)
 {
@@ -1199,6 +1222,7 @@ void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlo
     struct CmBlob certAlias = { 0, NULL };
     uint32_t userId = 0;
     uint32_t status = CERT_STATUS_ENANLED;
+    uint32_t certFormat = PEM_DER;
     struct CmContext cmContext = {0};
     struct CmContext oriContext = {0};
     struct CmParamSet *paramSet = NULL;
@@ -1207,6 +1231,7 @@ void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlo
         { .tag = CM_TAG_PARAM1_BUFFER, .blob = &certAlias },
         { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &userId },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &status },
+        { .tag = CM_TAG_PARAM2_UINT32, .uint32Param = &certFormat },
     };
 
     do {
@@ -1224,7 +1249,8 @@ void CmIpcServiceInstallUserCert(const struct CmBlob *paramSetBlob, struct CmBlo
             break;
         }
 
-        ret = CmInstallUserCert(&cmContext, &userCert, &certAlias, status, outData);
+        struct InstallUserCertParams installUserCertParams = { &cmContext, &userCert, &certAlias, outData, status };
+        ret = CmInstallUserCertExecute(&installUserCertParams, certFormat);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CertManagerInstallUserCert fail, ret = %d", ret);
             break;

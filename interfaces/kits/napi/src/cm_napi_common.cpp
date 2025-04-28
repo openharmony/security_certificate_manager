@@ -36,6 +36,7 @@ static const std::string NO_AUTHORIZATION_MSG = "the application is not authoriz
 static const std::string ALIAS_LENGTH_REACHED_LIMIT_MSG = "the input alias length reaches the max";
 static const std::string DEVICE_ENTER_ADVSECMODE_MSG = "the device enters advanced security mode";
 static const std::string PASSWORD_IS_ERROR_MSG = "the input password is error";
+static const std::string INCLUDE_TOO_MANY_CERTS_MSG = "the file includes too many certs";
 
 static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     // invalid params
@@ -54,6 +55,7 @@ static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     { CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT, ALIAS_LENGTH_REACHED_LIMIT },
     { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE },
     { CMR_ERROR_PASSWORD_IS_ERR, PASSWORD_IS_ERROR },
+    { CMR_ERROR_INCLUDE_TOO_MANY_CERTS, INCLUDE_TOO_MANY_CERTS },
 };
 
 static const std::unordered_map<int32_t, std::string> NATIVE_CODE_TO_MSG_MAP = {
@@ -69,6 +71,7 @@ static const std::unordered_map<int32_t, std::string> NATIVE_CODE_TO_MSG_MAP = {
     { CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT, ALIAS_LENGTH_REACHED_LIMIT_MSG },
     { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE_MSG },
     { CMR_ERROR_PASSWORD_IS_ERR, PASSWORD_IS_ERROR_MSG },
+    { CMR_ERROR_INCLUDE_TOO_MANY_CERTS, INCLUDE_TOO_MANY_CERTS_MSG },
 };
 }  // namespace
 
