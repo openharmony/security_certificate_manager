@@ -62,9 +62,6 @@ int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem);
 int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *userCert,
     const struct CmBlob *certAlias, const uint32_t status, struct CmBlob *certUri);
 
-int32_t CmInstallMultiUserCert(const struct CmContext *context, const struct CmBlob *userCert,
-    const struct CmBlob *certAlias, const uint32_t status, struct CmBlob *certUri);
-
 int32_t CmUninstallUserCert(const struct CmContext *context, const struct CmBlob *certUri);
 
 int32_t CmUninstallAllUserCert(const struct CmContext *context);

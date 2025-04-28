@@ -19,7 +19,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <openssl/x509.h>
-#include <openssl/safestack.h>
 #include "cm_type.h"
 #ifdef __cplusplus
 extern "C" {
@@ -43,9 +42,6 @@ extern "C" {
 #define CM_ORGANIZATION_UNIT_NAME  "OU"
 
 #define ASN1_TAG_TYPE_SEQ 0x30
-
-DEFINE_STACK_OF(char)
-
 enum CmCertFormat {
     CM_CERT_FORMAT_PEM,
     CM_CERT_FORMAT_DER
@@ -61,15 +57,6 @@ struct DataTime {
 };
 
 X509 *InitCertContext(const uint8_t *certBuf, uint32_t size);
-
-/**
- * @brief Create STACKOF(X509) from a buffer
- *
- * @param[in] certBuf P7B file buffer.
- * @param[in] size Buffer's size.
- * @return STACK_OF(X509)* Stack of X509 certificate.
- */
-STACK_OF(X509) *InitCertStackContext(const uint8_t *certBuf, uint32_t size);
 
 int32_t GetX509SerialNumber(X509 *x509cert, char *outBuf, uint32_t outBufMaxSize);
 

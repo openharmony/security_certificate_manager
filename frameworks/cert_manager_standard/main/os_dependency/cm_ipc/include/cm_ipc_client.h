@@ -69,8 +69,8 @@ int32_t CmClientGetUserCertInfo(const struct CmBlob *certUri, const uint32_t sto
 int32_t CmClientSetUserCertStatus(const struct CmBlob *certUri, const uint32_t store,
     const uint32_t status);
 
-int32_t CmClientInstallUserTrustedCert(const struct CmInstallCertInfo *installInfo,
-    const enum CmCertFileFormat certFormat, const uint32_t status, struct CmBlob *certUri);
+int32_t CmClientInstallUserTrustedCert(const struct CmBlob *userCert, const struct CmBlob *certAlias,
+    const uint32_t userId, const uint32_t status, struct CmBlob *certUri);
 
 int32_t CmClientUninstallUserTrustedCert(const struct CmBlob *certUri);
 
