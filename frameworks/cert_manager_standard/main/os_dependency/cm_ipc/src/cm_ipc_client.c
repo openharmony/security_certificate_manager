@@ -944,17 +944,9 @@ int32_t CmClientSetUserCertStatus(const struct CmBlob *certUri, const uint32_t s
     return SetUserCertStatus(CM_MSG_SET_USER_CERTIFICATE_STATUS, certUri, store, status);
 }
 
-int32_t CmClientInstallUserTrustedCert(const struct CmInstallCertInfo *installInfo,
-    const enum CmCertFileFormat certFormat, const uint32_t status, struct CmBlob *certUri)
+int32_t CmClientInstallUserTrustedCert(const struct CmBlob *userCert, const struct CmBlob *certAlias,
+    const uint32_t userId, const uint32_t status, struct CmBlob *certUri)
 {
-    if (CmCheckInstallCertInfo(installInfo) != CM_SUCCESS) {
-        CM_LOG_E("check installCertInfo invalid");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    const struct CmBlob *userCert = installInfo->userCert;
-    const struct CmBlob *certAlias = installInfo->certAlias;
-    uint32_t userId = installInfo->userId;
-
     if (CmCheckBlob(userCert) != CM_SUCCESS || CmCheckBlob(certAlias) != CM_SUCCESS ||
         CmCheckBlob(certUri) != CM_SUCCESS) {
         CM_LOG_E("invalid input params");
@@ -969,7 +961,6 @@ int32_t CmClientInstallUserTrustedCert(const struct CmInstallCertInfo *installIn
         { .tag = CM_TAG_PARAM1_BUFFER, .blob = *certAlias },
         { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = userId },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = status },
-        { .tag = CM_TAG_PARAM2_UINT32, .uint32Param = certFormat },
     };
 
     do {

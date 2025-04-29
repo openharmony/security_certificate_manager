@@ -93,8 +93,6 @@ int32_t RdbInsertCertProperty(const struct CertPropertyOri *propertyOri);
 int32_t GetObjNameFromCertData(const struct CmBlob *certData, const struct CmBlob *certAlias,
     struct CmBlob *objectName);
 
-int32_t GetCertOrCredCount(const struct CmContext *context, const uint32_t store, uint32_t *certCount);
-
 #ifdef __cplusplus
 }
 #endif
