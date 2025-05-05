@@ -45,6 +45,7 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode);
 
 void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
     napi_value *result, int32_t length);
+int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncContext);
 
 inline napi_value GetInt32(napi_env env, int32_t value)
 {
@@ -53,14 +54,13 @@ inline napi_value GetInt32(napi_env env, int32_t value)
     return result;
 }
 
-int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncContext);
-
 enum CmDialogPageType {
     PAGE_MAIN = 1,
     PAGE_CA_CERTIFICATE = 2,
     PAGE_CREDENTIAL = 3,
     PAGE_INSTALL_CERTIFICATE = 4,
-    PAGE_INSTALL_CA_GUIDE = 5
+    PAGE_INSTALL_CA_GUIDE = 5,
+    PAGE_REQUEST_AUTHORIZE = 6
 };
 
 enum CmCertificateType {
@@ -89,6 +89,7 @@ enum OperationType {
     DIALOG_OPERATION_INSTALL = 1,
     DIALOG_OPERATION_UNINSTALL = 2,
     DIALOG_OPERATION_DETAIL = 3,
+    DIALOG_OPERATION_AUTHORIZE = 4,
 };
 
 }  // namespace CertManagerNapi
