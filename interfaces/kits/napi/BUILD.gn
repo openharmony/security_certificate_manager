@@ -92,6 +92,7 @@ ohos_shared_library("certmanagerdialog") {
     "src/dialog/cm_napi_open_dialog.cpp",
     "src/dialog/cm_napi_open_install_dialog.cpp",
     "src/dialog/cm_napi_open_uninstall_dialog.cpp",
+    "src/dialog/cm_napi_open_authorize_dialog.cpp",
   ]
 
   external_deps = [

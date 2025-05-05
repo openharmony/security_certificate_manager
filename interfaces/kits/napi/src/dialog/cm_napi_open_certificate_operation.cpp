@@ -63,7 +63,7 @@ void CmOperationUIExtensionCallback::ProcessCallback(napi_env env, const CommonA
 {
     napi_value args = nullptr;
     if (asyncContext->errCode == CM_SUCCESS) {
-        if (asyncContext->opType == DIALOG_OPERATION_INSTALL) {
+        if (asyncContext->opType == DIALOG_OPERATION_INSTALL || asyncContext->opType == DIALOG_OPERATION_AUTHORIZE) {
             NAPI_CALL_RETURN_VOID(env,
                 napi_create_string_utf8(env, asyncContext->uri.c_str(), NAPI_AUTO_LENGTH, &args));
         } else {

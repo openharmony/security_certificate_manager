@@ -433,7 +433,7 @@ static OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
     return OHOS::iface_cast<OHOS::AppExecFwk::BundleMgrProxy>(remoteObject);
 }
 
-int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncContext)
+static int32_t GetCallerBundleInfo(OHOS::AppExecFwk::BundleInfo &bundleInfo)
 {
     OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> bundleMgrProxy = GetBundleMgrProxy();
     if (bundleMgrProxy == nullptr) {
@@ -441,7 +441,6 @@ int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncCon
         return CM_FAILURE;
     }
 
-    OHOS::AppExecFwk::BundleInfo bundleInfo;
     int32_t flags = static_cast<int32_t>(OHOS::AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_DEFAULT) |
         static_cast<int32_t>(OHOS::AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_APPLICATION) |
         static_cast<int32_t>(OHOS::AppExecFwk::GetBundleInfoFlag::GET_BUNDLE_INFO_WITH_HAP_MODULE) |
@@ -451,13 +450,27 @@ int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncCon
         CM_LOG_E("Failed to get bundleInfo, resCode is %d", resCode);
         return CM_FAILURE;
     }
+    return CM_SUCCESS;
+}
+
+int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncContext)
+{
+    if (asyncContext == nullptr || asyncContext->context == nullptr) {
+        CM_LOG_E("invalid param");
+        return CM_FAILURE;
+    }
+    OHOS::AppExecFwk::BundleInfo bundleInfo;
+    if (GetCallerBundleInfo(bundleInfo) != CM_SUCCESS) {
+        CM_LOG_E("Failed to get caller bundleInfo");
+        return CM_FAILURE;
+    }
 
     if (asyncContext->context->GetResourceManager() == nullptr) {
         CM_LOG_E("context get resourcemanager faild");
         return CMR_ERROR_NULL_POINTER;
     }
 
-    resCode = asyncContext->context->GetResourceManager()->GetStringById(bundleInfo.applicationInfo.labelId,
+    int32_t resCode = asyncContext->context->GetResourceManager()->GetStringById(bundleInfo.applicationInfo.labelId,
         asyncContext->labelName);
     if (resCode != CM_SUCCESS) {
         CM_LOG_E("getStringById is faild, resCode is %d", resCode);
@@ -465,6 +478,5 @@ int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncCon
     }
     return CM_SUCCESS;
 }
-
 
 }  // namespace CertManagerNapi
