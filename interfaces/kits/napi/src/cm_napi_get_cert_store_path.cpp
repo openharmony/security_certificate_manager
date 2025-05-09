@@ -15,6 +15,8 @@
 
 #include "cm_napi_get_cert_store_path.h"
 
+#include <unistd.h>
+
 #include "cm_log.h"
 #include "cm_napi_common.h"
 #include "cm_type.h"
@@ -83,11 +85,43 @@ static int32_t GetUserCaStorePath(const enum CmCertScope certScope, string &path
     return CM_SUCCESS;
 }
 
-static napi_value GetCertStorePath(napi_env env, const enum CmCertType certType, const enum CmCertScope certScope)
+static bool IsDirExist(const char *fileName)
+{
+    if (fileName == NULL) {
+        return false;
+    }
+    if (access(fileName, F_OK) == 0) {
+        return true;
+    }
+    return false;
+}
+
+static int32_t GetSysCaStorePath(napi_env env, const enum CmCertAlg certAlg, string &path)
+{
+    if (certAlg == CM_ALG_INTERNATIONAL) {
+        path = CA_STORE_PATH_SYSTEM;
+        return CM_SUCCESS;
+    }
+    if (!IsDirExist(SYSTEM_CA_STORE_GM)) {
+        CM_LOG_E("system gm ca store path not exist");
+        ThrowError(env, STORE_PATH_NOT_SUPPORTED, "the device does not support specified certificate store path");
+        return STORE_PATH_NOT_SUPPORTED;
+    } else {
+        path = CA_STORE_PATH_SYSTEM_SM;
+    }
+    return CM_SUCCESS;
+}
+
+static napi_value GetCertStorePath(napi_env env, const enum CmCertType certType, const enum CmCertScope certScope,
+    const enum CmCertAlg certAlg)
 {
     string path = "";
     if (certType == CM_CA_CERT_SYSTEM) {
-        path += CA_STORE_PATH_SYSTEM;
+        int32_t ret = GetSysCaStorePath(env, certAlg, path);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed to get system ca path, ret = %d", ret);
+            return nullptr;
+        }
     } else {
         int32_t ret = GetUserCaStorePath(certScope, path);
         if (ret != CM_SUCCESS) {
@@ -186,6 +220,36 @@ static int32_t GetAndCheckCertScope(napi_env env, napi_value arg, const enum CmC
     return CM_SUCCESS;
 }
 
+static int32_t GetAndCheckCertAlg(napi_env env, napi_value arg, uint32_t &algorithm)
+{
+    bool hasAlg = false;
+    napi_status status = napi_has_named_property(env, arg, CM_CERT_ALG_STR.c_str(), &hasAlg);
+    if (status != napi_ok || !hasAlg) {
+        CM_LOG_D("property certAlg not exist");
+        algorithm = CM_ALG_INTERNATIONAL;
+        return SUCCESS;
+    }
+
+    napi_value certAlg = nullptr;
+    status = napi_get_named_property(env, arg, CM_CERT_ALG_STR.c_str(), &certAlg);
+    if (status != napi_ok) {
+        CM_LOG_E("Failed to get certAlg");
+        return CM_FAILURE;
+    }
+
+    napi_value result = ParseUint32(env, certAlg, algorithm);
+    if (result == nullptr) {
+        CM_LOG_E("Failed to get certAlg value");
+        return CM_FAILURE;
+    }
+
+    if (!IsValidCertAlg(algorithm)) {
+        CM_LOG_E("certAlg[%u] is invalid", algorithm);
+        return CM_FAILURE;
+    }
+    return CM_SUCCESS;
+}
+
 napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get cert store path enter");
@@ -219,7 +283,15 @@ napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    napi_value res = GetCertStorePath(env, static_cast<CmCertType>(type), static_cast<CmCertScope>(scope));
+    uint32_t algorithm;
+    ret = GetAndCheckCertAlg(env, argv[0], algorithm);
+    if (ret != CM_SUCCESS) {
+        ThrowError(env, PARAM_ERROR, "Failed to get param certAlg");
+        return nullptr;
+    }
+
+    napi_value res = GetCertStorePath(env, static_cast<CmCertType>(type), static_cast<CmCertScope>(scope),
+        static_cast<CmCertAlg>(algorithm));
     CM_LOG_I("get cert store path end");
     return res;
 }
