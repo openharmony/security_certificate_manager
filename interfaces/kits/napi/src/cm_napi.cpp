@@ -142,6 +142,16 @@ namespace CMNapi {
         AddInt32Property(env, level, "EL4", CM_AUTH_STORAGE_LEVEL_EL4);
         return level;
     }
+
+    static napi_value CreateCertAlgorithm(napi_env env)
+    {
+        napi_value algorithm = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &algorithm));
+
+        AddInt32Property(env, algorithm, "INTERNATIONAL", CM_ALG_INTERNATIONAL);
+        AddInt32Property(env, algorithm, "SM", CM_ALG_SM);
+        return algorithm;
+    }
 }  // namespace CertManagerNapi
 
 using namespace CMNapi;
@@ -158,6 +168,7 @@ extern "C" {
             DECLARE_NAPI_PROPERTY("CertScope", CreateCertScope(env)),
             DECLARE_NAPI_PROPERTY("CertFileFormat", CreateCertFileFormat(env)),
             DECLARE_NAPI_PROPERTY("AuthStorageLevel", CreateAuthStorageLevel(env)),
+            DECLARE_NAPI_PROPERTY("CertAlgorithm", CreateCertAlgorithm(env)),
 
             /* system ca */
             DECLARE_NAPI_FUNCTION("getSystemTrustedCertificateList", CMNapiGetSystemCertList),

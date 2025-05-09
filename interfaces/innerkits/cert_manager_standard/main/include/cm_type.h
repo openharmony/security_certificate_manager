@@ -90,6 +90,8 @@ extern "C" {
     (((a) != CM_AUTH_STORAGE_LEVEL_EL1) && ((a) != CM_AUTH_STORAGE_LEVEL_EL2) && ((a) != CM_AUTH_STORAGE_LEVEL_EL4))
 
 #define CA_STORE_PATH_SYSTEM              "/etc/security/certificates"
+#define CA_STORE_PATH_SYSTEM_SM           "/etc/security/certificates_gm"
+#define SYSTEM_CA_STORE_GM                "/system/etc/security/certificates_gm/"
 #define CA_STORE_PATH_USER_SANDBOX_BASE   "/data/certificates/user_cacerts/"
 #define CA_STORE_PATH_USER_SERVICE_BASE   "/data/service/el1/public/cert_manager_service/certificates/user_open/"
 

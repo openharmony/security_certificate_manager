@@ -56,6 +56,7 @@ static const std::string CM_RESULT_PRPPERTY_CREDENTIAL = "credential";
 
 static const std::string CM_CERT_SCOPE_STR = "certScope";
 static const std::string CM_CERT_TYPE_STR = "certType";
+static const std::string CM_CERT_ALG_STR = "certAlg";
 
 static const std::string GENERIC_MSG = "There is an internal error. Possible causes: "
     "1.IPC communication failed. 2.Memory operation error.";
@@ -95,6 +96,7 @@ void GenerateNapiPromise(napi_env env, napi_ref callback, napi_deferred *deferre
 
 bool IsValidCertType(const uint32_t certType);
 bool IsValidCertScope(const uint32_t scope);
+bool IsValidCertAlg(const uint32_t certAlg);
 
 inline napi_value GetNull(napi_env env)
 {
@@ -168,6 +170,7 @@ enum ErrorCode {
     ALIAS_LENGTH_REACHED_LIMIT = 17500006,
     DEVICE_ENTER_ADVSECMODE = 17500007,
     PASSWORD_IS_ERROR = 17500008,
+    STORE_PATH_NOT_SUPPORTED = 17500009,
 };
 
 enum CmJSKeyDigest {
@@ -185,6 +188,11 @@ enum CmJSKeyPadding {
     CM_JS_PADDING_NONE = 0,
     CM_JS_PADDING_PSS = 1,
     CM_JS_PADDING_PKCS1_V1_5 = 2,
+};
+
+enum CmCertAlg {
+    CM_ALG_INTERNATIONAL = 1,
+    CM_ALG_SM = 2,
 };
 
 struct CertInfoValue {
