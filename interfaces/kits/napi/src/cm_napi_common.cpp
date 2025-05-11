@@ -665,4 +665,15 @@ bool IsValidCertScope(const uint32_t scope)
             return false;
     }
 }
+
+bool IsValidCertAlg(const uint32_t certAlg)
+{
+    switch (static_cast<CmCertAlg>(certAlg)) {
+        case CM_ALG_INTERNATIONAL:
+        case CM_ALG_SM:
+            return true;
+        default:
+            return false;
+    }
+}
 }  // namespace CertManagerNapi
