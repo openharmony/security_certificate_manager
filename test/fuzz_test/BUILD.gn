@@ -66,6 +66,7 @@ group("fuzztest") {
       "./cmipcserviceuninstallusercert_fuzzer:fuzztest",
       "./cmipcserviceupdate_fuzzer:fuzztest",
       "./cmonremoterequest_fuzzer:fuzztest",
+      "./cminstallusertrustedcertp7b_fuzzer:fuzztest",
     ]
 
     deps += [
