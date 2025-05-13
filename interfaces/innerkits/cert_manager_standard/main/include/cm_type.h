@@ -33,13 +33,15 @@ extern "C" {
     #define CM_API_EXPORT __attribute__ ((visibility("default")))
 #endif
 
-#define MAX_LEN_CERTIFICATE    8196
+#define MAX_LEN_CERTIFICATE      8196
+#define MAX_LEN_CERTIFICATE_P7B  (1024 * 300)
 
 #define MAX_LEN_CERTIFICATE_CHAIN    (3 * MAX_LEN_CERTIFICATE)
 
 #define MAX_SUFFIX_LEN           16
 #define MAX_COUNT_CERTIFICATE    256
 #define MAX_COUNT_CERTIFICATE_ALL  512
+#define MAX_P7B_INSTALL_COUNT    256
 #define MAX_LEN_URI              256
 #define MAX_AUTH_LEN_URI         256
 #define MAX_LEN_CERT_ALIAS       129    /* include 1 byte: the terminator('\0') */
@@ -470,9 +472,33 @@ enum CmCertScope {
     CM_GLOBAL_USER = 2,
 };
 
+enum CmCertFileFormat {
+    PEM_DER = 0,
+    P7B = 1,
+};
+
 struct UserCAProperty {
     uint32_t userId;
     enum CmCertScope scope;
+};
+
+struct CmInstallCertInfo {
+    const struct CmBlob *userCert;
+    const struct CmBlob *certAlias;
+    uint32_t userId;
+};
+
+struct CertUriList {
+    uint32_t certCount;
+    struct CmBlob *uriList;
+};
+
+struct InstallUserCertParams {
+    struct CmContext *cmContext;
+    struct CmBlob *userCert;
+    struct CmBlob *certAlias;
+    struct CmBlob *outData;
+    uint32_t status;
 };
 
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)
@@ -483,6 +509,24 @@ static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)
 static inline int32_t CmCheckBlob(const struct CmBlob *blob)
 {
     if ((blob == NULL) || (blob->data == NULL) || (blob->size == 0)) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    return CM_SUCCESS;
+}
+
+static inline int32_t CmCheckInstallUserCertParams(const struct InstallUserCertParams *params)
+{
+    if (params == NULL || params->cmContext == NULL || CmCheckBlob(params->certAlias) != CM_SUCCESS ||
+        CmCheckBlob(params->userCert) != CM_SUCCESS || CmCheckBlob(params->outData) != CM_SUCCESS) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    return CM_SUCCESS;
+}
+
+static inline int32_t CmCheckInstallCertInfo(const struct CmInstallCertInfo *installCertInfo)
+{
+    if (installCertInfo == NULL || CmCheckBlob(installCertInfo->certAlias) != CM_SUCCESS ||
+        CmCheckBlob(installCertInfo->userCert) != CM_SUCCESS) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     return CM_SUCCESS;

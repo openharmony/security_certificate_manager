@@ -42,7 +42,7 @@ int32_t CmServiceGetCallingAppCertListCheck(const struct CmContext *cmContext, c
 int32_t CmServiceGetAppCertCheck(struct CmContext *cmContext, const uint32_t store, const struct CmBlob *keyUri);
 
 int32_t CmServiceInstallUserCertCheck(struct CmContext *cmContext, const struct CmBlob *userCert,
-    const struct CmBlob *certAlias, const uint32_t userId);
+    const struct CmBlob *certAlias, const uint32_t userId, const uint32_t certFormat);
 
 int32_t CmServiceUninstallUserCertCheck(struct CmContext *cmContext, const struct CmBlob *certUri);
 
@@ -50,6 +50,8 @@ int32_t CmServiceGetUserCertInfoCheck(struct CmContext *cmContext, const struct 
     const uint32_t type, bool isCheckUid);
 
 int32_t CmServiceSetUserCertStatusCheck(struct CmContext *cmContext, const struct CmBlob *certUri);
+
+int32_t CheckInstallMultiCertCount(const struct CmContext *context, const uint32_t certNum);
 #ifdef __cplusplus
 }
 #endif

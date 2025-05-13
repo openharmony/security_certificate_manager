@@ -86,6 +86,9 @@ CM_API_EXPORT int32_t CmGetUserCACertList(const struct UserCAProperty *property,
 CM_API_EXPORT int32_t CmGetCertStorePath(const enum CmCertType type, const uint32_t userId,
     char *path, uint32_t pathLen);
 
+CM_API_EXPORT int32_t CmInstallUserTrustedP7BCert(const struct CmInstallCertInfo *installCertInfo, const bool status,
+    struct CertUriList *certUriList);
+
 #ifdef __cplusplus
 }
 #endif

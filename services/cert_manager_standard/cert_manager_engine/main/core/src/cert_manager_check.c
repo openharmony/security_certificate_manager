@@ -494,14 +494,15 @@ static bool CmCheckAndUpdateCallerUserId(const uint32_t inputUserId, uint32_t *c
 }
 
 int32_t CmServiceInstallUserCertCheck(struct CmContext *cmContext, const struct CmBlob *userCert,
-    const struct CmBlob *certAlias, const uint32_t userId)
+    const struct CmBlob *certAlias, const uint32_t userId, const uint32_t certFormat)
 {
     if (cmContext == NULL) {
         CM_LOG_E("CmServiceInstallUserCertCheck: context is null");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((CmCheckBlob(userCert) != CM_SUCCESS) || userCert->size > MAX_LEN_CERTIFICATE) {
+    uint32_t userCertMaxLen = (certFormat == P7B) ? MAX_LEN_CERTIFICATE_P7B : MAX_LEN_CERTIFICATE;
+    if ((CmCheckBlob(userCert) != CM_SUCCESS) || userCert->size > userCertMaxLen) {
         CM_LOG_E("input params userCert is invalid");
         return CMR_ERROR_INVALID_ARGUMENT_APP_CERT;
     }
@@ -574,6 +575,21 @@ int32_t CmServiceSetUserCertStatusCheck(struct CmContext *cmContext, const struc
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uninstall user cert: caller and uri check fail");
         return ret;
+    }
+    return CM_SUCCESS;
+}
+
+int32_t CheckInstallMultiCertCount(const struct CmContext *context, const uint32_t certNum)
+{
+    uint32_t certCount = 0;
+    int32_t ret = GetCertOrCredCount(context, CM_USER_TRUSTED_STORE, &certCount);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed obtain cert count for store muti user cert.");
+        return ret;
+    }
+    if (certCount + certNum > MAX_COUNT_CERTIFICATE) {
+        CM_LOG_E("cert count beyond maxcount, can't install user certs");
+        return CMR_ERROR_MAX_CERT_COUNT_REACHED;
     }
     return CM_SUCCESS;
 }

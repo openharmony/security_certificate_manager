@@ -20,6 +20,7 @@
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_cert_data_user.h"
+#include "cm_cert_data_p7b.h"
 
 using namespace testing::ext;
 using namespace CertmanagerTest;
@@ -772,6 +773,82 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest026, TestSize.Level0)
 
     ret = CmUninstallUserTrustedCert(&certUri26);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal uninstall user ca cert test failed, recode:" << ret;
+}
+
+/**
+ * @tc.name: InstallUserCertTest027
+ * @tc.desc: Test CertManager Install user p7b cert interface  function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MJ8 /SR000H09N7
+ */
+HWTEST_F(CmUserCertTest, InstallUserCertTest027, TestSize.Level0)
+{
+    int32_t ret;
+    struct CertUriList certUriList = { 0, nullptr };
+
+    char aliasBuf[] = "";
+    struct CmBlob alias027 = { strlen(aliasBuf) + 1, reinterpret_cast<uint8_t *>(aliasBuf) };
+
+    struct CmInstallCertInfo installCertInfo = {
+        .userCert = &g_p7bUserCert,
+        .certAlias = &alias027,
+        .userId = TEST_USERID
+    };
+
+    ret = CmInstallUserTrustedP7BCert(&installCertInfo, true, &certUriList);
+    EXPECT_EQ(ret, CM_SUCCESS) << "install p7b user ca cert test failed, recode:" << ret;
+    EXPECT_EQ(certUriList.certCount == 2, true) << "install p7b user ca cert test failed, certUriList.certCount != 2";
+    CM_FREE_PTR(certUriList.uriList);
+}
+
+/**
+ * @tc.name: InstallUserCertTest028
+ * @tc.desc: Test CertManager Install user p7b cert interface  function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MJ8 /SR000H09N7
+ */
+HWTEST_F(CmUserCertTest, InstallUserCertTest028, TestSize.Level0)
+{
+    int32_t ret;
+    struct CertUriList certUriList = { 0, nullptr };
+
+    char aliasBuf[] = "";
+    struct CmBlob alias028 = { strlen(aliasBuf) + 1, reinterpret_cast<uint8_t *>(aliasBuf) };
+
+    struct CmInstallCertInfo installCertInfo = {
+        .userCert = &userCert[0],
+        .certAlias = &alias028,
+        .userId = TEST_USERID
+    };
+
+    ret = CmInstallUserTrustedP7BCert(&installCertInfo, true, &certUriList);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_CERT_FORMAT) << "install p7b user ca cert test failed, recode:" << ret;
+    CM_FREE_PTR(certUriList.uriList);
+}
+
+/**
+ * @tc.name: InstallUserCertTest029
+ * @tc.desc: Test CertManager Install user p7b cert interface  function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MJ8 /SR000H09N7
+ */
+HWTEST_F(CmUserCertTest, InstallUserCertTest029, TestSize.Level0)
+{
+    int32_t ret;
+    struct CertUriList certUriList = { 0, nullptr };
+
+    char aliasBuf[] = "";
+    struct CmBlob alias029 = { strlen(aliasBuf) + 1, reinterpret_cast<uint8_t *>(aliasBuf) };
+
+    struct CmInstallCertInfo installCertInfo = {
+        .userCert = &g_p7bUserCertTooLongSubj,
+        .certAlias = &alias029,
+        .userId = TEST_USERID
+    };
+
+    ret = CmInstallUserTrustedP7BCert(&installCertInfo, true, &certUriList);
+    EXPECT_EQ(ret, CMR_ERROR_BUFFER_TOO_SMALL) << "install p7b user ca cert test failed, recode:" << ret;
+    CM_FREE_PTR(certUriList.uriList);
 }
 
 /**
