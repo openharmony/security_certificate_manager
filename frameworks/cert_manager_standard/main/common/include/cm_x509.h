@@ -85,7 +85,7 @@ int32_t GetX509IssueNameLongFormat(const X509 *x509cert, char* outBuf, uint32_t 
 int32_t GetX509NotBefore(const X509 *x509cert, char* outBuf, uint32_t outBufMaxSize);
 int32_t GetX509NotAfter(const X509 *x509cert, char* outBuf, uint32_t outBufMaxSize);
 
-int32_t GetX509Fingerprint(const X509 *x509cert, char* outBuf, uint32_t outBufMaxSize);
+int32_t GetX509Fingerprint(const X509 *x509cert, char *outBuf, uint32_t outBufMaxSize);
 
 void FreeCertContext(X509 *x509cert);
 #ifdef __cplusplus
