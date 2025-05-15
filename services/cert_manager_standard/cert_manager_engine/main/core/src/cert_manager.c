@@ -856,7 +856,6 @@ static int32_t RemoveAllUserCert(const struct CmContext *context, uint32_t store
 {
     ASSERT_ARGS(path);
     struct CmMutableBlob fileNames = { 0, NULL };
-    struct CmMutableBlob pathBlob = { strlen(path) + 1, (uint8_t *)path }; /* include '\0' at end. */
     struct CmBlob certUri = { 0, NULL };
     int32_t ret = CertManagerGetFilenames(&fileNames, path);
     if (ret != CM_SUCCESS) {
@@ -881,11 +880,6 @@ static int32_t RemoveAllUserCert(const struct CmContext *context, uint32_t store
         ret = CertManagerFileRemove(path, (char *)fNames[i].data);
         if (ret != CMR_OK) {
             CM_LOG_E("User Cert %u remove failed, ret: %d", i, ret);
-            continue;
-        }
-        ret = CmSetStatusEnable(context, &pathBlob, (struct CmBlob *)(&fNames[i]), store);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("Update StatusFile %u fail, ret = %d", i, ret);
             continue;
         }
     }

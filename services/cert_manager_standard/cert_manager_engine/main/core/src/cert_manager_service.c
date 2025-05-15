@@ -506,7 +506,7 @@ static int32_t CmGetHapUserCertList(const struct CmContext *context, const struc
         }
         ret = CmGetCertPathList(&cmContext, CM_USER_TRUSTED_STORE, pathList);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("get current or gloval cert path list failed");
+            CM_LOG_E("get current or global cert path list failed");
             return ret;
         }
     }
@@ -605,14 +605,9 @@ static int32_t CmServiceGetSysCertInfo(const struct CmContext *context, const st
             ret = CMR_ERROR_NOT_EXIST;
             break;
         }
+        *status = CERT_STATUS_ENABLED;
 
         struct CertFileInfo *cFileList = (struct CertFileInfo *)certFileList.data;
-        ret = CmGetCertStatus(context, &cFileList[matchIndex], store, status); /* status */
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed to get cert status");
-            break;
-        }
-
         ret = CmStorageGetBuf((char *)cFileList[matchIndex].path.data,
         (char *)cFileList[matchIndex].fileName.data, certificateData); /* cert data */
         if (ret != CM_SUCCESS) {
@@ -643,19 +638,24 @@ static int32_t CmServiceGetUserCertInfo(struct CmContext *context, const struct 
         CM_LOG_E("Failed to construct uidpath");
         return ret;
     }
-
     struct CmBlob path = {MAX_PATH_LEN, (uint8_t *)uidPath};
     struct CertFileInfo cFile = {*certUri, path};
-    ret = CmGetCertStatus(context, &cFile, store, status); /* status */
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("Failed to get cert status");
-        return ret;
-    }
-
     ret = CmStorageGetBuf(uidPath, (char *)cFile.fileName.data, certificateData); /* cert data */
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed to get cert data");
         return ret;
+    }
+
+    if (store == CM_SYS_CREDENTIAL_STORE) {
+        *status = CERT_STATUS_ENABLED;
+        return ret;
+    }
+    ret = CmGetCertConfigStatus((char *)cFile.fileName.data, status);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to get cert status, ret = %d", ret);
+        CM_FREE_PTR(certificateData->data);
+        certificateData->size = 0;
+        return CMR_ERROR_GET_CERT_STATUS;
     }
     return ret;
 }
@@ -775,6 +775,72 @@ static int32_t GetUserCertNameAndPath(const struct CmContext *context, const str
     return ret;
 }
 
+static int32_t GetCertFileHash(const struct CmBlob *certFileData, struct CmBlob *certFileHash)
+{
+    uint8_t certAliasData[] = "";
+    struct CmBlob certAlias = { sizeof(certAliasData), certAliasData };
+    // get cert file hash
+    int ret = GetObjNameFromCertData(certFileData, &certAlias, certFileHash);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get objName from certData failed, ret = %d", ret);
+    }
+    return ret;
+}
+
+static int32_t FindDuplicateUserCert(const struct CmContext *context, const char *objectName,
+    struct CmBlob *outUri)
+{
+    if (context == NULL || objectName == NULL || outUri == NULL) {
+        CM_LOG_E("params null pointer");
+        return CMR_ERROR_NULL_POINTER;
+    }
+    struct CmMutableBlob certFileList = { 0, NULL };
+    const struct UserCAProperty prop = { INIT_INVALID_VALUE, CM_CURRENT_USER };
+    int32_t ret = CmServiceGetCertList(context, &prop, CM_USER_TRUSTED_STORE, &certFileList);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get cert file list failed");
+        return ret;
+    }
+    struct CertFileInfo *cFileList = (struct CertFileInfo *)certFileList.data;
+    ret = CMR_ERROR_NOT_EXIST;
+    for (uint32_t i = 0; i < certFileList.size; i++) {
+        char fileName[MAX_PATH_LEN] = { 0 };
+        if (sprintf_s(fileName, MAX_PATH_LEN, "%s/%s", cFileList[i].path.data, cFileList[i].fileName.data) < 0) {
+            CM_LOG_E("Failed sprint fileName");
+            return CMR_ERROR_MEM_OPERATION_PRINT;
+        }
+        struct CmBlob certData = { 0, NULL };
+        ret = CmStorageGetBuf((char *)cFileList[i].path.data, (char *)cFileList[i].fileName.data, &certData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get cert data failed");
+            break;
+        }
+        uint8_t certFileHashData[MAX_LEN_CERT_ALIAS] = { 0 };
+        struct CmBlob certFileHash = { sizeof(certFileHashData), certFileHashData };
+        ret = GetCertFileHash(&certData, &certFileHash);
+        CM_FREE_BLOB(certData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get certFileHash failed");
+            break;
+        }
+        if (strcmp((char *)certFileHashData, objectName) != 0) {
+            ret = CMR_ERROR_NOT_EXIST;
+            continue;
+        }
+        if (memcpy_s(outUri->data, outUri->size, cFileList[i].fileName.data, cFileList[i].fileName.size) != EOK) {
+            CM_LOG_E("Copy cert uri failed");
+            ret = CMR_ERROR_MEM_OPERATION_COPY;
+            break;
+        }
+        ret = CM_SUCCESS;
+        break;
+    }
+    if (certFileList.data != NULL) {
+        CmFreeCertFiles((struct CertFileInfo *)certFileList.data, certFileList.size);
+    }
+    return ret;
+}
+
 int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *userCert,
     const struct CmBlob *certAlias, const uint32_t status, struct CmBlob *certUri)
 {
@@ -796,6 +862,14 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
             break;
         }
 
+        if (strcmp("", (char *)certAlias->data) == 0) {
+            ret = FindDuplicateUserCert(context, (char *)objectBuf, certUri);
+            if (ret == CM_SUCCESS) {
+                CM_LOG_I("Find duplicate userCert");
+                break;
+            }
+        }
+
         ret = CmWriteUserCert(context, &pathBlob, userCert, &objectName, certUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CertManagerWriteUserCert fail");
@@ -808,12 +882,6 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
         ret = RdbInsertCertProperty(&propertyOri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to RdbInsertCertProperty");
-            break;
-        }
-
-        ret = SetcertStatus(context, certUri, CM_USER_TRUSTED_STORE, status, NULL);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("SetcertStatus fail");
             break;
         }
 
@@ -1017,13 +1085,7 @@ int32_t CmUninstallUserCert(const struct CmContext *context, const struct CmBlob
             CM_LOG_E("CmRemoveBackupUserCert fail");
             break;
         }
-        ret = CmSetStatusEnable(context, &pathBlob, certUri, store);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("UpdateStatusFile fail, ret = %d", ret);
-            break;
-        }
     } while (0);
-
     return ret;
 }
 
@@ -1051,16 +1113,6 @@ int32_t CmUninstallAllUserCert(const struct CmContext *context)
     }
 
     return ret;
-}
-
-int32_t CmServiceSetCertStatus(const struct CmContext *context, const struct CmBlob *certUri,
-    uint32_t store, uint32_t status)
-{
-    if (CmCheckBlob(certUri) != CM_SUCCESS || CheckUri(certUri) != CM_SUCCESS) {
-        CM_LOG_E("input params invalid");
-        return CMR_ERROR_INVALID_ARGUMENT_URI;
-    }
-    return SetcertStatus(context, certUri, store, status, NULL);
 }
 
 int32_t CmSetStatusBackupCert(
