@@ -82,17 +82,9 @@ static int32_t CmTraversalDirActionUserCa(const struct CmContext *context, const
         return ret;
     }
 
-    struct CmBlob certUri = { strlen(fileName) + 1, (uint8_t *)fileName }; /* include '\0' at end. */
     ret = DeleteCertProperty(fileName);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("delete user ca cert property failed, ret: %d", ret);
-        return ret;
-    }
-
-    struct CmMutableBlob pathBlob = { strlen(filePath) + 1, (uint8_t *)filePath };
-    ret = CmSetStatusEnable(context, &pathBlob, &certUri, store);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("User set status faild, ret: %d", ret);
         return ret;
     }
 

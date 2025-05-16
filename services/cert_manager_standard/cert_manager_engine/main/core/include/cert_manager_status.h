@@ -86,6 +86,7 @@ int32_t CmSetStatusEnable(const struct CmContext *context, struct CmMutableBlob 
 int32_t CmGetCertStatus(const struct CmContext *context, struct CertFileInfo *cFile,
     uint32_t store, uint32_t *status);
 
+int32_t CmGetCertConfigStatus(const char *fileName, uint32_t *status);
 #ifdef __cplusplus
 }
 #endif

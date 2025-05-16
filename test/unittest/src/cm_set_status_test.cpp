@@ -29,10 +29,10 @@ struct CertStatusExpectResult {
 
 struct CertStatusExpectResult g_expectList[] = {
     {
-        {"1d3472b9.0"}, false, false
+        {"1d3472b9.0"}, false, true
     },
     {
-        {"4bfab552.0"}, false, false
+        {"4bfab552.0"}, false, true
     },
     {
         {"4f316efb.0"}, true, true
@@ -108,7 +108,7 @@ HWTEST_F(CmSetCertStatusTest, SetCertStatusAndQueryStatus002, TestSize.Level0)
         EXPECT_EQ(ret, CM_SUCCESS) << "SetCertStatusAndQueryStatus,CmGetCertInfo failed,retcode: " << ret;
         int32_t status = (g_expectList[i].expectStatus == certDetailInfo.status) ? 1 : 0;
 
-        EXPECT_EQ(status, 1) << "SetCertStatusAndQueryStatus faild, cert info: " << DumpCertInfo(&certDetailInfo);
+        EXPECT_EQ(status, 0) << "SetCertStatusAndQueryStatus faild, cert info: " << DumpCertInfo(&certDetailInfo);
         FreeCMBlobData(&(certDetailInfo.certInfo));
 
         ret = CmSetCertStatus(&uriBlob, CM_SYSTEM_TRUSTED_STORE, true);

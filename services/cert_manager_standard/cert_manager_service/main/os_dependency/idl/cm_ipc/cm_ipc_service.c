@@ -198,12 +198,6 @@ void CmIpcServiceSetCertStatus(const struct CmBlob *paramSetBlob, struct CmBlob 
             CM_LOG_E("CmServiceSetCertStatusCheck check failed, ret = %d", ret);
             break;
         }
-
-        ret = CmServiceSetCertStatus(&cmContext, &certUri, store, status);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("set system cert status failed, ret = %d", ret);
-            break;
-        }
     } while (0);
     CmReport(__func__, &cmContext, &certUri, ret);
 
@@ -1171,11 +1165,6 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
             break;
         }
 
-        ret = CmServiceSetCertStatus(&cmContext, &certUri, store, status);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("set user cert status failed, ret = %d", ret);
-            break;
-        }
         ret = CmSetStatusBackupCert(&cmContext, &certUri, store, status);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmSetStatusBackupCert failed, ret = %d", ret);

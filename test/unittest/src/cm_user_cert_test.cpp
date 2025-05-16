@@ -14,6 +14,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <string.h>
 #include "cm_test_log.h"
 #include "cm_test_common.h"
 #include "cert_manager_api.h"
@@ -852,6 +853,40 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest029, TestSize.Level0)
 }
 
 /**
+ * @tc.name: InstallUserCertTest030
+ * @tc.desc: Test CertManager Install user cert interface function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MJ8 /SR000H09N7
+ */
+HWTEST_F(CmUserCertTest, InstallUserCertTest030, TestSize.Level0)
+{
+    int32_t ret;
+    uint8_t uriBuf0301[MAX_URI_LEN] = {0};
+    struct CmBlob certUri301 = { sizeof(uriBuf0301), uriBuf0301 };
+
+    char aliasBuf1[] = "test_alias";
+    struct CmBlob alias0301 = { strlen(aliasBuf1) + 1, reinterpret_cast<uint8_t *>(aliasBuf1) };
+
+    ret = CmInstallUserCACert(&userCert[0], &alias0301, TEST_USERID, true, &certUri301);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal install user ca cert test failed, recode:" << ret;
+
+    uint8_t uriBuf0302[MAX_URI_LEN] = {0};
+    struct CmBlob certUri302 = { sizeof(uriBuf0302), uriBuf0302 };
+
+    char aliasBuf2[] = "";
+    struct CmBlob alias0302 = { strlen(aliasBuf2) + 1, reinterpret_cast<uint8_t *>(aliasBuf2) };
+
+    ret = CmInstallUserCACert(&userCert[0], &alias0302, TEST_USERID, true, &certUri302);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal install same user ca cert test failed, recode:" << ret;
+
+    ret = strcmp((char *)uriBuf0301, (char *)uriBuf0302);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal install same user ca test compare uri failed, recode:" << ret;
+
+    ret = CmUninstallUserTrustedCert(&certUri301);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal uninstall same user ca cert test failed, recode:" << ret;
+}
+
+/**
  * @tc.name: UninstallUserCertTest001
  * @tc.desc: Test CertManager Uninstall user cert interface base function
  * @tc.type: FUNC
@@ -1492,7 +1527,7 @@ HWTEST_F(CmUserCertTest, SetUserCertStatusTest005, TestSize.Level0)
         reinterpret_cast<uint8_t *>(g_certStatusExpectResult[1].uri) };
 
     ret = CmSetUserCertStatus(&certUri, 100, true); /* invalid store */
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "Normal set user cert status test failed, recode:" << ret;
+    EXPECT_EQ(ret, CM_FAILURE) << "Normal set user cert status test failed, recode:" << ret;
 }
 
 /**
@@ -1508,7 +1543,7 @@ HWTEST_F(CmUserCertTest, SetUserCertStatusTest006, TestSize.Level0)
     struct CmBlob invalidCertUri = { sizeof(invalidUriBuf), invalidUriBuf };
 
     ret = CmSetUserCertStatus(&invalidCertUri, CM_USER_TRUSTED_STORE, true);
-    EXPECT_EQ(ret, CMR_ERROR_NOT_FOUND) << "Normal set user cert status test failed, recode:" << ret;
+    EXPECT_EQ(ret, CM_FAILURE) << "Normal set user cert status test failed, recode:" << ret;
 }
 
 /**

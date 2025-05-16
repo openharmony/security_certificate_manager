@@ -69,9 +69,6 @@ int32_t CmUninstallUserCert(const struct CmContext *context, const struct CmBlob
 
 int32_t CmUninstallAllUserCert(const struct CmContext *context);
 
-int32_t CmServiceSetCertStatus(const struct CmContext *context, const struct CmBlob *certUri,
-    uint32_t store, uint32_t status);
-
 int32_t CmSetStatusBackupCert(
     const struct CmContext *context, const struct CmBlob *certUri, uint32_t store, uint32_t status);
 
