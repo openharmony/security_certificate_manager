@@ -531,6 +531,37 @@ static int32_t GetCertContext(const struct CmBlob *fileName, struct CmContext *c
     return CM_SUCCESS;
 }
 
+static int32_t GetCertInfo(const struct CertFileInfo *certFileInfo, uint32_t store, struct CmBlob *certAlias,
+    struct CmBlob *certSubject)
+{
+    if (certFileInfo == NULL || certAlias == NULL || certSubject == NULL) {
+        CM_LOG_E("null pointer error");
+        return CMR_ERROR_NULL_POINTER;
+    }
+    struct CmBlob certData = { 0, NULL };
+    int ret = CmStorageGetBuf((char *)certFileInfo->path.data, (char *)certFileInfo->fileName.data, &certData);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get cert data failed");
+        return ret;
+    }
+
+    ret = CmGetCertAlias(store, (char *)certFileInfo->fileName.data, &certData, certAlias); /* alias */
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to get cert alias, ret = %d", ret);
+        CM_FREE_BLOB(certData);
+        return ret;
+    }
+
+    ret = CmGetCertSubjectName(&certData, certSubject); /* subjectName */
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to get cert subjectName, ret = %d", ret);
+        CM_FREE_BLOB(certData);
+        return ret;
+    }
+    CM_FREE_BLOB(certData);
+    return ret;
+}
+
 int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
     const struct CmMutableBlob *certFileList, struct CertBlob *certBlob, uint32_t *status)
 {
@@ -559,26 +590,11 @@ int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
 
         certBlob->uri[i].size = cFileList[i].fileName.size; /* uri */
 
-        struct CmBlob certData = { 0, NULL };
-        ret = CmStorageGetBuf((char *)cFileList[i].path.data, (char *)cFileList[i].fileName.data, &certData);
+        ret = GetCertInfo(&cFileList[i], store, &(certBlob->certAlias[i]), &(certBlob->subjectName[i]));
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("get cert data failed");
+            CM_LOG_E("get cert info failed");
             return ret;
         }
-
-        ret = CmGetCertAlias(store, (char *)cFileList[i].fileName.data, &certData,
-            &(certBlob->certAlias[i])); /* alias */
-        if (ret != CM_SUCCESS) {
-            CM_FREE_BLOB(certData);
-            return ret;
-        }
-
-        ret = CmGetCertSubjectName(&certData, &(certBlob->subjectName[i])); /* subjectName */
-        if (ret != CM_SUCCESS) {
-            CM_FREE_BLOB(certData);
-            return ret;
-        }
-        CM_FREE_BLOB(certData);
 
         if (store == CM_SYSTEM_TRUSTED_STORE) {
             status[i] = CERT_STATUS_ENABLED;

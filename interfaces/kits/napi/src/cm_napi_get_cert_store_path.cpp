@@ -87,7 +87,7 @@ static int32_t GetUserCaStorePath(const enum CmCertScope certScope, string &path
 
 static bool IsDirExist(const char *fileName)
 {
-    if (fileName == NULL) {
+    if (fileName == nullptr) {
         return false;
     }
     if (access(fileName, F_OK) == 0) {
