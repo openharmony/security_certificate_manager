@@ -41,6 +41,8 @@ ohos_fuzztest("CmIsAuthorizedAppFuzzTest") {
     "access_token:libtoken_setproc",
     "bounds_checking_function:libsec_static",
     "c_utils:utils",
+    "cJSON:cjson_static",
+    "selinux_adapter:librestorecon",
   ]
 }
 

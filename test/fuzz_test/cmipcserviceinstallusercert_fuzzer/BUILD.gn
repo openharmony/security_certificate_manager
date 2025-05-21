@@ -41,6 +41,7 @@ ohos_fuzztest("CmIpcServiceInstallUserCertFuzzTest") {
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
     "bounds_checking_function:libsec_static",
+    "cJSON:cjson_static",
   ]
 }
 

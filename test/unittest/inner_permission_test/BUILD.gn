@@ -48,7 +48,9 @@ ohos_unittest("cm_inner_permission_test") {
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
     "bounds_checking_function:libsec_static",
+    "cJSON:cjson_static",
     "c_utils:utils",
     "googletest:gtest",
+    "selinux_adapter:librestorecon",
   ]
 }
