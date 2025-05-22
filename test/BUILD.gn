@@ -63,9 +63,11 @@ ohos_unittest("cm_sdk_test") {
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
     "bounds_checking_function:libsec_static",
+    "cJSON:cjson_static",
     "c_utils:utils",
     "googletest:gtest",
     "openssl:libcrypto_shared",
+    "selinux_adapter:librestorecon",
   ]
   resource_config_file = "./resource/certificate_manager/ohos_test.xml"
 

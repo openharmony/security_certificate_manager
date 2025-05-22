@@ -20,8 +20,7 @@ module_output_path = "certificate_manager/certificate_manager"
 ##############################fuzztest##########################################
 ohos_fuzztest("CmInstallUserTrustedP7BCertFuzzTest") {
   module_out_path = module_output_path
-  fuzz_config_file =
-      "${cert_manager_root_dir}/test/fuzz_test/cminstallusertrustedcertp7b_fuzzer"
+  fuzz_config_file = "${cert_manager_root_dir}/test/fuzz_test/cminstallusertrustedcertp7b_fuzzer"
 
   cflags = [
     "-g",
@@ -40,7 +39,9 @@ ohos_fuzztest("CmInstallUserTrustedP7BCertFuzzTest") {
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
     "bounds_checking_function:libsec_static",
+    "cJSON:cjson_static",
     "c_utils:utils",
+    "selinux_adapter:librestorecon",
   ]
 }
 

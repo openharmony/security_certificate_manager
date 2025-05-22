@@ -41,7 +41,9 @@ ohos_fuzztest("CmSendRequestFuzzTest") {
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
     "bounds_checking_function:libsec_static",
+    "cJSON:cjson_static",
     "c_utils:utils",
+    "selinux_adapter:librestorecon",
   ]
 }
 

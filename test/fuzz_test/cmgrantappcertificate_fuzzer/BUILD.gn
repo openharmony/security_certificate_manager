@@ -41,6 +41,7 @@ ohos_fuzztest("CmGrantAppCertificateFuzzTest") {
     "access_token:libtoken_setproc",
     "bounds_checking_function:libsec_static",
     "c_utils:utils",
+    "selinux_adapter:librestorecon",
   ]
 }
 
