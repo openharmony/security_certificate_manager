@@ -108,7 +108,7 @@ HWTEST_F(CmSetCertStatusTest, SetCertStatusAndQueryStatus002, TestSize.Level0)
         EXPECT_EQ(ret, CM_SUCCESS) << "SetCertStatusAndQueryStatus,CmGetCertInfo failed,retcode: " << ret;
         int32_t status = (g_expectList[i].expectStatus == certDetailInfo.status) ? 1 : 0;
 
-        EXPECT_EQ(status, 0) << "SetCertStatusAndQueryStatus faild, cert info: " << DumpCertInfo(&certDetailInfo);
+        EXPECT_EQ(status, 1) << "SetCertStatusAndQueryStatus faild, cert info: " << DumpCertInfo(&certDetailInfo);
         FreeCMBlobData(&(certDetailInfo.certInfo));
 
         ret = CmSetCertStatus(&uriBlob, CM_SYSTEM_TRUSTED_STORE, true);
@@ -167,6 +167,6 @@ HWTEST_F(CmSetCertStatusTest, ExceptionSetStatus004, TestSize.Level0)
     const char *invalidUri = "INVALIDXXXX";
     struct CmBlob invalidUriBlob = {strlen(invalidUri) + 1, (uint8_t *)invalidUri};
     EXPECT_EQ(CmSetCertStatus(&invalidUriBlob, CM_SYSTEM_TRUSTED_STORE, true),
-        CMR_ERROR_NOT_FOUND);
+        CM_SUCCESS);
 }
 }

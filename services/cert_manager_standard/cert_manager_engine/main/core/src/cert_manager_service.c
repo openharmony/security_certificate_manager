@@ -804,11 +804,6 @@ static int32_t FindDuplicateUserCert(const struct CmContext *context, const char
     struct CertFileInfo *cFileList = (struct CertFileInfo *)certFileList.data;
     ret = CMR_ERROR_NOT_EXIST;
     for (uint32_t i = 0; i < certFileList.size; i++) {
-        char fileName[MAX_PATH_LEN] = { 0 };
-        if (sprintf_s(fileName, MAX_PATH_LEN, "%s/%s", cFileList[i].path.data, cFileList[i].fileName.data) < 0) {
-            CM_LOG_E("Failed sprint fileName");
-            return CMR_ERROR_MEM_OPERATION_PRINT;
-        }
         struct CmBlob certData = { 0, NULL };
         ret = CmStorageGetBuf((char *)cFileList[i].path.data, (char *)cFileList[i].fileName.data, &certData);
         if (ret != CM_SUCCESS) {
