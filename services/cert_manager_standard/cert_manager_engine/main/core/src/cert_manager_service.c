@@ -850,44 +850,39 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
     struct CmBlob displayName = { sizeof(displayBuf), displayBuf };
     struct CertName certName = { &displayName, &objectName, &subjectName };
 
-    do {
-        ret = GetUserCertNameAndPath(context, userCert, certAlias, &certName, &pathBlob);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("GetUserCertNameAndPath fail");
-            break;
-        }
+    ret = GetUserCertNameAndPath(context, userCert, certAlias, &certName, &pathBlob);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("GetUserCertNameAndPath fail");
+        return ret;
+    }
 
-        if (strcmp("", (char *)certAlias->data) == 0) {
-            ret = FindDuplicateUserCert(context, (char *)objectBuf, certUri);
-            if (ret == CM_SUCCESS) {
-                CM_LOG_I("Find duplicate userCert");
-                break;
-            }
-        }
-
+    ret = FindDuplicateUserCert(context, (char *)objectBuf, certUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_W("No duplicate files found");   // should continue install user cert.
+    }
+    // If alias is specified or there are no duplicate user cert.
+    if (strcmp("", (char *)certAlias->data) > 0 || ret != CM_SUCCESS) {
         ret = CmWriteUserCert(context, &pathBlob, userCert, &objectName, certUri);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CertManagerWriteUserCert fail");
-            break;
+            return ret;
         }
+    }
 
-        struct CertPropertyOri propertyOri = { context, certUri, &displayName, &subjectName,
-            CM_USER_TRUSTED_STORE, CM_AUTH_STORAGE_LEVEL_EL1 };
+    struct CertPropertyOri propertyOri = { context, certUri, &displayName, &subjectName,
+        CM_USER_TRUSTED_STORE, CM_AUTH_STORAGE_LEVEL_EL1 };
 
-        ret = RdbInsertCertProperty(&propertyOri);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed to RdbInsertCertProperty");
-            break;
-        }
+    ret = RdbInsertCertProperty(&propertyOri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to RdbInsertCertProperty");
+        return ret;
+    }
 
-        if (status == CERT_STATUS_ENABLED) {
-            ret = TryBackupUserCert(context, userCert, certUri, &pathBlob);
-            if (ret != CM_SUCCESS) {
-                CM_LOG_E("BackupUserCert fail");
-                break;
-            }
-        }
-    } while (0);
+    ret = TryBackupUserCert(context, userCert, certUri, &pathBlob);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("BackupUserCert fail");
+        return ret;
+    }
     return ret;
 }
 
@@ -927,7 +922,7 @@ int32_t CmInstallMultiUserCert(const struct CmContext *context, const struct CmB
     *((uint32_t *)outData) = uriListSize;
     outData += sizeof(uint32_t);
 
-    for (int32_t i = 0; i < uriListSize; ++i) {
+    for (uint32_t i = 0; i < uriListSize; ++i) {
         struct CmBlob certPemData = { 0, NULL };
         X509 *cert = sk_X509_value(certStack, i);
         ret = CmX509ToPEM(cert, &certPemData);
