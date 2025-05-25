@@ -800,6 +800,8 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest027, TestSize.Level0)
     EXPECT_EQ(ret, CM_SUCCESS) << "install p7b user ca cert test failed, recode:" << ret;
     EXPECT_EQ(certUriList.certCount == 2, true) << "install p7b user ca cert test failed, certUriList.certCount != 2";
     CM_FREE_PTR(certUriList.uriList);
+    ret = CmUninstallAllUserTrustedCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall All test failed, recode:" << ret;
 }
 
 /**
@@ -850,6 +852,8 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest029, TestSize.Level0)
     ret = CmInstallUserTrustedP7BCert(&installCertInfo, true, &certUriList);
     EXPECT_EQ(ret, CMR_ERROR_BUFFER_TOO_SMALL) << "install p7b user ca cert test failed, recode:" << ret;
     CM_FREE_PTR(certUriList.uriList);
+    ret = CmUninstallAllUserTrustedCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall All test failed, recode:" << ret;
 }
 
 /**
@@ -883,6 +887,37 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest030, TestSize.Level0)
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal install same user ca test compare uri failed, recode:" << ret;
 
     ret = CmUninstallUserTrustedCert(&certUri301);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal uninstall same user ca cert test failed, recode:" << ret;
+}
+
+/**
+ * @tc.name: InstallUserCertTest031
+ * @tc.desc: Test CertManager Install user cert interface function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MJ8 /SR000H09N7
+ */
+HWTEST_F(CmUserCertTest, InstallUserCertTest031, TestSize.Level0)
+{
+    int32_t ret;
+    uint8_t uriBuf0311[MAX_URI_LEN] = {0};
+    struct CmBlob certUri311 = { sizeof(uriBuf0311), uriBuf0311 };
+
+    char aliasBuf[] = "test_alias";
+    struct CmBlob alias031 = { strlen(aliasBuf) + 1, reinterpret_cast<uint8_t *>(aliasBuf) };
+
+    ret = CmInstallUserCACert(&userCert[0], &alias031, TEST_USERID, true, &certUri311);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal install user ca cert test failed, recode:" << ret;
+
+    uint8_t uriBuf0312[MAX_URI_LEN] = {0};
+    struct CmBlob certUri312 = { sizeof(uriBuf0312), uriBuf0312 };
+
+    ret = CmInstallUserCACert(&userCert[0], &alias031, TEST_USERID, true, &certUri312);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal install same user ca cert test failed, recode:" << ret;
+
+    ret = strcmp((char *)uriBuf0311, (char *)uriBuf0312);
+    EXPECT_EQ(ret, CM_SUCCESS) << "Normal install same user ca test compare uri failed, recode:" << ret;
+
+    ret = CmUninstallUserTrustedCert(&certUri311);
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal uninstall same user ca cert test failed, recode:" << ret;
 }
 

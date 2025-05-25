@@ -827,6 +827,7 @@ static int32_t FindDuplicateUserCert(const struct CmContext *context, const char
             ret = CMR_ERROR_MEM_OPERATION_COPY;
             break;
         }
+        outUri->size = cFileList[i].fileName.size;
         ret = CM_SUCCESS;
         break;
     }
