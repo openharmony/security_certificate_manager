@@ -730,7 +730,17 @@ int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem)
 static int32_t TryBackupUserCert(const struct CmContext *context, const struct CmBlob *userCert,
     struct CmBlob *certUri, struct CmMutableBlob *pathBlob)
 {
-    int32_t ret = CmBackupUserCert(context, certUri, userCert);
+    uint32_t uid = 0;
+    int32_t ret = CertManagerGetUidFromUri(certUri, &uid);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get uid from uri fail");
+        return ret;
+    }
+    struct CmContext userContext = {
+        .userId = context->userId,
+        .uid = uid
+    };
+    ret = CmBackupUserCert(&userContext, certUri, userCert);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmBackupUserCert fail");
         if (CmRemoveUserCert(pathBlob, certUri) != CM_SUCCESS) {
@@ -787,10 +797,58 @@ static int32_t GetCertFileHash(const struct CmBlob *certFileData, struct CmBlob 
     return ret;
 }
 
-static int32_t FindDuplicateUserCert(const struct CmContext *context, const char *objectName,
-    struct CmBlob *outUri)
+static int32_t CopyCertFileInfo(const struct CertFileInfo *certFile, struct CertFileInfo *dstCertFile)
 {
-    if (context == NULL || objectName == NULL || outUri == NULL) {
+    if (certFile == NULL || dstCertFile == NULL) {
+        CM_LOG_E("params null pointer");
+        return CMR_ERROR_NULL_POINTER;
+    }
+    dstCertFile->fileName.data = (uint8_t *)CMMalloc(certFile->fileName.size);
+    if (dstCertFile->fileName.data == NULL) {
+        CM_LOG_E("malloc buffer failed!");
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    dstCertFile->fileName.size = certFile->fileName.size;
+
+    dstCertFile->path.data = (uint8_t *)CMMalloc(certFile->path.size);
+    if (dstCertFile->path.data == NULL) {
+        CM_LOG_E("malloc buffer failed!");
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    dstCertFile->path.size = certFile->path.size;
+
+    if (memcpy_s(dstCertFile->fileName.data, certFile->fileName.size, certFile->fileName.data,
+        certFile->fileName.size) != EOK) {
+        CM_LOG_E("copy fileName failed!");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+
+    if (memcpy_s(dstCertFile->path.data, certFile->path.size, certFile->path.data, certFile->path.size) != EOK) {
+        CM_LOG_E("copy path failed!");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+    return CM_SUCCESS;
+}
+
+static void FreeCertFileInfo(struct CertFileInfo *dstCertFile)
+{
+    if (dstCertFile == NULL) {
+        CM_LOG_E("params null pointer");
+        return;
+    }
+    if (dstCertFile->fileName.data != NULL) {
+        CM_FREE_BLOB(dstCertFile->fileName);
+    }
+    if (dstCertFile->path.data != NULL) {
+        CM_FREE_BLOB(dstCertFile->path);
+    }
+}
+
+// Find duplicate user cert, ouput cert file info if found.
+static int32_t FindDuplicateUserCert(const struct CmContext *context, const char *objectName,
+    struct CertFileInfo *certFileInfo)
+{
+    if (context == NULL || objectName == NULL || certFileInfo == NULL) {
         CM_LOG_E("params null pointer");
         return CMR_ERROR_NULL_POINTER;
     }
@@ -822,17 +880,90 @@ static int32_t FindDuplicateUserCert(const struct CmContext *context, const char
             ret = CMR_ERROR_NOT_EXIST;
             continue;
         }
-        if (memcpy_s(outUri->data, outUri->size, cFileList[i].fileName.data, cFileList[i].fileName.size) != EOK) {
-            CM_LOG_E("Copy cert uri failed");
-            ret = CMR_ERROR_MEM_OPERATION_COPY;
+        ret = CopyCertFileInfo(&cFileList[i], certFileInfo);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Copy cert file info failed");
             break;
         }
-        outUri->size = cFileList[i].fileName.size;
         ret = CM_SUCCESS;
         break;
     }
     if (certFileList.data != NULL) {
         CmFreeCertFiles((struct CertFileInfo *)certFileList.data, certFileList.size);
+    }
+    return ret;
+}
+
+// Update rdb table and backup user cert config file.
+static int32_t AfterInstallUserCert(const struct AfterInstallCertProperty *afterPersistProp)
+{
+    int32_t ret = RdbInsertCertProperty(afterPersistProp->propertyOri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Failed to RdbInsertCertProperty");
+        return ret;
+    }
+
+    ret = TryBackupUserCert(afterPersistProp->context, afterPersistProp->userCert,
+        afterPersistProp->certUri, afterPersistProp->pathBlob);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("BackupUserCert fail");
+        return ret;
+    }
+    return ret;
+}
+
+// Storage user cert file. After that, save to rdb table and backup user cert config file.
+static int32_t PersistUserCert(const struct PersistProperty *persistProp, const struct CertPropertyOri *propertyOri)
+{
+    int ret = CmWriteUserCert(persistProp->context, persistProp->pathBlob, persistProp->userCert,
+        persistProp->objectName, persistProp->certUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CertManagerWriteUserCert fail");
+        return ret;
+    }
+
+    struct AfterInstallCertProperty afterInstallCertProp = {
+        .propertyOri = propertyOri,
+        .context = persistProp->context,
+        .userCert = persistProp->userCert,
+        .certUri = persistProp->certUri,
+        .pathBlob = persistProp->pathBlob
+    };
+    ret = AfterInstallUserCert(&afterInstallCertProp);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Update rdb table and backup user cert config fail");
+        return ret;
+    }
+    return ret;
+}
+
+// Just update user cert when there are duplicate cert.
+static int32_t UpdateUserCert(const struct UpdateUserCertProperty *updateProp,
+    const struct CertPropertyOri *propertyOri)
+{
+    // copy uri from certFileInfo
+    if (memcpy_s(updateProp->certUri->data, updateProp->certUri->size, updateProp->certFileInfo->fileName.data,
+        updateProp->certFileInfo->fileName.size) != EOK) {
+        CM_LOG_E("Copy cert uri failed");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+    updateProp->certUri->size = updateProp->certFileInfo->fileName.size;
+    // set path from certFileInfo
+    struct CmMutableBlob pathBlob = {
+        updateProp->certFileInfo->path.size,
+        updateProp->certFileInfo->path.data,
+    };
+    struct AfterInstallCertProperty afterPersistProp = {
+        .propertyOri = propertyOri,
+        .context = updateProp->context,
+        .userCert = updateProp->userCert,
+        .certUri = updateProp->certUri,
+        .pathBlob = &pathBlob
+    };
+    int32_t ret = AfterInstallUserCert(&afterPersistProp);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Update rdb table and backup user cert config fail");
+        return ret;
     }
     return ret;
 }
@@ -856,34 +987,30 @@ int32_t CmInstallUserCert(const struct CmContext *context, const struct CmBlob *
         CM_LOG_E("GetUserCertNameAndPath fail");
         return ret;
     }
-
-    ret = FindDuplicateUserCert(context, (char *)objectBuf, certUri);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_W("No duplicate files found");   // should continue install user cert.
-    }
-    // If alias is specified or there are no duplicate user cert.
-    if (strcmp("", (char *)certAlias->data) > 0 || ret != CM_SUCCESS) {
-        ret = CmWriteUserCert(context, &pathBlob, userCert, &objectName, certUri);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("CertManagerWriteUserCert fail");
-            return ret;
-        }
-    }
-
     struct CertPropertyOri propertyOri = { context, certUri, &displayName, &subjectName,
         CM_USER_TRUSTED_STORE, CM_AUTH_STORAGE_LEVEL_EL1 };
 
-    ret = RdbInsertCertProperty(&propertyOri);
+    struct CertFileInfo certFileInfo = { 0 };
+    ret = FindDuplicateUserCert(context, (char *)objectBuf, &certFileInfo);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Failed to RdbInsertCertProperty");
-        return ret;
+        CM_LOG_W("No duplicate files found");   // Should continue install user cert.
     }
-
-    ret = TryBackupUserCert(context, userCert, certUri, &pathBlob);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("BackupUserCert fail");
-        return ret;
+    // If alias is not specified and there are duplicate user cert.
+    if (strcmp("", (char *)certAlias->data) == 0 && ret == CM_SUCCESS) {
+        struct UpdateUserCertProperty property = { context, userCert, certUri, &certFileInfo};
+        ret = UpdateUserCert(&property, &propertyOri);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Update user cert failed, ret: %d", ret);
+        }
+    } else {  // If alias is specified or there are no duplicate user cert.
+        struct PersistProperty property = { context, &pathBlob, userCert, &objectName, certUri};
+        ret = PersistUserCert(&property, &propertyOri);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Persist user cert failed, ret: %d", ret);
+        }
     }
+    // Must free certFileInfo at last.
+    FreeCertFileInfo(&certFileInfo);
     return ret;
 }
 
