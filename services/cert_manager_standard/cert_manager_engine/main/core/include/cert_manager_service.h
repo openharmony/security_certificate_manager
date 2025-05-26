@@ -24,6 +24,29 @@
 extern "C" {
 #endif
 
+struct AfterInstallCertProperty {
+    const struct CertPropertyOri *propertyOri;
+    const struct CmContext *context;
+    const struct CmBlob *userCert;
+    struct CmBlob *certUri;
+    struct CmMutableBlob *pathBlob;
+};
+
+struct PersistProperty {
+    const struct CmContext *context;
+    struct CmMutableBlob *pathBlob;
+    const struct CmBlob *userCert;
+    struct CmBlob *objectName;
+    struct CmBlob *certUri;
+};
+
+struct UpdateUserCertProperty {
+    const struct CmContext *context;
+    const struct CmBlob *userCert;
+    struct CmBlob *certUri;
+    struct CertFileInfo *certFileInfo;
+};
+
 int32_t CmServicInstallAppCert(
     struct CmContext *context, const struct CmAppCertParam *certParam, struct CmBlob *keyUri);
 
