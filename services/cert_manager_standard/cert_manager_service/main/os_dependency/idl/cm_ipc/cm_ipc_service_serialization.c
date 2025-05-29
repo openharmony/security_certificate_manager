@@ -148,8 +148,12 @@ static int32_t CmGetCertListPack(const struct CertBlob *certBlob, uint32_t *stat
         CM_LOG_E("Copy cert count failed");
         return ret;
     }
-
+    uint32_t *unpackCertCount = (uint32_t *)certificateList->data;
     for (uint32_t i = 0; i < certCount; i++) {
+        if (certBlob->uri[i].size == 0) {
+            (*unpackCertCount)--;
+            continue;
+        }
         ret = CopyBlobToBuffer(&(certBlob->subjectName[i]), certificateList, &offset);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Copy certificate subject failed");
