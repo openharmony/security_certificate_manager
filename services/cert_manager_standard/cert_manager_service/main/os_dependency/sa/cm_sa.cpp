@@ -43,7 +43,7 @@ const uint32_t MAX_DELAY_TIMES = 100;
 const uint32_t DELAY_INTERVAL = 200000; /* delay 200ms waiting for system event */
 
 const std::string TASK_ID = "unload";
-const uint32_t DELAY_TIME = 180000; /* delay 180000ms to unload SA */
+const uint32_t DELAY_TIME = 60000; /* delay 60000ms to unload SA */
 const std::string USER_REMOVED_EVENT = "usual.event.USER_REMOVED";
 
 constexpr int CM_IPC_THREAD_NUM = 32;
