@@ -1183,9 +1183,9 @@ void CmIpcServiceSetUserCertStatus(const struct CmBlob *paramSetBlob, struct CmB
 static int32_t CmInstallUserCertExecute(const struct InstallUserCertParams *installCertParams,
     const enum CmCertFileFormat certFormat)
 {
-    if (CmCheckInstallUserCertParams(installCertParams) != CM_SUCCESS) {
-        CM_LOG_E("invalid params");
-        return CMR_ERROR_NULL_POINTER;
+    if (installCertParams == NULL || CmCheckBlob(installCertParams->outData) != CM_SUCCESS) {
+        CM_LOG_E("check out data invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
     int32_t ret = CM_SUCCESS;
     if (certFormat == PEM_DER) {

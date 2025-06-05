@@ -516,15 +516,6 @@ static inline int32_t CmCheckBlob(const struct CmBlob *blob)
     return CM_SUCCESS;
 }
 
-static inline int32_t CmCheckInstallUserCertParams(const struct InstallUserCertParams *params)
-{
-    if (params == NULL || params->cmContext == NULL || CmCheckBlob(params->certAlias) != CM_SUCCESS ||
-        CmCheckBlob(params->userCert) != CM_SUCCESS || CmCheckBlob(params->outData) != CM_SUCCESS) {
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    return CM_SUCCESS;
-}
-
 static inline int32_t CmCheckInstallCertInfo(const struct CmInstallCertInfo *installCertInfo)
 {
     if (installCertInfo == NULL || CmCheckBlob(installCertInfo->certAlias) != CM_SUCCESS ||

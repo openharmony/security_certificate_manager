@@ -582,6 +582,13 @@ int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
             return ret;
         }
 
+        ret = GetCertInfo(&cFileList[i], store, &(certBlob->certAlias[i]), &(certBlob->subjectName[i]));
+        if (ret != CM_SUCCESS) {
+            certBlob->uri[i].size = 0;
+            CM_LOG_D("get cert info failed");
+            continue;
+        }
+
         if (memcpy_s(certBlob->uri[i].data, MAX_LEN_URI, cFileList[i].fileName.data,
             cFileList[i].fileName.size) != EOK) {
             CM_LOG_E("Failed to get cert uri");
@@ -589,12 +596,6 @@ int32_t CmGetCertListInfo(const struct CmContext *context, uint32_t store,
         }
 
         certBlob->uri[i].size = cFileList[i].fileName.size; /* uri */
-
-        ret = GetCertInfo(&cFileList[i], store, &(certBlob->certAlias[i]), &(certBlob->subjectName[i]));
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("get cert info failed");
-            return ret;
-        }
 
         if (store == CM_SYSTEM_TRUSTED_STORE) {
             status[i] = CERT_STATUS_ENABLED;
