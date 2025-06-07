@@ -867,20 +867,18 @@ static int32_t RemoveAllUserCert(const struct CmContext *context, uint32_t store
     for (uint32_t i = 0; i < fileNames.size; i++) {
         certUri.data = (uint8_t *)fNames[i].data;
         certUri.size = fNames[i].size - 1;
-        ret = DeleteCertProperty((char *)certUri.data);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("Failed delete cert: %s rdbData", (char *)certUri.data);
+        ret = CertManagerFileRemove(path, (char *)fNames[i].data);
+        if (ret != CMR_OK) {
+            CM_LOG_E("User Cert %u remove failed, ret: %d", i, ret);
             continue;
         }
         ret = CmBackupRemove(context->userId, path, &certUri);
         if (ret != CMR_OK) {
             CM_LOG_E("User Cert %u remove config and backup file failed, ret: %d", i, ret);
-            continue;
         }
-        ret = CertManagerFileRemove(path, (char *)fNames[i].data);
-        if (ret != CMR_OK) {
-            CM_LOG_E("User Cert %u remove failed, ret: %d", i, ret);
-            continue;
+        ret = DeleteCertProperty((char *)certUri.data);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Failed delete cert: %s rdbData", (char *)certUri.data);
         }
     }
 
