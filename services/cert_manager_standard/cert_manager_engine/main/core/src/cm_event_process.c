@@ -355,7 +355,7 @@ static int32_t CmTraversalBackupUidDir(const char *certConfigUidDirPath)
     uint32_t fileCounts = 0;
     struct CmBlob fileNames[MAX_COUNT_CERTIFICATE] = { 0 };
     /* Gets all files under the certConfigUidDirPath */
-    int32_t ret = CmUidLayerGetFileCountAndNames(certConfigUidDirPath, fileNames, sizeof(fileNames), &fileCounts);
+    int32_t ret = CmUidLayerGetFileCountAndNames(certConfigUidDirPath, fileNames, MAX_COUNT_CERTIFICATE, &fileCounts);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get file count and names for the certConfigUidDirPath, ret = %d", ret);
         return ret;
