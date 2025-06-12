@@ -389,7 +389,7 @@ static int32_t UpdateUserCerts(uint32_t userId, const char *userIdPath)
         uint32_t fileCounts = 0;
         struct CmBlob fileNames[MAX_COUNT_CERTIFICATE] = { 0 };
         /* Gets all files under the uidPath */
-        ret = CmUidLayerGetFileCountAndNames(uidPath, fileNames, sizeof(fileNames), &fileCounts);
+        ret = CmUidLayerGetFileCountAndNames(uidPath, fileNames, MAX_COUNT_CERTIFICATE, &fileCounts);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Get file count and names from path of userId layer failed");
             continue;
