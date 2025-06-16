@@ -25,9 +25,14 @@
 #include "cm_pfx.h"
 #include "cm_type.h"
 #include "cm_x509.h"
+#include "cm_cert_data_p7b.h"
+#include "cm_cert_data_ed25519.h"
+#include "cm_util.h"
 
 using namespace testing::ext;
 namespace {
+static constexpr uint32_t STR_MAX_LEN = 10;
+
 static constexpr uint32_t DEFAULT_SIZE = 1024;
 
 class CmCertParseTest : public testing::Test {
@@ -551,5 +556,80 @@ HWTEST_F(CmCertParseTest, CmCertParseTest028, TestSize.Level0)
     EXPECT_EQ(ret, CMR_ERROR_PASSWORD_IS_ERR);
 
     EVP_PKEY_free(pkey);
+}
+
+/**
+* @tc.name: CmCertParseTest029
+* @tc.desc: test init P7B format cert
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCertParseTest, CmCertParseTest029, TestSize.Level0)
+{
+    STACK_OF(X509) *certStack = InitCertStackContext(g_p7bUserCert.data, g_p7bUserCert.size);
+    EXPECT_NE(certStack, nullptr);
+    sk_X509_pop_free(certStack, X509_free);
+}
+
+/**
+* @tc.name: CmCertParseTest030
+* @tc.desc: test init P7B format cert
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCertParseTest, CmCertParseTest030, TestSize.Level0)
+{
+    STACK_OF(X509) *certStack = InitCertStackContext(g_p7bUserCertTooLongSubj.data, g_p7bUserCertTooLongSubj.size);
+    EXPECT_NE(certStack, nullptr);
+    sk_X509_pop_free(certStack, X509_free);
+}
+
+/**
+* @tc.name: CmCertParseTest031
+* @tc.desc: test init P7B format cert
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCertParseTest, CmCertParseTest031, TestSize.Level0)
+{
+    STACK_OF(X509) *certStack = InitCertStackContext(nullptr, 0);
+    EXPECT_EQ(certStack, nullptr);
+    sk_X509_pop_free(certStack, X509_free);
+    certStack = InitCertStackContext(g_p7bUserCertTooLongSubj.data, 0);
+    EXPECT_EQ(certStack, nullptr);
+    sk_X509_pop_free(certStack, X509_free);
+    certStack = InitCertStackContext(g_p7bUserCertTooLongSubj.data, MAX_LEN_CERTIFICATE_P7B + 1);
+    EXPECT_EQ(certStack, nullptr);
+    sk_X509_pop_free(certStack, X509_free);
+    certStack = InitCertStackContext(g_ed25519P12CertInfo, sizeof(g_ed25519P12CertInfo));
+    EXPECT_EQ(certStack, nullptr);
+    sk_X509_pop_free(certStack, X509_free);
+}
+
+/**
+* @tc.name: CmCertParseTest032
+* @tc.desc: test CmIsNumeric
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCertParseTest, CmCertParseTest032, TestSize.Level0)
+{
+    char str[] = "123";
+    int32_t ret = CmIsNumeric(nullptr, 0, nullptr);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+    ret = CmIsNumeric(str, 0, nullptr);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+    ret = CmIsNumeric(str, STR_MAX_LEN + 1, nullptr);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+    ret = CmIsNumeric(str, sizeof(str), nullptr);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+    uint32_t value = 0;
+    ret = CmIsNumeric(str, sizeof(str), &value);
+    EXPECT_EQ(ret, CM_SUCCESS);
+    ret = CmIsNumeric(str, sizeof(str) - 1, &value);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+    char errorStr[] = "123ab123";
+    ret = CmIsNumeric(errorStr, sizeof(errorStr), &value);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 }
 } // end of namespace
