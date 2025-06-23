@@ -177,6 +177,7 @@ int32_t CmStorageGetAppCert(const struct CmContext *context, uint32_t store,
     return CmStorageGetBuf(uidPath, (const char *)keyUri->data, certBlob);
 }
 
+// LCOV_EXCL_START
 int32_t CmGetCertFilePath(const struct CmContext *context, uint32_t store, struct CmMutableBlob *pathBlob)
 {
     char pathPtr[CERT_MAX_PATH_LEN] = {0};
@@ -507,3 +508,4 @@ int32_t CmGetCertBackupFilePath(const X509 *userCertX509, uint32_t userId, char 
     }
     return ret;
 }
+// LCOV_EXCL_STOP

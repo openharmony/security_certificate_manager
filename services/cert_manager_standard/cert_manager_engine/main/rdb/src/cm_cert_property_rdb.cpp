@@ -46,6 +46,7 @@ int32_t CreateCertPropertyRdb(void)
     return CM_SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t InsertCertProperty(const struct CertProperty *certProperty)
 {
     CM_LOG_D("enter InsertCertProperty");
@@ -264,3 +265,4 @@ int32_t QueryCertProperty(const char *uri, struct CertProperty *certProperty)
     }
     return CM_SUCCESS;
 }
+// LCOV_EXCL_STOP

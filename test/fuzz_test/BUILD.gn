@@ -19,29 +19,36 @@ group("fuzztest") {
   if (os_level == "standard") {
     deps = [
       "./cmabort_fuzzer:fuzztest",
+      "./cmcallinggetappcertlist_fuzzer:fuzztest",
       "./cmfinish_fuzzer:fuzztest",
       "./cmgetappcert_fuzzer:fuzztest",
       "./cmgetappcertlist_fuzzer:fuzztest",
       "./cmgetauthorizedapplist_fuzzer:fuzztest",
       "./cmgetcertinfo_fuzzer:fuzztest",
       "./cmgetcertlist_fuzzer:fuzztest",
+      "./cmgetusercacertlist_fuzzer:fuzztest",
       "./cmgetusercertinfo_fuzzer:fuzztest",
       "./cmgetusercertlist_fuzzer:fuzztest",
       "./cmgrantappcertificate_fuzzer:fuzztest",
       "./cminit_fuzzer:fuzztest",
       "./cminstallappcert_fuzzer:fuzztest",
+      "./cminstallappcertex_fuzzer:fuzztest",
+      "./cminstallsystemappcert_fuzzer:fuzztest",
       "./cminstallusertrustedcert_fuzzer:fuzztest",
       "./cmisauthorizedapp_fuzzer:fuzztest",
       "./cmremovegrantedapp_fuzzer:fuzztest",
       "./cmsendrequest_fuzzer:fuzztest",
       "./cmsetcertstatus_fuzzer:fuzztest",
       "./cmsetusercertstatus_fuzzer:fuzztest",
+      "./cmuninstallallappcert_fuzzer:fuzztest",
+      "./cmuninstallallusertrustedcert_fuzzer:fuzztest",
       "./cmuninstallappcert_fuzzer:fuzztest",
       "./cmuninstallusertrustedcert_fuzzer:fuzztest",
       "./cmupdate_fuzzer:fuzztest",
     ]
 
     deps += [
+      "./cminstallusertrustedp7bcert_fuzzer:fuzztest",
       "./cmipcserviceabort_fuzzer:fuzztest",
       "./cmipcservicefinish_fuzzer:fuzztest",
       "./cmipcservicegetappcert_fuzzer:fuzztest",
@@ -66,7 +73,6 @@ group("fuzztest") {
       "./cmipcserviceuninstallusercert_fuzzer:fuzztest",
       "./cmipcserviceupdate_fuzzer:fuzztest",
       "./cmonremoterequest_fuzzer:fuzztest",
-      "./cminstallusertrustedcertp7b_fuzzer:fuzztest",
     ]
 
     deps += [

@@ -18,11 +18,16 @@
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
 
+namespace {
+const uint32_t CM_BLOB_COUNT = 2;
+const uint32_t MAX_BOOL = 2;
+}
+
 using namespace CmFuzzTest;
 namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
-        uint32_t buffSize = sizeof(struct CmBlob) + sizeof(uint32_t) + sizeof(struct CertInfo);
+        uint32_t buffSize = sizeof(struct CmBlob) * CM_BLOB_COUNT + sizeof(uint32_t) + sizeof(uint32_t);
         uint8_t *myData = nullptr;
         if (!CopyMyData(data, size, buffSize, &myData)) {
             return false;
@@ -42,12 +47,31 @@ namespace OHOS {
             return false;
         }
 
-        struct CertInfo sysCertInfo;
-        if (!GetCertInfoFromBuffer(myData, &remainSize, &offset, &sysCertInfo)) {
+        uint32_t status;
+        if (!GetUintFromBuffer(myData, &remainSize, &offset, &status)) {
             CmFree(myData);
             return false;
         }
 
+        struct CmBlob certInfo = { 0, nullptr };
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &certInfo)) {
+            CmFree(myData);
+            return false;
+        }
+
+        struct CertInfo sysCertInfo = {
+            .uri = "uri",
+            .certAlias = "alias",
+            .status = status % MAX_BOOL,
+            .issuerName = "issuerName",
+            .subjectName = "subjectName",
+            .serial = "serial",
+            .notBefore = "notBefore",
+            .notAfter = "notAfter",
+            .fingerprintSha256 = "sha256",
+            .certInfo = certInfo
+        };
+        
         SetATPermission();
         (void)CmGetCertInfo(&sysUri, store, &sysCertInfo);
 

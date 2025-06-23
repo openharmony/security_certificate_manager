@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,18 +13,20 @@
  * limitations under the License.
  */
 
-#include "cminstallusertrustedcertp7b_fuzzer.h"
+#include "cmgetusercacertlist_fuzzer.h"
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
 
+namespace {
+const uint32_t MAX_SCOPE = 3;
+}
+
 using namespace CmFuzzTest;
 namespace OHOS {
-    static const uint32_t CM_BLOB_NUM = 3;
-
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
-        uint32_t minSize = CM_BLOB_NUM * sizeof(struct CmBlob);
+        uint32_t minSize = sizeof(struct UserCAProperty) + sizeof(struct CertList);
         uint8_t *myData = nullptr;
         if (!CopyMyData(data, size, minSize, &myData)) {
             return false;
@@ -32,34 +34,33 @@ namespace OHOS {
 
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
-        struct CmBlob userCert = { 0, nullptr };
-        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &userCert)) {
+
+        uint32_t userId;
+        if (!GetUintFromBuffer(myData, &remainSize, &offset, &userId)) {
             CmFree(myData);
             return false;
         }
 
-        struct CmBlob certAlias = { 0, nullptr };
-        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &certAlias)) {
+        uint32_t scope;
+        if (!GetUintFromBuffer(myData, &remainSize, &offset, &scope)) {
             CmFree(myData);
             return false;
         }
+        scope = scope % MAX_SCOPE;
 
-        struct CertUriList certUriList = { 0, nullptr };
-
-        uint32_t randomUserId = 0;
-        if (!GetUintFromBuffer(myData, &remainSize, &offset, &randomUserId)) {
-            return false;
-        }
-        struct CmInstallCertInfo installCertInfo = {
-            .userCert = &userCert,
-            .certAlias = &certAlias,
-            .userId = randomUserId
+        struct UserCAProperty property = {
+            .userId = userId
         };
+        property.scope = static_cast<CmCertScope>(scope);
+        struct CertList userCertList = { 0, nullptr };
+        if (!GetCertListFromBuffer(myData, &remainSize, &offset, &userCertList)) {
+            CmFree(myData);
+            return false;
+        }
 
         SetATPermission();
-        (void)CmInstallUserTrustedP7BCert(&installCertInfo, true, &certUriList);
+        (void)CmGetUserCACertList(&property, &userCertList);
 
-        CM_FREE_PTR(certUriList.uriList);
         CmFree(myData);
         return true;
     }
@@ -72,3 +73,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::DoSomethingInterestingWithMyAPI(data, size);
     return 0;
 }
+
