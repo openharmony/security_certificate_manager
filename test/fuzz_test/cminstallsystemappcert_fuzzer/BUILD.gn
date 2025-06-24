@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+# Copyright (c) 2025-2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,9 +18,10 @@ import("//build/test.gni")
 module_output_path = "certificate_manager/certificate_manager"
 
 ##############################fuzztest##########################################
-ohos_fuzztest("CmInstallUserTrustedP7BCertFuzzTest") {
+ohos_fuzztest("CmInstallSystemAppCertFuzzTest") {
   module_out_path = module_output_path
-  fuzz_config_file = "${cert_manager_root_dir}/test/fuzz_test/cminstallusertrustedcertp7b_fuzzer"
+  fuzz_config_file =
+      "${cert_manager_root_dir}/test/fuzz_test/cminstallsystemappcert_fuzzer"
 
   cflags = [
     "-g",
@@ -28,7 +29,7 @@ ohos_fuzztest("CmInstallUserTrustedP7BCertFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  sources = [ "cminstallusertrustedcertp7b_fuzzer.cpp" ]
+  sources = [ "cminstallsystemappcert_fuzzer.cpp" ]
   deps = [
     "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
     "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
@@ -39,9 +40,7 @@ ohos_fuzztest("CmInstallUserTrustedP7BCertFuzzTest") {
     "access_token:libnativetoken",
     "access_token:libtoken_setproc",
     "bounds_checking_function:libsec_static",
-    "cJSON:cjson_static",
     "c_utils:utils",
-    "selinux_adapter:librestorecon",
   ]
 }
 
@@ -52,7 +51,7 @@ group("fuzztest") {
 
   deps += [
     # deps file
-    ":CmInstallUserTrustedP7BCertFuzzTest",
+    ":CmInstallSystemAppCertFuzzTest",
   ]
 }
 ###############################################################################

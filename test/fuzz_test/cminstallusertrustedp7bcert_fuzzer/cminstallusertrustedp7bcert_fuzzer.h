@@ -14,5 +14,5 @@
  */
 
 #ifndef FUZZ_PROJECT_NAME
-#define FUZZ_PROJECT_NAME "cminstallusertrustedcertp7b_fuzzer"
+#define FUZZ_PROJECT_NAME "cminstallusertrustedp7bcert_fuzzer"
 #endif

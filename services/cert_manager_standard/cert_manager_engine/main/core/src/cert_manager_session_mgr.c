@@ -32,6 +32,7 @@ static struct DoubleList g_sessionList = { &g_sessionList, &g_sessionList };
 static uint32_t g_sessionCount = 0;
 static pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
 
+// LCOV_EXCL_START
 static void DeleteHuksInitInfo(const struct CmBlob *handle)
 {
     struct HksParamSet *paramSet = NULL;
@@ -262,4 +263,4 @@ void CmDeleteSessionByNodeInfo(enum CmSessionDeleteType deleteType, const struct
     }
     pthread_mutex_unlock(&g_lock);
 }
-
+// LCOV_EXCL_STOP

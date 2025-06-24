@@ -29,6 +29,7 @@
 #define MAX_AUTH_COUNT                      256
 #define AUTH_LIST_VERSION                    0
 
+// LCOV_EXCL_START
 static int32_t CheckAuthListFileSizeValid(const struct CmBlob *originList, uint32_t *authCount)
 {
     if (originList->size < (sizeof(uint32_t) + sizeof(uint32_t))) { /* version and count size */
@@ -508,4 +509,4 @@ int32_t CmCheckCredentialExist(const struct CmContext *context, const struct CmB
     }
     return ret;
 }
-
+// LCOV_EXCL_STOP

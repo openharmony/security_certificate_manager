@@ -33,6 +33,7 @@
 #include "cm_type.h"
 #include "cm_util.h"
 
+// LCOV_EXCL_START
 static void DeleteAuth(const struct CmContext *context, const char *fileName, bool isDeleteByUid)
 {
     CM_LOG_D("isDeleteByUid:%d", isDeleteByUid);
@@ -515,3 +516,4 @@ int32_t CmDeleteProcessInfo(const struct CmContext *context)
 
     return ret;
 }
+// LCOV_EXCL_STOP

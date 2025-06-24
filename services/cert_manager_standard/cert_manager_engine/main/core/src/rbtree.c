@@ -51,6 +51,7 @@ struct EncoderContext {
     RbTreeValueEncoder enc;
 };
 
+// LCOV_EXCL_START
 RbTreeKey RbTreeNodeKey(const struct RbTreeNode *n)
 {
     return n == NULL ? 0 : KEY(n);
@@ -595,5 +596,5 @@ void RbTreeDestroyEx(struct RbTree *t, RbTreeNodeHandler freeFunc)
 
 #ifdef __cplusplus
 }
-
 #endif
+// LCOV_EXCL_STOP

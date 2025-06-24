@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,11 +18,46 @@
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
 
+namespace {
+const uint32_t UINT32_COUNT = 4;
+const uint32_t CM_BLOB_COUNT = 2;
+}
+
 using namespace CmFuzzTest;
 namespace OHOS {
+    static bool CreateCredCert(struct Credential &credCert, uint8_t *myData,
+        uint32_t &remainSize, uint32_t &offset)
+    {
+        struct CmBlob credData = { 0, nullptr };
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &credData)) {
+            CmFree(myData);
+            return false;
+        }
+        uint32_t isExist;
+        if (!GetUintFromBuffer(myData, &remainSize, &offset, &isExist)) {
+            CmFree(myData);
+            return false;
+        }
+        uint32_t certNum;
+        if (!GetUintFromBuffer(myData, &remainSize, &offset, &certNum)) {
+            CmFree(myData);
+            return false;
+        }
+        uint32_t keyNum;
+        if (!GetUintFromBuffer(myData, &remainSize, &offset, &keyNum)) {
+            CmFree(myData);
+            return false;
+        }
+        credCert.isExist = isExist;
+        credCert.certNum = certNum;
+        credCert.keyNum = keyNum;
+        credCert.credData = credData;
+        return true;
+    }
+
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
-        uint32_t minSize = sizeof(struct CmBlob) + sizeof(uint32_t) + sizeof(struct Credential);
+        uint32_t minSize = sizeof(struct CmBlob) * CM_BLOB_COUNT + sizeof(uint32_t) * UINT32_COUNT;
         uint8_t *myData = nullptr;
         if (!CopyMyData(data, size, minSize, &myData)) {
             return false;
@@ -30,32 +65,27 @@ namespace OHOS {
 
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
-
         struct CmBlob appCertUri = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &appCertUri)) {
             CmFree(myData);
             return false;
         }
-
         uint32_t store;
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &store)) {
             CmFree(myData);
             return false;
         }
 
-        if (remainSize < sizeof(struct Credential)) {
+        struct Credential credCert = {
+            .type = "type",
+            .alias = "alias",
+            .keyUri = "uri",
+        };
+
+        if (!CreateCredCert(credCert, myData, remainSize, offset)) {
             CmFree(myData);
             return false;
         }
-        struct Credential credCert;
-        (void)memcpy_s(&credCert, sizeof(struct Credential), myData + offset, sizeof(struct Credential));
-        offset += sizeof(struct Credential);
-        remainSize -= sizeof(struct Credential);
-        if (remainSize < credCert.credData.size) {
-            CmFree(myData);
-            return false;
-        }
-        credCert.credData.data = const_cast<uint8_t *>(myData + offset);
 
         SetATPermission();
         (void)CmGetAppCert(&appCertUri, store, &credCert);
