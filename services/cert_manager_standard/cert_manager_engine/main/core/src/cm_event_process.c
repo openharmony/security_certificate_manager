@@ -66,6 +66,10 @@ static int32_t CmTraversalDirActionCredential(const char *filePath, const char *
         CM_LOG_E("get storage level failed, ret: %d", ret);
         return ret;
     }
+    if (level == ERROR_LEVEL) {
+        level = CM_AUTH_STORAGE_LEVEL_EL1;
+        CM_LOG_I("Traversal dir level is ERROR_LEVEL, change to default level el1");
+    }
 
     ret = CmKeyOpDeleteKey(&keyUri, level);
     if (ret != CM_SUCCESS) { /* ignore the return of delete key */
