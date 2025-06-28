@@ -58,7 +58,8 @@
           "safwk",
           "samgr",
           "security_guard",
-          "openssl"
+          "openssl",
+          "runtime_core"
         ]
       },
       "build": {
