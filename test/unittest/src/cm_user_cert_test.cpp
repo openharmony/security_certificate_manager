@@ -14,7 +14,7 @@
  */
 
 #include <gtest/gtest.h>
-#include <string.h>
+#include <cstring>
 #include "cm_test_log.h"
 #include "cm_test_common.h"
 #include "cert_manager_api.h"
