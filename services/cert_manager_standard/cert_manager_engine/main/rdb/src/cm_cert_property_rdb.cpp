@@ -248,7 +248,7 @@ int32_t QueryCertProperty(const char *uri, struct CertProperty *certProperty)
         return CMR_ERROR_QUERY_RDB_DATA_FAIL;
     }
     if (rowCount <= 0) {
-        CM_LOG_D("Finish to query, cert: %s does not exist in the database", uri);
+        CM_LOG_I("Finish to query, cert: %s does not exist in the database", uri);
         return CM_SUCCESS;
     }
 

@@ -294,6 +294,10 @@ int32_t CmServiceInit(const struct CmContext *context, const struct CmBlob *auth
         CM_FREE_PTR(commonUri.data);
         return ret;
     }
+    if (level == ERROR_LEVEL) {
+        level = CM_AUTH_STORAGE_LEVEL_EL1;
+        CM_LOG_I("Init level is ERROR_LEVEL, change to default level el1");
+    }
 
     ret = CmKeyOpInit(context, &commonUri, spec, level, handle);
     CM_FREE_PTR(commonUri.data);

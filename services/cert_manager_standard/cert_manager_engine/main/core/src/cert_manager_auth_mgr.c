@@ -364,6 +364,10 @@ int32_t CmAuthGrantAppCertificate(const struct CmContext *context, const struct 
             CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
             break;
         }
+        if (level == ERROR_LEVEL) {
+            level = CM_AUTH_STORAGE_LEVEL_EL1;
+            CM_LOG_I("grant level is ERROR_LEVEL, change to default level el1");
+        }
 
         ret = CheckCallerIsProducer(context, &uriObj);
         if (ret != CM_SUCCESS) {
@@ -534,6 +538,10 @@ int32_t CmAuthIsAuthorizedApp(const struct CmContext *context, const struct CmBl
             CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
             break;
         }
+        if (level == ERROR_LEVEL) {
+            level = CM_AUTH_STORAGE_LEVEL_EL1;
+            CM_LOG_I("Is authed app level is ERROR_LEVEL, change to default level el1");
+        }
 
         ret = CheckIsAuthorizedApp(&uriObj, level);
         if (ret != CM_SUCCESS) {
@@ -565,6 +573,10 @@ int32_t CmAuthRemoveGrantedApp(const struct CmContext *context, const struct CmB
         if (ret != CM_SUCCESS) {
             CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
             break;
+        }
+        if (level == ERROR_LEVEL) {
+            level = CM_AUTH_STORAGE_LEVEL_EL1;
+            CM_LOG_I("Remove granted app level is ERROR_LEVEL, change to default level el1");
         }
 
         ret = CheckCallerIsProducer(context, &uriObj);
@@ -676,6 +688,10 @@ int32_t CmAuthDeleteAuthInfoByUserId(uint32_t userId, const struct CmBlob *uri)
             CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
             break;
         }
+        if (level == ERROR_LEVEL) {
+            level = CM_AUTH_STORAGE_LEVEL_EL1;
+            CM_LOG_I("Delete auth user level is ERROR_LEVEL, change to default level el1");
+        }
 
         ret = DeleteAuthInfo(userId, uri, &appUidList, level);
         if (ret != CM_SUCCESS) {
@@ -719,6 +735,10 @@ int32_t CmAuthDeleteAuthInfoByUid(uint32_t userId, uint32_t targetUid, const str
             CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
             break;
         }
+        if (level == ERROR_LEVEL) {
+            level = CM_AUTH_STORAGE_LEVEL_EL1;
+            CM_LOG_I("Delete auth app level is ERROR_LEVEL, change to default level el1");
+        }
 
         uint32_t appUid[] = { targetUid };
         struct CmAppUidList appUidList = { sizeof(appUid) / sizeof(uint32_t), appUid };
@@ -746,6 +766,10 @@ static int32_t CheckCommonPermission(const struct CmContext *context, const stru
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
         return ret;
+    }
+    if (level == ERROR_LEVEL) {
+        level = CM_AUTH_STORAGE_LEVEL_EL1;
+        CM_LOG_I("Check permission level is ERROR_LEVEL, change to default level el1");
     }
 
     ret = CheckCallerIsProducer(context, uriObj);
