@@ -30,22 +30,18 @@ namespace OHOS {
     {
         struct CmBlob credData = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &credData)) {
-            CmFree(myData);
             return false;
         }
         uint32_t isExist;
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &isExist)) {
-            CmFree(myData);
             return false;
         }
         uint32_t certNum;
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &certNum)) {
-            CmFree(myData);
             return false;
         }
         uint32_t keyNum;
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &keyNum)) {
-            CmFree(myData);
             return false;
         }
         credCert.isExist = isExist;

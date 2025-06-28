@@ -30,37 +30,31 @@ namespace OHOS {
     {
         struct CmBlob appCert = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &appCert)) {
-            CmFree(myData);
             return false;
         }
 
         struct CmBlob appCertPwd = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &appCertPwd)) {
-            CmFree(myData);
             return false;
         }
 
         struct CmBlob certAlias = { 0, nullptr };
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &certAlias)) {
-            CmFree(myData);
             return false;
         }
 
         uint32_t store;
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &store)) {
-            CmFree(myData);
             return false;
         }
 
         uint32_t userId;
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &userId)) {
-            CmFree(myData);
             return false;
         }
 
         uint32_t level;
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &level)) {
-            CmFree(myData);
             return false;
         }
         level = level % MAX_LEVEL;
