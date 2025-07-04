@@ -56,12 +56,6 @@ namespace OHOS {
             .userId = randomUserId
         };
 
-        struct CmBlob uriList = { 0, nullptr };
-        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &uriList)) {
-            CmFree(myData);
-            return false;
-        }
-
         uint32_t certCount = 0;
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &certCount)) {
             CmFree(myData);
@@ -70,7 +64,7 @@ namespace OHOS {
 
         struct CertUriList certUriList = {
             .certCount = certCount,
-            .uriList = &uriList
+            .uriList = nullptr
         };
 
         SetATPermission();
