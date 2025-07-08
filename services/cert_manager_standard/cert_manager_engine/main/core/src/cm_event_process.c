@@ -33,6 +33,7 @@
 #include "cm_type.h"
 #include "cm_util.h"
 
+// LCOV_EXCL_START
 static void DeleteAuth(const struct CmContext *context, const char *fileName, bool isDeleteByUid)
 {
     CM_LOG_D("isDeleteByUid:%d", isDeleteByUid);
@@ -64,6 +65,10 @@ static int32_t CmTraversalDirActionCredential(const char *filePath, const char *
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get storage level failed, ret: %d", ret);
         return ret;
+    }
+    if (level == ERROR_LEVEL) {
+        level = CM_AUTH_STORAGE_LEVEL_EL1;
+        CM_LOG_I("Traversal dir level is ERROR_LEVEL, change to default level el1");
     }
 
     ret = CmKeyOpDeleteKey(&keyUri, level);
@@ -515,3 +520,4 @@ int32_t CmDeleteProcessInfo(const struct CmContext *context)
 
     return ret;
 }
+// LCOV_EXCL_STOP

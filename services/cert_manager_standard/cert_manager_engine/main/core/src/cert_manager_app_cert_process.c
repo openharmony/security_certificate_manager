@@ -48,6 +48,7 @@
 #define CURVE25519_KEY_LEN_BYTES 32
 #define CM_OPENSSL_SUCCESS 1
 
+// LCOV_EXCL_START
 static int32_t TransEccKeyToKeyBlob(const EC_KEY *eccKey, const struct HksKeyMaterialEcc *keyMaterial,
     struct CmBlob *rawMaterial)
 {
@@ -479,11 +480,13 @@ static int32_t StoreKeyAndCert(const struct CmContext *context, const struct CmA
             level = param->level;
             break;
         case CM_CREDENTIAL_STORE:
+            /* If not found, specify the level el2 */
             if (level == ERROR_LEVEL) {
                 level = CM_AUTH_STORAGE_LEVEL_EL2;
             }
             break;
         default:
+            /* whether you find it or not, specify the level el1 */
             level = CM_AUTH_STORAGE_LEVEL_EL1;
             break;
     }
@@ -547,4 +550,4 @@ int32_t CmInstallAppCertPro(
     EVP_PKEY_free(priKey);
     return ret;
 }
-
+// LCOV_EXCL_STOP

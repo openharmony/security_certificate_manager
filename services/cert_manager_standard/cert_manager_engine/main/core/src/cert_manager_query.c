@@ -660,13 +660,16 @@ int32_t GetRdbAuthStorageLevel(const struct CmBlob *keyUri, enum CmAuthStorageLe
     struct CertProperty certProp;
     (void)memset_s(&certProp, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
 
+    /* Even if the queried data is empty, the return value is also success,
+     * this value is used to determine whether the query is successful
+     */
     certProp.level = ERROR_LEVEL;
     int32_t ret = QueryCertProperty((char *)keyUri->data, &certProp);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Failed to QueryCertProperty, ret: %d", ret);
         return ret;
     }
-    /* If the return value of level is ERROR_LEVEL, nothing is found */
+
     *level = certProp.level;
 
     return ret;

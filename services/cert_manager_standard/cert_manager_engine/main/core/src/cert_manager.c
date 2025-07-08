@@ -256,6 +256,10 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
         CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
         return ret;
     }
+    if (level == ERROR_LEVEL) {
+        level = CM_AUTH_STORAGE_LEVEL_EL1;
+        CM_LOG_I("Remove cred level is ERROR_LEVEL, change to default level el1");
+    }
 
     if (store == CM_CREDENTIAL_STORE) {
         ret = CmAuthDeleteAuthInfo(context, keyUri, level);
@@ -416,6 +420,10 @@ static int32_t GetUriAndDeleteRdbData(const char *filePath, struct CmBlob *uriBl
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
         return ret;
+    }
+    if (*level == ERROR_LEVEL) {
+        *level = CM_AUTH_STORAGE_LEVEL_EL1;
+        CM_LOG_I("Delete rdb level is ERROR_LEVEL, change to default level el1");
     }
 
     ret = DeleteCertProperty((char *)uriBlob->data);

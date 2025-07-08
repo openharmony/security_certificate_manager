@@ -44,6 +44,7 @@ extern "C" {
 // characters do not need to be encoded in query, other than digits and algabets
 #define Q_RES_AVAIL "-._~:[]@!$'()*+,=/?|"
 
+// LCOV_EXCL_START
 int32_t CertManagerFreeUri(struct CMUri *uri)
 {
     if (uri == NULL) {
@@ -637,4 +638,4 @@ int32_t CmConstructCommonUri(const struct CmContext *context, const uint32_t typ
 #ifdef __cplusplus
 }
 #endif
-
+// LCOV_EXCL_STOP

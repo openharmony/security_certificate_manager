@@ -26,31 +26,32 @@ CmRdbOpenCallback::CmRdbOpenCallback(const RdbConfig &rdbConfig) : rdbConfig_(rd
 
 int32_t CmRdbOpenCallback::OnCreate(NativeRdb::RdbStore &rdbStore)
 {
-    CM_LOG_D("CmRdbOpenCallback OnCreate");
+    CM_LOG_I("CmRdbOpenCallback OnCreate");
     return NativeRdb::E_OK;
 }
 
 int32_t CmRdbOpenCallback::OnUpgrade(NativeRdb::RdbStore &rdbStore, int currentVersion, int targetVersion)
 {
-    CM_LOG_D("CmRdbOpenCallback OnUpgrade : database upgrade. currentVersion = %{public}d, newVersion = %{public}d",
+    CM_LOG_I("CmRdbOpenCallback OnUpgrade : database upgrade. currentVersion = %{public}d, newVersion = %{public}d",
         currentVersion, targetVersion);
     /* Upgrade the database: Add the AUTH_STORAGE_LEVEL column with a default value of 1 (EL1).  */
     if (currentVersion == RDB_VERSION_FIRST && targetVersion == RDB_VERSION_CURRENT) {
-        rdbStore.ExecuteSql("ALTER TABLE " + CERT_PROPERTY_TABLE_NAME + " ADD COLUMN " +
+        int32_t ret = rdbStore.ExecuteSql("ALTER TABLE " + CERT_PROPERTY_TABLE_NAME + " ADD COLUMN " +
             COLUMN_AUTH_STORAGE_LEVEL + " INTEGER DEFAULT 1;");
+        CM_LOG_I("Upgrade execute sql ret: %d", ret);
     }
     return NativeRdb::E_OK;
 }
 
 int32_t CmRdbOpenCallback::OnDowngrade(NativeRdb::RdbStore &rdbStore, int currentVersion, int targetVersion)
 {
-    CM_LOG_D("CmRdbOpenCallback OnDowngrade");
+    CM_LOG_I("CmRdbOpenCallback OnDowngrade");
     return NativeRdb::E_OK;
 }
 
 int32_t CmRdbOpenCallback::OnOpen(NativeRdb::RdbStore &rdbStore)
 {
-    CM_LOG_D("CmRdbOpenCallback OnOpen");
+    CM_LOG_I("CmRdbOpenCallback OnOpen");
     return NativeRdb::E_OK;
 }
 } // namespace CertManager
