@@ -152,7 +152,7 @@ void CmReportSGRecord(const struct CmReportSGInfo *info)
     CmFillSGRecord(objectJson, recordJson, recordJsonLen);
     CM_FREE_PTR(objectJson);
     std::shared_ptr<EventInfo> eventInfo = std::make_shared<EventInfo>(CERT_EVENTID, CERT_VERSION, recordJson);
-    int32_t ret = NativeDataCollectKit::ReportSecurityInfo(eventInfo);
+    int32_t ret = NativeDataCollectKit::ReportSecurityInfoAsync(eventInfo);
     if (ret != 0) {
         CM_LOG_E("report security info error");
     }
