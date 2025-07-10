@@ -23,10 +23,10 @@ namespace OHOS::Security::CertManager::Ani {
 class CmGetCertInfoImpl : public CertManagerAniImpl {
 private:
     /* ani params */
-    ani_string aniCertUri;
+    ani_string aniCertUri = nullptr;
     /* parsed params */
-    CmBlob certUri;
-    CertInfo *certificate;
+    CmBlob certUri = { 0 };
+    CertInfo *certificate = nullptr;
     uint32_t store;
 public:
     CmGetCertInfoImpl(ani_env *env, ani_string aniCertUri, uint32_t store);

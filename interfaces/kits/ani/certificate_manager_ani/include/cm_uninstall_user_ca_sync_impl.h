@@ -23,9 +23,9 @@ namespace OHOS::Security::CertManager::Ani {
 class CmUninstallUserCaSyncImpl : public CertManagerAniImpl {
 private:
     /* ani params */
-    ani_string aniCertUri;
+    ani_string aniCertUri = nullptr;
     /* parsed params */
-    CmBlob certUri;
+    CmBlob certUri = { 0 };
 public:
     CmUninstallUserCaSyncImpl(ani_env *env, ani_string aniCertUri);
     ~CmUninstallUserCaSyncImpl() {};

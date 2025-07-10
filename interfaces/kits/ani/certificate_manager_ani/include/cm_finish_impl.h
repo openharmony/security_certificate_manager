@@ -27,8 +27,8 @@ public:
     ani_arraybuffer aniHandle = nullptr;
     ani_arraybuffer aniSignature = nullptr;
     /* parsed params */
-    CmBlob handle;
-    CmBlob signature;
+    CmBlob handle = { 0 };
+    CmBlob signature = { 0 };
     CmFinishImpl(ani_env *env);
     ~CmFinishImpl() {};
 

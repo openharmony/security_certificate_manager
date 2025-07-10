@@ -25,7 +25,7 @@ private:
     /* ani params */
     ani_arraybuffer aniHandle = nullptr;
     /* parsed params */
-    CmBlob handle;
+    CmBlob handle = { 0 };
 public:
     CmAbortImpl(ani_env *env, ani_arraybuffer aniHandle);
     ~CmAbortImpl() {};

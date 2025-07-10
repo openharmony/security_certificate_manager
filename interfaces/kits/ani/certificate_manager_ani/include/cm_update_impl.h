@@ -26,8 +26,8 @@ private:
     ani_arraybuffer aniHandle = nullptr;
     ani_arraybuffer aniData = nullptr;
     /* parsed params */
-    CmBlob handle { 0 };
-    CmBlob data { 0 };
+    CmBlob handle = { 0 };
+    CmBlob data = { 0 };
 public:
     CmUpdateImpl(ani_env *env, ani_arraybuffer aniHandle, ani_arraybuffer aniData);
     ~CmUpdateImpl() {};

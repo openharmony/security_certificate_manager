@@ -23,9 +23,9 @@ namespace OHOS::Security::CertManager::Ani {
 class CmUninstallPrivateCertImpl : public CertManagerAniImpl {
 private:
     /* ani params */
-    ani_string aniKeyUri;
+    ani_string aniKeyUri = nullptr;
     /* parsed params */
-    CmBlob keyUri;
+    CmBlob keyUri = { 0 };
 public:
     CmUninstallPrivateCertImpl(ani_env *env, ani_string aniKeyUri);
     ~CmUninstallPrivateCertImpl() {};

@@ -23,11 +23,11 @@ namespace OHOS::Security::CertManager::Ani {
 class CmInstallUserCaSyncImpl : public CertManagerAniImpl {
 private:
     /* ani params */
-    ani_arraybuffer aniCertData;
-    ani_enum_item aniCertScope;
+    ani_arraybuffer aniCertData = nullptr;
+    ani_enum_item aniCertScope = nullptr;
     /* parsed params */
-    CmBlob certData;
-    uint32_t certScope;
+    CmBlob certData = { 0 };
+    uint32_t certScope = 0;
 
     CmBlob certUri;
 public:
