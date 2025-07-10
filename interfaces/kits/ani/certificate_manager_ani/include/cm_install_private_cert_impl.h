@@ -28,10 +28,10 @@ private:
     ani_string aniKeystorePwd = nullptr;
     ani_string aniCertAlias = nullptr;
     /* parsed params */
-    CmBlob keystore = {};
-    CmBlob keystorePwd = {};
-    CmBlob certAlias = {};
-    CmBlob retUri = {};
+    CmBlob keystore = { 0 };
+    CmBlob keystorePwd = { 0 };
+    CmBlob certAlias = { 0 };
+    CmBlob retUri = { 0 };
 
     enum CmAuthStorageLevel level = CM_AUTH_STORAGE_LEVEL_EL1;
 public:

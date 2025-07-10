@@ -22,11 +22,11 @@
 namespace OHOS::Security::CertManager::Ani {
 class CmInitImpl : public CertManagerAniImpl {
 private:
-    ani_string aniAuthUri;
-    ani_object spec;
-    CmBlob authUri { 0 };
+    ani_string aniAuthUri = nullptr;
+    ani_object spec = nullptr;
+    CmBlob authUri = { 0 };
     CmSignatureSpec signatureSpec = { 0 };
-    CmBlob handle { 0 };
+    CmBlob handle = { 0 };
 public:
     CmInitImpl(ani_env *env, ani_string aniAuthUri, ani_object spec);
     ~CmInitImpl() {};

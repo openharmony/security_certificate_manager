@@ -24,9 +24,9 @@ namespace OHOS::Security::CertManager::Ani {
 class CmOpenCertManagerDialog : public CertManagerAsyncImpl {
 private:
     /* ani params */
-    ani_enum_item aniPageType;
+    ani_enum_item aniPageType = nullptr;
     /* parsed params */
-    CmDialogPageType pageType;
+    CmDialogPageType pageType = PAGE_MAIN;
 public:
     CmOpenCertManagerDialog(ani_env *env, ani_object aniContext, ani_enum_item aniPageType, ani_object callback);
     ~CmOpenCertManagerDialog() {};

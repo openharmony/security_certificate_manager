@@ -24,8 +24,8 @@ namespace OHOS::Security::CertManager::Ani {
 class CmOpenCertDetailDialog : public CertManagerAsyncImpl {
 private:
     /* ani params */
-    ani_boolean showInstallButton;
-    ani_string aniCert;
+    ani_boolean showInstallButton = false;
+    ani_string aniCert = nullptr;
     /* parsed params */
     CmBlob cert = { 0 };
 

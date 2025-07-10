@@ -24,10 +24,10 @@ namespace OHOS::Security::CertManager::Ani {
 class CmOpenUninstallDialog : public CertManagerAsyncImpl {
 private:
     /* ani params */
-    ani_enum_item aniCertType;
-    ani_string aniCertUri;
+    ani_enum_item aniCertType = nullptr;
+    ani_string aniCertUri = nullptr;
     /* parsed params */
-    CmDialogPageType pageType;
+    CmDialogPageType pageType = PAGE_MAIN;
     CmBlob certUri = { 0 };
 
 public:

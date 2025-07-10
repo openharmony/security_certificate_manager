@@ -25,12 +25,12 @@ namespace OHOS::Security::CertManager::Ani {
 class CmOpenInstallDialog : public CertManagerAsyncImpl {
 private:
     /* ani params */
-    ani_enum_item aniCertType;
-    ani_enum_item aniCertScope;
-    ani_string aniCert;
+    ani_enum_item aniCertType = nullptr;
+    ani_enum_item aniCertScope = nullptr;
+    ani_string aniCert = nullptr;
     /* parsed params */
-    CmDialogPageType pageType;
-    CertificateScope certScope;
+    CmDialogPageType pageType = PAGE_MAIN;
+    CertificateScope certScope = NOT_SPECIFIED;
     CmBlob cert = { 0 };
 public:
     CmOpenInstallDialog(ani_env *env, ani_object aniContext, ani_object callback, ani_object params);
