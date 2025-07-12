@@ -90,7 +90,7 @@ void SetATPermission(void)
     SetSelfTokenID(tokenId);
     OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
     if (firstRun) {
-        system("pidof accesstoken_ser | xargs kill -9");
+        system("pidof accesstoken_service | xargs kill -9");
         sleep(SLEEP_TIME);
         firstRun = false;
     }
