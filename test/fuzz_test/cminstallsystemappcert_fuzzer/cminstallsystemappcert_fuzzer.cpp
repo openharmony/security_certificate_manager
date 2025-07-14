@@ -28,18 +28,15 @@ namespace OHOS {
     static bool CreateCertParam(struct CmAppCertParam &certParam, uint8_t *myData,
         uint32_t &remainSize, uint32_t &offset)
     {
-        struct CmBlob appCert = { 0, nullptr };
-        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &appCert)) {
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, certParam.appCert)) {
             return false;
         }
 
-        struct CmBlob appCertPwd = { 0, nullptr };
-        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &appCertPwd)) {
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, certParam.appCertPwd)) {
             return false;
         }
 
-        struct CmBlob certAlias = { 0, nullptr };
-        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &certAlias)) {
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, certParam.certAlias)) {
             return false;
         }
 
@@ -59,9 +56,6 @@ namespace OHOS {
         }
         level = level % MAX_LEVEL;
 
-        certParam.appCert = &appCert;
-        certParam.appCertPwd = &appCertPwd;
-        certParam.certAlias = &certAlias;
         certParam.store = store;
         certParam.userId = userId;
         certParam.level = static_cast<CmAuthStorageLevel>(level);
@@ -79,8 +73,16 @@ namespace OHOS {
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
 
-        struct CmAppCertParam certParam;
+        struct CmBlob appCert = { 0, nullptr };
+        struct CmBlob appCertPwd = { 0, nullptr };
+        struct CmBlob certAlias = { 0, nullptr };
 
+        struct CmAppCertParam certParam = {
+            certParam.appCert = &appCert,
+            certParam.appCertPwd = &appCertPwd,
+            certParam.certAlias = &certAlias
+        };
+        
         if (!CreateCertParam(certParam, myData, remainSize, offset)) {
             CmFree(myData);
             return false;
