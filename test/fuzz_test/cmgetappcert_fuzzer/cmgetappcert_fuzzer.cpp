@@ -28,8 +28,7 @@ namespace OHOS {
     static bool CreateCredCert(struct Credential &credCert, uint8_t *myData,
         uint32_t &remainSize, uint32_t &offset)
     {
-        struct CmBlob credData = { 0, nullptr };
-        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &credData)) {
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &credCert.credData)) {
             return false;
         }
         uint32_t isExist;
@@ -47,7 +46,6 @@ namespace OHOS {
         credCert.isExist = isExist;
         credCert.certNum = certNum;
         credCert.keyNum = keyNum;
-        credCert.credData = credData;
         return true;
     }
 
@@ -72,10 +70,13 @@ namespace OHOS {
             return false;
         }
 
+        struct CmBlob credData = { 0, nullptr };
+
         struct Credential credCert = {
             .type = "type",
             .alias = "alias",
             .keyUri = "uri",
+            .credData = credData
         };
 
         if (!CreateCredCert(credCert, myData, remainSize, offset)) {
