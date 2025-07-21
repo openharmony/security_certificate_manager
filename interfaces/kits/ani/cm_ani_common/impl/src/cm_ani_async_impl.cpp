@@ -25,6 +25,7 @@ using namespace OHOS::AbilityRuntime;
 CertManagerAsyncImpl::CertManagerAsyncImpl(ani_env *env, ani_object aniContext,
     ani_object callback) : CertManagerAniImpl(env)
 {
+    this->env = env;
     env->GetVM(&this->vm);
     this->callback = callback;
     this->aniContext = aniContext;
@@ -34,15 +35,6 @@ CertManagerAsyncImpl::~CertManagerAsyncImpl() {}
 
 int32_t CertManagerAsyncImpl::Init()
 {
-    ani_env *vmEnv = GetEnv(this->vm);
-    if (vmEnv == nullptr) {
-        CM_LOG_E("get env failed.");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    if (vmEnv->GlobalReference_Create(reinterpret_cast<ani_ref>(this->callback), &this->globalCallback) != ANI_OK) {
-        CM_LOG_E("failed to create global callback.");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
     return CM_SUCCESS;
 }
 
@@ -51,6 +43,11 @@ int32_t CertManagerAsyncImpl::GetParamsFromEnv()
     ani_env *vmEnv = GetEnv(this->vm);
     if (vmEnv == nullptr) {
         CM_LOG_E("get env failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (vmEnv->GlobalReference_Create(reinterpret_cast<ani_ref>(this->callback), &this->globalCallback) != ANI_OK) {
+        CM_LOG_E("failed to create global callback.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -87,19 +84,13 @@ int32_t CertManagerAsyncImpl::InvokeInnerApi()
 
 ani_object CertManagerAsyncImpl::GenerateResult()
 {
-    ani_env *vmEnv = GetEnv(this->vm);
-    if (vmEnv == nullptr) {
-        CM_LOG_E("get env failed.");
-        return nullptr;
-    }
-
     int32_t ret;
     if (this->resultCode != CM_SUCCESS) {
-        return GetAniDialogNativeResult(vmEnv, this->resultCode);
+        return GetAniDialogNativeResult(this->env, this->resultCode);
     }
 
     ani_object nativeResult{};
-    ret = AniUtils::GenerateNativeResult(vmEnv, this->resultCode, nullptr, this->result, nativeResult);
+    ret = AniUtils::GenerateNativeResult(this->env, this->resultCode, nullptr, this->result, nativeResult);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("generate native result failed, ret = %d", ret);
         return nullptr;

@@ -27,7 +27,7 @@ private:
     /* parsed params */
     CmBlob certUri = { 0 };
     CertInfo *certificate = nullptr;
-    uint32_t store;
+    uint32_t store = 0;
 public:
     CmGetCertInfoImpl(ani_env *env, ani_string aniCertUri, uint32_t store);
     ~CmGetCertInfoImpl() {};

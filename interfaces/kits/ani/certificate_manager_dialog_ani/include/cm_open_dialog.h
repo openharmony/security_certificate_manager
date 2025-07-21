@@ -96,7 +96,7 @@ public:
     virtual ani_object GetDefaultResult(ani_env *env);
 
 protected:
-    ani_vm *vm;
+    ani_vm *vm = nullptr;
     ani_ref aniCallback = nullptr;
     bool isReleased = false;
     int32_t sessionId = 0;

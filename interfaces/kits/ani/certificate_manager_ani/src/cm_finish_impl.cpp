@@ -39,12 +39,6 @@ int32_t CmFinishImpl::GetParamsFromEnv()
     return CM_SUCCESS;
 }
 
-void CmFinishImpl::OnFinish()
-{
-    CM_FREE_BLOB(this->signature);
-    return;
-}
-
 // CmSignatureFinishImpl
 CmSignatureFinishImpl::CmSignatureFinishImpl(ani_env *env, ani_arraybuffer aniHandle) : CmFinishImpl(env)
 {
@@ -81,6 +75,12 @@ int32_t CmSignatureFinishImpl::UnpackResult()
     }
     this->result = resultBuilder.cmResult;
     return CM_SUCCESS;
+}
+
+void CmSignatureFinishImpl::OnFinish()
+{
+    CM_FREE_BLOB(this->signature);
+    return;
 }
 
 // CmVerifyFinishImpl
@@ -129,58 +129,8 @@ int32_t CmVerifyFinishImpl::UnpackResult()
     return CM_SUCCESS;
 }
 
-CmFinishImplProxy::CmFinishImplProxy(ani_env *env, ani_arraybuffer aniHandle,
-    ani_arraybuffer aniSignature) : CertManagerAniImpl(env)
+void CmVerifyFinishImpl::OnFinish()
 {
-    if (AniUtils::IsUndefined(env, aniSignature)) {
-        this->finishImpl = std::make_shared<CmSignatureFinishImpl>(env, aniHandle);
-    } else {
-        this->finishImpl = std::make_shared<CmVerifyFinishImpl>(env, aniHandle, aniSignature);
-    }
-}
-
-int32_t CmFinishImplProxy::Init()
-{
-    if (this->finishImpl == nullptr) {
-        CM_LOG_E("finishImpl is nullptr");
-        return CMR_ERROR_NULL_POINTER;
-    }
-    return this->finishImpl->Init();
-}
-
-int32_t CmFinishImplProxy::GetParamsFromEnv()
-{
-    if (this->finishImpl == nullptr) {
-        CM_LOG_E("finishImpl is nullptr");
-        return CMR_ERROR_NULL_POINTER;
-    }
-    return this->finishImpl->GetParamsFromEnv();
-}
-
-int32_t CmFinishImplProxy::InvokeInnerApi()
-{
-    if (this->finishImpl == nullptr) {
-        CM_LOG_E("finishImpl is nullptr");
-        return CMR_ERROR_NULL_POINTER;
-    }
-    return this->finishImpl->InvokeInnerApi();
-}
-
-int32_t CmFinishImplProxy::UnpackResult()
-{
-    if (this->finishImpl == nullptr) {
-        CM_LOG_E("finishImpl is nullptr");
-        return CMR_ERROR_NULL_POINTER;
-    }
-    return this->finishImpl->UnpackResult();
-}
-
-void CmFinishImplProxy::OnFinish()
-{
-    if (this->finishImpl == nullptr) {
-        CM_LOG_E("finishImpl is nullptr");
-        return;
-    }
-    this->finishImpl->OnFinish();
+    return;
 }
 }

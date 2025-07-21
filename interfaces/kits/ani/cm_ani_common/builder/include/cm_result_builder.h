@@ -38,7 +38,7 @@ private:
     int32_t credentialSetStringProperty(ani_object credentialObj);
     int32_t buildOutData();
 public:
-    ani_object cmResult;
+    ani_object cmResult = nullptr;
     CMResultBuilder(ani_env *env);
 
     CMResultBuilder *setUri(CmBlob *uri);

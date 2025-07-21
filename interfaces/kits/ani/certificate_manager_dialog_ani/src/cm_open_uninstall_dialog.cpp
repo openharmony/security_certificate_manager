@@ -34,7 +34,7 @@ int32_t CmOpenUninstallDialog::GetParamsFromEnv()
 {
     if (OHOS::system::GetParameter("const.product.devicetype", "") != "2in1") {
         CM_LOG_E("deviceType is not 2in1");
-        return DIALOG_ERROR_NOT_SUPPORTED;
+        return CMR_DIALOG_ERROR_NOT_SUPPORTED;
     }
     int32_t ret = CertManagerAsyncImpl::GetParamsFromEnv();
     if (ret != CM_SUCCESS) {

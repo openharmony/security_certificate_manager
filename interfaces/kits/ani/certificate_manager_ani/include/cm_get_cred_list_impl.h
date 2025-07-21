@@ -24,7 +24,7 @@ namespace OHOS::Security::CertManager::Ani {
 class CmGetCredListImpl : public CertManagerAniImpl {
 protected:
     CredentialList *credentialList = nullptr;
-    uint32_t store;
+    uint32_t store = 0;
 public:
     CmGetCredListImpl(ani_env *env, uint32_t store);
     ~CmGetCredListImpl() {};

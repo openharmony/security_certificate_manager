@@ -29,7 +29,9 @@ native function initNative(authUri: string,
 
 native function updateNative(handle: ArrayBuffer, data: ArrayBuffer): NativeResult<void>;
 
-native function finishNative(handle: ArrayBuffer, signature?: ArrayBuffer): NativeResult<certificateManager.CMResult>;
+native function signatureFinishNative(handle: ArrayBuffer): NativeResult<certificateManager.CMResult>;
+
+native function verifyFinishNative(handle: ArrayBuffer, signature: ArrayBuffer): NativeResult<certificateManager.CMResult>;
 
 native function abortNative(handle: ArrayBuffer): NativeResult<void>;
 
@@ -220,24 +222,6 @@ export namespace certificateManager {
     handle: Uint8Array;
   }
 
-  function taskExecuteReturn<T>(pool: Promise<NullishType>, callback: AsyncCallback<T>, result: T): void {
-    pool.then<void>((ret: NullishType) => {
-      let nativeResult: NativeResult<T> = ret as NativeResult<T>;
-      let err = new BusinessError();
-      if (nativeResult.result !== undefined) {
-        result = nativeResult.result as T;
-      }
-      if (nativeResult.code === 0) {
-        err.code = 0;
-        callback(err, result);
-      } else {
-        err.code = nativeResult.code;
-        err.message = nativeResult.message;
-        callback(err, result);
-      }
-    });
-  }
-
   export enum CertType {
     CA_CERT_SYSTEM = 0,
     CA_CERT_USER = 1
@@ -263,6 +247,44 @@ export namespace certificateManager {
     EL1 = 1,
     EL2 = 2,
     EL4 = 4,
+  }
+
+  const MAX_DATA_LEN: double = 0x6400000;
+
+  function checkBufferLen(buffer: Uint8Array, minLen: double, maxLen: double) {
+    if (buffer.length < minLen || buffer.length > maxLen) {
+      let error = new BusinessError();
+      error.code = 401;
+      error.message = 'the input parameters is invalid.';
+      throw error;
+    }
+  }
+
+  function checkStrLen(str: string, minLen: double, maxLen: double) {
+    if (str.length < minLen || str.length > maxLen) {
+      let error = new BusinessError();
+      error.code = 401;
+      error.message = 'the input parameters is invalid.';
+      throw error;
+    }
+  }
+
+  function taskExecuteReturn<T>(pool: Promise<NullishType>, callback: AsyncCallback<T>, result: T): void {
+    pool.then<void>((ret: NullishType) => {
+      let nativeResult: NativeResult<T> = ret as NativeResult<T>;
+      let err = new BusinessError();
+      if (nativeResult.result !== undefined) {
+        result = nativeResult.result as T;
+      }
+      if (nativeResult.code === 0) {
+        err.code = 0;
+        callback(err, result);
+      } else {
+        err.code = nativeResult.code;
+        err.message = nativeResult.message;
+        callback(err, result);
+      }
+    });
   }
 
   function createPromise<T>(task: () => NativeResult<T>, result: T): Promise<T> {
@@ -299,11 +321,13 @@ export namespace certificateManager {
   }
 
   export function uninstallPrivateCertificate(keyUri: string, callback: AsyncCallback<void>): void {
+    checkStrLen(keyUri, 1, MAX_DATA_LEN);
     let pool = taskpool.execute(uninstallPrivateCertificateNative, keyUri);
     taskExecuteReturn<void>(pool, callback, undefined);
   }
 
   export function uninstallPrivateCertificate(keyUri: string): Promise<void> {
+    checkStrLen(keyUri, 1, MAX_DATA_LEN);
     return createPromise<void>(() => uninstallPrivateCertificateNative(keyUri), undefined);
   }
 
@@ -317,62 +341,83 @@ export namespace certificateManager {
   }
 
   export function getPrivateCertificate(keyUri: string, callback: AsyncCallback<CMResult>): void {
+    checkStrLen(keyUri, 1, MAX_DATA_LEN);
     let pool = taskpool.execute(getPrivateCertificateNative, keyUri);
     taskExecuteReturn<CMResult>(pool, callback, {});
   }
 
   export function getPrivateCertificate(keyUri: string): Promise<CMResult> {
+    checkStrLen(keyUri, 1, MAX_DATA_LEN);
     return createPromise<CMResult>(() => getPrivateCertificateNative(keyUri), {});
   }
 
   export function init(authUri: string, spec: CMSignatureSpec, callback: AsyncCallback<CMHandle>): void {
+    checkStrLen(authUri, 1, MAX_DATA_LEN);
     let result: CMHandle = { handle: new Uint8Array() };
     let pool = taskpool.execute(initNative, authUri, spec);
     taskExecuteReturn<CMHandle>(pool, callback, result);
   }
 
   export function init(authUri: string, spec: CMSignatureSpec): Promise<CMHandle> {
+    checkStrLen(authUri, 1, MAX_DATA_LEN);
     let result: CMHandle = { handle: new Uint8Array() };
     return createPromise<CMHandle>(() => initNative(authUri, spec), result);
   }
 
   export function update(handle: Uint8Array, data: Uint8Array, callback: AsyncCallback<void>): void {
+    checkBufferLen(handle, 1, MAX_DATA_LEN);
+    checkBufferLen(data, 1, MAX_DATA_LEN);
     let pool = taskpool.execute(updateNative, handle.buffer as ArrayBuffer, data.buffer as ArrayBuffer);
     taskExecuteReturn<void>(pool, callback, undefined);
   }
 
   export function update(handle: Uint8Array, data: Uint8Array): Promise<void> {
+    checkBufferLen(handle, 1, MAX_DATA_LEN);
+    checkBufferLen(data, 1, MAX_DATA_LEN);
     return createPromise<void>(() => updateNative(handle.buffer as ArrayBuffer, data.buffer as ArrayBuffer), undefined);
   }
 
   export function finish(handle: Uint8Array, callback: AsyncCallback<CMResult>): void {
-    let pool = taskpool.execute(finishNative, handle.buffer as ArrayBuffer, undefined);
+    checkBufferLen(handle, 1, MAX_DATA_LEN);
+    let pool = taskpool.execute(signatureFinishNative, handle.buffer as ArrayBuffer);
     taskExecuteReturn<CMResult>(pool, callback, {});
   }
 
   export function finish(handle: Uint8Array, signature: Uint8Array, callback: AsyncCallback<CMResult>): void {
-    let pool = taskpool.execute(finishNative, handle.buffer as ArrayBuffer, signature.buffer as ArrayBuffer);
+    checkBufferLen(handle, 1, MAX_DATA_LEN);
+    checkBufferLen(signature, 1, MAX_DATA_LEN);
+    let pool = taskpool.execute(verifyFinishNative, handle.buffer as ArrayBuffer, signature.buffer as ArrayBuffer);
     taskExecuteReturn<CMResult>(pool, callback, {});
   }
 
   export function finish(handle: Uint8Array, signature?: Uint8Array): Promise<CMResult> {
-    return createPromise<CMResult>(() => finishNative(handle.buffer as ArrayBuffer, signature?.buffer as ArrayBuffer?? undefined), {});
+    checkBufferLen(handle, 1, MAX_DATA_LEN);
+    let defaultSignature = signature ?? new Uint8Array();
+    if (signature !== undefined) {
+      checkBufferLen(signature, 1, MAX_DATA_LEN);
+      return createPromise<CMResult>(() => verifyFinishNative(handle.buffer as ArrayBuffer, defaultSignature.buffer as ArrayBuffer), {});
+    }
+    return createPromise<CMResult>(() => signatureFinishNative(handle.buffer as ArrayBuffer), {});
   }
 
   export function abort(handle: Uint8Array, callback: AsyncCallback<void>): void {
+    checkBufferLen(handle, 1, MAX_DATA_LEN);
     let pool = taskpool.execute(abortNative, handle.buffer as ArrayBuffer);
     taskExecuteReturn<void>(pool, callback, undefined);
   }
 
   export function abort(handle: Uint8Array): Promise<void> {
+    checkBufferLen(handle, 1, MAX_DATA_LEN);
     return createPromise<void>(() => abortNative(handle.buffer as ArrayBuffer), undefined);
   }
 
   export function getPublicCertificate(keyUri: string): Promise<CMResult> {
+    checkStrLen(keyUri, 1, MAX_DATA_LEN);
     return createPromise<CMResult>(() => getPublicCertificateNative(keyUri), {});
   }
 
   export function isAuthorizedApp(keyUri: string): Promise<boolean> {
+    checkStrLen(keyUri, 1, MAX_DATA_LEN);
     return createPromise<boolean>(() => isAuthorizedAppNative(keyUri), false);
   }
 
@@ -385,6 +430,7 @@ export namespace certificateManager {
   }
 
   export function getUserTrustedCertificate(certUri: string): Promise<CMResult> {
+    checkStrLen(certUri, 1, MAX_DATA_LEN);
     return createPromise<CMResult>(() => getUserCANative(certUri), {});
   }
 
@@ -398,6 +444,12 @@ export namespace certificateManager {
 
   export function getCertificateStorePath(property: CertStoreProperty): string {
     let certType: CertType = property.certType;
+    if (certType === CertType.CA_CERT_USER && property.certScope === undefined) {
+      let error = new BusinessError();
+      error.code = 401;
+      error.message = 'the input parameters is invalid.';
+      throw error;
+    }
     let certScope: CertScope = property.certScope?? CertScope.CURRENT_USER;
     let certAlg: CertAlgorithm = property.certAlg?? CertAlgorithm.INTERNATIONAL;
     let nativeResult: NativeResult<string> = getCertificateStorePathNative(certType, certScope, certAlg);
@@ -425,6 +477,7 @@ export namespace certificateManager {
   }
 
   export function uninstallUserTrustedCertificateSync(certUri: string) : void {
+    checkStrLen(certUri, 1, MAX_DATA_LEN);
     let nativeResult: NativeResult<void> = uninstallUserCASyncNative(certUri);
     if (nativeResult.code === 0) {
       return;

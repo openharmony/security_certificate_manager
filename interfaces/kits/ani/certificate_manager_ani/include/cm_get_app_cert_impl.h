@@ -24,7 +24,7 @@
 namespace OHOS::Security::CertManager::Ani {
 class CmGetAppCertImpl : public CertManagerAniImpl {
 private:
-    ani_string aniKeyUri;
+    ani_string aniKeyUri = nullptr;
     CmBlob keyUri = { 0 };
     Credential *credential = nullptr;
     uint32_t store = -1;

@@ -37,7 +37,7 @@ static int32_t TranformDialogErrorCode(int32_t errorCode)
     if (iter != Dialog::DIALOG_CODE_TO_JS_CODE_MAP.end()) {
         return iter->second;
     }
-    return INNER_FAILURE;
+    return Dialog::DIALOG_ERROR_GENERIC;
 }
 
 static const char *GetJsErrorMsg(int32_t errCode)
@@ -55,7 +55,7 @@ static const char *GetDialogJsErrorMsg(int32_t errCode)
     if (iter != Dialog::DIALOG_CODE_TO_MSG_MAP.end()) {
         return (iter->second).c_str();
     }
-    return GENERIC_MSG.c_str();
+    return Dialog::DIALOG_GENERIC_MSG.c_str();
 }
 
 ani_object GetAniErrorResult(ani_env *env, int32_t resultCode)

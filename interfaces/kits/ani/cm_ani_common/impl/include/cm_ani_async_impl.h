@@ -26,13 +26,10 @@ using namespace OHOS::AbilityRuntime;
 
 class CertManagerAsyncImpl : public CertManagerAniImpl {
 public:
-    ani_env *env {};
-    ani_vm *vm {};
-    int32_t resultCode = 0;
-    ani_object result {};
-    ani_object callback {};
-    ani_ref globalCallback {};
-    ani_object aniContext {};
+    ani_vm *vm = nullptr;
+    ani_object callback = nullptr;
+    ani_ref globalCallback = nullptr;
+    ani_object aniContext = nullptr;
 
     std::shared_ptr<AbilityContext> abilityContext = nullptr;
 public:
@@ -43,7 +40,7 @@ public:
     int32_t GetParamsFromEnv() override;
     int32_t InvokeInnerApi() override;
     int32_t Init() override;
-    ani_object GenerateResult();
+    ani_object GenerateResult() override;
 };
 
 } // OHOS::Security::CertManager::Ani

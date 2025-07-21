@@ -102,9 +102,15 @@ static ani_object updateNative(ani_env *env, ani_arraybuffer aniHandle, ani_arra
     return updateImpl->Invoke();
 }
 
-static ani_object finishNative(ani_env *env, ani_arraybuffer aniHandle, ani_arraybuffer aniSignature)
+static ani_object verifyFinishNative(ani_env *env, ani_arraybuffer aniHandle, ani_arraybuffer aniSignature)
 {
-    auto finishImpl = std::make_shared<CmFinishImplProxy>(env, aniHandle, aniSignature);
+    auto finishImpl = std::make_shared<CmVerifyFinishImpl>(env, aniHandle, aniSignature);
+    return finishImpl->Invoke();
+}
+
+static ani_object signatureFinishNative(ani_env *env, ani_arraybuffer aniHandle)
+{
+    auto finishImpl = std::make_shared<CmSignatureFinishImpl>(env, aniHandle);
     return finishImpl->Invoke();
 }
 
@@ -172,8 +178,10 @@ static const std::array NATIVE_METHODS {
         reinterpret_cast<void *>(initNative)},
     ani_native_function {"updateNative", nullptr,
         reinterpret_cast<void *>(updateNative)},
-    ani_native_function {"finishNative", nullptr,
-        reinterpret_cast<void *>(finishNative)},
+    ani_native_function {"verifyFinishNative", nullptr,
+        reinterpret_cast<void *>(verifyFinishNative)},
+    ani_native_function {"signatureFinishNative", nullptr,
+        reinterpret_cast<void *>(signatureFinishNative)},
     ani_native_function {"abortNative", nullptr,
         reinterpret_cast<void *>(abortNative)},
     ani_native_function {"getPublicCertificateNative", nullptr,
