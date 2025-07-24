@@ -1038,7 +1038,7 @@ int32_t CmInstallMultiUserCert(const struct CmContext *context, const struct CmB
         CM_LOG_E("init certStack failed");
         return CMR_ERROR_INVALID_CERT_FORMAT;
     }
-    uriListSize = (int32_t)sk_X509_num(certStack);
+    uriListSize = (uint32_t)sk_X509_num(certStack);
     // check buffer size
     uint32_t capacity = (certUri->size - sizeof(uint32_t)) / MAX_LEN_URI;
     if (uriListSize > capacity) {

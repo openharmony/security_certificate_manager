@@ -157,7 +157,7 @@ int32_t CmGetCertPathList(const struct CmContext *context, uint32_t store, struc
     return CM_SUCCESS;
 }
 
-static int32_t GetSysCertPathCount(void)
+static uint32_t GetSysCertPathCount(void)
 {
     if (CmIsDirExist(SYSTEM_CA_STORE_GM) == CM_SUCCESS) {
         CM_LOG_D("exist gm system ca store path.");
