@@ -33,7 +33,6 @@ public:
     ~CmFinishImpl() {};
 
     int32_t GetParamsFromEnv() override;
-    void OnFinish() override;
 };
 
 class CmSignatureFinishImpl : public CmFinishImpl {
@@ -44,6 +43,7 @@ public:
     int32_t Init() override;
     int32_t InvokeInnerApi() override;
     int32_t UnpackResult() override;
+    void OnFinish() override;
 };
 
 class CmVerifyFinishImpl : public CmFinishImpl {
@@ -55,19 +55,6 @@ public:
     int32_t InvokeInnerApi() override;
     int32_t UnpackResult() override;
     int32_t GetParamsFromEnv() override;
-};
-
-class CmFinishImplProxy : public CertManagerAniImpl {
-private:
-    std::shared_ptr<CmFinishImpl> finishImpl = nullptr;
-public:
-    CmFinishImplProxy(ani_env *env, ani_arraybuffer aniHandle, ani_arraybuffer aniSignature);
-    ~CmFinishImplProxy() {};
-
-    int32_t Init() override;
-    int32_t GetParamsFromEnv() override;
-    int32_t InvokeInnerApi() override;
-    int32_t UnpackResult() override;
     void OnFinish() override;
 };
 }

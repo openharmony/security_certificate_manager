@@ -70,7 +70,11 @@ int32_t CmInstallPrivateCertImpl::InvokeInnerApi()
     struct CmAppCertParam certParam = { &this->keystore, &this->keystorePwd, &this->certAlias,
         APPLICATION_PRIVATE_CERTIFICATE_STORE, INIT_INVALID_VALUE, level };
 
-    return CmInstallAppCertEx(&certParam, &this->retUri);
+    int32_t ret = CmInstallAppCertEx(&certParam, &this->retUri);
+    if (ret == CMR_ERROR_PASSWORD_IS_ERR) {
+        return CMR_ERROR_INVALID_CERT_FORMAT;
+    }
+    return ret;
 }
 
 int32_t CmInstallPrivateCertImpl::UnpackResult()

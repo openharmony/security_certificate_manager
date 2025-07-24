@@ -34,8 +34,7 @@ public:
     virtual int32_t InvokeInnerApi() = 0;
     virtual int32_t UnpackResult() = 0;
     virtual void OnFinish() = 0;
-
-    ani_object GenerateResult();
+    virtual ani_object GenerateResult();
     ani_object Invoke();
 };
 } // OHOS::Security::CertManager::Ani

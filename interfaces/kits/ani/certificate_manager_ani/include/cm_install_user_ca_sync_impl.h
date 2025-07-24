@@ -29,7 +29,7 @@ private:
     CmBlob certData = { 0 };
     uint32_t certScope = 0;
 
-    CmBlob certUri;
+    CmBlob certUri = { 0 };
 public:
     CmInstallUserCaSyncImpl(ani_env *env, ani_arraybuffer aniCertData, ani_enum_item aniCertScope);
     ~CmInstallUserCaSyncImpl() {};

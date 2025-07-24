@@ -15,7 +15,7 @@
 
 import type common from '@ohos.app.ability.common';
 import { BusinessError, AsyncCallback } from '@ohos.base';
-import type buffer from '@ohos.buffer'
+import util from '@ohos.util';
 
 native function openCertificateManagerDialogNative(
   context: common.Context,
@@ -130,7 +130,8 @@ export namespace certificateManagerDialog {
             }
         });
         // convert cert data to base64 string
-        let certStringBase64 = buffer.from(cert.buffer as ArrayBuffer).toString('base64');
+        let base64Helper = new util.Base64Helper();
+        let certStringBase64 = base64Helper.encodeToStringSync(cert, util.Type.BASIC);
         let result: NativeResult<void> = openInstallCertificateDialogNative(context, {
           certType: certType,
           certScope: certScope,
@@ -178,7 +179,8 @@ export namespace certificateManagerDialog {
             }
         });
         // convert cert data to base64 string
-        let certStringBase64 = buffer.from(cert.buffer as ArrayBuffer).toString('base64');
+        let base64Helper = new util.Base64Helper();
+        let certStringBase64 = base64Helper.encodeToStringSync(cert, util.Type.BASIC);
         let result: NativeResult<void> = openCertificateDetailDialogNative(context, certStringBase64, property.showInstallButton, callback);
         if (result.code !== 0) {
           let err = new BusinessError();

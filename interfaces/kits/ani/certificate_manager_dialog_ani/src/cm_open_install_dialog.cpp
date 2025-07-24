@@ -38,21 +38,11 @@ int32_t CmOpenInstallDialog::GetParamsFromEnv()
 {
     if (OHOS::system::GetParameter("const.product.devicetype", "") != "2in1") {
         CM_LOG_E("deviceType is not 2in1");
-        return DIALOG_ERROR_NOT_SUPPORTED;
-    }
-    int32_t ret = CertManagerAsyncImpl::GetParamsFromEnv();
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("parse params failed. ret = %d", ret);
-        return ret;
-    }
-    ani_env *vmEnv = GetEnv(this->vm);
-    if (vmEnv == nullptr) {
-        CM_LOG_E("get env failed.");
-        return CMR_ERROR_INVALID_ARGUMENT;
+        return CMR_DIALOG_ERROR_NOT_SUPPORTED;
     }
 
     int32_t aniCertType = 0;
-    if (vmEnv->EnumItem_GetValue_Int(this->aniCertType, (ani_int *)&aniCertType) != ANI_OK) {
+    if (env->EnumItem_GetValue_Int(this->aniCertType, (ani_int *)&aniCertType) != ANI_OK) {
         CM_LOG_E("get certType value failed.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -65,15 +55,21 @@ int32_t CmOpenInstallDialog::GetParamsFromEnv()
     }
 
     int32_t aniCertScope = 0;
-    if (vmEnv->EnumItem_GetValue_Int(this->aniCertScope, (ani_int *)&aniCertScope) != ANI_OK) {
+    if (env->EnumItem_GetValue_Int(this->aniCertScope, (ani_int *)&aniCertScope) != ANI_OK) {
         CM_LOG_E("get certScope value failed.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     this->certScope = static_cast<CertificateScope>(aniCertType);
 
-    ret = AniUtils::ParseString(vmEnv, this->aniCert, this->cert);
+    int32_t ret = AniUtils::ParseString(env, this->aniCert, this->cert);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("parse cert failed, ret = %d", ret);
+        return ret;
+    }
+
+    ret = CertManagerAsyncImpl::GetParamsFromEnv();
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("parse params failed. ret = %d", ret);
         return ret;
     }
     return CM_SUCCESS;
