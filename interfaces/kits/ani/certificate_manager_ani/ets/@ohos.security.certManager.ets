@@ -249,6 +249,7 @@ export namespace certificateManager {
     EL4 = 4,
   }
 
+  const MIN_DATA_LEN: double = 1;
   const MAX_DATA_LEN: double = 0x6400000;
 
   function checkBufferLen(buffer: Uint8Array, minLen: double, maxLen: double) {
@@ -278,7 +279,7 @@ export namespace certificateManager {
       }
       if (nativeResult.code === 0) {
         err.code = 0;
-        callback(err, result);
+        callback(null, result);
       } else {
         err.code = nativeResult.code;
         err.message = nativeResult.message;
@@ -308,6 +309,7 @@ export namespace certificateManager {
     certAlias: string,
     callback: AsyncCallback<CMResult>
   ): void {
+    checkBufferLen(keystore, MIN_DATA_LEN, MAX_DATA_LEN);
     let pool = taskpool.execute(installPrivateCertificateNative, keystore.buffer as ArrayBuffer, keystorePwd, certAlias);
     taskExecuteReturn<CMResult>(pool, callback, {});
   }
@@ -317,17 +319,18 @@ export namespace certificateManager {
     keystorePwd: string,
     certAlias: string
   ): Promise<CMResult> {
+    checkBufferLen(keystore, MIN_DATA_LEN, MAX_DATA_LEN);
     return createPromise<CMResult>(() => installPrivateCertificateNative(keystore.buffer as ArrayBuffer, keystorePwd, certAlias), {});
   }
 
   export function uninstallPrivateCertificate(keyUri: string, callback: AsyncCallback<void>): void {
-    checkStrLen(keyUri, 1, MAX_DATA_LEN);
+    checkStrLen(keyUri, MIN_DATA_LEN, MAX_DATA_LEN);
     let pool = taskpool.execute(uninstallPrivateCertificateNative, keyUri);
     taskExecuteReturn<void>(pool, callback, undefined);
   }
 
   export function uninstallPrivateCertificate(keyUri: string): Promise<void> {
-    checkStrLen(keyUri, 1, MAX_DATA_LEN);
+    checkStrLen(keyUri, MIN_DATA_LEN, MAX_DATA_LEN);
     return createPromise<void>(() => uninstallPrivateCertificateNative(keyUri), undefined);
   }
 
@@ -341,83 +344,83 @@ export namespace certificateManager {
   }
 
   export function getPrivateCertificate(keyUri: string, callback: AsyncCallback<CMResult>): void {
-    checkStrLen(keyUri, 1, MAX_DATA_LEN);
+    checkStrLen(keyUri, MIN_DATA_LEN, MAX_DATA_LEN);
     let pool = taskpool.execute(getPrivateCertificateNative, keyUri);
     taskExecuteReturn<CMResult>(pool, callback, {});
   }
 
   export function getPrivateCertificate(keyUri: string): Promise<CMResult> {
-    checkStrLen(keyUri, 1, MAX_DATA_LEN);
+    checkStrLen(keyUri, MIN_DATA_LEN, MAX_DATA_LEN);
     return createPromise<CMResult>(() => getPrivateCertificateNative(keyUri), {});
   }
 
   export function init(authUri: string, spec: CMSignatureSpec, callback: AsyncCallback<CMHandle>): void {
-    checkStrLen(authUri, 1, MAX_DATA_LEN);
+    checkStrLen(authUri, MIN_DATA_LEN, MAX_DATA_LEN);
     let result: CMHandle = { handle: new Uint8Array() };
     let pool = taskpool.execute(initNative, authUri, spec);
     taskExecuteReturn<CMHandle>(pool, callback, result);
   }
 
   export function init(authUri: string, spec: CMSignatureSpec): Promise<CMHandle> {
-    checkStrLen(authUri, 1, MAX_DATA_LEN);
+    checkStrLen(authUri, MIN_DATA_LEN, MAX_DATA_LEN);
     let result: CMHandle = { handle: new Uint8Array() };
     return createPromise<CMHandle>(() => initNative(authUri, spec), result);
   }
 
   export function update(handle: Uint8Array, data: Uint8Array, callback: AsyncCallback<void>): void {
-    checkBufferLen(handle, 1, MAX_DATA_LEN);
-    checkBufferLen(data, 1, MAX_DATA_LEN);
+    checkBufferLen(handle, MIN_DATA_LEN, MAX_DATA_LEN);
+    checkBufferLen(data, MIN_DATA_LEN, MAX_DATA_LEN);
     let pool = taskpool.execute(updateNative, handle.buffer as ArrayBuffer, data.buffer as ArrayBuffer);
     taskExecuteReturn<void>(pool, callback, undefined);
   }
 
   export function update(handle: Uint8Array, data: Uint8Array): Promise<void> {
-    checkBufferLen(handle, 1, MAX_DATA_LEN);
-    checkBufferLen(data, 1, MAX_DATA_LEN);
+    checkBufferLen(handle, MIN_DATA_LEN, MAX_DATA_LEN);
+    checkBufferLen(data, MIN_DATA_LEN, MAX_DATA_LEN);
     return createPromise<void>(() => updateNative(handle.buffer as ArrayBuffer, data.buffer as ArrayBuffer), undefined);
   }
 
   export function finish(handle: Uint8Array, callback: AsyncCallback<CMResult>): void {
-    checkBufferLen(handle, 1, MAX_DATA_LEN);
+    checkBufferLen(handle, MIN_DATA_LEN, MAX_DATA_LEN);
     let pool = taskpool.execute(signatureFinishNative, handle.buffer as ArrayBuffer);
     taskExecuteReturn<CMResult>(pool, callback, {});
   }
 
   export function finish(handle: Uint8Array, signature: Uint8Array, callback: AsyncCallback<CMResult>): void {
-    checkBufferLen(handle, 1, MAX_DATA_LEN);
-    checkBufferLen(signature, 1, MAX_DATA_LEN);
+    checkBufferLen(handle, MIN_DATA_LEN, MAX_DATA_LEN);
+    checkBufferLen(signature, MIN_DATA_LEN, MAX_DATA_LEN);
     let pool = taskpool.execute(verifyFinishNative, handle.buffer as ArrayBuffer, signature.buffer as ArrayBuffer);
     taskExecuteReturn<CMResult>(pool, callback, {});
   }
 
   export function finish(handle: Uint8Array, signature?: Uint8Array): Promise<CMResult> {
-    checkBufferLen(handle, 1, MAX_DATA_LEN);
+    checkBufferLen(handle, MIN_DATA_LEN, MAX_DATA_LEN);
     let defaultSignature = signature ?? new Uint8Array();
     if (signature !== undefined) {
-      checkBufferLen(signature, 1, MAX_DATA_LEN);
+      checkBufferLen(signature, MIN_DATA_LEN, MAX_DATA_LEN);
       return createPromise<CMResult>(() => verifyFinishNative(handle.buffer as ArrayBuffer, defaultSignature.buffer as ArrayBuffer), {});
     }
     return createPromise<CMResult>(() => signatureFinishNative(handle.buffer as ArrayBuffer), {});
   }
 
   export function abort(handle: Uint8Array, callback: AsyncCallback<void>): void {
-    checkBufferLen(handle, 1, MAX_DATA_LEN);
+    checkBufferLen(handle, MIN_DATA_LEN, MAX_DATA_LEN);
     let pool = taskpool.execute(abortNative, handle.buffer as ArrayBuffer);
     taskExecuteReturn<void>(pool, callback, undefined);
   }
 
   export function abort(handle: Uint8Array): Promise<void> {
-    checkBufferLen(handle, 1, MAX_DATA_LEN);
+    checkBufferLen(handle, MIN_DATA_LEN, MAX_DATA_LEN);
     return createPromise<void>(() => abortNative(handle.buffer as ArrayBuffer), undefined);
   }
 
   export function getPublicCertificate(keyUri: string): Promise<CMResult> {
-    checkStrLen(keyUri, 1, MAX_DATA_LEN);
+    checkStrLen(keyUri, MIN_DATA_LEN, MAX_DATA_LEN);
     return createPromise<CMResult>(() => getPublicCertificateNative(keyUri), {});
   }
 
   export function isAuthorizedApp(keyUri: string): Promise<boolean> {
-    checkStrLen(keyUri, 1, MAX_DATA_LEN);
+    checkStrLen(keyUri, MIN_DATA_LEN, MAX_DATA_LEN);
     return createPromise<boolean>(() => isAuthorizedAppNative(keyUri), false);
   }
 
@@ -430,7 +433,7 @@ export namespace certificateManager {
   }
 
   export function getUserTrustedCertificate(certUri: string): Promise<CMResult> {
-    checkStrLen(certUri, 1, MAX_DATA_LEN);
+    checkStrLen(certUri, MIN_DATA_LEN, MAX_DATA_LEN);
     return createPromise<CMResult>(() => getUserCANative(certUri), {});
   }
 
@@ -477,7 +480,7 @@ export namespace certificateManager {
   }
 
   export function uninstallUserTrustedCertificateSync(certUri: string) : void {
-    checkStrLen(certUri, 1, MAX_DATA_LEN);
+    checkStrLen(certUri, MIN_DATA_LEN, MAX_DATA_LEN);
     let nativeResult: NativeResult<void> = uninstallUserCASyncNative(certUri);
     if (nativeResult.code === 0) {
       return;
@@ -494,6 +497,7 @@ export namespace certificateManager {
     keystorePwd: string,
     certAlias: string,
     level: AuthStorageLevel): Promise<CMResult> {
+    checkBufferLen(keystore, MIN_DATA_LEN, MAX_DATA_LEN);
     return createPromise<CMResult>(
       () => installPrivateCertWithLevelNative(keystore.buffer as ArrayBuffer, keystorePwd, certAlias, level),
       {}
