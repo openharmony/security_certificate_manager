@@ -101,6 +101,27 @@ export namespace certificateManagerDialog {
     GLOBAL_USER = 2,
   }
 
+  const MIN_DATA_LEN: double = 1;
+  const MAX_DATA_LEN: double = 0x6400000;
+
+  function checkBufferLen(buffer: Uint8Array, minLen: double, maxLen: double) {
+    if (buffer.length < minLen || buffer.length > maxLen) {
+      let error = new BusinessError();
+      error.code = 401;
+      error.message = 'the input parameters is invalid.';
+      throw error;
+    }
+  }
+
+  function checkStrLen(str: string, minLen: double, maxLen: double) {
+    if (str.length < minLen || str.length > maxLen) {
+      let error = new BusinessError();
+      error.code = 401;
+      error.message = 'the input parameters is invalid.';
+      throw error;
+    }
+  }
+
   export function openCertificateManagerDialog(context: common.Context, pageType: CertificateDialogPageType): Promise<void> {
     return new Promise<void>((resolve, reject: (error: BusinessError) => void) => {
         let callback = new AsyncCallbackWrapper<void>((err: BusinessError | null) => {
@@ -121,6 +142,7 @@ export namespace certificateManagerDialog {
   }
 
   export function openInstallCertificateDialog(context: common.Context, certType: CertificateType, certScope: CertificateScope, cert: Uint8Array): Promise<string> {
+    checkBufferLen(cert, MIN_DATA_LEN, MAX_DATA_LEN);
     return new Promise<string>((resolve, reject: (error: BusinessError) => void) => {
         let callback = new AsyncCallbackWrapper<string>((err: BusinessError | null, data: string | undefined) => {
             if (err?.code !== 0) {
@@ -147,6 +169,7 @@ export namespace certificateManagerDialog {
   }
 
   export function openUninstallCertificateDialog(context: common.Context, certType: CertificateType, certUri: string): Promise<void> {
+    checkStrLen(certUri, MIN_DATA_LEN, MAX_DATA_LEN);
     return new Promise<void>((resolve, reject: (error: BusinessError) => void) => {
         let callback = new AsyncCallbackWrapper<void>((err: BusinessError | null) => {
             if (err?.code !== 0) {
@@ -170,6 +193,7 @@ export namespace certificateManagerDialog {
   }
 
   export function openCertificateDetailDialog(context: common.Context, cert: Uint8Array, property: CertificateDialogProperty): Promise<void> {
+    checkBufferLen(cert, MIN_DATA_LEN, MAX_DATA_LEN);
     return new Promise<void>((resolve, reject: (error: BusinessError) => void) => {
         let callback = new AsyncCallbackWrapper<void>((err: BusinessError | null) => {
             if (err?.code !== 0) {
