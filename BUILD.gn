@@ -167,6 +167,7 @@ group("cert_manager_type_base") {
       "./config:trusted_system_certificate97",
       "./config:trusted_system_certificate98",
       "./config:trusted_system_certificate99",
+      "./config/integrate_cacert:build_integrate_cacert"
     ]
   } else if (os_level == "small") {
     deps = []
