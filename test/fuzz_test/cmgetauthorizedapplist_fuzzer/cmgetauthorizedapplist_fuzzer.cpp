@@ -17,6 +17,7 @@
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
+#include "cm_test_common.h"
 
 using namespace CmFuzzTest;
 namespace OHOS {
@@ -48,7 +49,7 @@ namespace OHOS {
         }
         appUidList.appUid = reinterpret_cast<uint32_t *>(myData  + offset);
 
-        SetATPermission();
+        CertmanagerTest::MockHapToken mockHap;
         (void)CmGetAuthorizedAppList(&authorUri, &appUidList);
 
         CmFree(myData);

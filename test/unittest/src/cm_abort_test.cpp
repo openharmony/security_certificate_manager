@@ -19,9 +19,13 @@
 
 #include "cert_manager_api.h"
 
+
 using namespace testing::ext;
 using namespace CertmanagerTest;
+
 namespace {
+static uint32_t g_selfTokenId = 0;
+static MockHapToken* g_MockHap = nullptr;
 class CmAbortTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -35,19 +39,26 @@ public:
 
 void CmAbortTest::SetUpTestCase(void)
 {
-    SetATPermission();
+    g_selfTokenId = GetSelfTokenID();
+    CmTestCommon::SetTestEnvironment(g_selfTokenId);
 }
 
 void CmAbortTest::TearDownTestCase(void)
 {
+    CmTestCommon::ResetTestEnvironment();
 }
 
 void CmAbortTest::SetUp()
 {
+    g_MockHap = new (std::nothrow) MockHapToken();
 }
 
 void CmAbortTest::TearDown()
 {
+    if (g_MockHap != nullptr) {
+        delete g_MockHap;
+        g_MockHap = nullptr;
+    }
 }
 
 /**

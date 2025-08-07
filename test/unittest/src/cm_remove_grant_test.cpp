@@ -22,6 +22,8 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
+static uint32_t g_selfTokenId = 0;
+static MockHapToken* g_MockHap = nullptr;
 static constexpr uint32_t DEFAULT_AUTH_URI_LEN = 256;
 static constexpr uint32_t DEFAULT_APP_ID = 1000;
 static constexpr uint32_t REMOVE_TWICE = 2;
@@ -41,19 +43,26 @@ public:
 
 void CmRemoveGrantTest::SetUpTestCase(void)
 {
-    SetATPermission();
+    g_selfTokenId = GetSelfTokenID();
+    CmTestCommon::SetTestEnvironment(g_selfTokenId);
 }
 
 void CmRemoveGrantTest::TearDownTestCase(void)
 {
+    CmTestCommon::ResetTestEnvironment();
 }
 
 void CmRemoveGrantTest::SetUp()
 {
+    g_MockHap = new (std::nothrow) MockHapToken();
 }
 
 void CmRemoveGrantTest::TearDown()
 {
+    if (g_MockHap != nullptr) {
+        delete g_MockHap;
+        g_MockHap = nullptr;
+    }
 }
 
 static void TestRemoveGrant(uint32_t removeAppUid, uint32_t removeCount)

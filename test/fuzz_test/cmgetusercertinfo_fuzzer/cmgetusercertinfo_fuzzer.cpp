@@ -17,6 +17,7 @@
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
+#include "cm_test_common.h"
 
 namespace {
 const uint32_t CM_BLOB_COUNT = 2;
@@ -73,7 +74,7 @@ namespace OHOS {
             .certInfo = certInfo
         };
 
-        SetATPermission();
+        CertmanagerTest::MockHapToken mockHap;
         (void)CmGetUserCertInfo(&userCertUri, store, &userCertInfo);
 
         CmFree(myData);

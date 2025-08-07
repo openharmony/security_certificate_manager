@@ -17,6 +17,7 @@
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
+#include "cm_test_common.h"
 
 namespace {
 const uint32_t UINT32_COUNT = 4;
@@ -84,7 +85,7 @@ namespace OHOS {
             return false;
         }
 
-        SetATPermission();
+        CertmanagerTest::MockHapToken mockHap;
         (void)CmGetAppCert(&appCertUri, store, &credCert);
 
         CmFree(myData);

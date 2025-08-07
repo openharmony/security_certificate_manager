@@ -17,6 +17,7 @@
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
+#include "cm_test_common.h"
 
 using namespace CmFuzzTest;
 namespace OHOS {
@@ -49,7 +50,7 @@ namespace OHOS {
             return false;
         }
 
-        SetATPermission();
+        CertmanagerTest::MockHapToken mockHap;
         (void)CmGrantAppCertificate(&keyUri, appUid, &authUri);
 
         CmFree(myData);

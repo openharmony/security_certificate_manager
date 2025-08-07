@@ -14,6 +14,8 @@
  */
 
 #include "cm_fuzz_test_common.h"
+#include "cm_test_common.h"
+#include "cm_test_common.h"
 
 #include "cm_ipc_client_serialization.h"
 #include "message_parcel.h"
@@ -23,42 +25,8 @@
 #include <unistd.h>
 
 namespace CmFuzzTest {
-constexpr uint32_t SLEEP_TIME = 3;
-constexpr int32_t PERMISSION_MAX = 4;
-constexpr int32_t PERMISSION_INDEX0 = 0;
-constexpr int32_t PERMISSION_INDEX1 = 1;
-constexpr int32_t PERMISSION_INDEX2 = 2;
-constexpr int32_t PERMISSION_INDEX3 = 3;
 constexpr uint32_t NUM_10 = 10;
 constexpr uint32_t NUM_9 = 9;
-void SetATPermission(void)
-{
-    static bool firstRun = true;
-    const char **perms = new const char *[PERMISSION_MAX]; // 4 permissions
-    perms[PERMISSION_INDEX0] = "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL"; // system_core
-    perms[PERMISSION_INDEX1] = "ohos.permission.ACCESS_CERT_MANAGER"; // normal
-    perms[PERMISSION_INDEX2] = "ohos.permission.ACCESS_USER_TRUSTED_CERT"; // system_core
-    perms[PERMISSION_INDEX3] = "ohos.permission.ACCESS_SYSTEM_APP_CERT"; // system_core
-    NativeTokenInfoParams infoInstance = {
-        .dcapsNum = 0,
-        .permsNum = PERMISSION_MAX,
-        .dcaps = nullptr,
-        .perms = perms,
-        .acls = nullptr,
-        .processName = "TestCertManager",
-        .aplStr = "system_core",
-    };
-
-    auto tokenId = GetAccessTokenId(&infoInstance);
-    SetSelfTokenID(tokenId);
-    OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
-    if (firstRun) {
-        system("pidof accesstoken_ser | xargs kill -9");
-        sleep(SLEEP_TIME);
-        firstRun = false;
-    }
-    delete[] perms;
-}
 
 bool GetUintFromBuffer(uint8_t *srcData, uint32_t *remSize, uint32_t *offset, uint32_t *outVal)
 {

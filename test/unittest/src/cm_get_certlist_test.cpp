@@ -21,6 +21,8 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
+static uint32_t g_selfTokenId = 0;
+static MockHapToken* g_MockHap = nullptr;
 static const int TIMES_PERFORMANCE = 10;
 static const uint32_t PATH_LEN = 1000;
 
@@ -73,21 +75,28 @@ public:
 
 void CmGetCertListTest::SetUpTestCase(void)
 {
-    SetATPermission();
+    g_selfTokenId = GetSelfTokenID();
+    CmTestCommon::SetTestEnvironment(g_selfTokenId);
 }
 
 void CmGetCertListTest::TearDownTestCase(void)
 {
+    CmTestCommon::ResetTestEnvironment();
 }
 
 void CmGetCertListTest::SetUp()
 {
     InitCertList(&lstCert);
+    g_MockHap = new (std::nothrow) MockHapToken();
 }
 
 void CmGetCertListTest::TearDown()
 {
     FreeCertList(lstCert);
+    if (g_MockHap != nullptr) {
+        delete g_MockHap;
+        g_MockHap = nullptr;
+    }
 }
 
 /**

@@ -17,6 +17,7 @@
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
+#include "cm_test_common.h"
 
 using namespace CmFuzzTest;
 namespace OHOS {
@@ -67,7 +68,7 @@ namespace OHOS {
             .uriList = nullptr
         };
 
-        SetATPermission();
+        CertmanagerTest::MockHapToken mockHap;
         (void)CmInstallUserTrustedP7BCert(&installCertInfo, true, &certUriList);
 
         CM_FREE_PTR(certUriList.uriList);

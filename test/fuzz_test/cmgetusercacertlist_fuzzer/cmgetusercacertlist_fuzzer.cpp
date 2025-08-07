@@ -17,6 +17,7 @@
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
+#include "cm_test_common.h"
 
 namespace {
 const uint32_t MAX_SCOPE = 3;
@@ -58,7 +59,7 @@ namespace OHOS {
             return false;
         }
 
-        SetATPermission();
+        CertmanagerTest::MockHapToken mockHap;
         (void)CmGetUserCACertList(&property, &userCertList);
 
         CmFree(myData);

@@ -21,6 +21,8 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
+static uint32_t g_selfTokenId = 0;
+static MockHapToken* g_MockHap = nullptr;
 struct CertInfoResult {
     struct CertInfo CertInfo;
     bool bExpectResult;
@@ -86,21 +88,28 @@ public:
 
 void CmGetCertInfoTest::SetUpTestCase(void)
 {
-    SetATPermission();
+    g_selfTokenId = GetSelfTokenID();
+    CmTestCommon::SetTestEnvironment(g_selfTokenId);
 }
 
 void CmGetCertInfoTest::TearDownTestCase(void)
 {
+    CmTestCommon::ResetTestEnvironment();
 }
 
 void CmGetCertInfoTest::SetUp()
 {
     InitCertList(&lstCert);
+    g_MockHap = new (std::nothrow) MockHapToken();
 }
 
 void CmGetCertInfoTest::TearDown()
 {
     FreeCertList(lstCert);
+    if (g_MockHap != nullptr) {
+        delete g_MockHap;
+        g_MockHap = nullptr;
+    }
 }
 
 /**

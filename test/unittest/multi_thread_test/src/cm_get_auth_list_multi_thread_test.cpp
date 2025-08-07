@@ -24,6 +24,8 @@ using namespace testing::ext;
 using namespace testing::mt;
 using namespace CertmanagerTest;
 namespace {
+static uint32_t g_selfTokenId = 0;
+static MockHapToken* g_MockHap = nullptr;
 static constexpr uint32_t DEFAULT_AUTH_URI_LEN = 256;
 static constexpr uint32_t DEFAULT_BASE_APP_ID = 1000;
 static constexpr uint32_t APP_UID_COUNT_ONE = 1;
@@ -47,11 +49,13 @@ public:
 
 void CmGetAuthListMultiThreadTest::SetUpTestCase(void)
 {
-    SetATPermission();
+    g_selfTokenId = GetSelfTokenID();
+    CmTestCommon::SetTestEnvironment(g_selfTokenId);
 }
 
 void CmGetAuthListMultiThreadTest::TearDownTestCase(void)
 {
+    CmTestCommon::ResetTestEnvironment();
 }
 
 static const uint8_t g_uriData[] = "oh:t=ak;o=GetAuthList;u=0;a=0";
@@ -59,6 +63,7 @@ static const CmBlob g_keyUri = { sizeof(g_uriData), (uint8_t *)g_uriData };
 
 void CmGetAuthListMultiThreadTest::SetUp()
 {
+    g_MockHap = new (std::nothrow) MockHapToken();
     uint8_t aliasData[] = "GetAuthList";
     struct CmBlob alias = { sizeof(aliasData), aliasData };
 
@@ -85,6 +90,10 @@ void CmGetAuthListMultiThreadTest::TearDown()
 
     uint32_t expectCount = 0;
     EXPECT_EQ(appUidList.appUidCount, expectCount);
+    if (g_MockHap != nullptr) {
+        delete g_MockHap;
+        g_MockHap = nullptr;
+    }
 }
 
 static void TestRemoveGrant(uint32_t count, uint32_t baseAppId)

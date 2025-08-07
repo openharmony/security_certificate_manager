@@ -16,13 +16,14 @@
 #include "cmipcservicesetusercertstatus_fuzzer.h"
 
 #include "cm_fuzz_test_common.h"
+#include "cm_test_common.h"
 #include "cm_ipc_service.h"
 
 using namespace CmFuzzTest;
 namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
-        SetATPermission();
+        CertmanagerTest::MockHapToken mockHap;
         if (!IpcServiceApiFuzzerTest(data, size, CM_MSG_SET_USER_CERTIFICATE_STATUS,
             false, CmIpcServiceSetUserCertStatus)) {
             return false;

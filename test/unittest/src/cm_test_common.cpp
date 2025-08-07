@@ -29,14 +29,13 @@
 #include "token_setproc.h"
 #include <unistd.h>
 #include <unordered_map>
+#include <thread>
+#include <sstream>
+#include <iostream>
 
 namespace CertmanagerTest {
-constexpr uint32_t SLEEP_TIME = 3;
-constexpr int32_t PERMISSION_MAX = 4;
-constexpr int32_t PERMISSION_INDEX0 = 0;
-constexpr int32_t PERMISSION_INDEX1 = 1;
-constexpr int32_t PERMISSION_INDEX2 = 2;
-constexpr int32_t PERMISSION_INDEX3 = 3;
+using namespace OHOS::Security::AccessToken;
+namespace {
 
 static const std::unordered_map<uint32_t, const uint8_t*> ALG_CODE_TO_CERT_DATA = {
     { CERT_KEY_ALG_RSA, g_rsa2048P12CertInfo },
@@ -68,33 +67,179 @@ static const std::unordered_map<uint32_t, uint32_t> ALG_CODE_TO_CERT_SIZE = {
     { CERT_KEY_ALG_SM2_2, sizeof(g_sm2PfxCertInfo2) },
 };
 
-void SetATPermission(void)
+std::mutex g_lockSetToken;
+uint64_t g_shellTokenId = 0;
+const std::string BUNDLE_NAME = "test.bundlename";
+const bool IS_SYSTEM_APP = true;
+const std::vector<std::string> PERMISSION_LIST = {
+    "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL",
+    "ohos.permission.ACCESS_CERT_MANAGER",
+    "ohos.permission.ACCESS_USER_TRUSTED_CERT",
+    "ohos.permission.ACCESS_SYSTEM_APP_CERT"
+};
+}
+
+MockNativeToken::MockNativeToken(const std::string& process)
 {
-    static bool firstRun = true;
-    const char **perms = new const char *[PERMISSION_MAX]; // 4 permissions
-    perms[PERMISSION_INDEX0] = "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL"; // system_core
-    perms[PERMISSION_INDEX1] = "ohos.permission.ACCESS_CERT_MANAGER"; // normal
-    perms[PERMISSION_INDEX2] = "ohos.permission.ACCESS_USER_TRUSTED_CERT"; // system_core
-    perms[PERMISSION_INDEX3] = "ohos.permission.ACCESS_SYSTEM_APP_CERT"; // system_core
-    NativeTokenInfoParams infoInstance = {
-        .dcapsNum = 0,
-        .permsNum = PERMISSION_MAX,
-        .dcaps = nullptr,
-        .perms = perms,
-        .acls = nullptr,
-        .processName = "TestCertManager",
-        .aplStr = "system_core",
+    selfToken_ = GetSelfTokenID();
+    uint32_t tokenId = CmTestCommon::GetNativeTokenIdFromProcess(process);
+    SetSelfTokenID(tokenId);
+}
+
+MockNativeToken::~MockNativeToken()
+{
+    SetSelfTokenID(selfToken_);
+}
+
+MockHapToken::MockHapToken()
+{
+    selfToken_ = GetSelfTokenID();
+    AccessTokenIDEx tokenIdEx = CmTestCommon::SetupHapAndAllocateToken();
+    mockToken_ = tokenIdEx.tokenIdExStruct.tokenID;
+    SetSelfTokenID(tokenIdEx.tokenIDEx);
+}
+
+MockHapToken::~MockHapToken()
+{
+    if (mockToken_ != INVALID_TOKENID) {
+        CmTestCommon::DeleteTestHapToken(mockToken_);
+    }
+    SetSelfTokenID(selfToken_);
+}
+
+void CmTestCommon::SetTestEnvironment(uint64_t shellTokenId)
+{
+    std::lock_guard<std::mutex> lock(g_lockSetToken);
+    g_shellTokenId = shellTokenId;
+}
+
+void CmTestCommon::ResetTestEnvironment()
+{
+    std::lock_guard<std::mutex> lock(g_lockSetToken);
+    g_shellTokenId = 0;
+}
+
+uint64_t CmTestCommon::GetShellTokenId()
+{
+    std::lock_guard<std::mutex> lock(g_lockSetToken);
+    return g_shellTokenId;
+}
+
+void CmTestCommon::SetHapInfoAndPolicy(const std::string& bundle, const std::vector<std::string>& reqPerm,
+    bool isSystemApp, HapInfoParams& hapInfo, HapPolicyParams& hapPolicy)
+{
+    hapInfo = {
+        .userID = 0,
+        .bundleName = bundle,
+        .instIndex = 0,
+        .appIDDesc = "CmTestAppID",
+        .apiVersion = CmTestCommon::DEFAULT_API_VERSION,
+        .isSystemApp = isSystemApp,
+        .appDistributionType = "",
     };
 
-    auto tokenId = GetAccessTokenId(&infoInstance);
-    SetSelfTokenID(tokenId);
-    OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
-    if (firstRun) {
-        system("pidof accesstoken_service | xargs kill -9");
-        sleep(SLEEP_TIME);
-        firstRun = false;
+    hapPolicy = {
+        .apl = APL_NORMAL,
+        .domain = "test.domain",
+    };
+    for (size_t i = 0; i < reqPerm.size(); ++i) {
+        PermissionDef permDefResult;
+        if (AccessTokenKit::GetDefPermission(reqPerm[i], permDefResult) != RET_SUCCESS) {
+            continue;
+        }
+        PermissionStateFull permState = {
+            .permissionName = reqPerm[i],
+            .isGeneral = true,
+            .resDeviceID = {"local3"},
+            .grantStatus = {PermissionState::PERMISSION_DENIED},
+            .grantFlags = {PermissionFlag::PERMISSION_DEFAULT_FLAG}
+        };
+        hapPolicy.permStateList.emplace_back(permState);
+        if (permDefResult.availableLevel > hapPolicy.apl) {
+            hapPolicy.aclRequestedList.emplace_back(reqPerm[i]);
+        }
     }
-    delete[] perms;
+}
+
+AccessTokenIDEx CmTestCommon::AllocTestHapToken(
+    const HapInfoParams& hapInfo, HapPolicyParams& hapPolicy)
+{
+    AccessTokenIDEx tokenIdEx = {0};
+    uint64_t selfTokenId = GetSelfTokenID();
+    for (auto& permissionStateFull : hapPolicy.permStateList) {
+        PermissionDef permDefResult;
+        if (AccessTokenKit::GetDefPermission(permissionStateFull.permissionName, permDefResult) != RET_SUCCESS) {
+            continue;
+        }
+        if (permDefResult.availableLevel > hapPolicy.apl) {
+            hapPolicy.aclRequestedList.emplace_back(permissionStateFull.permissionName);
+        }
+    }
+    if (CmTestCommon::GetNativeTokenIdFromProcess("foundation") == selfTokenId) {
+        AccessTokenKit::InitHapToken(hapInfo, hapPolicy, tokenIdEx);
+    } else {
+        // set sh token for self
+        MockNativeToken mock("foundation");
+        AccessTokenKit::InitHapToken(hapInfo, hapPolicy, tokenIdEx);
+
+        // restore
+        SetSelfTokenID(selfTokenId);
+    }
+    return tokenIdEx;
+}
+
+AccessTokenIDEx CmTestCommon::SetupHapAndAllocateToken()
+{
+    HapInfoParams hapInfo;
+    HapPolicyParams hapPolicy;
+    CmTestCommon::SetHapInfoAndPolicy(BUNDLE_NAME, PERMISSION_LIST, IS_SYSTEM_APP,
+        hapInfo, hapPolicy);
+    AccessTokenIDEx tokenIdEx = CmTestCommon::AllocTestHapToken(hapInfo, hapPolicy);
+    return tokenIdEx;
+}
+
+int32_t CmTestCommon::DeleteTestHapToken(AccessTokenID tokenID)
+{
+    uint64_t selfTokenId = GetSelfTokenID();
+    if (CmTestCommon::GetNativeTokenIdFromProcess("foundation") == selfTokenId) {
+        return AccessTokenKit::DeleteToken(tokenID);
+    }
+
+    // set sh token for self
+    MockNativeToken mock("foundation");
+
+    int32_t ret = AccessTokenKit::DeleteToken(tokenID);
+    // restore
+    SetSelfTokenID(selfTokenId);
+    return ret;
+}
+
+AccessTokenID CmTestCommon::GetNativeTokenIdFromProcess(const std::string &process)
+{
+    uint64_t selfTokenId = GetSelfTokenID();
+    SetSelfTokenID(CmTestCommon::GetShellTokenId()); // set shell token
+
+    std::string dumpInfo;
+    AtmToolsParamInfo info;
+    info.processName = process;
+    AccessTokenKit::DumpTokenInfo(info, dumpInfo);
+    size_t pos = dumpInfo.find("\"tokenID\": ");
+    if (pos == std::string::npos) {
+        return 0;
+    }
+    pos += std::string("\"tokenID\": ").length();
+    std::string numStr;
+    while (pos < dumpInfo.length() && std::isdigit(dumpInfo[pos])) {
+        numStr += dumpInfo[pos];
+        ++pos;
+    }
+    // restore
+    SetSelfTokenID(selfTokenId);
+
+    std::istringstream iss(numStr);
+    AccessTokenID tokenID;
+    iss >> tokenID;
+    return tokenID;
 }
 
 int32_t InitCertInfo(struct CertInfo *certInfo)

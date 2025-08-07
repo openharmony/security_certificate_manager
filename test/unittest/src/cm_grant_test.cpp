@@ -22,6 +22,8 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
+static uint32_t g_selfTokenId = 0;
+static MockHapToken* g_MockHap = nullptr;
 static constexpr uint32_t DEFAULT_AUTH_URI_LEN = 256;
 static constexpr uint32_t INVALID_AUTH_URI_LEN = 100;
 static constexpr uint32_t DEFAULT_APP_ID = 1000;
@@ -42,19 +44,26 @@ public:
 
 void CmGrantTest::SetUpTestCase(void)
 {
-    SetATPermission();
+    g_selfTokenId = GetSelfTokenID();
+    CmTestCommon::SetTestEnvironment(g_selfTokenId);
 }
 
 void CmGrantTest::TearDownTestCase(void)
 {
+    CmTestCommon::ResetTestEnvironment();
 }
 
 void CmGrantTest::SetUp()
 {
+    g_MockHap = new (std::nothrow) MockHapToken();
 }
 
 void CmGrantTest::TearDown()
 {
+    if (g_MockHap != nullptr) {
+        delete g_MockHap;
+        g_MockHap = nullptr;
+    }
 }
 
 static void TestNormalGrant(uint32_t count, bool isSameUid)

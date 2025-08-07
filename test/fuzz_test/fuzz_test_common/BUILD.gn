@@ -15,7 +15,10 @@ import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
 
 config("cert_manager_config") {
-  include_dirs = [ "include" ]
+  include_dirs = [
+    "include",
+    "../../unittest/include"
+  ]
 }
 
 ohos_static_library("libcert_manager_fuzz_test_common_static") {
@@ -23,7 +26,10 @@ ohos_static_library("libcert_manager_fuzz_test_common_static") {
   part_name = "certificate_manager"
   public_configs = [ ":cert_manager_config" ]
 
-  sources = [ "src/cm_fuzz_test_common.cpp" ]
+  sources = [
+    "src/cm_fuzz_test_common.cpp",
+    "../../unittest/src/cm_test_common.cpp"
+  ]
   cflags_cc = [
     "-Wall",
     "-Werror",
