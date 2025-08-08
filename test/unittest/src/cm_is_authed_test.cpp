@@ -22,6 +22,8 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
+static uint32_t g_selfTokenId = 0;
+static MockHapToken* g_MockHap = nullptr;
 static constexpr uint32_t DEFAULT_AUTH_URI_LEN = 256;
 
 class CmIsAuthedTest : public testing::Test {
@@ -37,15 +39,18 @@ public:
 
 void CmIsAuthedTest::SetUpTestCase(void)
 {
-    SetATPermission();
+    g_selfTokenId = GetSelfTokenID();
+    CmTestCommon::SetTestEnvironment(g_selfTokenId);
 }
 
 void CmIsAuthedTest::TearDownTestCase(void)
 {
+    CmTestCommon::ResetTestEnvironment();
 }
 
 void CmIsAuthedTest::SetUp()
 {
+    g_MockHap = new (std::nothrow) MockHapToken();
     uint8_t aliasData[] = "TestNormalGrant";
     struct CmBlob alias = { sizeof(aliasData), aliasData };
 
@@ -60,6 +65,10 @@ void CmIsAuthedTest::TearDown()
 
     int32_t ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert failed, retcode:" << ret;
+    if (g_MockHap != nullptr) {
+        delete g_MockHap;
+        g_MockHap = nullptr;
+    }
 }
 
 static void TestGrantApp(struct CmBlob *authUri)

@@ -27,7 +27,8 @@ using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
 constexpr uint32_t MAX_URI_LEN = 256;
-
+static uint32_t g_selfTokenId = 0;
+static MockHapToken* g_MockHap = nullptr;
 struct UserCertListResult {
     struct CertAbstract certAbstract;
     bool bExpectResult;
@@ -215,19 +216,26 @@ public:
 
 void CmUserCertTest::SetUpTestCase(void)
 {
-    SetATPermission();
+    g_selfTokenId = GetSelfTokenID();
+    CmTestCommon::SetTestEnvironment(g_selfTokenId);
 }
 
 void CmUserCertTest::TearDownTestCase(void)
 {
+    CmTestCommon::ResetTestEnvironment();
 }
 
 void CmUserCertTest::SetUp()
 {
+    g_MockHap = new (std::nothrow) MockHapToken();
 }
 
 void CmUserCertTest::TearDown()
 {
+    if (g_MockHap != nullptr) {
+        delete g_MockHap;
+        g_MockHap = nullptr;
+    }
 }
 
 /**

@@ -27,6 +27,8 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
+static uint32_t g_selfTokenId = 0;
+static MockHapToken* g_MockHap = nullptr;
 
 static const struct CmBlob g_appCert = { sizeof(g_rsa2048P12CertInfo), const_cast<uint8_t *>(g_rsa2048P12CertInfo) };
 static const struct CmBlob g_eccAppCert = { sizeof(g_eccP256P12CertInfo), const_cast<uint8_t *>(g_eccP256P12CertInfo) };
@@ -54,19 +56,26 @@ public:
 
 void CmPriAppCertTest::SetUpTestCase(void)
 {
-    SetATPermission();
+    g_selfTokenId = GetSelfTokenID();
+    CmTestCommon::SetTestEnvironment(g_selfTokenId);
 }
 
 void CmPriAppCertTest::TearDownTestCase(void)
 {
+    CmTestCommon::ResetTestEnvironment();
 }
 
 void CmPriAppCertTest::SetUp()
 {
+    g_MockHap = new (std::nothrow) MockHapToken();
 }
 
 void CmPriAppCertTest::TearDown()
 {
+    if (g_MockHap != nullptr) {
+        delete g_MockHap;
+        g_MockHap = nullptr;
+    }
 }
 
 /**

@@ -25,6 +25,8 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
+static uint32_t g_selfTokenId = 0;
+static MockHapToken* g_MockHap = nullptr;
 static constexpr uint32_t INIT_COUNT_MULTI = 16;
 
 class CmInitTest : public testing::Test {
@@ -40,11 +42,13 @@ public:
 
 void CmInitTest::SetUpTestCase(void)
 {
-    SetATPermission();
+    g_selfTokenId = GetSelfTokenID();
+    CmTestCommon::SetTestEnvironment(g_selfTokenId);
 }
 
 void CmInitTest::TearDownTestCase(void)
 {
+    CmTestCommon::ResetTestEnvironment();
 }
 
 static const uint8_t g_rsaUriData[] = "oh:t=ak;o=TestInitRsa;u=0;a=0";
@@ -56,6 +60,7 @@ static const CmBlob g_sm2KeyUri = { sizeof(g_sm2UriData), (uint8_t *)g_sm2UriDat
 
 void CmInitTest::SetUp()
 {
+    g_MockHap = new (std::nothrow) MockHapToken();
     uint8_t aliasRsaData[] = "TestInitRsa";
     uint8_t aliasEccData[] = "TestInitEcc";
     uint8_t aliasSM2Data[] = "TestInitSM2";
@@ -79,6 +84,10 @@ void CmInitTest::TearDown()
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert ecc failed, retcode:" << ret;
     ret = CmUninstallAppCert(&g_sm2KeyUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert sm2 failed, retcode:" << ret;
+    if (g_MockHap != nullptr) {
+        delete g_MockHap;
+        g_MockHap = nullptr;
+    }
 }
 
 /**

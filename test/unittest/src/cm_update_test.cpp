@@ -22,6 +22,8 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
+static uint32_t g_selfTokenId = 0;
+static MockHapToken* g_MockHap = nullptr;
 static constexpr uint32_t DEFAULT_INDATA_SIZE = 10;
 static constexpr uint32_t DEFAULT_HANDLE_SIZE = 8;
 
@@ -38,19 +40,26 @@ public:
 
 void CmUpdateTest::SetUpTestCase(void)
 {
-    SetATPermission();
+    g_selfTokenId = GetSelfTokenID();
+    CmTestCommon::SetTestEnvironment(g_selfTokenId);
 }
 
 void CmUpdateTest::TearDownTestCase(void)
 {
+    CmTestCommon::ResetTestEnvironment();
 }
 
 void CmUpdateTest::SetUp()
 {
+    g_MockHap = new (std::nothrow) MockHapToken();
 }
 
 void CmUpdateTest::TearDown()
 {
+    if (g_MockHap != nullptr) {
+        delete g_MockHap;
+        g_MockHap = nullptr;
+    }
 }
 
 static const uint8_t g_inDataBuf[DEFAULT_INDATA_SIZE] = {0};

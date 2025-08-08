@@ -16,6 +16,7 @@
 #include "cmsendrequest_fuzzer.h"
 
 #include "cm_fuzz_test_common.h"
+#include "cm_test_common.h"
 #include "cm_param.h"
 #include "cm_request.h"
 
@@ -55,7 +56,7 @@ namespace OHOS {
             return false;
         }
 
-        SetATPermission();
+        CertmanagerTest::MockHapToken mockHap;
         (void)SendRequest(type, &inBlob, &outBlob);
 
         CmFree(myData);

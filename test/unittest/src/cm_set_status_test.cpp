@@ -21,6 +21,8 @@
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
+static uint32_t g_selfTokenId = 0;
+static MockHapToken* g_MockHap = nullptr;
 struct CertStatusExpectResult {
     char uri[MAX_LEN_URI];
     bool inparamStatus;
@@ -52,19 +54,26 @@ public:
 
 void CmSetCertStatusTest::SetUpTestCase(void)
 {
-    SetATPermission();
+    g_selfTokenId = GetSelfTokenID();
+    CmTestCommon::SetTestEnvironment(g_selfTokenId);
 }
 
 void CmSetCertStatusTest::TearDownTestCase(void)
 {
+    CmTestCommon::ResetTestEnvironment();
 }
 
 void CmSetCertStatusTest::SetUp()
 {
+    g_MockHap = new (std::nothrow) MockHapToken();
 }
 
 void CmSetCertStatusTest::TearDown()
 {
+    if (g_MockHap != nullptr) {
+        delete g_MockHap;
+        g_MockHap = nullptr;
+    }
 }
 
 /**

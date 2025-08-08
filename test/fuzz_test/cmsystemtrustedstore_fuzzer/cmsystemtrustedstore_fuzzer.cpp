@@ -16,6 +16,7 @@
 #include "cmsystemtrustedstore_fuzzer.h"
 
 #include "cm_fuzz_test_common.h"
+#include "cm_test_common.h"
 #include "cert_manager_api.h"
 #include "cm_ipc_client_serialization.h"
 #include "cm_ipc_service.h"
@@ -136,7 +137,7 @@ namespace OHOS {
 
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
-        SetATPermission();
+        CertmanagerTest::MockHapToken mockHap;
 
         bool ret = false;
         uint8_t keyUriData[] = "1d3472b9.0";

@@ -18,6 +18,9 @@
 
 #include "cm_type.h"
 #include "securec.h"
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
 
 #include  <string>
 
@@ -42,6 +45,41 @@ constexpr uint32_t TEST_USERID = 100;
 constexpr uint32_t SA_USERID = 0;
 
 namespace CertmanagerTest {
+
+using namespace OHOS::Security::AccessToken;
+
+class MockNativeToken {
+public:
+    explicit MockNativeToken(const std::string& process);
+    ~MockNativeToken();
+private:
+    uint64_t selfToken_;
+};
+
+class MockHapToken {
+public:
+    explicit MockHapToken();
+    ~MockHapToken();
+private:
+    uint64_t selfToken_;
+    uint32_t mockToken_;
+};
+
+class CmTestCommon {
+public:
+    static constexpr int32_t DEFAULT_API_VERSION = 12;
+    static void SetTestEnvironment(uint64_t shellTokenId);
+    static void ResetTestEnvironment();
+    static uint64_t GetShellTokenId();
+    static void SetHapInfoAndPolicy(const std::string& bundle, const std::vector<std::string>& reqPerm,
+        bool isSystemApp, HapInfoParams& hapInfo, HapPolicyParams& hapPolicy);
+    static AccessTokenIDEx AllocTestHapToken(
+        const HapInfoParams& hapInfo, HapPolicyParams& hapPolicy);
+    static int32_t DeleteTestHapToken(AccessTokenID tokenID);
+    static AccessTokenID GetNativeTokenIdFromProcess(const std::string& process);
+    static AccessTokenIDEx SetupHapAndAllocateToken();
+};
+
 void FreeCMBlobData(struct CmBlob *blob);
 
 void FreeCertList(struct CertList *certList);
@@ -59,8 +97,6 @@ int32_t TestGenerateAppCert(const struct CmBlob *alias, uint32_t alg, uint32_t s
 std::string DumpCertAbstractInfo(const struct CertAbstract *certAbstract);
 std::string DumpCertInfo(const struct CertInfo* certInfo);
 std::string DumpCertList(struct CertList *certList);
-
-void SetATPermission(void);
 
 int32_t InitCertList(struct CertList **cList);
 
