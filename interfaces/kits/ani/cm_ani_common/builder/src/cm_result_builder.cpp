@@ -70,7 +70,7 @@ int32_t CMResultBuilder::buildCredentialList()
         return CM_SUCCESS;
     }
 
-    ani_array_ref aniCredArray;
+    ani_array aniCredArray;
     int32_t ret = AniUtils::GenerateCredArray(env, credentialAbstract, credCount, aniCredArray);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("generate cred array failed.");
@@ -206,7 +206,7 @@ int32_t CMResultBuilder::buildCertList()
         return CM_SUCCESS;
     }
 
-    ani_array_ref aniCertArray;
+    ani_array aniCertArray;
     int32_t ret = AniUtils::GenerateCertArray(env, certAbstract, certCount, aniCertArray);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("generate cert array failed.");
