@@ -197,10 +197,17 @@ static void InstallAppCertExecute(napi_env env, void *data)
 {
     InstallAppCertAsyncContext context = static_cast<InstallAppCertAsyncContext>(data);
     InitKeyUri(context->keyUri);
-    if (context->store == CM_PRI_CREDENTIAL_STORE) {
-        struct CmAppCertParam certParam = { (struct CmBlob *)context->keystore, (struct CmBlob *)context->keystorePwd,
-            (struct CmBlob *)context->keyAlias, context->store, INIT_INVALID_VALUE, context->level };
+    struct CmBlob privKey = { 0, NULL };
 
+    if (context->store == CM_PRI_CREDENTIAL_STORE) {
+        struct CmAppCertParam certParam = {
+            (struct CmBlob *)context->keystore,
+            (struct CmBlob *)context->keystorePwd,
+            (struct CmBlob *)context->keyAlias,
+            context->store, INIT_INVALID_VALUE,
+            context->level, FILE_P12,
+            &privKey, DEFAULT_FORMAT
+        };
         context->result = CmInstallAppCertEx(&certParam, context->keyUri);
     } else {
         context->result = CmInstallAppCert(context->keystore,

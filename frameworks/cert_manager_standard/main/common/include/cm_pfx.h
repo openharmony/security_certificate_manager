@@ -27,6 +27,9 @@ extern "C" {
 int32_t CmParsePkcs12Cert(const struct CmBlob *p12Cert, char *passWd, EVP_PKEY **pkey,
     struct AppCert *appCert, X509 **x509Cert);
 
+int32_t CmParseCertChainAndPrivKey(const struct CmBlob *certChain, const struct CmBlob *privKey, EVP_PKEY **pkey,
+    struct AppCert *appCert, X509 **x509Cert);
+
 #ifdef __cplusplus
 }
 #endif

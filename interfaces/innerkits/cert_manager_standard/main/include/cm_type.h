@@ -59,6 +59,7 @@ extern "C" {
 #define MAX_LEN_FINGER_PRINT_SHA256     128
 #define MAX_LEN_APP_CERT 20480
 #define MAX_LEN_APP_CERT_PASSWD 33   /* 32位密码 + 1位结束符 */
+#define MAX_LEN_CRED_PRI_KEY     4096
 
 #define CERT_MAX_PATH_LEN       256
 #define CM_ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
@@ -88,6 +89,8 @@ extern "C" {
     (((a) != CM_CREDENTIAL_STORE) && ((a) != CM_PRI_CREDENTIAL_STORE) && ((a) != CM_SYS_CREDENTIAL_STORE))
 #define CM_LEVEL_CHECK(a) \
     (((a) != CM_AUTH_STORAGE_LEVEL_EL1) && ((a) != CM_AUTH_STORAGE_LEVEL_EL2) && ((a) != CM_AUTH_STORAGE_LEVEL_EL4))
+#define CM_CRED_FORMAT_CHECK(a) (((a) != FILE_P12) && ((a) != CHAIN_KEY))
+#define CM_DETECT_ALIAS_CHECK(a) (((a) != DEFAULT_FORMAT) && ((a) != SHA256_FORMAT))
 
 #define CA_STORE_PATH_SYSTEM              "/etc/security/certificates"
 #define CA_STORE_PATH_SYSTEM_SM           "/etc/security/certificates_gm"
@@ -196,6 +199,7 @@ enum CmErrorCode {
     CMR_ERROR_INVALID_ARGUMENT_ALIAS = -10010,
     CMR_ERROR_INVALID_ARGUMENT_SIGN_SPEC = -10011,
     CMR_ERROR_INVALID_ARGUMENT_HANDLE = -10012,
+    CMR_ERROR_INVALID_ARGUMENT_CRED_PREVKEY = -10013,
     CMR_ERROR_INVALID_ARGUMENT_END = -19999,
 
     /* key operation failed */
@@ -448,6 +452,18 @@ enum CmAuthStorageLevel {
     CM_AUTH_STORAGE_LEVEL_EL4 = 4,
 };
 
+enum CredFormat {
+    FILE_P12,
+    // cert chain and private key
+    CHAIN_KEY,
+};
+
+// There is Chinese for the alias in the lake
+enum AliasTransFormat {
+    DEFAULT_FORMAT,
+    SHA256_FORMAT,
+};
+
 struct CmAppCertParam {
     struct CmBlob *appCert;
     struct CmBlob *appCertPwd;
@@ -455,6 +471,10 @@ struct CmAppCertParam {
     uint32_t store;
     uint32_t userId;
     enum CmAuthStorageLevel level;
+    enum CredFormat credFormat;
+    // In lake cred format is certChain + privKey
+    struct CmBlob *appCertPrivKey;
+    enum AliasTransFormat aliasFormat;
 };
 
 struct CertName {

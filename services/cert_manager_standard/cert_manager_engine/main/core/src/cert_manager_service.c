@@ -777,7 +777,7 @@ static int32_t GetUserCertNameAndPath(const struct CmContext *context, const str
             break;
         }
 
-        ret = GetObjNameFromCertData(certData, certAlias, certName->objectName);
+        ret = GetObjNameFromCertData(certData, certAlias, certName->objectName, DEFAULT_FORMAT);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get object name from subject name");
             break;
@@ -797,7 +797,7 @@ static int32_t GetCertFileHash(const struct CmBlob *certFileData, struct CmBlob 
     uint8_t certAliasData[] = "";
     struct CmBlob certAlias = { sizeof(certAliasData), certAliasData };
     // get cert file hash
-    int ret = GetObjNameFromCertData(certFileData, &certAlias, certFileHash);
+    int ret = GetObjNameFromCertData(certFileData, &certAlias, certFileHash, DEFAULT_FORMAT);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get objName from certData failed, ret = %d", ret);
     }

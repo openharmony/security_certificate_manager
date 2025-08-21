@@ -990,31 +990,59 @@ int32_t CmRemoveBackupUserCert(const struct CmContext *context, const struct CmB
     return CM_SUCCESS;
 }
 
-int32_t GetObjNameFromCertData(const struct CmBlob *certData, const struct CmBlob *certAlias,
+static int32_t HandleEmptyAlias(const struct CmBlob *certData, struct CmBlob *objectName)
+{
+    uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
+    struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
+
+    int32_t ret = GetNameEncode(certData, &encodeTarget);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("base64urlsha256 failed");
+        return ret;
+    }
+
+    if (memcpy_s(objectName->data, objectName->size, encodeTarget.data, encodeTarget.size) != EOK) {
+        CM_LOG_E("memcpy object name failed");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+    return ret;
+}
+
+static int32_t HandleNotEmptyAlias(const struct CmBlob *certAlias, const enum AliasTransFormat aliasFormat,
     struct CmBlob *objectName)
+{
+    struct CmBlob object = { certAlias->size, certAlias->data };
+    int32_t ret = CM_SUCCESS;
+    // if DEFAULT_FORMAT means no chinese, objectName can be target alias
+    // else if SHA256_FORMAT may include chinese or other symbols, need to hash alias as objectName
+    if (aliasFormat == DEFAULT_FORMAT) {
+        if (memcpy_s(objectName->data, objectName->size, object.data, object.size) != EOK) {
+            CM_LOG_E("memcpy object name failed");
+            return CMR_ERROR_MEM_OPERATION_COPY;
+        }
+    } else {
+        ret = GetNameEncode(&object, objectName);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmGetHash fail, ret = %d", ret);
+            return ret;
+        }
+    }
+    return ret;
+}
+
+int32_t GetObjNameFromCertData(const struct CmBlob *certData, const struct CmBlob *certAlias,
+    struct CmBlob *objectName, const enum AliasTransFormat aliasFormat)
 {
     if ((CmCheckBlob(certData) != CM_SUCCESS) || (CmCheckBlob(certAlias) != CM_SUCCESS) || (objectName == NULL)) {
         CM_LOG_E("input param is invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    struct CmBlob object = { certAlias->size, certAlias->data };
-    uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
-    struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
-    if (strcmp("", (char *)certAlias->data) == 0) {
-        int32_t ret = GetNameEncode(certData, &encodeTarget);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("base64urlsha256 failed");
-            return ret;
-        }
-        object.data = encodeTarget.data;
-        object.size = encodeTarget.size;
-    }
 
-    if (memcpy_s(objectName->data, objectName->size, object.data, object.size) != CM_SUCCESS) {
-        CM_LOG_E("memcpy object name failed");
-        return CMR_ERROR_MEM_OPERATION_COPY;
+    if (strcmp("", (char *)certAlias->data) == 0) {
+        return HandleEmptyAlias(certData, objectName);
+    } else {
+        return HandleNotEmptyAlias(certAlias, aliasFormat, objectName);
     }
-    return CM_SUCCESS;
 }
 #ifdef __cplusplus
 }

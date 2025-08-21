@@ -103,6 +103,7 @@ static const std::string CMR_ERROR_INVALID_ARGUMENT_APP_PWD_MSG = "the app pwd d
 static const std::string CMR_ERROR_INVALID_ARGUMENT_ALIAS_MSG = "the alias argument is invalid";
 static const std::string CMR_ERROR_INVALID_ARGUMENT_SIGN_SPEC_MSG = "the sign verify spec argument is invalid";
 static const std::string CMR_ERROR_INVALID_ARGUMENT_HANDLE_MSG = "the handle argument is invalid";
+static const std::string CMR_ERROR_INVALID_ARGUMENT_CRED_PREVKEY_MSG = "the cred private key is invalid";
 
 /* key operation failed msg */
 static const std::string CMR_ERROR_KEY_IMPORT_PARAM_FAILED_MSG = "failed to construct import key param";
@@ -193,6 +194,7 @@ static const std::unordered_map<int32_t, std::string> ERROR_CODE_TO_MSG_MAP = {
     { CMR_ERROR_INVALID_ARGUMENT_ALIAS, CMR_ERROR_INVALID_ARGUMENT_ALIAS_MSG },
     { CMR_ERROR_INVALID_ARGUMENT_SIGN_SPEC, CMR_ERROR_INVALID_ARGUMENT_SIGN_SPEC_MSG },
     { CMR_ERROR_INVALID_ARGUMENT_HANDLE, CMR_ERROR_INVALID_ARGUMENT_HANDLE_MSG },
+    { CMR_ERROR_INVALID_ARGUMENT_CRED_PREVKEY, CMR_ERROR_INVALID_ARGUMENT_CRED_PREVKEY_MSG },
 
     /* key operation failed */
     { CMR_ERROR_KEY_IMPORT_PARAM_FAILED, CMR_ERROR_KEY_IMPORT_PARAM_FAILED_MSG },

@@ -142,7 +142,21 @@ static int32_t CmCheckAppCertPwd(const struct CmBlob *appCertPwd)
     return CMR_ERROR_INVALID_ARGUMENT;
 }
 
-static bool AppCertCheckBlobValid(const struct CmBlob *data)
+static int32_t CmCheckCredPrivKey(const struct CmBlob * appCredPrivKey)
+{
+    if (CmCheckBlob(appCredPrivKey) != CM_SUCCESS) {
+        CM_LOG_E("appCredPrivKey blob is invalid");
+        return CMR_ERROR_INVALID_ARGUMENT_CRED_PREVKEY;
+    }
+    if (appCredPrivKey->size > MAX_LEN_CRED_PRI_KEY) {
+        CM_LOG_E("appCredPrivKey size max check fail, appCredPrivKey size:%u", appCredPrivKey->size);
+        return CMR_ERROR_INVALID_ARGUMENT_CRED_PREVKEY;
+    }
+    return CM_SUCCESS;
+}
+
+// If called in lake, the laias input may be in chinese, so it will not be checked
+static bool AppCertCheckBlobValid(const struct CmBlob *data, const enum AliasTransFormat aliasFormat)
 {
     for (uint32_t i = 0; i < data->size; i++) {
         if ((i > 0) && (data->data[i] == '\0')) { /* from index 1 has '\0' */
@@ -150,7 +164,8 @@ static bool AppCertCheckBlobValid(const struct CmBlob *data)
             return true;
         }
 
-        if ((!isalnum(data->data[i])) && (data->data[i] != '_')) { /* has invalid character */
+        // chinese is not permitted ,has invalid character
+        if (aliasFormat == DEFAULT_FORMAT && (!isalnum(data->data[i])) && (data->data[i] != '_')) {
             CM_LOG_E("data include invalid character");
             return false;
         }
@@ -160,7 +175,7 @@ static bool AppCertCheckBlobValid(const struct CmBlob *data)
     return false;
 }
 
-static int32_t CmCheckCertAlias(const struct CmBlob *certAlias, uint32_t store)
+static int32_t CmCheckCertAlias(const struct CmBlob *certAlias, uint32_t store, const enum AliasTransFormat aliasFormat)
 {
     if (CmCheckBlob(certAlias) != CM_SUCCESS) {
         CM_LOG_E("certAlias blob is invalid");
@@ -182,7 +197,7 @@ static int32_t CmCheckCertAlias(const struct CmBlob *certAlias, uint32_t store)
         return CM_SUCCESS;
     }
 
-    if (!AppCertCheckBlobValid(certAlias)) {
+    if (!AppCertCheckBlobValid(certAlias, aliasFormat)) {
         CM_LOG_E("certAlias data check fail");
         return CMR_ERROR_INVALID_ARGUMENT_ALIAS;
     }
@@ -209,19 +224,25 @@ static bool CmCheckUserIdAndUpdateContext(const uint32_t inputUserId, uint32_t *
     return true;
 }
 
-int32_t CmServiceInstallAppCertCheck(const struct CmAppCertParam *certParam, struct CmContext *cmContext)
+static int32_t CmCheckAppCertParam(const struct CmAppCertParam *certParam)
 {
-    if ((certParam == NULL) || (cmContext == NULL)) {
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-
     if (CM_STORE_CHECK(certParam->store)) {
-        CM_LOG_E("CmInstallAppCertCheck store check fail, store:%u", certParam->store);
+        CM_LOG_E("CmCheckAppCertParam store check fail, store:%u", certParam->store);
         return CMR_ERROR_INVALID_ARGUMENT_STORE_TYPE;
     }
 
     if (CM_LEVEL_CHECK(certParam->level)) {
-        CM_LOG_E("CmInstallAppCertCheck level check fail, level:%u", certParam->level);
+        CM_LOG_E("CmCheckAppCertParam level check fail, level:%u", certParam->level);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (CM_CRED_FORMAT_CHECK(certParam->credFormat)) {
+        CM_LOG_E("CmCheckAppCertParam credFormat check fail, credFormat:%u", certParam->credFormat);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (CM_DETECT_ALIAS_CHECK(certParam->aliasFormat)) {
+        CM_LOG_E("CmCheckAppCertParam credFormat check fail, aliasFormat:%u", certParam->aliasFormat);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -230,13 +251,34 @@ int32_t CmServiceInstallAppCertCheck(const struct CmAppCertParam *certParam, str
         return ret;
     }
 
-    ret = CmCheckAppCertPwd(certParam->appCertPwd);
+    ret = CmCheckCertAlias(certParam->certAlias, certParam->store, certParam->aliasFormat);
     if (ret != CM_SUCCESS) {
         return ret;
     }
 
-    ret = CmCheckCertAlias(certParam->certAlias, certParam->store);
+    if (certParam->credFormat == FILE_P12) {
+        ret = CmCheckAppCertPwd(certParam->appCertPwd);
+        if (ret != CM_SUCCESS) {
+            return ret;
+        }
+    } else {
+        ret = CmCheckCredPrivKey(certParam->appCertPrivKey);
+        if (ret != CM_SUCCESS) {
+            return ret;
+        }
+    }
+    return ret;
+}
+
+int32_t CmServiceInstallAppCertCheck(const struct CmAppCertParam *certParam, struct CmContext *cmContext)
+{
+    if ((certParam == NULL) || (cmContext == NULL)) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CmCheckAppCertParam(certParam);
     if (ret != CM_SUCCESS) {
+        CM_LOG_E("app cert param is invalid");
         return ret;
     }
 
@@ -507,7 +549,7 @@ int32_t CmServiceInstallUserCertCheck(struct CmContext *cmContext, const struct 
         return CMR_ERROR_INVALID_ARGUMENT_APP_CERT;
     }
 
-    int32_t ret = CmCheckCertAlias(certAlias, CM_USER_TRUSTED_STORE);
+    int32_t ret = CmCheckCertAlias(certAlias, CM_USER_TRUSTED_STORE, DEFAULT_FORMAT);
     if (ret != CM_SUCCESS) {
         return ret;
     }

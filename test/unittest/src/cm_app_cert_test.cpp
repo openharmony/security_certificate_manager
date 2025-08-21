@@ -19,6 +19,7 @@
 #include "cm_cert_data_ecc.h"
 #include "cm_cert_data_part1_rsa.h"
 #include "cm_cert_data_part3_rsa.h"
+#include "cm_cert_data_chain_key.h"
 #include "cm_mem.h"
 #include "cm_test_common.h"
 
@@ -63,6 +64,15 @@ struct CredentialAbstractResult g_expectList[] = {
 static const struct CmBlob g_appCert = { sizeof(g_rsa2048P12CertInfo), const_cast<uint8_t *>(g_rsa2048P12CertInfo) };
 static const struct CmBlob g_eccAppCert = { sizeof(g_eccP256P12CertInfo), const_cast<uint8_t *>(g_eccP256P12CertInfo) };
 static const struct CmBlob g_appCertPwd = { sizeof(g_certPwd), const_cast<uint8_t *>(g_certPwd) };
+
+static const struct CmBlob g_appPemCertChain = { strlen(g_rsa2048PEMCertChain) + 1,
+    reinterpret_cast<uint8_t *>(g_rsa2048PEMCertChain) };
+static const struct CmBlob g_appPemCertPrivKey = { strlen(g_rsa2048PEMPrivKey) + 1,
+    reinterpret_cast<uint8_t *>(g_rsa2048PEMPrivKey) };
+static const struct CmBlob g_appDerCertChain = { sizeof(g_rsa2048DERCertChain),
+    const_cast<uint8_t *>(g_rsa2048DERCertChain) };
+static const struct CmBlob g_appDerCertPrivKey = { sizeof(g_rsa2048DERPrivKey),
+    const_cast<uint8_t *>(g_rsa2048DERPrivKey) };
 
 static const uint8_t g_p12AbnormalCertinfo[] = {
     0x30, 0x82, 0x0b, 0xc1, 0x02, 0x01, 0x03, 0x30, 0x82, 0x0b, 0x87, 0x06, 0x09, 0x2a, 0x86, 0x48,
@@ -847,6 +857,54 @@ HWTEST_F(CmAppCertTest, AppCertInstallPwdTest003, TestSize.Level0)
     int32_t ret = CmInstallAppCert(&appCert, &appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << \
         "AppCertInstallPwdTest003 33 bytes sepcial pwd test failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: AppCertInstallCnAlias001
+ * @tc.desc: Test Install user app cert chain and priv key normal function
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmAppCertTest, AppCertInstallCnAlias001, TestSize.Level0)
+{
+    char retUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob credPwd = { 0, NULL };
+
+    uint8_t certAliasBuf[] = "我的PEM证书";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appPemCertChain, &credPwd, &certAlias,
+        CM_CREDENTIAL_STORE, TEST_USERID, CM_AUTH_STORAGE_LEVEL_EL2, CHAIN_KEY,
+        (struct CmBlob *)&g_appPemCertPrivKey, SHA256_FORMAT };
+    int32_t ret = CmInstallAppCertEx(&appCertParam, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertInstallCnAlias001 test install pem failed, retcode:" << ret;
+
+    ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertInstallCnAlias001 test uninstall failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: AppCertInstallCnAlias002
+ * @tc.desc: Test Install user app cert chain and priv key normal function
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmAppCertTest, AppCertInstallCnAlias002, TestSize.Level0)
+{
+    char retUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob credPwd = { 0, NULL };
+
+    uint8_t certAliasBuf[] = "我的DER证书";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appDerCertChain, &credPwd, &certAlias,
+        CM_CREDENTIAL_STORE, TEST_USERID, CM_AUTH_STORAGE_LEVEL_EL2, CHAIN_KEY,
+        (struct CmBlob *)&g_appDerCertPrivKey, SHA256_FORMAT };
+    int32_t ret = CmInstallAppCertEx(&appCertParam, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertInstallCnAlias002 test install der failed, retcode:" << ret;
+
+    ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertInstallCnAlias002 test uninstall failed, retcode:" << ret;
 }
 } // end of namespace
 

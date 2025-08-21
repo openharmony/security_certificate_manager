@@ -421,15 +421,35 @@ static int32_t ConstructKeyUri(
     return ret;
 }
 
+static int32_t ParseAppCert(const struct CmAppCertParam *certParam, EVP_PKEY **priKey,
+    struct CertName *certName, struct AppCert *appCert, X509 **cert)
+{
+    int32_t ret = CM_SUCCESS;
+    if (certParam->credFormat == FILE_P12) {
+        ret = CmParsePkcs12Cert(certParam->appCert, (char *)certParam->appCertPwd->data, priKey, appCert, cert);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmParsePkcs12Cert fail");
+            return ret;
+        }
+    } else if (certParam->credFormat == CHAIN_KEY) {
+        ret = CmParseCertChainAndPrivKey(certParam->appCert, certParam->appCertPrivKey, priKey, appCert, cert);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmParseCertChainAndPrivKey failed");
+            return ret;
+        }
+    }
+    return ret;
+}
+
 static int32_t GetCredCertName(const struct CmContext *context, const struct CmAppCertParam *certParam,
     EVP_PKEY **priKey, struct CertName *certName, struct AppCert *appCert)
 {
     int32_t ret = CM_SUCCESS;
     X509 *cert = NULL;
     do {
-        ret = CmParsePkcs12Cert(certParam->appCert, (char *)certParam->appCertPwd->data, priKey, appCert, &cert);
+        ret = ParseAppCert(certParam, priKey, certName, appCert, &cert);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmParsePkcs12Cert fail");
+            CM_LOG_E("Failed to parse app cert");
             break;
         }
 
@@ -439,7 +459,8 @@ static int32_t GetCredCertName(const struct CmContext *context, const struct CmA
             break;
         }
 
-        ret = GetObjNameFromCertData(certParam->appCert, certParam->certAlias, certName->objectName);
+        ret = GetObjNameFromCertData(certParam->appCert, certParam->certAlias,
+            certName->objectName, certParam->aliasFormat);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get object name from subject name");
             break;

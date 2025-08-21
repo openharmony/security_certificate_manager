@@ -458,4 +458,3 @@ static const uint8_t g_rsa2048P12CertInfoPwd33[] = {
 };
 
 #endif /* CM_CERT_DATA_PART_THREE_RSA_H */
-

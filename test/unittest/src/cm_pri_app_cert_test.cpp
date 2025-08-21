@@ -19,6 +19,7 @@
 #include "cm_cert_data_ecc.h"
 #include "cm_cert_data_part1_rsa.h"
 #include "cm_cert_data_part3_rsa.h"
+#include "cm_cert_data_chain_key.h"
 #include "cm_mem.h"
 #include "cm_test_common.h"
 
@@ -33,6 +34,15 @@ static MockHapToken* g_MockHap = nullptr;
 static const struct CmBlob g_appCert = { sizeof(g_rsa2048P12CertInfo), const_cast<uint8_t *>(g_rsa2048P12CertInfo) };
 static const struct CmBlob g_eccAppCert = { sizeof(g_eccP256P12CertInfo), const_cast<uint8_t *>(g_eccP256P12CertInfo) };
 static const struct CmBlob g_appCertPwd = { sizeof(g_certPwd), const_cast<uint8_t *>(g_certPwd) };
+
+static const struct CmBlob g_appPemCertChain = { strlen(g_rsa2048PEMCertChain) + 1,
+    reinterpret_cast<uint8_t *>(g_rsa2048PEMCertChain) };
+static const struct CmBlob g_appPemCertPrivKey = { strlen(g_rsa2048PEMPrivKey) + 1,
+    reinterpret_cast<uint8_t *>(g_rsa2048PEMPrivKey) };
+static const struct CmBlob g_appDerCertChain = { sizeof(g_rsa2048DERCertChain),
+    const_cast<uint8_t *>(g_rsa2048DERCertChain) };
+static const struct CmBlob g_appDerCertPrivKey = { sizeof(g_rsa2048DERPrivKey),
+    const_cast<uint8_t *>(g_rsa2048DERPrivKey) };
 
 static const uint8_t g_abnormalCertData[] = {
     0x30, 0x82, 0x0b, 0xc1, 0x02, 0x01, 0x03, 0xf7, 0x0d, 0x01, 0x07, 0x06, 0x09, 0x2a, 0x86, 0x48,
@@ -87,6 +97,7 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest001, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     uint8_t certAliasBuf[] = "PrikeyA";
     struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
@@ -95,7 +106,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest001, TestSize.Level0)
 
     /* test g_appCert */
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+        &certAlias, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+        &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest001 1 credentail test failed, retcode:" << ret;
 
@@ -104,7 +116,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest001, TestSize.Level0)
 
     /* test g_eccAppCert, level=el1 */
     struct CmAppCertParam appCertParam01 = { (struct CmBlob *)&g_eccAppCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias01, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+        &certAlias01, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+        &privKey, DEFAULT_FORMAT};
     ret = CmInstallAppCertEx(&appCertParam01, &priKeyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest001 2 credentail test failed, retcode:" << ret;
 
@@ -124,6 +137,7 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest002, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     uint8_t certAliasBuf[] = "PrikeyA";
     struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
@@ -132,7 +146,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest002, TestSize.Level0)
 
     /* test g_appCert,level=el2 */
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL2 };
+       &certAlias, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL2, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest002 1 credentail test failed, retcode:" << ret;
 
@@ -141,7 +156,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest002, TestSize.Level0)
 
     /* test g_eccAppCert */
     struct CmAppCertParam appCertParam01 = { (struct CmBlob *)&g_eccAppCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias02, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL2 };
+       &certAlias02, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL2, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     ret = CmInstallAppCertEx(&appCertParam01, &priKeyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest002 2 credentail test failed, retcode:" << ret;
 
@@ -161,6 +177,7 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest003, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     uint8_t certAliasBuf[] = "PrikeyA";
     struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
@@ -169,7 +186,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest003, TestSize.Level0)
 
     /* test g_appCert, level=el4 */
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL4 };
+       &certAlias, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL4, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest003 credentail test failed, retcode:" << ret;
 
@@ -178,7 +196,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest003, TestSize.Level0)
 
      /* test g_eccAppCert, level=el4 */
     struct CmAppCertParam appCertParam01 = { (struct CmBlob *)&g_eccAppCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias03, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL4 };
+       &certAlias03, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL4, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     ret = CmInstallAppCertEx(&appCertParam01, &priKeyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest002 2 credentail test failed, retcode:" << ret;
 
@@ -198,13 +217,15 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest004, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     uint8_t certAliasBuf[] = "PrikeyA";
     struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
 
     /* level is invalid */
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, static_cast<CmAuthStorageLevel>(ERROR_LEVEL) };
+       &certAlias, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, static_cast<CmAuthStorageLevel>(ERROR_LEVEL), FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest004 credentail test failed, retcode:" << ret;
 }
@@ -218,13 +239,15 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest005, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     uint8_t certAliasBuf[] = "PrikeyA";
     struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
 
     /* store is not private cred */
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias, CM_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias, CM_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest005 credentail test failed, retcode:" << ret;
 }
@@ -238,6 +261,7 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest006, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     uint8_t certAliasBuf[] = "PrikeyA";
     struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
@@ -246,7 +270,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest006, TestSize.Level0)
     struct CmBlob abnormalAppCert = { sizeof(g_abnormalCertData), const_cast<uint8_t *>(g_abnormalCertData) };
 
     struct CmAppCertParam appCertParam = { &abnormalAppCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_CERT_FORMAT) << "PriAppCertTest006 credentail test failed, retcode:" << ret;
 }
@@ -275,13 +300,15 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest008, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     uint8_t certAliasBuf[] = "PriAppCertTest008";
     struct CmBlob certAlias007 = { sizeof(certAliasBuf), certAliasBuf };
 
     /* certParam->appCert is nullptr */
     struct CmAppCertParam appCertParam = { nullptr, (struct CmBlob *)&g_appCertPwd,
-        &certAlias007, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+        &certAlias007, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest008 credentail test failed, retcode:" << ret;
 }
@@ -295,13 +322,15 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest009, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     uint8_t certAliasBuf[] = "PriAppCertTest009";
     struct CmBlob certAlias008 = { sizeof(certAliasBuf), certAliasBuf };
 
     /* certParam->appCertPwd is nullptr */
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appCert, nullptr,
-        &certAlias008, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+        &certAlias008, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest009 credentail test failed, retcode:" << ret;
 }
@@ -315,10 +344,12 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest010, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     /* certParam->certAlias is nullptr */
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appCert, (struct CmBlob *)&g_appCertPwd,
-        nullptr, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+        nullptr, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest010 credentail test failed, retcode:" << ret;
 }
@@ -332,8 +363,10 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest011, TestSize.Level0)
 {
     uint8_t certAliasBuf[] = "PriAppCertTest011";
     struct CmBlob certAlias010 = { sizeof(certAliasBuf), certAliasBuf };
+    struct CmBlob privKey = { 0, NULL };
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias010, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias010, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
 
     /* keyUri is nullptr */
     int32_t ret = CmInstallAppCertEx(&appCertParam, nullptr);
@@ -350,8 +383,10 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest012, TestSize.Level0)
     struct CmBlob priKeyUri = { 0, nullptr };
     uint8_t certAliasBuf[] = "PriAppCertTest012";
     struct CmBlob certAlias010 = { sizeof(certAliasBuf), certAliasBuf };
+    struct CmBlob privKey = { 0, NULL };
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias010, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias010, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
 
     /* keyUri->data is nullptr */
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
@@ -367,13 +402,15 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest013, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     /* certAlias not include '\0' */
     uint8_t certAliasBuf[] = "PrikeyB";
     struct CmBlob certAlias013 = { sizeof(certAliasBuf) - 1, certAliasBuf };
 
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_eccAppCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias013, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias013, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest013 credentail test failed, retcode:" << ret;
 }
@@ -387,6 +424,7 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest014, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
     uint8_t certAliasBuf[] = "PrikeyB";
     struct CmBlob certAlias014 = { sizeof(certAliasBuf), certAliasBuf };
 
@@ -395,7 +433,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest014, TestSize.Level0)
     struct CmBlob errPwd = { sizeof(errPwdBuf) - 1, errPwdBuf };
 
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_eccAppCert, &errPwd,
-       &certAlias014, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias014, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest014 credentail test failed, retcode:" << ret;
 }
@@ -409,13 +448,15 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest015, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     /* certAlias data is nullptr */
     uint8_t certAliasBuf[] = "PrikeyB";
     struct CmBlob certAlias015 = { sizeof(certAliasBuf), nullptr };
 
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_eccAppCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias015, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias015, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest015 credentail test failed, retcode:" << ret;
 }
@@ -429,13 +470,15 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest016, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     /* certAlias size is 0 */
     uint8_t certAliasBuf[] = "PrikeyB";
     struct CmBlob certAlias016 = { 0, certAliasBuf };
 
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_eccAppCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias016, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias016, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest016 credentail test failed, retcode:" << ret;
 }
@@ -449,6 +492,7 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest017, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     /* certAlias size beyond max */
     uint8_t certAliasBuf[] = "123456789012345678901234567890123456789012345678901234567890  \
@@ -456,7 +500,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest017, TestSize.Level0)
     struct CmBlob certAlias018 = { sizeof(certAliasBuf), certAliasBuf };
 
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_eccAppCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias018, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias018, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) <<
         "PriAppCertTest017 credentail test failed, retcode:" << ret;
@@ -471,6 +516,7 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest018, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
     uint8_t certAliasBuf[] = "PrikeyB";
     struct CmBlob certAlias019 = { sizeof(certAliasBuf), certAliasBuf };
 
@@ -478,7 +524,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest018, TestSize.Level0)
     struct CmBlob appCert = { sizeof(g_rsa2048P12CertInfo), nullptr };
 
     struct CmAppCertParam appCertParam = { &appCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias019, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias019, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest018 credentail test failed, retcode:" << ret;
 }
@@ -492,6 +539,7 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest019, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
     uint8_t certAliasBuf[] = "PrikeyB";
     struct CmBlob certAlias019 = { sizeof(certAliasBuf), certAliasBuf };
 
@@ -499,7 +547,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest019, TestSize.Level0)
     struct CmBlob appCert = { 0, const_cast<uint8_t *>(g_rsa2048P12CertInfo) };
 
     struct CmAppCertParam appCertParam = { &appCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias019, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias019, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest019 credentail test failed, retcode:" << ret;
 }
@@ -513,6 +562,7 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest020, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
     uint8_t certAliasBuf[] = "PrikeyB";
     struct CmBlob certAlias019 = { sizeof(certAliasBuf), certAliasBuf };
 
@@ -521,7 +571,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest020, TestSize.Level0)
     struct CmBlob appCert = { MAX_LEN_APP_CERT + 1, appCertData };
 
     struct CmAppCertParam appCertParam = { &appCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias019, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias019, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest020 credentail test failed, retcode:" << ret;
 }
@@ -535,6 +586,7 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest021, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
     uint8_t certAliasBuf[] = "PrikeyB";
     struct CmBlob certAlias020 = { sizeof(certAliasBuf), certAliasBuf };
 
@@ -543,7 +595,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest021, TestSize.Level0)
     struct CmBlob appCertPwd = { sizeof(pwdBuf), nullptr };
 
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_eccAppCert, &appCertPwd,
-       &certAlias020, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias020, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest021 credentail test failed, retcode:" << ret;
 }
@@ -557,6 +610,7 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest022, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
     uint8_t certAliasBuf[] = "PrikeyB";
     struct CmBlob certAlias021 = { sizeof(certAliasBuf), certAliasBuf };
 
@@ -565,7 +619,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest022, TestSize.Level0)
     struct CmBlob appCertPwd = { 0, pwdBuf };
 
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_eccAppCert, &appCertPwd,
-       &certAlias021, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias021, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest022 credentail test failed, retcode:" << ret;
 }
@@ -579,6 +634,7 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest023, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
     uint8_t certAliasBuf[] = "PrikeyB";
     struct CmBlob certAlias022 = { sizeof(certAliasBuf), certAliasBuf };
 
@@ -587,7 +643,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest023, TestSize.Level0)
     struct CmBlob appCertPwd = { sizeof(pwdBuf), pwdBuf };
 
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_eccAppCert, &appCertPwd,
-       &certAlias022, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias022, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest023 credentail test failed, retcode:" << ret;
 }
@@ -601,6 +658,7 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest024, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     uint8_t certAliasBuf[] = "PrikeyA";
     struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
@@ -610,7 +668,8 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest024, TestSize.Level0)
     struct CmBlob errAppCertPwd = { sizeof(appCertPwdBuf), appCertPwdBuf };
 
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appCert, &errAppCertPwd,
-        &certAlias, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1 };
+        &certAlias, CM_PRI_CREDENTIAL_STORE, INIT_INVALID_VALUE, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_PASSWORD_IS_ERR) << "PriAppCertTest024 credentail test failed, retcode:" << ret;
 }
@@ -624,14 +683,166 @@ HWTEST_F(CmPriAppCertTest, PriAppCertTest025, TestSize.Level0)
 {
     char retUriBuf[MAX_LEN_URI] = {0};
     struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
 
     uint8_t certAliasBuf[] = "PrikeyA";
     struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
 
     /* userid is not invalid */
     struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appCert, (struct CmBlob *)&g_appCertPwd,
-       &certAlias, CM_PRI_CREDENTIAL_STORE, TEST_USERID, CM_AUTH_STORAGE_LEVEL_EL1 };
+       &certAlias, CM_PRI_CREDENTIAL_STORE, TEST_USERID, CM_AUTH_STORAGE_LEVEL_EL1, FILE_P12,
+       &privKey, DEFAULT_FORMAT };
     int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest025 1 credentail test failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: PriAppCertTest026
+ * @tc.desc: Test CertManager Install private app cert chain and priv key normal function
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmPriAppCertTest, PriAppCertTest026, TestSize.Level0)
+{
+    char retUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob credPwd = { 0, NULL };
+
+    uint8_t certAliasBuf[] = "我的PEM证书";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appPemCertChain, &credPwd, &certAlias,
+        CM_PRI_CREDENTIAL_STORE, TEST_USERID, CM_AUTH_STORAGE_LEVEL_EL1, CHAIN_KEY,
+        (struct CmBlob *)&g_appPemCertPrivKey, SHA256_FORMAT };
+    int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest026 credentail el1 test failed, retcode:" << ret;
+
+    appCertParam.level = CM_AUTH_STORAGE_LEVEL_EL2;
+    ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest026 credentail el2 test failed, retcode:" << ret;
+
+    appCertParam.level = CM_AUTH_STORAGE_LEVEL_EL4;
+    ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest026 credentail el4 test failed, retcode:" << ret;
+
+    ret = CmUninstallAllAppCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest026 test uninstall failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: PriAppCertTest027
+ * @tc.desc: Test CertManager Install private app cert chain and priv key normal function
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmPriAppCertTest, PriAppCertTest027, TestSize.Level0)
+{
+    char retUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob credPwd = { 0, NULL };
+
+    uint8_t certAliasBuf[] = "我的DER证书";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appDerCertChain, &credPwd, &certAlias,
+        CM_PRI_CREDENTIAL_STORE, TEST_USERID, CM_AUTH_STORAGE_LEVEL_EL1, CHAIN_KEY,
+        (struct CmBlob *)&g_appDerCertPrivKey, SHA256_FORMAT };
+    int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest027 credentail el1 test failed, retcode:" << ret;
+
+    appCertParam.level = CM_AUTH_STORAGE_LEVEL_EL2;
+    ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest027 credentail el2 test failed, retcode:" << ret;
+
+    appCertParam.level = CM_AUTH_STORAGE_LEVEL_EL4;
+    ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest027 credentail test uninstall failed, retcode:" << ret;
+
+    ret = CmUninstallAllAppCert();
+    EXPECT_EQ(ret, CM_SUCCESS) << "PriAppCertTest027 test uninstall failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: PriAppCertTest028
+ * @tc.desc: Test CertManager Install private app cert interface abnormal function
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmPriAppCertTest, PriAppCertTest028, TestSize.Level0)
+{
+    char retUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob credPwd = { 0, NULL };
+
+    uint8_t certAliasBuf[] = "测试中文alias";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appDerCertChain, &credPwd, &certAlias,
+        CM_PRI_CREDENTIAL_STORE, TEST_USERID, CM_AUTH_STORAGE_LEVEL_EL1, CHAIN_KEY,
+        (struct CmBlob *)&g_appDerCertPrivKey, DEFAULT_FORMAT };
+    int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest028 test cn alias failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: PriAppCertTest029
+ * @tc.desc: Test CertManager Install private app cert interface abnormal function
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmPriAppCertTest, PriAppCertTest029, TestSize.Level0)
+{
+    char retUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob credPwd = { 0, NULL };
+
+    uint8_t certAliasBuf[] = "PrivateA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    uint32_t testCredFormat = 10;
+    struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appPemCertChain, &credPwd, &certAlias,
+        CM_PRI_CREDENTIAL_STORE, TEST_USERID, CM_AUTH_STORAGE_LEVEL_EL1, (CredFormat)testCredFormat,
+        (struct CmBlob *)&g_appPemCertPrivKey, SHA256_FORMAT };
+    int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest029 test error cred format failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: PriAppCertTest030
+ * @tc.desc: Test CertManager Install private app cert interface abnormal function
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmPriAppCertTest, PriAppCertTest030, TestSize.Level0)
+{
+    char retUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob credPwd = { 0, NULL };
+
+    uint8_t certAliasBuf[] = "PrivateA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    uint32_t testAliasFormat = 10;
+    struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appPemCertChain, &credPwd, &certAlias,
+        CM_PRI_CREDENTIAL_STORE, TEST_USERID, CM_AUTH_STORAGE_LEVEL_EL1, CHAIN_KEY,
+        (struct CmBlob *)&g_appPemCertPrivKey, (AliasTransFormat)testAliasFormat };
+    int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest030 test error alias format failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: PriAppCertTest031
+ * @tc.desc: Test CertManager Install private app cert interface abnormal function
+ * @tc.type: FUNC
+ */
+HWTEST_F(CmPriAppCertTest, PriAppCertTest031, TestSize.Level0)
+{
+    char retUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob priKeyUri = { sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
+    struct CmBlob privKey = { 0, NULL };
+    struct CmBlob credPwd = { 0, NULL };
+
+    uint8_t certAliasBuf[] = "PrivateA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    struct CmAppCertParam appCertParam = { (struct CmBlob *)&g_appDerCertChain, &credPwd, &certAlias,
+        CM_PRI_CREDENTIAL_STORE, TEST_USERID, CM_AUTH_STORAGE_LEVEL_EL1, CHAIN_KEY, &privKey, SHA256_FORMAT };
+    int32_t ret = CmInstallAppCertEx(&appCertParam, &priKeyUri);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "PriAppCertTest031 test prikey failed, retcode:" << ret;
 }
 }
