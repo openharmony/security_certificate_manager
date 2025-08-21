@@ -87,7 +87,6 @@ group("cert_manager_type_base") {
       "./config:trusted_system_certificate24",
       "./config:trusted_system_certificate25",
       "./config:trusted_system_certificate26",
-      "./config:trusted_system_certificate27",
       "./config:trusted_system_certificate28",
       "./config:trusted_system_certificate29",
       "./config:trusted_system_certificate3",
