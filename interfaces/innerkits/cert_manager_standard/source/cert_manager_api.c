@@ -80,14 +80,36 @@ CM_API_EXPORT int32_t CmSetCertStatus(const struct CmBlob *certUri, const uint32
     return ret;
 }
 
+// FILE_P12 is complete p12 file, CHAIN_KEY split the file into certificate and private key
+static bool CheckAppCertParams(const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
+{
+    if (certParam == NULL || certParam->appCert == NULL || certParam->certAlias == NULL || keyUri == NULL ||
+        keyUri->data == NULL || CM_LEVEL_CHECK(certParam->level) || CM_CRED_FORMAT_CHECK(certParam->credFormat)) {
+        CM_LOG_E("Check generic app cert params failed");
+        return false;
+    }
+
+    if (certParam->credFormat == FILE_P12) {
+        if (certParam->appCertPwd == NULL || certParam->userId != INIT_INVALID_VALUE ||
+            certParam->store != CM_PRI_CREDENTIAL_STORE) {
+            CM_LOG_E("Check p12 file app cert params failed");
+            return false;
+        }
+    } else {
+        if (certParam->appCertPrivKey == NULL) {
+            CM_LOG_E("Check cert chain and key app cert params failed");
+            return false;
+        }
+    }
+    return true;
+}
+
+// This interface can not only install private cred file
 CM_API_EXPORT int32_t CmInstallAppCertEx(const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
 {
     CM_LOG_I("enter install app certificate extension");
-    /* The store must be private, and the userid must be invalid */
-    if (certParam == NULL || certParam->appCert == NULL || certParam->appCertPwd == NULL||
-        certParam->certAlias == NULL || keyUri == NULL || certParam->userId != INIT_INVALID_VALUE ||
-        keyUri->data == NULL || certParam->store != CM_PRI_CREDENTIAL_STORE || CM_LEVEL_CHECK(certParam->level)) {
-        CM_LOG_E("an error in the parameters of installing the application certificate ex.");
+    if (!CheckAppCertParams(certParam, keyUri)) {
+        CM_LOG_E("check app cert params failed");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
@@ -109,9 +131,9 @@ CM_API_EXPORT int32_t CmInstallAppCert(const struct CmBlob *appCert, const struc
     /* The public credentials are at the EL2 level. */
     enum CmAuthStorageLevel level = (store == CM_CREDENTIAL_STORE) ? CM_AUTH_STORAGE_LEVEL_EL2 :
         CM_AUTH_STORAGE_LEVEL_EL1;
-
+    struct CmBlob privKey = { 0, NULL };
     struct CmAppCertParam certParam = { (struct CmBlob *)appCert, (struct CmBlob *)appCertPwd,
-        (struct CmBlob *)certAlias, store, INIT_INVALID_VALUE, level };
+        (struct CmBlob *)certAlias, store, INIT_INVALID_VALUE, level, FILE_P12, &privKey, DEFAULT_FORMAT };
 
     int32_t ret = CmClientInstallAppCert(&certParam, keyUri);
     CM_LOG_I("leave install app certificate, result = %d", ret);

@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
- #ifndef CM_NAPI_OPEN_AUTHORIZE_DIALOG_H
- #define CM_NAPI_OPEN_AUTHORIZE_DIALOG_H
- 
- #include "napi/native_api.h"
- #include "napi/native_node_api.h"
- 
+#ifndef CM_NAPI_OPEN_AUTHORIZE_DIALOG_H
+#define CM_NAPI_OPEN_AUTHORIZE_DIALOG_H
+
+#include "napi/native_api.h"
+#include "napi/native_node_api.h"
+
 namespace CMNapi {
 napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info);
 }  // namespace CMNapi
 
- #endif  // CM_NAPI_OPEN_AUTHORIZE_DIALOG_H
+#endif  // CM_NAPI_OPEN_AUTHORIZE_DIALOG_H

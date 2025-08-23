@@ -199,9 +199,12 @@ int32_t CmClientInstallAppCert(const struct CmAppCertParam *certParam, struct Cm
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = *(certParam->appCert) },
         { .tag = CM_TAG_PARAM1_BUFFER, .blob = *(certParam->appCertPwd) },
         { .tag = CM_TAG_PARAM2_BUFFER, .blob = *(certParam->certAlias) },
+        { .tag = CM_TAG_PARAM3_BUFFER, .blob = *(certParam->appCertPrivKey) },
         { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = certParam->store },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = certParam->userId },
         { .tag = CM_TAG_PARAM2_UINT32, .uint32Param = certParam->level },
+        { .tag = CM_TAG_PARAM3_UINT32, .uint32Param = certParam->credFormat },
+        { .tag = CM_TAG_PARAM4_UINT32, .uint32Param = certParam->aliasFormat },
     };
 
     do {
@@ -1040,6 +1043,7 @@ int32_t CmClientUninstallAllUserTrustedCert(void)
 
 int32_t CmClientInstallSystemAppCert(const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
 {
+    struct CmBlob privKey = { 0, NULL };
     struct CmAppCertParam certParamEx = {
         certParam->appCert,
         certParam->appCertPwd,
@@ -1047,7 +1051,10 @@ int32_t CmClientInstallSystemAppCert(const struct CmAppCertParam *certParam, str
         certParam->store,
         certParam->userId,
         /* this is only valid for installing private credentials and is used for filling here. */
-        CM_AUTH_STORAGE_LEVEL_EL1
+        CM_AUTH_STORAGE_LEVEL_EL1,
+        FILE_P12,
+        &privKey,
+        DEFAULT_FORMAT
     };
     return CmClientInstallAppCert(&certParamEx, keyUri);
 }

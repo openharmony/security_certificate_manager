@@ -91,6 +91,7 @@ int32_t SendRequest(enum CertManagerInterfaceCode type, const struct CmBlob *inB
     if (cmProxy == nullptr) {
         cmProxy = CmLoadSystemAbility();
     }
+
     if (cmProxy == nullptr) {
         CM_LOG_E("Certificate manager Proxy is null.");
         return CMR_ERROR_NULL_POINTER;

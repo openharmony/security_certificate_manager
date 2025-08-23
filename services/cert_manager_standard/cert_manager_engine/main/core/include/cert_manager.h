@@ -91,7 +91,7 @@ int32_t CmGetDisplayNameByURI(const struct CmBlob *uri, const char *object, stru
 int32_t RdbInsertCertProperty(const struct CertPropertyOri *propertyOri);
 
 int32_t GetObjNameFromCertData(const struct CmBlob *certData, const struct CmBlob *certAlias,
-    struct CmBlob *objectName);
+    struct CmBlob *objectName, const enum AliasTransFormat aliasFormat);
 
 int32_t GetCertOrCredCount(const struct CmContext *context, const uint32_t store, uint32_t *certCount);
 

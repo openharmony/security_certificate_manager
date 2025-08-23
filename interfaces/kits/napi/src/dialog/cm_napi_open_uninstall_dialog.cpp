@@ -39,13 +39,13 @@ static bool CMIsCertificateType(const uint32_t value, uint32_t &pageType)
 static napi_value CMInitAsyncContext(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
     napi_value argv[], size_t length)
 {
-    //Parse the first param: context
+    // Parse the first param: context
     if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[PARAM0], asyncContext->context)) {
         CM_LOG_E("ParseUIAbilityContextReq failed");
         return nullptr;
     }
 
-    //Parse the second param: certType
+    // Parse the second param: certType
     uint32_t certificateType = 0;
     if (ParseUint32(asyncContext->env, argv[PARAM1], certificateType) == nullptr) {
         CM_LOG_E("parse type failed");
@@ -56,12 +56,12 @@ static napi_value CMInitAsyncContext(std::shared_ptr<CmUIExtensionRequestContext
         return nullptr;
     }
 
-    //Parse the third param: certUri
+    // Parse the third param: certUri
     if (ParseString(asyncContext->env, argv[PARAM2], asyncContext->certUri) == nullptr) {
         CM_LOG_E("certUri is invalid");
         return nullptr;
     }
-    //return 0
+    // return 0
     return GetInt32(asyncContext->env, 0);
 }
 
@@ -81,7 +81,7 @@ static OHOS::AAFwk::Want CMGetUninstallCertWant(std::shared_ptr<CmUIExtensionReq
 
 napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
 {
-    //determine the type of device
+    // determine the type of device
     CM_LOG_I("enter uninstall cert dialog");
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
@@ -92,7 +92,7 @@ napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
         return result;
     }
 
-    //determine the number of parameters
+    // determine the number of parameters
     size_t argc = PARAM_SIZE_THREE;
     napi_value argv[PARAM_SIZE_THREE] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
@@ -104,7 +104,7 @@ napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
         return result;
     }
 
-    //parse and init context
+    // parse and init context
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
     asyncContext->env = env;
     asyncContext->opType = static_cast<int32_t>(DIALOG_OPERATION_UNINSTALL);
@@ -114,7 +114,7 @@ napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    //get lable name
+    // get lable name
     if (GetCallerLabelName(asyncContext) != CM_SUCCESS) {
         CM_LOG_E("get caller labelName faild");
         ThrowError(env, DIALOG_ERROR_GENERIC, "get caller labelName faild");
@@ -122,7 +122,7 @@ napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
     }
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
 
-    //set want params
+    // set want params
     auto uiExtCallback = std::make_shared<CmOperationUIExtensionCallback>(asyncContext);
     StartUIExtensionAbility(asyncContext, CMGetUninstallCertWant(asyncContext), uiExtCallback);
     CM_LOG_I("cert uninstall dialog end");

@@ -138,4 +138,200 @@ int32_t CmParsePkcs12Cert(const struct CmBlob *p12Cert, char *passWd, EVP_PKEY *
     }
     return ret;
 }
+
+
+static int32_t CmGetPemDerCertChain(const struct CmBlob *certChain, STACK_OF(X509) *fullChain)
+{
+    X509 *tmpCert = NULL;
+    BIO *bio = NULL;
+    int32_t ret = CM_SUCCESS;
+
+    do {
+        bio = BIO_new_mem_buf(certChain->data, certChain->size);
+        if (bio == NULL) {
+            CM_LOG_E("BIO_new_mem_buf faild");
+            ret = CMR_ERROR_OPENSSL_FAIL;
+            break;
+        }
+
+        if (certChain->data[0] == '-') {
+            // PEM format
+            while ((tmpCert = PEM_read_bio_X509(bio, NULL, NULL, NULL)) != NULL) {
+                sk_X509_push(fullChain, tmpCert);
+            };
+        } else if (certChain->data[0] == ASN1_TAG_TYPE_SEQ) {
+            // Der format
+            while ((tmpCert = d2i_X509_bio(bio, NULL)) != NULL) {
+                sk_X509_push(fullChain, tmpCert);
+            }
+        } else {
+            CM_LOG_E("invalid certificate format.");
+            ret = CMR_ERROR_INVALID_CERT_FORMAT;
+            break;
+        }
+    } while (0);
+
+    if (bio != NULL) {
+        BIO_free(bio);
+    }
+    if (tmpCert != NULL) {
+        X509_free(tmpCert);
+    }
+    return ret;
+}
+
+// certChain contains a terminal certificate, trans certChain to appCert and get terminal certificate
+static int32_t CmParseCertChain(const struct CmBlob *certChain, struct AppCert *appCert, X509 **cert)
+{
+    int32_t ret = CM_SUCCESS;
+    STACK_OF(X509) *fullChain;
+
+    do {
+        fullChain = sk_X509_new_null();
+        if (fullChain == NULL) {
+            CM_LOG_E("x509 fullChain is null");
+            ret = CMR_ERROR_OPENSSL_FAIL;
+            break;
+        }
+
+        ret = CmGetPemDerCertChain(certChain, fullChain);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmGetX509CertChain failed");
+            break;
+        }
+
+        int certCount = sk_X509_num(fullChain);
+        if (certCount == 0) {
+            CM_LOG_E("cert chain has no cert");
+            ret = CMR_ERROR_OPENSSL_FAIL;
+            break;
+        }
+
+        if (memcpy_s(appCert->appCertdata, MAX_LEN_CERTIFICATE_CHAIN, certChain->data, certChain->size) != EOK) {
+            CM_LOG_E("Copy certChain->data faild");
+            ret = CMR_ERROR_MEM_OPERATION_COPY;
+            break;
+        }
+
+        /* default certificate chain is packaged as a whole */
+        appCert->certCount = certCount;
+        appCert->certSize = certChain->size;
+        *cert = sk_X509_value(fullChain, 0);
+        // Increase the reference count to prevent it from being released
+        if (*cert != NULL) {
+            X509_up_ref(*cert);
+        }
+    } while (0);
+
+    if (fullChain != NULL) {
+        sk_X509_pop_free(fullChain, X509_free);
+    }
+    return ret;
+}
+
+
+static int32_t CmGetPemDerPrivKey(const struct CmBlob *privKey, EVP_PKEY **pkey)
+{
+    BIO *bio = NULL;
+    int32_t ret = CM_SUCCESS;
+
+    do {
+        bio = BIO_new_mem_buf(privKey->data, privKey->size);
+        if (bio == NULL) {
+            ret = CMR_ERROR_OPENSSL_FAIL;
+            CM_LOG_E("BIO_new_mem_buf faild");
+            break;
+        }
+
+        // The private key info contains the corresponding public key info
+        if (privKey->data[0] == '-') {
+            // PEM format
+            if (PEM_read_bio_PrivateKey(bio, pkey, NULL, NULL) == NULL) {
+                ret = CMR_ERROR_OPENSSL_FAIL;
+                CM_LOG_E("pem read bio private key faild");
+                break;
+            }
+        } else if (privKey->data[0] == ASN1_TAG_TYPE_SEQ) {
+            // Der format
+            if (d2i_PrivateKey_bio(bio, pkey) == NULL) {
+                ret = CMR_ERROR_OPENSSL_FAIL;
+                CM_LOG_E("der read bio private key faild");
+                break;
+            }
+        } else {
+            CM_LOG_E("invalid priv key format.");
+            ret = CMR_ERROR_INVALID_CERT_FORMAT;
+            break;
+        }
+    } while (0);
+
+    if (bio != NULL) {
+        BIO_free(bio);
+    }
+    return ret;
+}
+
+static int32_t CmParsePrivKey(const struct CmBlob *privKey, X509 *cert, EVP_PKEY **pkey)
+{
+    if (cert == NULL) {
+        CM_LOG_E("user cert is null");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    int32_t ret = CM_SUCCESS;
+
+    do {
+        ret = CmGetPemDerPrivKey(privKey, pkey);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmGetPemDerPrivKey failed");
+            break;
+        }
+
+        EVP_PKEY* pubkey = X509_get_pubkey(cert);
+        if (!pubkey) {
+            ret = CMR_ERROR_OPENSSL_FAIL;
+            CM_LOG_E("x509 get pubkey failed");
+            break;
+        }
+
+        // Verify that the public and private keys match
+        if (EVP_PKEY_cmp(*pkey, pubkey) != 1) {
+            ret = CMR_ERROR_INVALID_CERT_FORMAT;
+            CM_LOG_E("The public key does not match the private key");
+            EVP_PKEY_free(pubkey);
+            break;
+        }
+        EVP_PKEY_free(pubkey);
+    } while (0);
+
+    return ret;
+}
+
+int32_t CmParseCertChainAndPrivKey(const struct CmBlob *certChain, const struct CmBlob *privKey, EVP_PKEY **pkey,
+    struct AppCert *appCert, X509 **x509Cert)
+{
+    X509 *cert = NULL;
+    if (certChain == NULL || certChain->data == NULL || certChain->size > MAX_LEN_CERTIFICATE_CHAIN) {
+        return CMR_ERROR_INVALID_ARGUMENT_APP_CERT;
+    }
+
+    int32_t ret = CM_SUCCESS;
+    do {
+        ret = CmParseCertChain(certChain, appCert, &cert);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("parse cert chain failed");
+            break;
+        }
+
+        ret = CmParsePrivKey(privKey, cert, pkey);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("parse private key failed");
+            break;
+        }
+    } while (0);
+
+    if (cert != NULL) {
+        *x509Cert = cert;
+    }
+    return ret;
+}
 // LCOV_EXCL_STOP
