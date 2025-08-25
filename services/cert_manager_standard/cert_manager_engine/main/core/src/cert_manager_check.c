@@ -204,12 +204,16 @@ static int32_t CmCheckCertAlias(const struct CmBlob *certAlias, uint32_t store, 
     return CM_SUCCESS;
 }
 
-static bool CmCheckUserIdAndUpdateContext(const uint32_t inputUserId, uint32_t *callerUserId)
+static bool CmCheckUserIdAndUpdateContext(const uint32_t inputUserId, uint32_t *callerUserId, uint32_t store)
 {
     if (*callerUserId == 0) { /* caller is sa */
         if (inputUserId == 0 || inputUserId == INIT_INVALID_VALUE) {
-            CM_LOG_E("caller is sa, input userId %u is invalid", inputUserId);
-            return false;
+            if (store == CM_CREDENTIAL_STORE) {
+                return true;
+            } else {
+                CM_LOG_E("caller is sa, input userId %u is invalid", inputUserId);
+                return false;
+            }
         }
         CM_LOG_D("update caller userId from %u to %u", *callerUserId, inputUserId);
         *callerUserId = inputUserId;
@@ -282,8 +286,8 @@ int32_t CmServiceInstallAppCertCheck(const struct CmAppCertParam *certParam, str
         return ret;
     }
 
-    if (certParam->store == CM_SYS_CREDENTIAL_STORE &&
-        !CmCheckUserIdAndUpdateContext(certParam->userId, &(cmContext->userId))) {
+    if ((certParam->store == CM_SYS_CREDENTIAL_STORE || certParam->store == CM_CREDENTIAL_STORE) &&
+        !CmCheckUserIdAndUpdateContext(certParam->userId, &(cmContext->userId), certParam->store)) {
         CM_LOG_E("input userId is invalid");
         return CMR_ERROR_INVALID_ARGUMENT_USER_ID;
     }
