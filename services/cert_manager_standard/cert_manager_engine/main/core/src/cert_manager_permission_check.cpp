@@ -18,10 +18,15 @@
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
 #include "tokenid_kit.h"
+#include "bundlemgr/bundle_mgr_proxy.h"
+#include "system_ability_definition.h"
+#include "iservice_registry.h"
 
 #include "cm_log.h"
 
 using namespace OHOS::Security::AccessToken;
+using namespace OHOS;
+using namespace AppExecFwk;
 
 static bool HasPermission(const std::string &permissionName)
 {
@@ -92,4 +97,48 @@ bool CmPermissionCheck(const uint32_t store)
         default:
             return false;
     }
+}
+
+static sptr<IBundleMgr> GetBundleMgr()
+{
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        CM_LOG_E("systemAbilityManager is nullptr, please check.");
+        return nullptr;
+    }
+    auto bundleMgrRemoteObj = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (bundleMgrRemoteObj == nullptr) {
+        CM_LOG_E("bundleMgrRemoteObj is nullptr, please check.");
+        return nullptr;
+    }
+    sptr<IBundleMgr> bundleMgr = iface_cast<IBundleMgr>(bundleMgrRemoteObj);
+    if (bundleMgr == nullptr) {
+        CM_LOG_E("iface_cast bundleMgr is nullptr, let's try new proxy way.");
+        sptr<IBundleMgr> bundleMgrProxy = new BundleMgrProxy(bundleMgrRemoteObj);
+        if (bundleMgrProxy == nullptr) {
+            CM_LOG_E("bundleMgrProxy is nullptr, please check.");
+            return nullptr;
+        }
+        bundleMgr = bundleMgrProxy;
+    }
+    return bundleMgr;
+}
+
+bool CmGetCertManagerAppUid(int32_t *uid, int32_t userId)
+{
+    char bundleName[] = "com.ohos.certmanager";
+    auto bundleMgrPtr = GetBundleMgr();
+    if (bundleMgrPtr == nullptr) {
+        CM_LOG_E("bundleMgrPtr is nullptr");
+        return false;
+    }
+
+    int32_t tmpUid = bundleMgrPtr->GetUidByBundleName(bundleName, userId);
+    if (tmpUid < 0) {
+        CM_LOG_E("cert manager uid is invalid, uid: %d", tmpUid);
+        return false;
+    }
+
+    *uid = tmpUid;
+    return true;
 }

@@ -36,6 +36,7 @@
 #include "cert_manager_service.h"
 #include "cert_manager_uri.h"
 #include "cert_manager_query.h"
+#include "cert_manager_permission_check.h"
 #include "cm_log.h"
 #include "cm_pfx.h"
 #include "cm_type.h"
@@ -441,12 +442,22 @@ static int32_t ParseAppCert(const struct CmAppCertParam *certParam, EVP_PKEY **p
     return ret;
 }
 
-static int32_t GetCredCertName(const struct CmContext *context, const struct CmAppCertParam *certParam,
+static int32_t GetCredCertName(struct CmContext *context, const struct CmAppCertParam *certParam,
     EVP_PKEY **priKey, struct CertName *certName, struct AppCert *appCert)
 {
     int32_t ret = CM_SUCCESS;
     X509 *cert = NULL;
+    int32_t certManagerUid;
+
     do {
+        if (certParam->store == CM_CREDENTIAL_STORE) {
+            if (!CmGetCertManagerAppUid(&certManagerUid, (int32_t)context->userId)) {
+                CM_LOG_E("get cert manager uid failed");
+            } else {
+                context->uid = (uint32_t)certManagerUid;
+            }
+        }
+
         ret = ParseAppCert(certParam, priKey, certName, appCert, &cert);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to parse app cert");
@@ -527,7 +538,7 @@ static int32_t StoreKeyAndCert(const struct CmContext *context, const struct CmA
 }
 
 int32_t CmInstallAppCertPro(
-    const struct CmContext *context, const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
+    struct CmContext *context, const struct CmAppCertParam *certParam, struct CmBlob *keyUri)
 {
     struct AppCert appCert;
     (void)memset_s(&appCert, sizeof(struct AppCert), 0, sizeof(struct AppCert));

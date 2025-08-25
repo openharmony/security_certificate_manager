@@ -72,6 +72,7 @@ ohos_static_library("cert_manager_engine_core_standard") {
     "huks:libhukssdk",
     "ipc:ipc_core",
     "openssl:libcrypto_shared",
+    "bundle_framework:appexecfwk_core",
   ]
 
   complete_static_lib = true

@@ -38,6 +38,8 @@ bool CmIsSystemAppByStoreType(const uint32_t store);
 
 bool CmPermissionCheck(const uint32_t store);
 
+bool CmGetCertManagerAppUid(int32_t *uid, int32_t userId);
+
 #ifdef __cplusplus
 }
 #endif

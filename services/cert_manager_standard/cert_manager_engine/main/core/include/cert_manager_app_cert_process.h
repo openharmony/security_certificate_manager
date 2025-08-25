@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 int32_t CmInstallAppCertPro(
-    const struct CmContext *context, const struct CmAppCertParam *certParam, struct CmBlob *keyUri);
+    struct CmContext *context, const struct CmAppCertParam *certParam, struct CmBlob *keyUri);
 
 #ifdef __cplusplus
 }
