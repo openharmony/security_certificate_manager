@@ -37,7 +37,7 @@ int32_t CmRdbOpenCallback::OnUpgrade(NativeRdb::RdbStore &rdbStore, int currentV
     /* Upgrade the database: Add the AUTH_STORAGE_LEVEL column with a default value of 1 (EL1).  */
     if (currentVersion == RDB_VERSION_FIRST && targetVersion == RDB_VERSION_CURRENT) {
         int32_t ret = rdbStore.ExecuteSql("ALTER TABLE " + CERT_PROPERTY_TABLE_NAME + " ADD COLUMN " +
-            COLUMN_AUTH_STORAGE_LEVEL + " INTEGER DEFAULT_FORMAT 1;");
+            COLUMN_AUTH_STORAGE_LEVEL + " INTEGER DEFAULT 1;");
         CM_LOG_I("Upgrade execute sql ret: %d", ret);
     }
     return NativeRdb::E_OK;

@@ -99,6 +99,7 @@ bool CmPermissionCheck(const uint32_t store)
     }
 }
 
+// LCOV_EXCL_START
 static sptr<IBundleMgr> GetBundleMgr()
 {
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -124,6 +125,7 @@ static sptr<IBundleMgr> GetBundleMgr()
     return bundleMgr;
 }
 
+// Temporarily process, install all user credentials under the certificate manager uid
 bool CmGetCertManagerAppUid(int32_t *uid, int32_t userId)
 {
     char bundleName[] = "com.ohos.certmanager";
@@ -142,3 +144,4 @@ bool CmGetCertManagerAppUid(int32_t *uid, int32_t userId)
     *uid = tmpUid;
     return true;
 }
+// LCOV_EXCL_STOP

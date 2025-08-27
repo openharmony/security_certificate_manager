@@ -440,7 +440,7 @@ HWTEST_F(CmInitTest, CmInitTest020, TestSize.Level0)
 
 /**
  * @tc.name: CmInitTest021
- * @tc.desc: Abnormal case: Test init sm2 with SHA256_FORMAT
+ * @tc.desc: Abnormal case: Test init sm2 with SHA256
  * @tc.type: FUNC
  */
 HWTEST_F(CmInitTest, CmInitTest021, TestSize.Level0)
