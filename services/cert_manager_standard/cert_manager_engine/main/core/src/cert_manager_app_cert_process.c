@@ -447,15 +447,17 @@ static int32_t GetCredCertName(struct CmContext *context, const struct CmAppCert
 {
     int32_t ret = CM_SUCCESS;
     X509 *cert = NULL;
-    int32_t certManagerUid;
+    int32_t certManagerUid = 0;
 
     do {
-        if (certParam->store == CM_CREDENTIAL_STORE) {
-            if (!CmGetCertManagerAppUid(&certManagerUid, (int32_t)context->userId)) {
+        // only install user cred and target userid/caller user id is not 0
+        if (certParam->store == CM_CREDENTIAL_STORE && context->userId != 0) {
+            if (!CmGetCertManagerAppUid(&certManagerUid, (int32_t)(context->userId))) {
+                ret = CM_FAILURE;
                 CM_LOG_E("get cert manager uid failed");
-            } else {
-                context->uid = (uint32_t)certManagerUid;
+                break;
             }
+            context->uid = (uint32_t)certManagerUid;
         }
 
         ret = ParseAppCert(certParam, priKey, certName, appCert, &cert);

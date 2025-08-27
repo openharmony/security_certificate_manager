@@ -37,24 +37,31 @@ typedef ASN1_TIME *(TIME_FUNC)(const X509 *);
 // LCOV_EXCL_START
 X509 *InitCertContext(const uint8_t *certBuf, uint32_t size)
 {
-    X509 *x509 = NULL;
     if (certBuf == NULL || size > MAX_LEN_CERTIFICATE || size == 0) {
         return NULL;
     }
-    BIO *bio = BIO_new_mem_buf(certBuf, (int)size);
-    if (!bio) {
-        return NULL;
-    }
-    if (certBuf[0] == '-') {
+    X509 *x509 = NULL;
+    BIO *bio = NULL;
+
+    do {
+        bio = BIO_new_mem_buf(certBuf, (int)size);
+        if (!bio) {
+            break;
+        }
+
+        if (certBuf[0] == ASN1_TAG_TYPE_SEQ) {
+            // Der format
+            x509 = d2i_X509_bio(bio, NULL);
+            break;
+        }
+
         // PEM format
         x509 = PEM_read_bio_X509(bio, NULL, NULL, NULL);
-    } else if (certBuf[0] == ASN1_TAG_TYPE_SEQ) {
-        // Der format
-        x509 = d2i_X509_bio(bio, NULL);
-    } else {
-        CM_LOG_E("invalid certificate format.");
+    } while (0);
+
+    if (bio != NULL) {
+        BIO_free(bio);
     }
-    BIO_free(bio);
     return x509;
 }
 

@@ -154,28 +154,24 @@ static int32_t CmGetPemDerCertChain(const struct CmBlob *certChain, STACK_OF(X50
             break;
         }
 
-        if (certChain->data[0] == '-') {
-            // PEM format
-            while ((tmpCert = PEM_read_bio_X509(bio, NULL, NULL, NULL)) != NULL) {
-                sk_X509_push(fullChain, tmpCert);
-            };
-        } else if (certChain->data[0] == ASN1_TAG_TYPE_SEQ) {
+        if (certChain->data[0] == ASN1_TAG_TYPE_SEQ) {
             // Der format
             while ((tmpCert = d2i_X509_bio(bio, NULL)) != NULL) {
                 sk_X509_push(fullChain, tmpCert);
+                // avoid double free
+                tmpCert = NULL;
             }
         } else {
-            CM_LOG_E("invalid certificate format.");
-            ret = CMR_ERROR_INVALID_CERT_FORMAT;
-            break;
+            // Pem format and other format
+            while ((tmpCert = PEM_read_bio_X509(bio, NULL, NULL, NULL)) != NULL) {
+                sk_X509_push(fullChain, tmpCert);
+                tmpCert = NULL;
+            };
         }
     } while (0);
 
     if (bio != NULL) {
         BIO_free(bio);
-    }
-    if (tmpCert != NULL) {
-        X509_free(tmpCert);
     }
     return ret;
 }
@@ -200,8 +196,8 @@ static int32_t CmParseCertChain(const struct CmBlob *certChain, struct AppCert *
             break;
         }
 
-        int certCount = sk_X509_num(fullChain);
-        if (certCount == 0) {
+        int32_t certCount = sk_X509_num(fullChain);
+        if (certCount <= 0) {
             CM_LOG_E("cert chain has no cert");
             ret = CMR_ERROR_OPENSSL_FAIL;
             break;
@@ -214,7 +210,7 @@ static int32_t CmParseCertChain(const struct CmBlob *certChain, struct AppCert *
         }
 
         /* default certificate chain is packaged as a whole */
-        appCert->certCount = certCount;
+        appCert->certCount = (uint32_t)certCount;
         appCert->certSize = certChain->size;
         *cert = sk_X509_value(fullChain, 0);
         // Increase the reference count to prevent it from being released
@@ -244,14 +240,7 @@ static int32_t CmGetPemDerPrivKey(const struct CmBlob *privKey, EVP_PKEY **pkey)
         }
 
         // The private key info contains the corresponding public key info
-        if (privKey->data[0] == '-') {
-            // PEM format
-            if (PEM_read_bio_PrivateKey(bio, pkey, NULL, NULL) == NULL) {
-                ret = CMR_ERROR_OPENSSL_FAIL;
-                CM_LOG_E("pem read bio private key faild");
-                break;
-            }
-        } else if (privKey->data[0] == ASN1_TAG_TYPE_SEQ) {
+        if (privKey->data[0] == ASN1_TAG_TYPE_SEQ) {
             // Der format
             if (d2i_PrivateKey_bio(bio, pkey) == NULL) {
                 ret = CMR_ERROR_OPENSSL_FAIL;
@@ -259,9 +248,12 @@ static int32_t CmGetPemDerPrivKey(const struct CmBlob *privKey, EVP_PKEY **pkey)
                 break;
             }
         } else {
-            CM_LOG_E("invalid priv key format.");
-            ret = CMR_ERROR_INVALID_CERT_FORMAT;
-            break;
+            // Pem and other format
+            if (PEM_read_bio_PrivateKey(bio, pkey, NULL, NULL) == NULL) {
+                ret = CMR_ERROR_OPENSSL_FAIL;
+                CM_LOG_E("pem or other format read bio private key faild");
+                break;
+            }
         }
     } while (0);
 
