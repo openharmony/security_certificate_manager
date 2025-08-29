@@ -256,21 +256,17 @@ int32_t GenerateCredObj(ani_env *env, ani_string type, ani_string alias, ani_str
 }
 
 int32_t GenerateCredArray(ani_env *env, CredentialAbstract *credentialAbstract, uint32_t credCount,
-    ani_array_ref &outArrayRef)
+    ani_array &outArrayRef)
 {
     if (env == nullptr) {
         CM_LOG_E("env is nullptr.");
         return CMR_ERROR_NULL_POINTER;
     }
-    ani_class credClass;
-    if (env->FindClass(CRED_ABSTRACT_CLASS, &credClass) != ANI_OK) {
-        CM_LOG_E("find class failed, class %s not found.", CRED_ABSTRACT_CLASS);
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
+
     ani_ref undefinedRef;
     env->GetUndefined(&undefinedRef);
-    ani_array_ref resultArray;
-    env->Array_New_Ref(credClass, credCount, undefinedRef, &resultArray);
+    ani_array resultArray;
+    env->Array_New(credCount, undefinedRef, &resultArray);
     for (uint32_t i = 0; i < credCount; i++) {
         ani_string aniCredType{};
         ani_string aniCredAlias{};
@@ -285,7 +281,7 @@ int32_t GenerateCredArray(ani_env *env, CredentialAbstract *credentialAbstract, 
             CM_LOG_E("generate cred object failed. ret = %d", ret);
             return CMR_ERROR_INVALID_ARGUMENT;
         }
-        if (env->Array_Set_Ref(resultArray, i, credAbstractObj) != ANI_OK) {
+        if (env->Array_Set(resultArray, i, credAbstractObj) != ANI_OK) {
             CM_LOG_E("credArray setRef failed.");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
@@ -505,21 +501,17 @@ int32_t GenerateCertObj(ani_env *env, CertAbstract *certAbstract, ani_object &re
     return CM_SUCCESS;
 }
 
-int32_t GenerateCertArray(ani_env *env, CertAbstract *certAbstract, uint32_t certCount, ani_array_ref &outArrayRef)
+int32_t GenerateCertArray(ani_env *env, CertAbstract *certAbstract, uint32_t certCount, ani_array &outArrayRef)
 {
     if (env == nullptr) {
         CM_LOG_E("env is nullptr.");
         return CMR_ERROR_NULL_POINTER;
     }
-    ani_class certClass;
-    if (env->FindClass(CERT_ABSTRACT_CLASS, &certClass) != ANI_OK) {
-        CM_LOG_E("find class failed, class %s not found.", CRED_ABSTRACT_CLASS);
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
+
     ani_ref undefinedRef;
     env->GetUndefined(&undefinedRef);
-    ani_array_ref resultArray;
-    env->Array_New_Ref(certClass, certCount, undefinedRef, &resultArray);
+    ani_array resultArray;
+    env->Array_New(certCount, undefinedRef, &resultArray);
     for (uint32_t i = 0; i < certCount; i++) {
         ani_object certAbstractObj{};
         int32_t ret = GenerateCertObj(env, &certAbstract[i], certAbstractObj);
@@ -527,7 +519,7 @@ int32_t GenerateCertArray(ani_env *env, CertAbstract *certAbstract, uint32_t cer
             CM_LOG_E("generate cert object failed. ret = %d", ret);
             return CMR_ERROR_INVALID_ARGUMENT;
         }
-        if (env->Array_Set_Ref(resultArray, i, certAbstractObj) != ANI_OK) {
+        if (env->Array_Set(resultArray, i, certAbstractObj) != ANI_OK) {
             CM_LOG_E("certArray setRef failed.");
             return CMR_ERROR_INVALID_ARGUMENT;
         }

@@ -43,7 +43,7 @@ int32_t GenerateCmResult(ani_env *env, ani_object &resultObjOut);
 int32_t GenerateCredObj(ani_env *env, ani_string type, ani_string alias, ani_string keyUri, ani_object &resultObjOut);
 
 int32_t GenerateCredArray(ani_env *env, CredentialAbstract *credentialAbstract, uint32_t credCount,
-    ani_array_ref &outArrayRef);
+    ani_array &outArrayRef);
 
 int32_t GenerateCredentialObj(ani_env *env, ani_object &resultObjOut);
 
@@ -55,7 +55,7 @@ int32_t GenerateCMHandle(ani_env *env, const CmBlob *handleData, ani_object &res
 
 int32_t GenerateCertObj(ani_env *env, CertAbstract *certAbstract, ani_object &resultObjOut);
 
-int32_t GenerateCertArray(ani_env *env, CertAbstract *certAbstract, uint32_t certCount, ani_array_ref &outArrayRef);
+int32_t GenerateCertArray(ani_env *env, CertAbstract *certAbstract, uint32_t certCount, ani_array &outArrayRef);
 
 int32_t GenerateCertInfo(ani_env *env, ani_object &resultObjectOut);
 
