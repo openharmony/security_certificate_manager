@@ -21,6 +21,8 @@
 
 namespace {
 const uint32_t MAX_LEVEL = 5;
+const uint32_t MAX_CRED_FORMAT = 2;
+const uint32_t MAX_ALIAS_FORMAT = 2;
 }
 
 using namespace CmFuzzTest;
@@ -41,6 +43,10 @@ namespace OHOS {
             return false;
         }
 
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, certParam.appCertPrivKey)) {
+            return false;
+        }
+
         uint32_t store;
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &store)) {
             return false;
@@ -57,9 +63,23 @@ namespace OHOS {
         }
         level = level % MAX_LEVEL;
 
+        uint32_t credFormat;
+        if (!GetUintFromBuffer(myData, &remainSize, &offset, &credFormat)) {
+            return false;
+        }
+        credFormat = credFormat % MAX_CRED_FORMAT;
+
+        uint32_t aliasFormat;
+        if (!GetUintFromBuffer(myData, &remainSize, &offset, &aliasFormat)) {
+            return false;
+        }
+        aliasFormat = aliasFormat % MAX_ALIAS_FORMAT;
+
         certParam.store = store;
         certParam.userId = userId;
         certParam.level = static_cast<CmAuthStorageLevel>(level);
+        certParam.credFormat = static_cast<CredFormat>(credFormat);
+        certParam.aliasFormat = static_cast<AliasTransFormat>(aliasFormat);
         return true;
     }
 
@@ -77,11 +97,13 @@ namespace OHOS {
         struct CmBlob appCert = { 0, nullptr };
         struct CmBlob appCertPwd = { 0, nullptr };
         struct CmBlob certAlias = { 0, nullptr };
+        struct CmBlob privKey = { 0, nullptr };
 
         struct CmAppCertParam certParam = {
-            certParam.appCert = &appCert,
-            certParam.appCertPwd = &appCertPwd,
-            certParam.certAlias = &certAlias
+            .appCert = &appCert,
+            .appCertPwd = &appCertPwd,
+            .certAlias = &certAlias,
+            .appCertPrivKey = &privKey,
         };
 
         if (!CreateCertParam(certParam, myData, remainSize, offset)) {
