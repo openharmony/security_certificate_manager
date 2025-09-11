@@ -71,7 +71,7 @@ ANI_EXPORT ani_status ANI_Constructor(ani_vm *vm, uint32_t *result)
         return ret;
     }
     ani_module module;
-    ret = env->FindModule("L@ohos/security/certManagerDialog;", &module);
+    ret = env->FindModule("@ohos.security.certManagerDialog", &module);
     if (ret != ANI_OK) {
         CM_LOG_E("FindModule failed, ret = %d", static_cast<int32_t>(ret));
         return ret;

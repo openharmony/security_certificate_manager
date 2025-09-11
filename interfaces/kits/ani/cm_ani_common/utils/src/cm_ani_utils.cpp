@@ -24,19 +24,19 @@
 namespace OHOS::Security::CertManager::Ani {
 namespace AniUtils {
 const char *ETS_CTOR = "<ctor>";
-const char *NATIVE_RESULT_CLASS = "L@ohos/security/certManager/NativeResult;";
-const char *CALLBACK_WRAPPER_CLASS = "L@ohos/security/certManagerDialog/AsyncCallbackWrapper;";
-const char *BUSINESS_ERROR_CLASS = "L@ohos/base/BusinessError;";
-const char *CM_RESULT_CLASS = "L@ohos/security/certManager/CMResultClass;";
-const char *CRED_ABSTRACT_CLASS = "L@ohos/security/certManager/CredentialAbstractClass;";
-const char *CREDENTIAL_CLASS = "L@ohos/security/certManager/CredentialClass;";
-const char *CERT_ABSTRACT_CLASS = "L@ohos/security/certManager/CertAbstractClass;";
-const char *CERT_INFO_CLASS = "L@ohos/security/certManager/CertInfoClass;";
-const char *UINT8_ARRAY_CLASS = "Lescompat/Uint8Array;";
-const char *KEY_PURPOSE_ENUM = "L@ohos/security/certManager/certificateManager/CmKeyPurpose;";
-const char *KEY_PADDING_ENUM = "L@ohos/security/certManager/certificateManager/CmKeyPadding;";
-const char *KEY_DIGEST_ENUM = "L@ohos/security/certManager/certificateManager/CmKeyDigest;";
-const char *CM_HANDLE_CLASS = "L@ohos/security/certManager/CMHandleClass;";
+const char *NATIVE_RESULT_CLASS = "@ohos.security.certManager.NativeResult";
+const char *CALLBACK_WRAPPER_CLASS = "@ohos.security.certManagerDialog.AsyncCallbackWrapper";
+const char *BUSINESS_ERROR_CLASS = "@ohos.base.BusinessError";
+const char *CM_RESULT_CLASS = "@ohos.security.certManager.CMResultClass";
+const char *CRED_ABSTRACT_CLASS = "@ohos.security.certManager.CredentialAbstractClass";
+const char *CREDENTIAL_CLASS = "@ohos.security.certManager.CredentialClass";
+const char *CERT_ABSTRACT_CLASS = "@ohos.security.certManager.CertAbstractClass";
+const char *CERT_INFO_CLASS = "@ohos.security.certManager.CertInfoClass";
+const char *UINT8_ARRAY_CLASS = "escompat.Uint8Array";
+const char *KEY_PURPOSE_ENUM = "@ohos.security.certManager.certificateManager.CmKeyPurpose";
+const char *KEY_PADDING_ENUM = "@ohos.security.certManager.certificateManager.CmKeyPadding";
+const char *KEY_DIGEST_ENUM = "@ohos.security.certManager.certificateManager.CmKeyDigest";
+const char *CM_HANDLE_CLASS = "@ohos.security.certManager.CMHandleClass";
 const char *BOOLEAN_CLASS = "std.core.Boolean";
 
 bool IsUndefined(ani_env *env, ani_object object)
@@ -316,7 +316,7 @@ int32_t GenerateUint8Array(ani_env *env, const CmBlob *data, ani_object &resultO
     }
 
     ani_method ctor;
-    if (env->Class_FindMethod(uint8ArrayClass, ETS_CTOR, "I:V", &ctor) != ANI_OK) {
+    if (env->Class_FindMethod(uint8ArrayClass, ETS_CTOR, "i:", &ctor) != ANI_OK) {
         CM_LOG_E("find class method failed, method %s not found.", ETS_CTOR);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
