@@ -164,7 +164,7 @@ static int32_t CreateResultObject(ani_env *env, ani_object &resultObjOut, const 
     }
 
     ani_method ctor;
-    if (env->Class_FindMethod(cls, ETS_CTOR, ":V", &ctor) != ANI_OK) {
+    if (env->Class_FindMethod(cls, ETS_CTOR, ":", &ctor) != ANI_OK) {
         CM_LOG_E("find class method failed, method %s not found.", ETS_CTOR);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
