@@ -35,7 +35,7 @@ namespace {
 constexpr int CM_NAPI_GET_CERT_STORE_PATH_ARGS = 1;
 }
 
-static sptr<BundleMgrProxy> GetBundleMgrProxy()
+static sptr<IBundleMgr> GetBundleMgrProxy()
 {
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (!systemAbilityManager) {
@@ -48,7 +48,7 @@ static sptr<BundleMgrProxy> GetBundleMgrProxy()
         CM_LOG_E("Failed to get bundle manager proxy.");
         return nullptr;
     }
-    return iface_cast<BundleMgrProxy>(remoteObject);
+    return iface_cast<IBundleMgr>(remoteObject);
 }
 
 static int32_t GetUserCaStorePath(const enum CmCertScope certScope, string &path)
@@ -60,7 +60,7 @@ static int32_t GetUserCaStorePath(const enum CmCertScope certScope, string &path
     }
 
     int32_t userId = 0;
-    sptr<BundleMgrProxy> bundleMgrProxy = GetBundleMgrProxy();
+    sptr<IBundleMgr> bundleMgrProxy = GetBundleMgrProxy();
     if (bundleMgrProxy == nullptr) {
         CM_LOG_E("Failed to get bundle manager proxy.");
         return CM_FAILURE;
