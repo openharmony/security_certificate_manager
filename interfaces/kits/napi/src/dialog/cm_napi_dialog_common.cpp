@@ -418,7 +418,7 @@ void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
     }
 }
 
-static OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
+static OHOS::sptr<OHOS::AppExecFwk::IBundleMgr> GetBundleMgrProxy()
 {
     auto systemAbilityManager = OHOS::SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (!systemAbilityManager) {
@@ -431,12 +431,12 @@ static OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
         CM_LOG_E("fail to get bundle manager proxy.");
         return nullptr;
     }
-    return OHOS::iface_cast<OHOS::AppExecFwk::BundleMgrProxy>(remoteObject);
+    return OHOS::iface_cast<OHOS::AppExecFwk::IBundleMgr>(remoteObject);
 }
 
 static int32_t GetCallerBundleInfo(OHOS::AppExecFwk::BundleInfo &bundleInfo)
 {
-    OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> bundleMgrProxy = GetBundleMgrProxy();
+    OHOS::sptr<OHOS::AppExecFwk::IBundleMgr> bundleMgrProxy = GetBundleMgrProxy();
     if (bundleMgrProxy == nullptr) {
         CM_LOG_E("Failed to get bundle manager proxy.");
         return CM_FAILURE;
