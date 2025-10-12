@@ -60,7 +60,8 @@
           "samgr",
           "security_guard",
           "selinux_adapter",
-          "openssl"
+          "openssl",
+          "runtime_core"
         ]
       },
       "build": {
