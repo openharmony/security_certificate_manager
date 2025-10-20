@@ -59,7 +59,7 @@ int32_t GenerateCertArray(ani_env *env, CertAbstract *certAbstract, uint32_t cer
 
 int32_t GenerateCertInfo(ani_env *env, ani_object &resultObjectOut);
 
-int32_t SetObjStringProperty(ani_env *env, ani_object obj, std::map<std::string, std::string> valueMap);
+int32_t SetObjStringProperty(ani_env *env, ani_object obj, const std::map<std::string, std::string> &valueMap);
 
 int32_t GenerateBusinessError(ani_env *env, const int32_t errorCode, const char *message, ani_object &objectOut);
 } // namespace AniUtils

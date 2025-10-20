@@ -103,15 +103,15 @@ int32_t CMResultBuilder::credentialSetStringProperty(ani_object credentialObj)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     if (env->Object_SetPropertyByName_Ref(credentialObj, "type", typeString) != ANI_OK) {
-        CM_LOG_E("set credential property type faild");
+        CM_LOG_E("set credential property type failed");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     if (env->Object_SetPropertyByName_Ref(credentialObj, "alias", aliasString) != ANI_OK) {
-        CM_LOG_E("set credential property alias faild");
+        CM_LOG_E("set credential property alias failed");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     if (env->Object_SetPropertyByName_Ref(credentialObj, "keyUri", keyUriString) != ANI_OK) {
-        CM_LOG_E("set credential property keyUri faild");
+        CM_LOG_E("set credential property keyUri failed");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     return CM_SUCCESS;
@@ -142,21 +142,21 @@ int32_t CMResultBuilder::buildCredential()
     }
     if (env->Object_SetPropertyByName_Int(credentialObj, "certNum",
         static_cast<ani_int>(credential->certNum)) != ANI_OK) {
-        CM_LOG_E("set credential property certNum faild");
+        CM_LOG_E("set credential property certNum failed");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     if (env->Object_SetPropertyByName_Int(credentialObj, "keyNum",
         static_cast<ani_int>(credential->keyNum)) != ANI_OK) {
-        CM_LOG_E("set credential property keyNum faild");
+        CM_LOG_E("set credential property keyNum failed");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     if (env->Object_SetPropertyByName_Ref(credentialObj, "credentialData", credData) != ANI_OK) {
-        CM_LOG_E("set credential property credData faild");
+        CM_LOG_E("set credential property credData failed");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     ani_status status = env->Object_SetPropertyByName_Ref(cmResult, "credential", credentialObj);
     if (status != ANI_OK) {
-        CM_LOG_E("cmResult set property credentialList failed. ret = %d", static_cast<int32_t>(status));
+        CM_LOG_E("cmResult set property credential failed. ret = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     return CM_SUCCESS;

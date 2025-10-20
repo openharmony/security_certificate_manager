@@ -97,10 +97,10 @@ int32_t ParseString(ani_env *env, ani_string ani_str, CmBlob &outBlob)
     ret = env->String_GetUTF8(ani_str, strData, strSize + 1, &bytes_written);
     if (ret != ANI_OK) {
         CM_LOG_E("get ani string, ret = %d", static_cast<int32_t>(ret));
+        CmFree(strData);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    strData[bytes_written] = '\0';
     outBlob.data = (uint8_t *)strData;
     outBlob.size = strSize + 1;
     return CM_SUCCESS;
@@ -541,7 +541,7 @@ int32_t GenerateCertInfo(ani_env *env, ani_object &resultObjOut)
     return CM_SUCCESS;
 }
 
-int32_t SetObjStringProperty(ani_env *env, ani_object obj, std::map<std::string, std::string> valueMap)
+int32_t SetObjStringProperty(ani_env *env, ani_object obj, const std::map<std::string, std::string> &valueMap)
 {
     if (env == nullptr) {
         CM_LOG_E("env is nullptr.");

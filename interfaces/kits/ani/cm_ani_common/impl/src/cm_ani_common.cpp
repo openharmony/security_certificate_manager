@@ -22,7 +22,7 @@
 namespace OHOS::Security::CertManager::Ani {
 using namespace OHOS::Security::CertManager;
 
-static int32_t TranformErrorCode(int32_t errorCode)
+static int32_t TransformErrorCode(int32_t errorCode)
 {
     auto iter = NATIVE_CODE_TO_JS_CODE_MAP.find(errorCode);
     if (iter != NATIVE_CODE_TO_JS_CODE_MAP.end()) {
@@ -31,7 +31,7 @@ static int32_t TranformErrorCode(int32_t errorCode)
     return INNER_FAILURE;
 }
 
-static int32_t TranformDialogErrorCode(int32_t errorCode)
+static int32_t TransformDialogErrorCode(int32_t errorCode)
 {
     auto iter = Dialog::DIALOG_CODE_TO_JS_CODE_MAP.find(errorCode);
     if (iter != Dialog::DIALOG_CODE_TO_JS_CODE_MAP.end()) {
@@ -60,7 +60,7 @@ static const char *GetDialogJsErrorMsg(int32_t errCode)
 
 ani_object GetAniErrorResult(ani_env *env, int32_t resultCode)
 {
-    int32_t jsRet = TranformErrorCode(resultCode);
+    int32_t jsRet = TransformErrorCode(resultCode);
     const char *msg = GetJsErrorMsg(resultCode);
     ani_object retObj{};
     int32_t ret = AniUtils::GenerateNativeResult(env, jsRet, msg, nullptr, retObj);
@@ -73,7 +73,7 @@ ani_object GetAniErrorResult(ani_env *env, int32_t resultCode)
 
 ani_object GetAniDialogNativeResult(ani_env *env, int32_t resultCode)
 {
-    int32_t jsRet = TranformDialogErrorCode(resultCode);
+    int32_t jsRet = TransformDialogErrorCode(resultCode);
     const char *msg = GetDialogJsErrorMsg(resultCode);
     ani_object retObj{};
     int32_t ret = AniUtils::GenerateNativeResult(env, jsRet, msg, nullptr, retObj);
@@ -86,7 +86,7 @@ ani_object GetAniDialogNativeResult(ani_env *env, int32_t resultCode)
 
 ani_object GetDialogAniErrorResult(ani_env *env, int32_t resultCode)
 {
-    int32_t jsRet = TranformDialogErrorCode(resultCode);
+    int32_t jsRet = TransformDialogErrorCode(resultCode);
     const char *msg = GetDialogJsErrorMsg(resultCode);
     ani_object retObj{};
     int32_t ret = AniUtils::GenerateBusinessError(env, jsRet, msg, retObj);

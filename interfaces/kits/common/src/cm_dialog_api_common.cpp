@@ -35,7 +35,7 @@ static OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
 }
 
 int32_t GetCallerLabelName(std::shared_ptr<OHOS::AbilityRuntime::AbilityContext> abilityContext,
-    std::string &lableName)
+    std::string &labelName)
 {
     OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> bundleMgrProxy = GetBundleMgrProxy();
     if (bundleMgrProxy == nullptr) {
@@ -59,7 +59,7 @@ int32_t GetCallerLabelName(std::shared_ptr<OHOS::AbilityRuntime::AbilityContext>
         return CMR_ERROR_NULL_POINTER;
     }
 
-    resCode = abilityContext->GetResourceManager()->GetStringById(bundleInfo.applicationInfo.labelId, lableName);
+    resCode = abilityContext->GetResourceManager()->GetStringById(bundleInfo.applicationInfo.labelId, labelName);
     if (resCode != CM_SUCCESS) {
         CM_LOG_E("getStringById is faild, resCode is %d", resCode);
         return CM_FAILURE;
