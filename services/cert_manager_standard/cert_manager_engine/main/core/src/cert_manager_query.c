@@ -480,6 +480,25 @@ int32_t CmGetCertAlias(const uint32_t store, const char *uri, const struct CmBlo
     return CM_SUCCESS;
 }
 
+int32_t CmGetAliasFromSubjectName(const struct CmBlob *certData, struct CmBlob *alias)
+{
+    X509 *cert = InitCertContext(certData->data, certData->size);
+    if (cert == NULL) {
+        CM_LOG_E("cert data can't convert x509 format");
+        return CMR_ERROR_INVALID_CERT_FORMAT;
+    }
+
+    int32_t ret = GetX509FirstSubjectName(cert, alias);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("GetX509FirstSubjextName failed, ret = %d ", ret);
+        FreeCertContext(cert);
+        return CMR_ERROR_GET_CERT_SUBJECT_ITEM;
+    }
+
+    FreeCertContext(cert);
+    return CM_SUCCESS;
+}
+
 static int32_t CmGetCertSubjectName(const struct CmBlob *certData, struct CmBlob *subjectName)
 {
     X509 *cert = InitCertContext(certData->data, certData->size);

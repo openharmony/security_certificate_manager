@@ -44,13 +44,14 @@ extern "C" {
 #define MAX_P7B_INSTALL_COUNT    256
 #define MAX_LEN_URI              256
 #define MAX_AUTH_LEN_URI         256
-#define MAX_LEN_CERT_ALIAS       129    /* include 1 byte: the terminator('\0') */
+#define MAX_LEN_CERT_ALIAS       257    /* include 1 byte: the terminator('\0') */
 #define MAX_LEN_SUBJECT_NAME     1025   /* include 1 byte: the terminator('\0') */
 #define MAX_LEN_PACKGE_NAME      64
 #define MAX_LEN_MAC_KEY          64
 #define MAX_UINT32_LEN           16
 #define MAX_LEN_CERT_TYPE        8
 #define MAX_LEN_PRI_CRED_ALIAS   33     /* include 1 byte: the terminator('\0') */
+#define MAX_COUNT_UKEY_CERTIFICATE 36
 
 #define MAX_LEN_ISSUER_NAME             256
 #define MAX_LEN_SERIAL                  64
@@ -184,6 +185,9 @@ enum CmErrorCode {
     CMR_ERROR_CERT_COUNT_MISMATCH = -48,
     CMR_ERROR_GET_CERT_STATUS = -49,
     CMR_ERROR_GET_CERT_SUBJECT_ITEM = -50,
+    /* ukey failed */
+    CMR_ERROR_UKEY_GENERAL_ERROR = -51,
+    CMR_ERROR_UKEY_DEVICE_SUPPORT = -52,
 
     /* invalid argument */
     CMR_ERROR_INVALID_ARGUMENT_BEGIN = -10000,
@@ -245,7 +249,8 @@ enum CMDialogErrorCode {
     CMR_DIALOG_ERROR_NOT_EXIST = -1008,
     CMR_DIALOG_ERROR_NOT_SUPPORTED = -1009,
     CMR_DIALOG_ERROR_PARAM_INVALID = -1010,
-    CMR_DIALOG_ERROR_PERMISSION_DENIED = 1011, /* UIExtension will return 1011 if permission check failed */
+    CMR_DIALOG_ERROR_PERMISSION_DENIED = -1011, /* UIExtension will return -1011 if permission check failed */
+    CMR_DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED = -1012, /* UIExtension will return -1012 if device check failed */
 };
 
 enum CMErrorCode { /* temp use */
@@ -284,6 +289,13 @@ enum CmTag {
     CM_TAG_PARAM2_NULL = CM_TAG_TYPE_BYTES | 30018,
     CM_TAG_PARAM3_NULL = CM_TAG_TYPE_BYTES | 30019,
     CM_TAG_PARAM4_NULL = CM_TAG_TYPE_BYTES | 30020,
+};
+
+enum CmCertificatePurpose {
+    CM_CERT_PURPOSE_DEFAULT = 0,
+    CM_CERT_PURPOSE_ALL = 1,
+    CM_CERT_PURPOSE_SIGN = 2,
+    CM_CERT_PURPOSE_ENCRYPT = 3,
 };
 
 #define CM_PARAM_BUFFER_NULL_INTERVAL ((CM_TAG_PARAM0_NULL) - (CM_TAG_PARAM0_BUFFER))
@@ -388,6 +400,12 @@ struct Credential {
     uint32_t certNum;
     uint32_t keyNum;
     struct CmBlob credData;
+    enum CmCertificatePurpose certPurpose;
+};
+
+struct CredentialDetailList {
+    uint32_t credentialCount;
+    struct Credential *credential;
 };
 
 struct CredentialAbstract {
@@ -522,6 +540,10 @@ struct InstallUserCertParams {
     struct CmBlob *certAlias;
     struct CmBlob *outData;
     uint32_t status;
+};
+
+struct UkeyInfo {
+    enum CmCertificatePurpose certPurpose;
 };
 
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)

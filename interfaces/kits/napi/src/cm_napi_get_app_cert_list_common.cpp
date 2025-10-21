@@ -96,7 +96,7 @@ napi_value GetAppCertListWriteResult(napi_env env, GetAppCertListAsyncContext co
     return result;
 }
 
-void InitAppCertList(struct CredentialList *credentialList)
+static void InitAppCertList(struct CredentialList *credentialList)
 {
     uint32_t buffSize = (MAX_COUNT_CERTIFICATE * sizeof(struct CredentialAbstract));
     credentialList->credentialAbstract = static_cast<struct CredentialAbstract *>(CmMalloc(buffSize));

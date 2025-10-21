@@ -35,6 +35,8 @@ static const std::string NO_AUTHORIZATION_MSG = "the application is not authoriz
 static const std::string ALIAS_LENGTH_REACHED_LIMIT_MSG = "the input alias length reaches the max";
 static const std::string DEVICE_ENTER_ADVSECMODE_MSG = "the device enters advanced security mode";
 static const std::string PASSWORD_IS_ERROR_MSG = "the input password is error";
+static const std::string ACCESS_UKEY_SERVICE_FAILED_MSG = "the access USB key service failed";
+static const std::string CAPABILITY_NOT_SUPPORTED_MSG = "capability not support";
 
 static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     // invalid params
@@ -53,6 +55,10 @@ static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     { CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT, ALIAS_LENGTH_REACHED_LIMIT },
     { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE },
     { CMR_ERROR_PASSWORD_IS_ERR, PASSWORD_IS_ERROR },
+
+    // ukey
+    { CMR_ERROR_UKEY_GENERAL_ERROR, ACCESS_UKEY_SERVICE_FAILED },
+    { CMR_ERROR_UKEY_DEVICE_SUPPORT, CAPABILITY_NOT_SUPPORTED },
 };
 
 static const std::unordered_map<int32_t, std::string> NATIVE_CODE_TO_MSG_MAP = {
@@ -68,6 +74,8 @@ static const std::unordered_map<int32_t, std::string> NATIVE_CODE_TO_MSG_MAP = {
     { CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT, ALIAS_LENGTH_REACHED_LIMIT_MSG },
     { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE_MSG },
     { CMR_ERROR_PASSWORD_IS_ERR, PASSWORD_IS_ERROR_MSG },
+    { CMR_ERROR_UKEY_GENERAL_ERROR, ACCESS_UKEY_SERVICE_FAILED_MSG },
+    { CMR_ERROR_UKEY_DEVICE_SUPPORT, CAPABILITY_NOT_SUPPORTED_MSG },
 };
 }  // namespace
 
@@ -208,6 +216,10 @@ static napi_value ParseStringCommon(napi_env env, napi_value object, CmBlob *&st
 napi_value ParseString(napi_env env, napi_value object, CmBlob *&stringBlob)
 {
     return ParseStringCommon(env, object, stringBlob, false);
+}
+napi_value ParseStringOrEmpty(napi_env env, napi_value object, CmBlob *&stringBlob)
+{
+    return ParseStringCommon(env, object, stringBlob, true);
 }
 
 napi_value ParsePasswd(napi_env env, napi_value object, CmBlob *&stringBlob)
@@ -391,6 +403,24 @@ napi_value GenerateCredentialAbstractArray(napi_env env,
     return array;
 }
 
+
+napi_value GenerateCredentialArray(napi_env env,
+    const struct Credential *credential, const uint32_t credentialCount)
+{
+    if (credentialCount == 0 || credential == nullptr) {
+        return nullptr;
+    }
+    napi_value array = nullptr;
+    NAPI_CALL(env, napi_create_array(env, &array));
+    for (uint32_t i = 0; i < credentialCount; i++) {
+        napi_value element = nullptr;
+        napi_create_object(env, &element);
+        element = GenerateUkeyCertInfo(env, &credential[i]);
+        napi_set_element(env, array, i, element);
+    }
+    return array;
+}
+
 napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo)
 {
     if (certInfo == nullptr) {
@@ -532,6 +562,18 @@ napi_value GenerateAppCertInfo(napi_env env, const struct Credential *credential
 
     NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_CREDENTIAL_DATA.c_str(), credData));
     NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PROPERTY_CREDENTIAL_DATA_NEW.c_str(), credData));
+
+    return element;
+}
+
+napi_value GenerateUkeyCertInfo(napi_env env, const struct Credential *credential)
+{
+    napi_value element = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &element));
+    element = GenerateAppCertInfo(env, credential);
+    napi_value certPurpose = nullptr;
+    NAPI_CALL(env, napi_create_uint32(env, credential->certPurpose, &certPurpose));
+    NAPI_CALL(env, napi_set_named_property(env, element, CM_CERT_PURPOSE.c_str(), certPurpose));
     return element;
 }
 
@@ -570,6 +612,29 @@ void GenerateNapiPromise(napi_env env, napi_ref callback, napi_deferred *deferre
         NAPI_CALL_RETURN_VOID(env, napi_create_promise(env, deferred, promise));
     } else {
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, promise));
+    }
+}
+
+// ukey
+void GenerateUkeyCertList(struct CredentialDetailList *certificateList)
+{
+    uint32_t buffSize = (MAX_COUNT_UKEY_CERTIFICATE * sizeof(struct Credential));
+    certificateList->credential = static_cast<struct Credential *>(CmMalloc(buffSize));
+    if (certificateList->credential == nullptr) {
+        CM_LOG_E("malloc file buffer failed");
+        return;
+    }
+    (void)memset_s(certificateList->credential, buffSize, 0, buffSize);
+    certificateList->credentialCount = MAX_COUNT_UKEY_CERTIFICATE;
+    for (uint32_t i = 0; i < MAX_COUNT_UKEY_CERTIFICATE; ++i) {
+        certificateList->credential[i].credData.data = static_cast<uint8_t *>(CmMalloc(MAX_LEN_CERTIFICATE_CHAIN));
+        if (certificateList->credential[i].credData.data == nullptr) {
+            CM_LOG_E("malloc file buffer failed");
+            return;
+        }
+        (void)memset_s(certificateList->credential[i].credData.data, MAX_LEN_CERTIFICATE_CHAIN,
+            0, MAX_LEN_CERTIFICATE_CHAIN);
+        certificateList->credential[i].credData.size = MAX_LEN_CERTIFICATE_CHAIN;
     }
 }
 
@@ -623,6 +688,19 @@ void FreeCredentialList(CredentialList *&credentialList)
 
     CmFree(credentialList);
     credentialList = nullptr;
+}
+
+void FreeUkeyCertList(CredentialDetailList *&certificateList)
+{
+    if (certificateList == nullptr || certificateList->credential == nullptr) {
+        return;
+    }
+    for (uint32_t i = 0; i < MAX_COUNT_UKEY_CERTIFICATE; ++i) {
+        CM_FREE_BLOB(certificateList->credential[i].credData);
+    }
+    certificateList->credentialCount = 0;
+    CM_FREE_PTR(certificateList->credential);
+    certificateList = nullptr;
 }
 
 void FreeCertInfo(CertInfo *&certInfo)

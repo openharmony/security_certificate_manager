@@ -17,7 +17,7 @@
 
 #include "cm_log.h"
 #include "cm_napi_dialog_common.h"
-#include "cm_napi_open_certificate_operation.h"
+#include "cm_napi_dialog_callback_void.h"
 
 #include "securec.h"
 #include "syspara/parameters.h"
@@ -123,7 +123,7 @@ napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
 
     // set want params
-    auto uiExtCallback = std::make_shared<CmOperationUIExtensionCallback>(asyncContext);
+    auto uiExtCallback = std::make_shared<CmUIExtensionVoidCallback>(asyncContext);
     StartUIExtensionAbility(asyncContext, CMGetUninstallCertWant(asyncContext), uiExtCallback);
     CM_LOG_I("cert uninstall dialog end");
     return result;

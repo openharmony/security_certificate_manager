@@ -39,9 +39,38 @@ static int32_t CmSendParcelInit(struct CmParam *params, uint32_t paramCount,
 
 static int32_t GetCertListInitOutData(struct CmBlob *outListBlob)
 {
-    /* buff struct: certCount + MAX_CERT_COUNT * (subjectBlob + status + uriBlob + aliasBlob) */
+    /* buff struct: certCount + MAX_CERT_COUNT * (subjectBlob + uriBlob + aliasBlob + ) */
     uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
         sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) +  MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE_ALL;
+    outListBlob->data = (uint8_t *)CmMalloc(buffSize);
+    if (outListBlob->data == NULL) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    outListBlob->size = buffSize;
+
+    return CM_SUCCESS;
+}
+
+static int32_t GetUkeyCertListInitOutData(struct CmBlob *outListBlob)
+{
+    /* buff struct: certCount + MAX_CERT_COUNT * (isExist + typeBlob + aliasBlob + keyUriBlob + aliasBlob +
+        certNum + keyNum + credDataBlob + certPurpose) */
+    uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME +
+        sizeof(uint32_t) + MAX_LEN_CERT_ALIAS + sizeof(uint32_t) +  MAX_LEN_URI + sizeof(uint32_t) +
+        sizeof(uint32_t) + sizeof(uint32_t) + MAX_LEN_CERTIFICATE_CHAIN +sizeof(uint32_t)) * MAX_COUNT_UKEY_CERTIFICATE;
+    outListBlob->data = (uint8_t *)CmMalloc(buffSize);
+    if (outListBlob->data == NULL) {
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    outListBlob->size = buffSize;
+
+    return CM_SUCCESS;
+}
+
+static int32_t CheckAppPermissionInitOutData(struct CmBlob *outListBlob)
+{
+    /* buff struct: hasPermission + certAlias*/
+    uint32_t buffSize = sizeof(bool) + sizeof(uint32_t) + MAX_LEN_CERT_ALIAS;
     outListBlob->data = (uint8_t *)CmMalloc(buffSize);
     if (outListBlob->data == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
@@ -324,6 +353,31 @@ static int32_t CmAppCertListGetCertCount(const struct CmBlob *outData,
     return CM_SUCCESS;
 }
 
+static int32_t CmUkeyCertListGetCertCount(const struct CmBlob *outData,
+    struct CredentialDetailList *certificateList, uint32_t *offset)
+{
+    uint32_t credCount = 0;
+    int32_t ret = GetUint32FromBuffer(&credCount, outData, offset);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("ukey cert get list failed ret:%d", ret);
+        return ret;
+    }
+
+    if (credCount == 0) {
+        CM_LOG_D("ukey cert list is null");
+    }
+
+    if (credCount > certificateList->credentialCount) {
+        CM_LOG_E("Caller buff too small count:%u, count:%u", credCount,
+            certificateList->credentialCount);
+        return CMR_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    certificateList->credentialCount = credCount;
+
+    return CM_SUCCESS;
+}
+
 static int32_t CmAppCertListUnpackFromService(const struct CmBlob *outData,
     struct CredentialList *certificateList)
 {
@@ -370,6 +424,145 @@ static int32_t CmAppCertListUnpackFromService(const struct CmBlob *outData,
             return CMR_ERROR_MEM_OPERATION_COPY;
         }
     }
+    return CM_SUCCESS;
+}
+
+static int32_t CmGetAppCertFromBuffer(struct Credential *certificateInfo, const struct CmBlob *outData,
+    uint32_t *offset)
+{
+    struct CmBlob blob;
+    int32_t ret = CmGetBlobFromBuffer(&blob, outData, offset);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get type blob failed");
+        return ret;
+    }
+    if (memcpy_s(certificateInfo->type, MAX_LEN_SUBJECT_NAME, blob.data, blob.size) != EOK) {
+        CM_LOG_E("copy type failed");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+
+    ret = CmGetBlobFromBuffer(&blob, outData, offset);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get keyUri blob failed");
+        return ret;
+    }
+    if (memcpy_s(certificateInfo->keyUri, MAX_LEN_URI, blob.data, blob.size) != EOK) {
+        CM_LOG_E("copy keyUri failed");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+
+    ret = CmGetBlobFromBuffer(&blob, outData, offset);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get alias blob failed");
+        return ret;
+    }
+    if (memcpy_s(certificateInfo->alias, MAX_LEN_CERT_ALIAS, blob.data, blob.size) != EOK) {
+        CM_LOG_E("copy alias failed");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+
+    return ret;
+}
+
+
+static int32_t CmCredentialUnpackFromService(const struct CmBlob *outData, struct Credential *certificateInfo,
+    uint32_t *offset)
+{
+    struct CmBlob blob = { 0, NULL };
+
+    int32_t ret = GetUint32FromBuffer(&certificateInfo->isExist, outData, offset);
+    if (ret != CM_SUCCESS || certificateInfo->isExist == 0) {
+        CM_LOG_E("Get certificateInfo->isExist failed ret:%d, is exist:%u", ret, certificateInfo->isExist);
+        return ret;
+    }
+
+    ret = CmGetAppCertFromBuffer(certificateInfo, outData, offset);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get AppCert failed");
+        return ret;
+    }
+
+    ret = GetUint32FromBuffer(&certificateInfo->certNum, outData, offset);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get certificateInfo->certNum failed");
+        return ret;
+    }
+
+    ret = GetUint32FromBuffer(&certificateInfo->keyNum, outData, offset);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get certificateInfo->keyNum failed");
+        return ret;
+    }
+
+    ret = CmGetBlobFromBuffer(&blob, outData, offset);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get certificateInfo->credData failed");
+        return ret;
+    }
+
+    if ((blob.size > certificateInfo->credData.size)) {
+        CM_LOG_E("size failed");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+    if (memcpy_s(certificateInfo->credData.data, certificateInfo->credData.size, blob.data, blob.size) != EOK) {
+        CM_LOG_E("copy credData failed");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+    certificateInfo->credData.size = blob.size;
+    return CM_SUCCESS;
+}
+
+static int32_t CmUkeyCertListUnpackFromService(const struct CmBlob *outData,
+    struct CredentialDetailList *certificateList)
+{
+    uint32_t offset = 0;
+    if ((outData == NULL) || (certificateList == NULL) ||
+        (outData->data == NULL) || (certificateList->credential == NULL)) {
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    int32_t ret = CmUkeyCertListGetCertCount(outData, certificateList, &offset);
+    if (ret != CM_SUCCESS) {
+        return ret;
+    }
+
+    for (uint32_t i = 0; i < certificateList->credentialCount; i++) {
+        ret = CmCredentialUnpackFromService(outData, &certificateList->credential[i], &offset);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmCredentialUnpackFromService failed");
+            return ret;
+        }
+        // get purpose
+        ret = GetUint32FromBuffer(&certificateList->credential[i].certPurpose, outData, &offset);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("Get certPurpose failed");
+            return ret;
+        }
+    }
+    return CM_SUCCESS;
+}
+
+static int32_t CmAppPermissiontUnpackFromService(const struct CmBlob *outData, bool *hasPermission, 
+    struct CmBlob *huksAlias)
+{
+    uint32_t offset = 0;
+    if ((outData == NULL) || (huksAlias == NULL) ||
+        (outData->data == NULL) || (huksAlias->data == NULL)) {
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    int32_t ret = GetBoolFromBuffer(hasPermission, outData, &offset);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get hasPermission failed");
+        return ret;
+    }
+
+    ret = CmGetBlobFromBuffer(huksAlias, outData, &offset);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get huksAlias failed");
+        return ret;
+    }
+
     return CM_SUCCESS;
 }
 
@@ -421,9 +614,62 @@ static int32_t GetAppCertList(enum CertManagerInterfaceCode type, const uint32_t
     return ret;
 }
 
+static int32_t GetAppCertListByUid(enum CertManagerInterfaceCode type, const uint32_t store,
+    uint32_t appUid, struct CredentialList *certificateList)
+{
+    int32_t ret;
+    struct CmBlob outBlob = { 0, NULL };
+    struct CmParamSet *sendParamSet = NULL;
+
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = store },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = appUid }
+    };
+
+    do {
+        ret = CmParamsToParamSet(params, CM_ARRAY_SIZE(params), &sendParamSet);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetAppCertList CmParamSetPack fail");
+            break;
+        }
+
+        struct CmBlob parcelBlob = {
+            .size = sendParamSet->paramSetSize,
+            .data = (uint8_t *)sendParamSet
+        };
+
+        ret = GetAppCertListInitBlob(&outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetAppCertListInitBlob fail");
+            break;
+        }
+
+        ret = SendRequest(type, &parcelBlob, &outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetAppCertList request fail");
+            break;
+        }
+
+        ret = CmAppCertListUnpackFromService(&outBlob, certificateList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmAppCertListUnpackFromService fail");
+            break;
+        }
+    } while (0);
+
+    CmFreeParamSet(&sendParamSet);
+    CM_FREE_BLOB(outBlob);
+    return ret;
+}
+
 int32_t CmClientGetAppCertList(const uint32_t store, struct CredentialList *certificateList)
 {
     return GetAppCertList(CM_MSG_GET_APP_CERTIFICATE_LIST, store, certificateList);
+}
+
+int32_t CmClientGetAppCertListByUid(const uint32_t store, uint32_t appUid, struct CredentialList *certificateList)
+{
+    return GetAppCertListByUid(CM_MSG_GET_APP_CERTIFICATE_LIST_BY_UID, store, appUid, certificateList);
 }
 
 int32_t CmClientGetCallingAppCertList(const uint32_t store, struct CredentialList *certificateList)
@@ -435,7 +681,8 @@ static int32_t GetAppCertInitBlob(struct CmBlob *outBlob)
 {
     uint32_t buffSize = sizeof(uint32_t) + sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME +
         sizeof(uint32_t) + MAX_LEN_CERT_ALIAS + sizeof(uint32_t) + MAX_LEN_URI +
-        sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + MAX_LEN_CERTIFICATE_CHAIN;
+        sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint32_t) + MAX_LEN_CERTIFICATE_CHAIN
+        + sizeof(uint32_t);
 
     outBlob->data = (uint8_t *)CmMalloc(buffSize);
     if (outBlob->data == NULL) {
@@ -446,89 +693,20 @@ static int32_t GetAppCertInitBlob(struct CmBlob *outBlob)
     return CM_SUCCESS;
 }
 
-static int32_t CmGetAppCertFromBuffer(struct Credential *certificateInfo,
-    const struct CmBlob *outData, uint32_t *offset)
-{
-    struct CmBlob blob;
-    int32_t ret = CmGetBlobFromBuffer(&blob, outData, offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get type blob failed");
-        return ret;
-    }
-    if (memcpy_s(certificateInfo->type, MAX_LEN_SUBJECT_NAME, blob.data, blob.size) != EOK) {
-        CM_LOG_E("copy type failed");
-        return CMR_ERROR_MEM_OPERATION_COPY;
-    }
-
-    ret = CmGetBlobFromBuffer(&blob, outData, offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get keyUri blob failed");
-        return ret;
-    }
-    if (memcpy_s(certificateInfo->keyUri, MAX_LEN_URI, blob.data, blob.size) != EOK) {
-        CM_LOG_E("copy keyUri failed");
-        return CMR_ERROR_MEM_OPERATION_COPY;
-    }
-
-    ret = CmGetBlobFromBuffer(&blob, outData, offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get alias blob failed");
-        return ret;
-    }
-    if (memcpy_s(certificateInfo->alias, MAX_LEN_CERT_ALIAS, blob.data, blob.size) != EOK) {
-        CM_LOG_E("copy alias failed");
-        return CMR_ERROR_MEM_OPERATION_COPY;
-    }
-
-    return ret;
-}
-
 static int32_t CmAppCertInfoUnpackFromService(const struct CmBlob *outData, struct Credential *certificateInfo)
 {
     uint32_t offset = 0;
-    struct CmBlob blob = { 0, NULL };
 
     if ((outData == NULL) || (certificateInfo == NULL) || (outData->data == NULL) ||
         (certificateInfo->credData.data == NULL)) {
         return CMR_ERROR_NULL_POINTER;
     }
 
-    int32_t ret = GetUint32FromBuffer(&certificateInfo->isExist, outData, &offset);
-    if (ret != CM_SUCCESS || certificateInfo->isExist == 0) {
-        CM_LOG_E("Get certificateInfo->isExist failed ret:%d, is exist:%u", ret, certificateInfo->isExist);
-        return ret;
-    }
-
-    ret = CmGetAppCertFromBuffer(certificateInfo, outData, &offset);
+    int32_t ret = CmCredentialUnpackFromService(outData, certificateInfo, &offset);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get AppCert failed");
+        CM_LOG_E("CmCredentialUnpackFromService failed");
         return ret;
     }
-
-    ret = GetUint32FromBuffer(&certificateInfo->certNum, outData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get certificateInfo->certNum failed");
-        return ret;
-    }
-
-    ret = GetUint32FromBuffer(&certificateInfo->keyNum, outData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get certificateInfo->keyNum failed");
-        return ret;
-    }
-
-    ret = CmGetBlobFromBuffer(&blob, outData, &offset);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get certificateInfo->credData failed");
-        return ret;
-    }
-
-    if ((blob.size > certificateInfo->credData.size) || memcpy_s(certificateInfo->credData.data,
-        certificateInfo->credData.size, blob.data, blob.size) != EOK) {
-        CM_LOG_E("copy credData failed");
-        return CMR_ERROR_MEM_OPERATION_COPY;
-    }
-    certificateInfo->credData.size = blob.size;
 
     return CM_SUCCESS;
 }
@@ -1057,4 +1235,147 @@ int32_t CmClientInstallSystemAppCert(const struct CmAppCertParam *certParam, str
         DEFAULT_FORMAT
     };
     return CmClientInstallAppCert(&certParamEx, keyUri);
+}
+
+int32_t CmClientGetUkeyCertList(const struct CmBlob *ukeyProvider, const struct UkeyInfo *ukeyInfo, 
+    struct CredentialDetailList *certificateList)
+{
+    int32_t ret;
+    struct CmBlob outBlob = { 0, NULL };
+    struct CmParamSet *sendParamSet = NULL;
+    uint32_t certPurpose = ukeyInfo->certPurpose;
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *ukeyProvider },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = certPurpose },
+    };
+
+    do {
+        ret = CmParamsToParamSet(params, CM_ARRAY_SIZE(params), &sendParamSet);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetUkeyCertList CmParamSetPack fail");
+            break;
+        }
+
+        struct CmBlob parcelBlob = {
+            .size = sendParamSet->paramSetSize,
+            .data = (uint8_t *)sendParamSet
+        };
+
+        ret = GetUkeyCertListInitOutData(&outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetCertListInitOutData fail");
+            break;
+        }
+
+        ret = SendRequest(CM_MSG_GET_UKEY_CERTIFICATE_LIST, &parcelBlob, &outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmClientGetUkeyCertList request fail");
+            break;
+        }
+
+        ret = CmUkeyCertListUnpackFromService(&outBlob, certificateList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmUkeyCertListUnpackFromService fail");
+            break;
+        }
+    } while (0);
+
+    CmFreeParamSet(&sendParamSet);
+    CM_FREE_BLOB(outBlob);
+    return ret;
+}
+
+int32_t CmClientGetUkeyCert(const struct CmBlob *ukeyCertIndex, const struct UkeyInfo *ukeyInfo,
+    struct CredentialDetailList *certificateList)
+{
+    int32_t ret;
+    struct CmBlob outBlob = { 0, NULL };
+    struct CmParamSet *sendParamSet = NULL;
+    uint32_t certPurpose = ukeyInfo->certPurpose;
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *ukeyCertIndex },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = certPurpose },
+    };
+
+    do {
+        ret = CmParamsToParamSet(params, CM_ARRAY_SIZE(params), &sendParamSet);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetUkeyCert CmParamSetPack fail");
+            break;
+        }
+
+        struct CmBlob parcelBlob = {
+            .size = sendParamSet->paramSetSize,
+            .data = (uint8_t *)sendParamSet
+        };
+
+        ret = GetUkeyCertListInitOutData(&outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("GetUkeyCertListInitOutData fail");
+            break;
+        }
+
+        ret = SendRequest(CM_MSG_GET_UKEY_CERTIFICATE, &parcelBlob, &outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmClientGetUkeyCert request fail");
+            break;
+        }
+
+        ret = CmUkeyCertListUnpackFromService(&outBlob, certificateList);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmUkeyCertListUnpackFromService fail");
+            break;
+        }
+    } while (0);
+
+    CmFreeParamSet(&sendParamSet);
+    CM_FREE_BLOB(outBlob);
+    return ret;
+}
+
+int32_t CmClientCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid, bool *hasPermission,
+    struct CmBlob *huksAlias)
+{
+    int32_t ret;
+    struct CmBlob outBlob = { 0, NULL };
+    struct CmParamSet *sendParamSet = NULL;
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *keyUri },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = appUid },
+    };
+
+    do {
+        ret = CmParamsToParamSet(params, CM_ARRAY_SIZE(params), &sendParamSet);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CheckAppPermission CmParamSetPack fail");
+            break;
+        }
+
+        struct CmBlob parcelBlob = {
+            .size = sendParamSet->paramSetSize,
+            .data = (uint8_t *)sendParamSet
+        };
+
+        ret = CheckAppPermissionInitOutData(&outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CheckAppPermissionInitOutData fail");
+            break;
+        }
+
+        ret = SendRequest(CM_MSG_CHECK_APP_PERMISSION, &parcelBlob, &outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmClientGetUkeyCert request fail");
+            break;
+        }
+
+        ret = CmAppPermissiontUnpackFromService(&outBlob, hasPermission, huksAlias);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmAppPermissiontUnpackFromService fail");
+            break;
+        }
+    } while (0);
+
+    CmFreeParamSet(&sendParamSet);
+    CM_FREE_BLOB(outBlob);
+    return ret;
 }

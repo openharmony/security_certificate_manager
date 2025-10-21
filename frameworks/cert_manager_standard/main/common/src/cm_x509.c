@@ -252,7 +252,7 @@ static int32_t GetX509IssueName(const X509 *x509cert, const char *issuerObjName,
     return ToStringName(X509_get_issuer_name, x509cert, issuerObjName, outBuf, outBufMaxSize);
 }
 
-static int32_t GetX509FirstSubjectName(const X509 *x509cert, struct CmBlob *displayName)
+int32_t GetX509FirstSubjectName(const X509 *x509cert, struct CmBlob *displayName)
 {
     char *outBuf = (char *)displayName->data;
     const char *subjectNameList[] = {CM_COMMON_NAME, CM_ORGANIZATION_UNIT_NAME, CM_ORGANIZATION_NAME};

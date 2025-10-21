@@ -17,7 +17,7 @@
 
 #include "cm_log.h"
 #include "cm_napi_dialog_common.h"
-#include "cm_napi_open_certificate_operation.h"
+#include "cm_napi_dialog_callback_string.h"
 
 #include "securec.h"
 #include "syspara/parameters.h"
@@ -135,7 +135,7 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
     }
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
 
-    auto uiExtCallback = std::make_shared<CmOperationUIExtensionCallback>(asyncContext);
+    auto uiExtCallback = std::make_shared<CmUIExtensionStringCallback>(asyncContext);
     StartUIExtensionAbility(asyncContext, CMGetInstallCertWant(asyncContext), uiExtCallback);
     CM_LOG_I("cert install dialog end");
     return result;

@@ -26,6 +26,7 @@
 #include "cert_manager.h"
 #include "cert_manager_app_cert_process.h"
 #include "cert_manager_auth_mgr.h"
+#include "cert_manager_crypto_operation.h"
 #include "cert_manager_check.h"
 #include "cert_manager_key_operation.h"
 #include "cert_manager_mem.h"
@@ -1276,6 +1277,62 @@ int32_t CmSetStatusBackupCert(
         }
     }
 
+    return ret;
+}
+
+static int32_t GetHksAlias(const struct CmBlob *alias, struct CmBlob *huksAlias)
+{
+    int32_t ret = CM_SUCCESS;
+    huksAlias->data = alias->data;
+    huksAlias->size = alias->size;
+    uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
+    struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
+    if (huksAlias->size > MAX_LEN_MAC_KEY) {
+        ret = GetNameEncode(huksAlias, &encodeTarget);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("base64urlsha256 failed");
+            return ret;
+        }
+        huksAlias->data = encodeTarget.data;
+        huksAlias->size = encodeTarget.size;
+    }
+    return ret;
+}
+
+int32_t CmServiceCheckAppPermission(const struct CmContext *context, const struct CmBlob *keyUri,
+    bool *hasPermission, struct CmBlob *huksAlias)
+{
+    if (CheckUri(keyUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments uri");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
+    if (CmCheckBlob(huksAlias) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments huksAlias");
+        return CMR_ERROR_INVALID_ARGUMENT_HANDLE;
+    }
+    uint32_t store = CM_CREDENTIAL_STORE;
+    int32_t ret = CheckAndGetStore(context, keyUri, &store);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("check and get store error");
+        return ret;
+    }
+
+    struct CmBlob commonUri = { 0, NULL };
+    ret = CmCheckAndGetCommonUri(context, store, keyUri, &commonUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("check and get common uri failed, ret = %d", ret);
+        return ret;
+    }
+    *hasPermission = true;
+
+    ret = GetHksAlias(&commonUri, huksAlias);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get huksAlias failed, ret = %d", ret);
+        CM_FREE_PTR(commonUri.data);
+        return ret;
+    }
+    CM_FREE_PTR(commonUri.data);
     return ret;
 }
 // LCOV_EXCL_STOP

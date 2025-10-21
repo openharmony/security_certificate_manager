@@ -46,6 +46,15 @@ int32_t CmRemoveAllAppCert(const struct CmContext *context);
 int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store, struct CmBlob *fileNames,
     const uint32_t fileSize, uint32_t *fileCount);
 
+int32_t CmServiceGetAppCertListByUid(const struct CmContext *context, uint32_t store, struct CmBlob *fileNames,
+    const uint32_t fileSize, uint32_t *fileCount);
+
+int32_t CmServiceGetUkeyCertList(const struct CmBlob *ukeyProvider, uint32_t certPurpose, uint32_t paramsCount,
+    struct CmBlob *certificateList);
+
+int32_t CmServiceGetUkeyCert(const struct CmBlob *ukeyCertIndex, uint32_t certPurpose, uint32_t paramsCount,
+    struct CmBlob *certificateList);
+
 int32_t CmServiceGetCallingAppCertList(const struct CmContext *context, uint32_t store, struct CmBlob *fileNames,
     const uint32_t fileSize, uint32_t *fileCount);
 

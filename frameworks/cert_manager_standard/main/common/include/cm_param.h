@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-enum CmTagType GetTagType(enum CmTag tag);
+enum CmTagType CmGetTagType(enum CmTag tag);
 
 int32_t CmInitParamSet(struct CmParamSet **paramSet);
 

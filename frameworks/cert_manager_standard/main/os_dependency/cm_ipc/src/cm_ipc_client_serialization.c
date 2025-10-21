@@ -35,6 +35,20 @@ int32_t GetUint32FromBuffer(uint32_t *value, const struct CmBlob *srcBlob, uint3
     return CM_SUCCESS;
 }
 
+int32_t GetBoolFromBuffer(bool *value, const struct CmBlob *srcBlob, uint32_t *srcOffset)
+{
+    if ((*srcOffset > srcBlob->size) || (srcBlob->size - *srcOffset < sizeof(bool))) {
+        return CMR_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    if (memcpy_s(value, sizeof(bool), srcBlob->data + *srcOffset, sizeof(bool)) != EOK) {
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+
+    *srcOffset += sizeof(bool);
+    return CM_SUCCESS;
+}
+
 int32_t CmGetBlobFromBuffer(struct CmBlob *blob, const struct CmBlob *srcBlob, uint32_t *srcOffset)
 {
     if ((*srcOffset > srcBlob->size) || ((srcBlob->size - *srcOffset) < sizeof(uint32_t))) {
@@ -254,7 +268,7 @@ int32_t CmParamsToParamSet(struct CmParam *params, uint32_t cnt, struct CmParamS
         uint8_t tmpData = 0;
         struct CmBlob tmpBlob = { sizeof(tmpData), &tmpData };
         for (uint32_t i = 0; i < cnt; ++i) {
-            if ((GetTagType(params[i].tag) == CM_TAG_TYPE_BYTES) &&
+            if ((CmGetTagType(params[i].tag) == CM_TAG_TYPE_BYTES) &&
                 (params[i].blob.size == 0 || params[i].blob.data == NULL)) {
                 params[i].tag += CM_PARAM_BUFFER_NULL_INTERVAL;
                 params[i].blob = tmpBlob;

@@ -13,29 +13,21 @@
  * limitations under the License.
  */
 
-#ifndef CM_NAPI_OPEN_CERTIFICATE_OPERATION_H
-#define CM_NAPI_OPEN_CERTIFICATE_OPERATION_H
+#ifndef CM_NAPI_DIALOG_CALLBACK_INTBOOL_H
+#define CM_NAPI_DIALOG_CALLBACK_INTBOOL_H
 
-#include "cm_napi_open_dialog.h"
+#include "cm_napi_dialog_callback.h"
 
 namespace CMNapi {
-class CmOperationUIExtensionCallback : public CmUIExtensionCallback {
+class CmUIExtensionIntBoolCallback : public CmUIExtensionCallback {
 public:
-    explicit CmOperationUIExtensionCallback(std::shared_ptr<CmUIExtensionRequestContext>& reqContext);
-    ~CmOperationUIExtensionCallback() override;
-    void OnRelease(const int32_t releaseCode) override;
-    void OnResult(const int32_t resultCode, const OHOS::AAFwk::Want& result) override;
+    explicit CmUIExtensionIntBoolCallback(std::shared_ptr<CmUIExtensionRequestContext>& reqContext);
+    ~CmUIExtensionIntBoolCallback();
+
+    void OnDestroy() override;
     void OnReceive(const OHOS::AAFwk::WantParams& request) override;
     void ProcessCallback(napi_env env, const CommonAsyncContext* asyncContext) override;
-    void OnDestroy() override;
-
-private:
-    bool SetErrorCode(int32_t errCode);
-    int32_t resultCode_ = 0;
-    OHOS::AAFwk::Want resultWant_;
-    std::shared_ptr<CmUIExtensionRequestContext> reqContext_ = nullptr;
-    bool alreadyCallback_ = false;
 };
 } // namespace CMNapi
 
-#endif  // CM_NAPI_OPEN_CERTIFICATE_OPERATION_H
+#endif  // CM_NAPI_DIALOG_CALLBACK_INTBOOL_H

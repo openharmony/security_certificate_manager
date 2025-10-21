@@ -66,6 +66,7 @@ static const std::string SA_INTERNAL_ERROR_MSG = "sa internal error.";
 static const std::string NOT_EXIST_MSG = "the certificate dose not exist.";
 static const std::string NOT_ENTERPRISE_DEVICE_MSG = "The operation does not comply with the device security policy,"
     "such as the device does not allow users to manage the ca certificate of the global user.";
+static const std::string CAPABILITY_NOT_SUPPORTED_MSG = "the capability not supported.";
 
 static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
     // no permission
@@ -80,6 +81,8 @@ static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
     { CMR_DIALOG_ERROR_NOT_SUPPORTED, DIALOG_ERROR_NOT_SUPPORTED },
     // The input parameter is invalid
     { CMR_DIALOG_ERROR_PARAM_INVALID, PARAM_ERROR },
+    // The device is not supported
+    { CMR_DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED},
 
     { CMR_DIALOG_ERROR_PARSE_CERT_FAILED, DIALOG_ERROR_INSTALL_FAILED },
     { CMR_DIALOG_ERROR_ADVANCED_SECURITY, DIALOG_ERROR_INSTALL_FAILED },
@@ -98,6 +101,7 @@ static const std::unordered_map<int32_t, std::string> DIALOG_CODE_TO_MSG_MAP = {
     { CMR_DIALOG_ERROR_NOT_SUPPORTED, DIALOG_NOT_SUPPORTED_MSG },
     { CMR_DIALOG_ERROR_NOT_ENTERPRISE_DEVICE, NOT_ENTERPRISE_DEVICE_MSG },
     { CMR_DIALOG_ERROR_PARAM_INVALID, DIALOG_INVALID_PARAMS_MSG },
+    { CMR_DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED, CAPABILITY_NOT_SUPPORTED_MSG},
 
     { CMR_DIALOG_ERROR_PARSE_CERT_FAILED, DIALOG_OPERATION_FAILED_MSG + PARSE_CERT_FAILED_MSG },
     { CMR_DIALOG_ERROR_ADVANCED_SECURITY, DIALOG_OPERATION_FAILED_MSG + ADVANCED_SECURITY_MSG },
@@ -240,7 +244,10 @@ napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store)
         return nullptr;
     }
     uint32_t temp = 0;
-    napi_get_value_uint32(env, object, &temp);
+    if (napi_get_value_uint32(env, object, &temp) != napi_ok) {
+        CM_LOG_E("failed to get uint value");
+        return nullptr;
+    }
     store = temp;
     return GetInt32(env, 0);
 }
@@ -254,7 +261,10 @@ napi_value ParseBoolean(napi_env env, napi_value object, bool &status)
         return nullptr;
     }
     bool temp = false;
-    napi_get_value_bool(env, object, &temp);
+    if (napi_get_value_bool(env, object, &temp) != napi_ok) {
+        CM_LOG_E("failed to get bool value");
+        return nullptr;
+    }
     status = temp;
     return GetInt32(env, 0);
 }
@@ -352,6 +362,41 @@ napi_value GetUint8ArrayToBase64Str(napi_env env, napi_value object, std::string
     std::string encode = EncodeBase64(data, length);
     certArray = encode;
     CmFree(data);
+    return GetInt32(env, 0);
+}
+
+napi_value GetCertTypeArray(napi_env env, napi_value object, std::vector<int32_t> &certTypes)
+{
+    bool isArray = false;
+    napi_status status = napi_is_array(env, object, &isArray);
+    if ((status != napi_ok) || (!isArray)) {
+        CM_LOG_E("object is not array");
+        return nullptr;
+    }
+    uint32_t length = 0;
+    status = napi_get_array_length(env, object, &length);
+    if (status != napi_ok || length == 0) {
+        CM_LOG_E("failed to get length");
+        return nullptr;
+    }
+
+    for (uint32_t i = 0; i < length; ++i) {
+        napi_value element = nullptr;
+        if (napi_get_element(env, object, i, &element) != napi_ok) {
+            CM_LOG_E("failed to get %u-th element", i);
+            return nullptr;
+        }
+        uint32_t certType = 0;
+        if (ParseUint32(env, element, certType)== nullptr) {
+            return nullptr;
+        }
+        
+        if (certType < CA_CERT || certType > CREDENTIAL_UKEY) {
+            CM_LOG_E("certtype is invalid");
+            return nullptr;
+        }
+        certTypes.push_back(static_cast<int32_t>(certType));
+    }
     return GetInt32(env, 0);
 }
 
@@ -479,5 +524,4 @@ int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncCon
     }
     return CM_SUCCESS;
 }
-
 }  // namespace CertManagerNapi

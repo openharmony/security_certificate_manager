@@ -55,6 +55,7 @@ ohos_static_library("cert_manager_engine_core_standard") {
     "src/cert_manager_session_mgr.c",
     "src/cert_manager_status.c",
     "src/cert_manager_storage.c",
+    "src/cert_manager_ukey_operation.c",
     "src/cert_manager_updateflag.c",
     "src/cert_manager_uri.c",
     "src/cm_event_process.c",
