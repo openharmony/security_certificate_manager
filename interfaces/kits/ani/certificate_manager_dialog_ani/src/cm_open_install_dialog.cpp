@@ -59,7 +59,7 @@ int32_t CmOpenInstallDialog::GetParamsFromEnv()
         CM_LOG_E("get certScope value failed.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    this->certScope = static_cast<CertificateScope>(aniCertType);
+    this->certScope = static_cast<CertificateScope>(aniCertScope);
 
     int32_t ret = AniUtils::ParseString(env, this->aniCert, this->cert);
     if (ret != CM_SUCCESS) {
@@ -80,10 +80,10 @@ int32_t CmOpenInstallDialog::InvokeAsyncWork()
     CM_LOG_D("InvokeAsyncWork start");
     std::string certStr(reinterpret_cast<char *>(this->cert.data), this->cert.size);
 
-    std::string lableName = "";
-    int32_t ret = GetCallerLabelName(this->abilityContext, lableName);
+    std::string labelName = "";
+    int32_t ret = GetCallerLabelName(this->abilityContext, labelName);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("get caller lableName failed, ret = %d", ret);
+        CM_LOG_E("get caller labelName failed, ret = %d", ret);
         return ret;
     }
 
@@ -92,7 +92,7 @@ int32_t CmOpenInstallDialog::InvokeAsyncWork()
     want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(this->pageType));
     want.SetParam(CERT_MANAGER_CERTIFICATE_DATA, certStr);
     want.SetParam(CERT_MANAGER_CERTSCOPE_TYPE, static_cast<int32_t>(this->certScope));
-    want.SetParam(CERT_MANAGER_CALLER_BUNDLENAME, lableName);
+    want.SetParam(CERT_MANAGER_CALLER_BUNDLENAME, labelName);
     want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
     want.SetParam(CERT_MANAGER_OPERATION_TYPE, static_cast<int32_t>(DIALOG_OPERATION_INSTALL));
 

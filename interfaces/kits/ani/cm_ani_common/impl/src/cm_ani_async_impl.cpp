@@ -26,7 +26,6 @@ CertManagerAsyncImpl::CertManagerAsyncImpl(ani_env *env, ani_object aniContext,
     ani_object callback) : CertManagerAniImpl(env)
 {
     this->env = env;
-    env->GetVM(&this->vm);
     this->callback = callback;
     this->aniContext = aniContext;
 }
@@ -40,25 +39,14 @@ int32_t CertManagerAsyncImpl::Init()
 
 int32_t CertManagerAsyncImpl::GetParamsFromEnv()
 {
-    ani_env *vmEnv = GetEnv(this->vm);
-    if (vmEnv == nullptr) {
-        CM_LOG_E("get env failed.");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (vmEnv->GlobalReference_Create(reinterpret_cast<ani_ref>(this->callback), &this->globalCallback) != ANI_OK) {
-        CM_LOG_E("failed to create global callback.");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-
     ani_boolean stageMode = false;
-    ani_status status = IsStageContext(vmEnv, this->aniContext, stageMode);
+    ani_status status = IsStageContext(env, this->aniContext, stageMode);
     if (status != ANI_OK || !stageMode) {
         CM_LOG_E("check not stage mode.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    auto context = GetStageModeContext(vmEnv, this->aniContext);
+    auto context = GetStageModeContext(env, this->aniContext);
     if (context == nullptr) {
         CM_LOG_E("get stageMode context failed.");
         return CMR_ERROR_INVALID_ARGUMENT;
@@ -67,6 +55,12 @@ int32_t CertManagerAsyncImpl::GetParamsFromEnv()
     this->abilityContext = Context::ConvertTo<AbilityContext>(context);
     if (this->abilityContext == nullptr) {
         CM_LOG_E("convert context to abilityContext failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    status = env->GlobalReference_Create(reinterpret_cast<ani_ref>(this->callback), &this->globalCallback);
+    if (status != ANI_OK) {
+        CM_LOG_E("failed to create global callback.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     return CM_SUCCESS;
@@ -79,7 +73,13 @@ int32_t CertManagerAsyncImpl::InvokeAsyncWork()
 
 int32_t CertManagerAsyncImpl::InvokeInnerApi()
 {
-    return this->InvokeAsyncWork();
+    int32_t ret = this->InvokeAsyncWork();
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("failed to InvokeAsyncWork. ret = %d", ret);
+        env->GlobalReference_Delete(this->globalCallback);
+        return ret;
+    }
+    return CM_SUCCESS;
 }
 
 ani_object CertManagerAsyncImpl::GenerateResult()

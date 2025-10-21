@@ -73,17 +73,17 @@ int32_t CmOpenUninstallDialog::InvokeAsyncWork()
     CM_LOG_D("InvokeAsyncWork start");
     std::string uriStr(reinterpret_cast<char *>(this->certUri.data), this->certUri.size);
 
-    std::string lableName = "";
-    int32_t ret = GetCallerLabelName(this->abilityContext, lableName);
+    std::string labelName = "";
+    int32_t ret = GetCallerLabelName(this->abilityContext, labelName);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("get caller lableName failed, ret = %d", ret);
+        CM_LOG_E("get caller labelName failed, ret = %d", ret);
         return ret;
     }
 
     OHOS::AAFwk::Want want;
     want.SetElementName(CERT_MANAGER_BUNDLENAME, CERT_MANAGER_ABILITYNAME);
     want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(this->pageType));
-    want.SetParam(CERT_MANAGER_CALLER_BUNDLENAME, lableName);
+    want.SetParam(CERT_MANAGER_CALLER_BUNDLENAME, labelName);
     want.SetParam(CERT_MANAGER_CERT_URI, uriStr);
     want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
     want.SetParam(CERT_MANAGER_OPERATION_TYPE, DIALOG_OPERATION_UNINSTALL);

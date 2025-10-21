@@ -297,7 +297,9 @@ export namespace certificateManager {
       if (nativeResult.code === 0) {
         resolve(result);
       } else {
-        let error: BusinessError = { code: nativeResult.code, message: nativeResult.message };
+        let error = new BusinessError();
+        error.code = nativeResult.code;
+        error.message = nativeResult.message;
         reject(error);
       }
     })

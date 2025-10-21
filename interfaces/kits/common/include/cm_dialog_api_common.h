@@ -98,6 +98,6 @@ static const std::unordered_map<int32_t, std::string> DIALOG_CODE_TO_MSG_MAP = {
 };
 
 int32_t GetCallerLabelName(std::shared_ptr<OHOS::AbilityRuntime::AbilityContext> abilityContext,
-    std::string &lableName);
+    std::string &labelName);
 }  // namespace
 #endif

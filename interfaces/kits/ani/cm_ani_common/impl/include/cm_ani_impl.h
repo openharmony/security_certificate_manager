@@ -25,6 +25,7 @@ public:
     ani_env *env = nullptr;
     int32_t resultCode = 0;
     ani_object result = nullptr;
+
 public:
     CertManagerAniImpl(ani_env *env);
     virtual ~CertManagerAniImpl();

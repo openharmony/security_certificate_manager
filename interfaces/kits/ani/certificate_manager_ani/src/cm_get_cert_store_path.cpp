@@ -115,12 +115,11 @@ int32_t CmGetCertStorePathImpl::GetSysCaStorePath()
     if (this->certAlg == CM_ALG_INTERNATIONAL) {
         path = CA_STORE_PATH_SYSTEM;
         return CM_SUCCESS;
-    }
-    if (!IsDirExist(SYSTEM_CA_STORE_GM)) {
-        CM_LOG_E("system gm ca store path not exist");
-        return CMR_ERROR_STORE_PATH_NOT_SUPPORTED;
-    } else {
+    } else if (this->certAlg == CM_ALG_SM && IsDirExist(SYSTEM_CA_STORE_GM)) {
         path = CA_STORE_PATH_SYSTEM_SM;
+    } else {
+        CM_LOG_E("not support, certAlg: %u", this->certAlg);
+        return CMR_ERROR_STORE_PATH_NOT_SUPPORTED;
     }
     return CM_SUCCESS;
 }
