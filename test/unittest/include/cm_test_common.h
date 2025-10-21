@@ -59,6 +59,7 @@ private:
 class MockHapToken {
 public:
     explicit MockHapToken();
+    explicit MockHapToken(const std::vector<std::string> permissionList);
     ~MockHapToken();
 private:
     uint64_t selfToken_;
@@ -78,6 +79,7 @@ public:
     static int32_t DeleteTestHapToken(AccessTokenID tokenID);
     static AccessTokenID GetNativeTokenIdFromProcess(const std::string& process);
     static AccessTokenIDEx SetupHapAndAllocateToken();
+    static AccessTokenIDEx SetupHapAndAllocateToken(const std::vector<std::string> permissionList);
 };
 
 void FreeCMBlobData(struct CmBlob *blob);
