@@ -33,7 +33,7 @@ static OHOS::AAFwk::Want CMGetAuthCertWant(std::shared_ptr<CmUIExtensionRequestC
     if (!asyncContext->certTypes.empty()) {
         want.SetParam(CERT_MANAGER_CERT_TYPES, asyncContext->certTypes);
     }
-    if (asyncContext->certPurpose != 0 && asyncContext->certPurpose != CREDENTIAL_MAX_TYPE) {
+    if (asyncContext->certPurpose != 0 && asyncContext->certPurpose != CREDENTIAL_INVLAID_TYPE) {
         want.SetParam(CERT_MANAGER_CERT_PURPOSE, static_cast<int32_t>(asyncContext->certPurpose));
     }
     return want;
@@ -75,7 +75,7 @@ static int32_t GetCertPurpose(napi_env env, napi_value arg, uint32_t &certPurpos
         return CM_FAILURE;
     }
     if (!hasProperty) {
-        certPurpose = CREDENTIAL_MAX_TYPE;
+        certPurpose = CREDENTIAL_INVLAID_TYPE;
         return CM_SUCCESS;
     }
 
