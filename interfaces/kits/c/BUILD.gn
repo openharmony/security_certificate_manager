@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
 
 config("cm_config") {
@@ -42,8 +43,8 @@ ohos_shared_library("cm_ndk") {
   ]
 
   deps = [
-    "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
-    "//base/security/certificate_manager/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
+    "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
   ]
 
   external_deps = [

@@ -56,25 +56,6 @@ void DeleteGetAppCertListByUidAsyncContext(napi_env env, GetAppCertListByUidAsyn
     context = nullptr;
 }
 
-static napi_value ParseString2Uint32(napi_env env, napi_value object, uint32_t &value)
-{
-    struct CmBlob *blob = nullptr;
-    napi_value result = ParseString(env, object, blob);
-    if (result == nullptr ||
-        CmIsNumeric(reinterpret_cast<char *>(blob->data), static_cast<size_t>(blob->size), &value) != CM_SUCCESS) {
-        CM_LOG_E("parse string to uint32 failed");
-        if (blob != nullptr) {
-            CM_FREE_PTR(blob->data);
-            CmFree(blob);
-        }
-        return nullptr;
-    }
-
-    CM_FREE_PTR(blob->data);
-    CM_FREE_PTR(blob);
-    return GetInt32(env, 0);
-}
-
 napi_value GetAppCertListByUidParseParams(
     napi_env env, napi_callback_info info, GetAppCertListByUidAsyncContext context)
 {
@@ -89,9 +70,9 @@ napi_value GetAppCertListByUidParseParams(
     }
     
     size_t index = 0;
-    napi_value result = ParseString2Uint32(env, argv[index], context->appUid);
+    napi_value result = ParseUint32(env, argv[index], context->appUid);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "appUid is not a string or the length is 0 or too long.");
+        ThrowError(env, PARAM_ERROR, "parse appUid failed.");
         CM_LOG_E("could not get key appUid");
         return nullptr;
     }

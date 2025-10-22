@@ -111,18 +111,22 @@ static int32_t BuildCmBlobToHuksParams(const struct CmBlob *cmParam, uint32_t ce
     uint32_t paramsCount, struct HksBlob *hksParam, struct HksParamSet **paramSetIn)
 {
     CM_LOG_I("enter CopyCmBlobToHuksBlob");
-    hksParam->data = (uint8_t *)CmMalloc(cmParam->size);
-    if (hksParam->data == NULL) {
-        CM_LOG_E("malloc buffer failed!");
-        return CMR_ERROR_MALLOC_FAIL;
+    if (cmParam == NULL) {
+        CM_LOG_E("cmParam is NULL");
+        return CMR_ERROR_NULL_POINTER;
     }
-    hksParam->size = cmParam->size;
-
-    if (memcpy_s(hksParam->data, cmParam->size, cmParam->data, cmParam->size) != EOK) {
-        CM_LOG_E("copy hksParam failed!");
-        return CMR_ERROR_MEM_OPERATION_COPY;
+    if (cmParam->size != 0) {
+        hksParam->data = (uint8_t *)CmMalloc(cmParam->size);
+        if (hksParam->data == NULL) {
+            CM_LOG_E("malloc buffer failed!");
+            return CMR_ERROR_MALLOC_FAIL;
+        }
+        hksParam->size = cmParam->size;
+        if (memcpy_s(hksParam->data, cmParam->size, cmParam->data, cmParam->size) != EOK) {
+            CM_LOG_E("copy hksParam failed!");
+            return CMR_ERROR_MEM_OPERATION_COPY;
+        }
     }
-
     int32_t ret = ParseParamsToHuksParamSet(certPurpose, paramSetIn, paramsCount);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("ParseParamsToHuksParamSet failed, ret = %d", ret);

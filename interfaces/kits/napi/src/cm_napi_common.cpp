@@ -403,7 +403,6 @@ napi_value GenerateCredentialAbstractArray(napi_env env,
     return array;
 }
 
-
 napi_value GenerateCredentialArray(napi_env env,
     const struct Credential *credential, const uint32_t credentialCount)
 {
