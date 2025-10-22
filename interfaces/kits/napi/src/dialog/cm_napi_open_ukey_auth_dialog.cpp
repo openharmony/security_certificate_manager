@@ -38,7 +38,8 @@ static OHOS::AAFwk::Want CMGetAuthCertWant(std::shared_ptr<CmUIExtensionRequestC
 static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
 {
     bool hasProperty = false;
-    napi_status status = napi_has_named_property(asyncContext->env, arg, CERT_MANAGER_CERT_UKEY_INDEX.c_str(), &hasProperty);
+    napi_status status = napi_has_named_property(asyncContext->env, arg, CERT_MANAGER_CERT_UKEY_INDEX.c_str(),
+        &hasProperty);
     if (status != napi_ok || !hasProperty) {
         CM_LOG_E("Failed to check ukeyCertIndex");
         return nullptr;
@@ -78,7 +79,7 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
     if (argc != PARAM_SIZE_TWO) {
         CM_LOG_E("params number mismatch");
-        std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_ONE)
+        std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_TWO)
             + ", given " + std::to_string(argc);
         ThrowError(env, PARAM_ERROR, errMsg);
         return result;

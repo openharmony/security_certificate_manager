@@ -298,6 +298,11 @@ enum CmCertificatePurpose {
     CM_CERT_PURPOSE_ENCRYPT = 3,
 };
 
+enum CmPermissionState {
+    CM_PERMISSION_DENIED = 0,
+    CM_PERMISSION_GRANTED = 1,
+};
+
 #define CM_PARAM_BUFFER_NULL_INTERVAL ((CM_TAG_PARAM0_NULL) - (CM_TAG_PARAM0_BUFFER))
 
 enum CmSendType {

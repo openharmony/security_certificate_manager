@@ -45,6 +45,7 @@
 #include "cert_manager_file_operator.h"
 #include "cert_manager_updateflag.h"
 #define MAX_PATH_LEN 256
+#define PERMISSION_GRANTED 1
 
 static int32_t CheckPermission(bool needPriPermission, bool needCommonPermission)
 {
@@ -1282,25 +1283,35 @@ int32_t CmSetStatusBackupCert(
 
 static int32_t GetHksAlias(const struct CmBlob *alias, struct CmBlob *huksAlias)
 {
+    if (alias == NULL || huksAlias == NULL || alias->data == NULL) {
+        CM_LOG_E("input params invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     int32_t ret = CM_SUCCESS;
-    huksAlias->data = alias->data;
+    if (memcpy_s(huksAlias->data, huksAlias->size, alias->data, alias->size) != EOK) {
+        CM_LOG_E("memcpy_s huksAlias data failed");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
     huksAlias->size = alias->size;
     uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
-    struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
+    struct CmBlob encodeTarget = { MAX_LEN_BASE64URL_SHA256, encodeBuf };
     if (huksAlias->size > MAX_LEN_MAC_KEY) {
         ret = GetNameEncode(huksAlias, &encodeTarget);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("base64urlsha256 failed");
             return ret;
         }
-        huksAlias->data = encodeTarget.data;
+        if (memcpy_s(huksAlias->data, huksAlias->size, encodeTarget.data, encodeTarget.size) != EOK) {
+            CM_LOG_E("memcpy_s huksAlias data failed");
+            return CMR_ERROR_MEM_OPERATION_COPY;
+        }
         huksAlias->size = encodeTarget.size;
     }
     return ret;
 }
 
 int32_t CmServiceCheckAppPermission(const struct CmContext *context, const struct CmBlob *keyUri,
-    bool *hasPermission, struct CmBlob *huksAlias)
+    uint32_t *hasPermission, struct CmBlob *huksAlias)
 {
     if (CheckUri(keyUri) != CM_SUCCESS) {
         CM_LOG_E("invalid input arguments uri");
@@ -1324,7 +1335,7 @@ int32_t CmServiceCheckAppPermission(const struct CmContext *context, const struc
         CM_LOG_E("check and get common uri failed, ret = %d", ret);
         return ret;
     }
-    *hasPermission = true;
+    *hasPermission = PERMISSION_GRANTED;
 
     ret = GetHksAlias(&commonUri, huksAlias);
     if (ret != CM_SUCCESS) {

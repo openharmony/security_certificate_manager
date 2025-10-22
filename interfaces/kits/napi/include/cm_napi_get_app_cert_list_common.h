@@ -27,7 +27,6 @@ struct GetAppCertListAsyncContextT {
 
     int32_t result = 0;
     uint32_t store = 0;
-    uint32_t appUid = 0;
     struct CredentialList *credentialList = nullptr;
 };
 using GetAppCertListAsyncContext = GetAppCertListAsyncContextT *;

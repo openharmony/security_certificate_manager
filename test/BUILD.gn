@@ -24,6 +24,7 @@ ohos_unittest("cm_sdk_test") {
     "unittest/src/cm_finish_test.cpp",
     "unittest/src/cm_get_auth_list_test.cpp",
     "unittest/src/cm_get_certinfo_test.cpp",
+    "unittest/src/cm_app_cert_by_uid_test.cpp",
     "unittest/src/cm_get_certlist_test.cpp",
     "unittest/src/cm_get_ukey_cert_test.cpp",
     "unittest/src/cm_get_user_ca_cert_list.cpp",

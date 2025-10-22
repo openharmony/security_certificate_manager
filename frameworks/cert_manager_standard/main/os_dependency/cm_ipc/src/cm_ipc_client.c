@@ -542,8 +542,8 @@ static int32_t CmUkeyCertListUnpackFromService(const struct CmBlob *outData,
     return CM_SUCCESS;
 }
 
-static int32_t CmAppPermissiontUnpackFromService(const struct CmBlob *outData, bool *hasPermission, 
-    struct CmBlob *huksAlias)
+static int32_t CmAppPermissiontUnpackFromService(const struct CmBlob *outData,
+    enum CmPermissionState *hasPermission, struct CmBlob *huksAlias)
 {
     uint32_t offset = 0;
     if ((outData == NULL) || (huksAlias == NULL) ||
@@ -551,7 +551,7 @@ static int32_t CmAppPermissiontUnpackFromService(const struct CmBlob *outData, b
         return CMR_ERROR_NULL_POINTER;
     }
 
-    int32_t ret = GetBoolFromBuffer(hasPermission, outData, &offset);
+    int32_t ret = GetUint32FromBuffer(hasPermission, outData, &offset);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get hasPermission failed");
         return ret;
@@ -1333,8 +1333,8 @@ int32_t CmClientGetUkeyCert(const struct CmBlob *ukeyCertIndex, const struct Uke
     return ret;
 }
 
-int32_t CmClientCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid, bool *hasPermission,
-    struct CmBlob *huksAlias)
+int32_t CmClientCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,
+    enum CmPermissionState *hasPermission, struct CmBlob *huksAlias)
 {
     int32_t ret;
     struct CmBlob outBlob = { 0, NULL };

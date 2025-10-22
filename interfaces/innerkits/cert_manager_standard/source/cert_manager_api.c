@@ -560,7 +560,7 @@ CM_API_EXPORT int32_t CmGetUkeyCertList(const struct CmBlob *ukeyProvider, const
     struct CredentialDetailList *certificateList)
 {
     CM_LOG_I("enter get ukey cert list");
-    if (ukeyProvider == NULL || ukeyInfo == NULL) {
+    if (ukeyProvider == NULL || ukeyInfo == NULL || certificateList == NULL) {
         return CMR_ERROR_NULL_POINTER;
     }
 
@@ -573,7 +573,7 @@ CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *ukeyCertIndex, const st
     struct CredentialDetailList *certificateList)
 {
     CM_LOG_I("enter get ukey cert");
-    if (ukeyCertIndex == NULL || ukeyInfo == NULL) {
+    if (ukeyCertIndex == NULL || ukeyInfo == NULL || certificateList == NULL) {
         return CMR_ERROR_NULL_POINTER;
     }
     
@@ -582,8 +582,8 @@ CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *ukeyCertIndex, const st
     return ret;
 }
 
-CM_API_EXPORT int32_t CmCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid, bool *hasPermission,
-    struct CmBlob *huksAlias)
+CM_API_EXPORT int32_t CmCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,
+    enum CmPermissionState *hasPermission, struct CmBlob *huksAlias)
 {
     CM_LOG_I("enter check app permission");
     if (keyUri == NULL) {
@@ -591,7 +591,7 @@ CM_API_EXPORT int32_t CmCheckAppPermission(const struct CmBlob *keyUri, uint32_t
     }
 
     int32_t ret = CmClientCheckAppPermission(keyUri, appUid, hasPermission, huksAlias);
-    CM_LOG_I("leave get ukey cert, result = %d", ret);
+    CM_LOG_I("leave check app permission, result = %d", ret);
     return ret;
 }
 

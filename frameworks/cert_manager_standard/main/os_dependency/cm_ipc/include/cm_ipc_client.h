@@ -86,8 +86,8 @@ int32_t CmClientUninstallAllUserTrustedCert(void);
 
 int32_t CmClientInstallSystemAppCert(const struct CmAppCertParam *certParam, struct CmBlob *keyUri);
 
-int32_t CmClientCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid, bool *hasPermission,
-    struct CmBlob *huksAlias);
+int32_t CmClientCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,
+    enum CmPermissionState *hasPermission, struct CmBlob *huksAlias);
 
 #ifdef __cplusplus
 }

@@ -458,11 +458,11 @@ static int32_t CmServiceGetAppCertListPack(struct CmBlob *certificateList, const
     return ret;
 }
 
-static int32_t CmServiceCheckAppPermissionPack(struct CmBlob *permissionInfo, bool *hasPermission,
+static int32_t CmServiceCheckAppPermissionPack(struct CmBlob *permissionInfo, uint32_t *hasPermission,
     const struct CmBlob *huksAlias)
 {
     uint32_t offset = 0;
-    int32_t ret = CopyBoolToBuffer(*hasPermission, permissionInfo, &offset);
+    int32_t ret = CopyUint32ToBuffer(*hasPermission, permissionInfo, &offset);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Copy hasPermission failed");
         return ret;
@@ -1499,7 +1499,7 @@ void CmIpcServiceCheckAppPermission(const struct CmBlob *paramSetBlob, struct Cm
     struct CmContext cmContext = {0};
     uint32_t appUid;
     struct CmBlob keyUri = { 0, NULL };
-    bool hasPermission = false;
+    uint32_t hasPermission = 0;
     struct CmBlob huksAlias = { 0, NULL };
     struct CmParamSet *paramSet = NULL;
     struct CmParamOut params[] = {
@@ -1538,6 +1538,7 @@ void CmIpcServiceCheckAppPermission(const struct CmBlob *paramSetBlob, struct Cm
     CmReport(__func__, &cmContext, NULL, ret);
     CmSendResponse(context, ret, outData);
     CmFreeParamSet(&paramSet);
+    CM_FREE_BLOB(huksAlias);
 
     CM_LOG_I("leave: ret = %d", ret);
 }

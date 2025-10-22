@@ -115,17 +115,19 @@ static napi_value ParseUkeyInfo(napi_env env, napi_value object, GetUkeyCertAsyn
     }
     if (!hasProperty) {
         CM_LOG_E("certPurpose is undefined, set certPurpose value is default");
+        if (context->ukeyInfo == nullptr) {
+            CM_LOG_E("ukeyInfo is nullptr");
+            return nullptr;
+        }
         context->ukeyInfo->certPurpose = CM_CERT_PURPOSE_DEFAULT;
         return GetInt32(env, 0);
     }
-
     napi_value certPurposeValue = nullptr;
     status = napi_get_named_property(env, object, CM_CERT_PURPOSE.c_str(), &certPurposeValue);
     if (status != napi_ok || certPurposeValue == nullptr) {
         CM_LOG_E("Failed to get certPurpose");
         return nullptr;
     }
-    
     napi_valuetype type = napi_undefined;
     NAPI_CALL(env, napi_typeof(env, certPurposeValue, &type));
     if (type == napi_undefined) {
@@ -137,7 +139,6 @@ static napi_value ParseUkeyInfo(napi_env env, napi_value object, GetUkeyCertAsyn
         CM_LOG_E("arguments invalid, type of param digest is not number.");
         return nullptr;
     }
-
     uint32_t certPurpose = CM_CERT_PURPOSE_DEFAULT;
     if (ParseUint32(env, certPurposeValue, certPurpose) == nullptr) {
         CM_LOG_E("parse uint32 failed");
@@ -173,6 +174,10 @@ static napi_value GetUkeyCertParseParams(
     }
     ++index;
     context->ukeyInfo = static_cast<UkeyInfo *>(CmMalloc(sizeof(UkeyInfo)));
+    if (context->ukeyInfo == nullptr) {
+        CM_LOG_E("malloc ukeyInfo failed");
+        return nullptr;
+    }
     result = ParseUkeyInfo(env, argv[index], context);
     if (result == nullptr) {
         ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get ukey info.");

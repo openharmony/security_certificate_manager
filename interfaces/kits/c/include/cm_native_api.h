@@ -52,7 +52,7 @@ extern "C" {
  * @return {@link OH_CM_ErrCode#OH_CM_SUCCESS} 0 - The operation is successful.
  *         {@link OH_CM_ErrCode#OH_CM_HAS_NO_PERMISSION} 201 - Permission verification failed
  *         {@link OH_CM_ErrCode#OH_CM_CAPABILITY_NOT_SUPPORTED} 801 - Capability not supported.
- *         {@link OH_CM_ErrCode#OH_CM_PARAMETER_VALIDATION_FAILED} 1700011 - Indicates that the input paramters
+ *         {@link OH_CM_ErrCode#OH_CM_PARAMETER_VALIDATION_FAILED} 1700011 - Indicates that the input parameters
  *             validation failed. for example, the parameter format is incorrect or the value range is invalid.
  *         {@link OH_CM_ErrCode#OH_CM_INNER_FAILURE} 17500001 - Internal error. Possible causes:
  *             1. IPC communication failed. 2. Memory operation error; 3. File operation error.
@@ -85,7 +85,7 @@ int32_t OH_CertManager_GetPrivateCertificate(const OH_CM_Blob *keyUri, OH_CM_Cre
 /**
  * @brief Get the detail of user public certificate.
  *
- * @param keyUri Indicates the private certificate uri.
+ * @param keyUri Indicates the public certificate uri.
  * @param certificate Indicates the detail information of private certificate.
  * @return {@link OH_CM_ErrCode#OH_CM_SUCCESS} 0 - The operation is successful.
  *         {@link OH_CM_ErrCode#OH_CM_HAS_NO_PERMISSION} 201 - Permission verification failed

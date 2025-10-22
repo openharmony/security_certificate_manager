@@ -490,7 +490,7 @@ int32_t CmGetAliasFromSubjectName(const struct CmBlob *certData, struct CmBlob *
 
     int32_t ret = GetX509FirstSubjectName(cert, alias);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("GetX509FirstSubjextName failed, ret = %d ", ret);
+        CM_LOG_E("GetX509FirstSubjectName failed, ret = %d ", ret);
         FreeCertContext(cert);
         return CMR_ERROR_GET_CERT_SUBJECT_ITEM;
     }

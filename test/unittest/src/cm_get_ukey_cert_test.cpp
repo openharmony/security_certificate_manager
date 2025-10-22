@@ -130,7 +130,6 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestBaseTest001, TestSize.Level0)
     ret = CmGetUkeyCertList(&providerNameBlob, &ukeyInfo1, &ukeyList);
     EXPECT_EQ(ret, CM_FAILURE) << "CmGetUkeyCertList test failed, retcode:" << ret;
 
-
     uint8_t *uriBuf = static_cast<uint8_t*>(CmMalloc(sizeof(ukeyList.credential[0].alias)));
     memcpy_s(uriBuf, sizeof(ukeyList.credential[0].alias), ukeyList.credential[0].alias, sizeof(ukeyList.credential[0].alias));
     struct CmBlob retUri = { sizeof(ukeyList.credential[0].alias), uriBuf };
@@ -146,6 +145,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestBaseTest001, TestSize.Level0)
     EXPECT_EQ(ret, CM_FAILURE) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
 
     FreeUkeyCertList(&certificateList);
+    FreeUkeyCertList(&ukeyList);
 }
 
 /**
@@ -176,6 +176,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestAbnormalTest002, TestSize.Level0)
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
 
     FreeUkeyCertList(&certificateList);
+    FreeUkeyCertList(&ukeyList);
 }
 
 /**
@@ -195,7 +196,7 @@ HWTEST_F(CmGetUkeyCertTest, CmCheckAppPermissionBaseTest001, TestSize.Level0)
     int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmCheckAppPermissionBaseTest001 private install failed, retcode:" << ret;
 
-    bool hasPermission = false;
+    enum CmPermissionState hasPermission;
     uint8_t aliasBuf[MAX_LEN_CERT_ALIAS] = {0};
     struct CmBlob alias = { sizeof(aliasBuf), aliasBuf };
     ret = CmCheckAppPermission(&keyUri, 0, &hasPermission, &alias);
@@ -219,7 +220,7 @@ HWTEST_F(CmGetUkeyCertTest, CmCheckAppPermissionAbnormalTest001, TestSize.Level0
     int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmCheckAppPermissionBaseTest001 private install failed, retcode:" << ret;
 
-    bool hasPermission = false;
+    enum CmPermissionState hasPermission;
     uint8_t aliasBuf[MAX_LEN_CERT_ALIAS] = {0};
     struct CmBlob alias = { sizeof(aliasBuf), aliasBuf };
     ret = CmCheckAppPermission(&keyUri, 1, &hasPermission, &alias);

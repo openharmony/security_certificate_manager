@@ -29,12 +29,12 @@ CmUIExtensionCertIndexCallback::~CmUIExtensionCertIndexCallback()
     CM_LOG_D("~CmUIExtensionCertIndexCallback");
 }
 
-void CmUIExtensionCertIndexCallback::OnResult(const int32_t resultCode, const OHOS::AAFwk::Want& result)
+void CmUIExtensionCertIndexCallback::OnReceive(const OHOS::AAFwk::WantParams& request)
 {
-    CM_LOG_D("CmUIExtensionIntBoolCallback OnReceive()");
-    this->resultCode_ = resultCode;
-    this->resultWant_ = result;
-    if (SetErrorCode(resultCode)) {
+    CM_LOG_D("CmUIExtensionCertIndexCallback OnReceive()");
+    this->reqContext_->certificateType = static_cast<uint32_t>(request.GetIntParam("certType", 0));
+    this->reqContext_->index = request.GetStringParam("uri");
+    if (SetErrorCode(0)) {
         SendMessageBack();
     }
 }
