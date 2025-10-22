@@ -177,7 +177,7 @@ CM_API_EXPORT int32_t CmGetAppCertList(const uint32_t store, struct CredentialLi
 CM_API_EXPORT int32_t CmGetAppCertListByUid(const uint32_t store, uint32_t appUid,
     struct CredentialList *certificateList)
 {
-    CM_LOG_I("enter get app certificatelist by uid");
+    CM_LOG_D("enter get app certificatelist by uid");
     if (certificateList == NULL || CM_STORE_CHECK(store)) {
         CM_LOG_E("CmGetAppCertListByUid params is invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
@@ -559,8 +559,9 @@ CM_API_EXPORT int32_t CmGetCertStorePath(const enum CmCertType type, const uint3
 CM_API_EXPORT int32_t CmGetUkeyCertList(const struct CmBlob *ukeyProvider, const struct UkeyInfo *ukeyInfo,
     struct CredentialDetailList *certificateList)
 {
-    CM_LOG_I("enter get ukey cert list");
+    CM_LOG_D("enter get ukey cert list");
     if (ukeyProvider == NULL || ukeyInfo == NULL || certificateList == NULL) {
+        CM_LOG_E("CmGetUkeyCertList params is invalid");
         return CMR_ERROR_NULL_POINTER;
     }
 
@@ -572,8 +573,9 @@ CM_API_EXPORT int32_t CmGetUkeyCertList(const struct CmBlob *ukeyProvider, const
 CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *ukeyCertIndex, const struct UkeyInfo *ukeyInfo,
     struct CredentialDetailList *certificateList)
 {
-    CM_LOG_I("enter get ukey cert");
+    CM_LOG_D("enter get ukey cert");
     if (ukeyCertIndex == NULL || ukeyInfo == NULL || certificateList == NULL) {
+        CM_LOG_E("CmGetUkeyCert params is invalid");
         return CMR_ERROR_NULL_POINTER;
     }
     
@@ -585,8 +587,9 @@ CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *ukeyCertIndex, const st
 CM_API_EXPORT int32_t CmCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,
     enum CmPermissionState *hasPermission, struct CmBlob *huksAlias)
 {
-    CM_LOG_I("enter check app permission");
+    CM_LOG_D("enter check app permission");
     if (keyUri == NULL) {
+        CM_LOG_E("CmCheckAppPermission params is invalid");
         return CMR_ERROR_NULL_POINTER;
     }
 

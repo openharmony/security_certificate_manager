@@ -83,7 +83,7 @@ static napi_value GetUkeyCertListWriteResult(napi_env env, GetUkeyCertListAsyncC
     napi_value certificateListValue = GenerateCredentialArray(env,
         context->certificateList->credential, context->certificateList->credentialCount);
     if (certificateListValue != nullptr) {
-        napi_set_named_property(env, result, CM_RESULT_PRPPERTY_CREDENTIAL_DETAIL_LIST.c_str(), certificateListValue);
+        napi_set_named_property(env, result, CM_RESULT_PROPERTY_CREDENTIAL_DETAIL_LIST.c_str(), certificateListValue);
     } else {
         NAPI_CALL(env, napi_get_undefined(env, &result));
     }
@@ -135,7 +135,7 @@ static napi_value ParseUkeyInfo(napi_env env, napi_value object, GetUkeyCertList
         return GetInt32(env, 0);
     }
     if (type != napi_number) {
-        CM_LOG_E("arguments invalid, type of param digest is not number.");
+        CM_LOG_E("arguments invalid, type of cert purpose is not number.");
         return nullptr;
     }
     uint32_t certPurpose = CM_CERT_PURPOSE_DEFAULT;

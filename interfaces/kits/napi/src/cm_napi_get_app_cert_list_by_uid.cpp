@@ -23,14 +23,4 @@ napi_value CMNapiGetPrivateAppCertListByUid(napi_env env, napi_callback_info inf
 {
     return CMNapiGetAppCertListByUidCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
 }
-
-napi_value CMNapiGetAllPublicCertListByUid(napi_env env, napi_callback_info info)
-{
-    return nullptr; // to be used
-}
-
-napi_value CMNapiGetSystemAppCertListByUid(napi_env env, napi_callback_info info)
-{
-    return nullptr; // to be used
-}
 }  // namespace CertManagerNapi

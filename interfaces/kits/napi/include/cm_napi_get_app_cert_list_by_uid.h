@@ -23,10 +23,6 @@ namespace CMNapi {
 
 napi_value CMNapiGetPrivateAppCertListByUid(napi_env env, napi_callback_info info);
 
-napi_value CMNapiGetAllPublicCertListByUid(napi_env env, napi_callback_info info);
-
-napi_value CMNapiGetSystemAppCertListByUid(napi_env env, napi_callback_info info);
-
 }  // namespace CertManagerNapi
 
 #endif  // CM_NAPI_GET_APP_CERTIFICATE_LIST_BY_UID_H

@@ -1531,7 +1531,7 @@ void CmIpcServiceCheckAppPermission(const struct CmBlob *paramSetBlob, struct Cm
         }
         ret = CmServiceCheckAppPermissionPack(outData, &hasPermission, &huksAlias);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmServiceGetAppCertListPack pack fail, ret = %d", ret);
+            CM_LOG_E("CmIpcServiceCheckAppPermission pack fail, ret = %d", ret);
         }
     } while (0);
 

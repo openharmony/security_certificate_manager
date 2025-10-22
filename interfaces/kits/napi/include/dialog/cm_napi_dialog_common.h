@@ -68,10 +68,10 @@ enum CmDialogPageType {
 
 enum CmCertificateType {
     CA_CERT = 1,
-    CREDENTIAL_USER = 2, // 用户证书凭据
-    CREDENTIAL_APP = 3, // 应用证书凭据
-    CREDENTIAL_UKEY = 4, // UKEY证书凭据
-    CREDENTIAL_MAX_TYPE, // 无效type
+    CREDENTIAL_USER = 2, // private type
+    CREDENTIAL_APP = 3, // app type
+    CREDENTIAL_UKEY = 4, // ukey type
+    CREDENTIAL_INVLAID_TYPE, // invalid type
 };
 
 enum CertificateScope {

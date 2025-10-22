@@ -60,12 +60,13 @@ static int32_t TranformErrorCode(int32_t errorCode)
 static int32_t InitUkeyCertList(OH_CM_CredentialDetailList *certificateList)
 {
     if (certificateList == NULL) {
+        CM_LOG_E("certificateList is NULL");
         return CMR_ERROR_NULL_POINTER;
     }
     uint32_t buffSize = (MAX_COUNT_UKEY_CERTIFICATE * sizeof(OH_CM_Credential));
     certificateList->credential = (OH_CM_Credential *)CmMalloc(buffSize);
     if (certificateList->credential == NULL) {
-        CM_LOG_E("malloc file buffer failed");
+        CM_LOG_E("malloc credential buffer failed");
         return CMR_ERROR_MALLOC_FAIL;
     }
     (void)memset_s(certificateList->credential, buffSize, 0, buffSize);
@@ -73,7 +74,7 @@ static int32_t InitUkeyCertList(OH_CM_CredentialDetailList *certificateList)
     for (uint32_t i = 0; i < MAX_COUNT_UKEY_CERTIFICATE; ++i) {
         certificateList->credential[i].credData.data = (uint8_t *)CmMalloc(MAX_LEN_CERTIFICATE_CHAIN);
         if (certificateList->credential[i].credData.data == NULL) {
-            CM_LOG_E("malloc file buffer failed");
+            CM_LOG_E("malloc credData buffer failed");
             return CMR_ERROR_MALLOC_FAIL;
         }
         (void)memset_s(certificateList->credential[i].credData.data, MAX_LEN_CERTIFICATE_CHAIN,

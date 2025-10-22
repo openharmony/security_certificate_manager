@@ -173,7 +173,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestAbnormalTest002, TestSize.Level0)
     ukeyInfo2.certPurpose = CM_CERT_PURPOSE_SIGN;
 
     ret = CmGetUkeyCert(nullptr, &ukeyInfo2, &certificateList);
-    EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER) << "CmGetAppCertBaseTest002 test failed, retcode:" << ret;
 
     FreeUkeyCertList(&certificateList);
     FreeUkeyCertList(&ukeyList);

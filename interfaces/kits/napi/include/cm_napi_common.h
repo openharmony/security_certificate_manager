@@ -53,7 +53,7 @@ static const std::string CM_RESULT_PRPPERTY_CERTLIST = "certList";
 static const std::string CM_RESULT_PRPPERTY_CERTINFO = "certInfo";
 static const std::string CM_RESULT_PRPPERTY_CREDENTIAL_LIST = "credentialList";
 static const std::string CM_RESULT_PRPPERTY_CREDENTIAL = "credential";
-static const std::string CM_RESULT_PRPPERTY_CREDENTIAL_DETAIL_LIST = "credentialDetailList";
+static const std::string CM_RESULT_PROPERTY_CREDENTIAL_DETAIL_LIST = "credentialDetailList";
 
 static const std::string CM_CERT_SCOPE_STR = "certScope";
 static const std::string CM_CERT_TYPE_STR = "certType";
@@ -223,9 +223,9 @@ struct CertInfoValue {
 };
 
 enum CertificatePurpose {
-    PURPOSE_ALL = 1, // 表示所有用户证书，用于查询接口的场景
-    PURPOSE_SIGN = 2, // 签名用途的证书
-    PURPOSE_ENCRYPT = 3, // 加密用途的证书
+    PURPOSE_ALL = 1, // all user cert
+    PURPOSE_SIGN = 2, // sign cert
+    PURPOSE_ENCRYPT = 3, // encrypt cert
 };
 }  // namespace CertManagerNapi
 

@@ -39,7 +39,7 @@ static int32_t CmSendParcelInit(struct CmParam *params, uint32_t paramCount,
 
 static int32_t GetCertListInitOutData(struct CmBlob *outListBlob)
 {
-    /* buff struct: certCount + MAX_CERT_COUNT * (subjectBlob + uriBlob + aliasBlob + ) */
+    /* buff struct: certCount + MAX_CERT_COUNT * (subjectBlob + uriBlob + aliasBlob) */
     uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
         sizeof(uint32_t) + MAX_LEN_URI + sizeof(uint32_t) +  MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE_ALL;
     outListBlob->data = (uint8_t *)CmMalloc(buffSize);
@@ -53,7 +53,7 @@ static int32_t GetCertListInitOutData(struct CmBlob *outListBlob)
 
 static int32_t GetUkeyCertListInitOutData(struct CmBlob *outListBlob)
 {
-    /* buff struct: certCount + MAX_CERT_COUNT * (isExist + typeBlob + aliasBlob + keyUriBlob + aliasBlob +
+    /* buff struct: certCount + MAX_UKEY_CERT_COUNT * (isExist + typeBlob + aliasBlob + keyUriBlob + aliasBlob +
         certNum + keyNum + credDataBlob + certPurpose) */
     uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME +
         sizeof(uint32_t) + MAX_LEN_CERT_ALIAS + sizeof(uint32_t) +  MAX_LEN_URI + sizeof(uint32_t) +
@@ -502,7 +502,7 @@ static int32_t CmCredentialUnpackFromService(const struct CmBlob *outData, struc
 
     if ((blob.size > certificateInfo->credData.size)) {
         CM_LOG_E("size failed");
-        return CMR_ERROR_MEM_OPERATION_COPY;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
     if (memcpy_s(certificateInfo->credData.data, certificateInfo->credData.size, blob.data, blob.size) != EOK) {
         CM_LOG_E("copy credData failed");
@@ -542,7 +542,7 @@ static int32_t CmUkeyCertListUnpackFromService(const struct CmBlob *outData,
     return CM_SUCCESS;
 }
 
-static int32_t CmAppPermissiontUnpackFromService(const struct CmBlob *outData,
+static int32_t CmAppPermissionUnpackFromService(const struct CmBlob *outData,
     enum CmPermissionState *hasPermission, struct CmBlob *huksAlias)
 {
     uint32_t offset = 0;
@@ -1364,13 +1364,13 @@ int32_t CmClientCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,
 
         ret = SendRequest(CM_MSG_CHECK_APP_PERMISSION, &parcelBlob, &outBlob);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmClientGetUkeyCert request fail");
+            CM_LOG_E("CmClientCheckAppPermission request fail");
             break;
         }
 
-        ret = CmAppPermissiontUnpackFromService(&outBlob, hasPermission, huksAlias);
+        ret = CmAppPermissionUnpackFromService(&outBlob, hasPermission, huksAlias);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("CmAppPermissiontUnpackFromService fail");
+            CM_LOG_E("CmAppPermissionUnpackFromService fail");
             break;
         }
     } while (0);

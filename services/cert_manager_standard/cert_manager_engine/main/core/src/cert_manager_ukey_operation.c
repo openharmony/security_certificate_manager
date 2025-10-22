@@ -142,7 +142,11 @@ static int32_t GetCertAliasByCertInfo(const struct HksExtCertInfo *certInfo, str
     int32_t ret = CmGetAliasFromSubjectName(&certBlob, certAlias);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("failed to get cert subject name, ret = %d", ret);
-        if (memcpy_s(certAlias->data, certInfo->index.size, certInfo->index.data, certInfo->index.size) != EOK) {
+        uint32_t aliasLen = (uint32_t)certInfo->index.size;
+        if (certInfo->index.size > MAX_LEN_CERT_ALIAS) {
+            aliasLen = MAX_LEN_CERT_ALIAS; // truncate copy
+        }
+        if (memcpy_s(certAlias->data, certInfo->index.size, certInfo->index.data, aliasLen) != EOK) {
             CM_LOG_E("failed to copy certUri->data");
             return CMR_ERROR_MEM_OPERATION_COPY;
         }
@@ -158,30 +162,25 @@ static int32_t ParseUkeyCertFromHuksCertInfo(const struct HksExtCertInfo *certIn
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     int32_t ret = CM_SUCCESS;
-    do {
-        if (memcpy_s(certType->data, certType->size, g_types[UKEY_TYPE_INDEX], strlen(g_types[UKEY_TYPE_INDEX]) + 1)
-            != EOK) {
-            CM_LOG_E("failed to copy certType->type!");
-            ret = CMR_ERROR_MEM_OPERATION_COPY;
-            break;
-        }
-        certType->size = strlen(g_types[UKEY_TYPE_INDEX]) + 1;
+    if (memcpy_s(certType->data, certType->size, g_types[UKEY_TYPE_INDEX], strlen(g_types[UKEY_TYPE_INDEX]) + 1)
+        != EOK) {
+        CM_LOG_E("failed to copy certType->type!");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+    certType->size = strlen(g_types[UKEY_TYPE_INDEX]) + 1;
 
-        if (memcpy_s(certUri->data, certUri->size, certInfo->index.data, certInfo->index.size) != EOK) {
-            CM_LOG_E("failed to copy certUri->data");
-            ret = CMR_ERROR_MEM_OPERATION_COPY;
-            break;
-        }
-        certUri->size = certInfo->index.size;
+    if (memcpy_s(certUri->data, certUri->size, certInfo->index.data, certInfo->index.size) != EOK) {
+        CM_LOG_E("failed to copy certUri->data");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+    certUri->size = certInfo->index.size;
 
-        ret = GetCertAliasByCertInfo(certInfo, certAlias);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("failed to copy certAlias->data");
-            ret = CMR_ERROR_MEM_OPERATION_COPY;
-            break;
-        }
-    } while (0);
-    return ret;
+    ret = GetCertAliasByCertInfo(certInfo, certAlias);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("failed to GetCertAliasByCertInfo");
+        return ret;
+    }
+    return CM_SUCCESS;
 }
 
 static int32_t CopyCertSize(const struct HksExtCertInfo *certInfo, struct CmBlob *certificateList,
