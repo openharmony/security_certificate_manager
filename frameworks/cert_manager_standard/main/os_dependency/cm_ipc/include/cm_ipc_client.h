@@ -40,6 +40,14 @@ int32_t CmClientUninstallAllAppCert(enum CertManagerInterfaceCode type);
 
 int32_t CmClientGetAppCertList(const uint32_t store, struct CredentialList *certificateList);
 
+int32_t CmClientGetAppCertListByUid(const uint32_t store, uint32_t appUid, struct CredentialList *certificateList);
+
+int32_t CmClientGetUkeyCertList(const struct CmBlob *ukeyProvider, const struct UkeyInfo *ukeyInfo,
+    struct CredentialDetailList *certificateList);
+
+int32_t CmClientGetUkeyCert(const struct CmBlob *ukeyCertIndex, const struct UkeyInfo *ukeyInfo,
+    struct CredentialDetailList *certificateList);
+
 int32_t CmClientGetCallingAppCertList(const uint32_t store, struct CredentialList *certificateList);
 
 int32_t CmClientGetAppCert(const struct CmBlob *keyUri, const uint32_t store, struct Credential *certificate);
@@ -77,6 +85,9 @@ int32_t CmClientUninstallUserTrustedCert(const struct CmBlob *certUri);
 int32_t CmClientUninstallAllUserTrustedCert(void);
 
 int32_t CmClientInstallSystemAppCert(const struct CmAppCertParam *certParam, struct CmBlob *keyUri);
+
+int32_t CmClientCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,
+    enum CmPermissionState *hasPermission, struct CmBlob *huksAlias);
 
 #ifdef __cplusplus
 }

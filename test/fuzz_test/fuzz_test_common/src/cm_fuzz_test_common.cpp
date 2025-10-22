@@ -300,7 +300,7 @@ bool ConstructParamSet(uint8_t *srcData, uint32_t *remainSize,
     }
 
     for (uint32_t i = 0; i < paramCnt; ++i) {
-        switch (GetTagType(static_cast<enum CmTag>(params[i].tag))) {
+        switch (CmGetTagType(static_cast<enum CmTag>(params[i].tag))) {
             case CM_TAG_TYPE_BYTES:
                 if (!GetCmBlobFromBuffer(srcData, remainSize, offset, &(params[i].blob))) {
                     return false;

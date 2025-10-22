@@ -95,9 +95,11 @@ int32_t CmUninstallAllUserCert(const struct CmContext *context);
 int32_t CmSetStatusBackupCert(
     const struct CmContext *context, const struct CmBlob *certUri, uint32_t store, uint32_t status);
 
+int32_t CmServiceCheckAppPermission(const struct CmContext *context, const struct CmBlob *keyUri,
+    uint32_t *hasPermission, struct CmBlob *huksAlias);
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* CERT_MANAGER_SERVICE_H */
-

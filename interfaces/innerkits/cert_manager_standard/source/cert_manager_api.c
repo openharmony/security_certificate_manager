@@ -174,6 +174,20 @@ CM_API_EXPORT int32_t CmGetAppCertList(const uint32_t store, struct CredentialLi
     return ret;
 }
 
+CM_API_EXPORT int32_t CmGetAppCertListByUid(const uint32_t store, uint32_t appUid,
+    struct CredentialList *certificateList)
+{
+    CM_LOG_D("enter get app certificatelist by uid");
+    if (certificateList == NULL || CM_STORE_CHECK(store)) {
+        CM_LOG_E("CmGetAppCertListByUid params is invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CmClientGetAppCertListByUid(store, appUid, certificateList);
+    CM_LOG_I("leave get app certificatelist by uid, result = %d", ret);
+    return ret;
+}
+
 CM_API_EXPORT int32_t CmCallingGetAppCertList(const uint32_t store, struct CredentialList *certificateList)
 {
     CM_LOG_I("enter get calling app certificate");
@@ -540,4 +554,71 @@ CM_API_EXPORT int32_t CmGetCertStorePath(const enum CmCertType type, const uint3
     }
 
     return CMR_ERROR_INVALID_ARGUMENT;
+}
+
+CM_API_EXPORT int32_t CmGetUkeyCertList(const struct CmBlob *ukeyProvider, const struct UkeyInfo *ukeyInfo,
+    struct CredentialDetailList *certificateList)
+{
+    CM_LOG_D("enter get ukey cert list");
+    if (ukeyProvider == NULL || ukeyInfo == NULL || certificateList == NULL) {
+        CM_LOG_E("CmGetUkeyCertList params is invalid");
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    int32_t ret = CmClientGetUkeyCertList(ukeyProvider, ukeyInfo, certificateList);
+    CM_LOG_I("leave get ukey cert list, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *ukeyCertIndex, const struct UkeyInfo *ukeyInfo,
+    struct CredentialDetailList *certificateList)
+{
+    CM_LOG_D("enter get ukey cert");
+    if (ukeyCertIndex == NULL || ukeyInfo == NULL || certificateList == NULL) {
+        CM_LOG_E("CmGetUkeyCert params is invalid");
+        return CMR_ERROR_NULL_POINTER;
+    }
+    
+    int32_t ret = CmClientGetUkeyCert(ukeyCertIndex, ukeyInfo, certificateList);
+    CM_LOG_I("leave get ukey cert, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT int32_t CmCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,
+    enum CmPermissionState *hasPermission, struct CmBlob *huksAlias)
+{
+    CM_LOG_D("enter check app permission");
+    if (keyUri == NULL) {
+        CM_LOG_E("CmCheckAppPermission params is invalid");
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    int32_t ret = CmClientCheckAppPermission(keyUri, appUid, hasPermission, huksAlias);
+    CM_LOG_I("leave check app permission, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT void CmFreeUkeyCertificate(struct CredentialDetailList *certificateList)
+{
+    if (certificateList == NULL || certificateList->credential == NULL) {
+        return;
+    }
+    for (uint32_t i = 0; i < MAX_COUNT_UKEY_CERTIFICATE; ++i) {
+        CM_FREE_BLOB(certificateList->credential[i].credData);
+    }
+    certificateList->credentialCount = 0;
+    CM_FREE_PTR(certificateList->credential);
+}
+
+CM_API_EXPORT void CmFreeCredential(struct Credential *certificate)
+{
+    if (certificate == NULL) {
+        return;
+    }
+
+    if (certificate->credData.data != NULL) {
+        CmFree(certificate->credData.data);
+    }
+    
+    CmFree(certificate);
 }

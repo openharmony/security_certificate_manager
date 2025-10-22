@@ -40,7 +40,7 @@ extern "C" {
     CM_LOG_E("Failed to allocate memory of size: %u\n", (uint32_t) (sz)); return CMR_ERROR_MALLOC_FAIL; } } while (0)
 
 // object types: certificate, mac-key, app-key, WLAN-key
-static const char *g_types[] = { "c", "m", "ak", "wk", "sk" };
+static const char *g_types[] = { "c", "m", "ak", "wk", "sk", "uk" };
 static const uint32_t TYPE_COUNT = 5;
 
 struct CMUri {

@@ -17,7 +17,7 @@
 
 #include "cm_log.h"
 #include "cm_napi_dialog_common.h"
-#include "cm_napi_open_certificate_operation.h"
+#include "cm_napi_dialog_callback_void.h"
 
 #include "securec.h"
 #include "syspara/parameters.h"
@@ -119,7 +119,7 @@ napi_value CMNapiOpenDetailDialog(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    auto uiExtCallback = std::make_shared<CmOperationUIExtensionCallback>(asyncContext);
+    auto uiExtCallback = std::make_shared<CmUIExtensionVoidCallback>(asyncContext);
     StartUIExtensionAbility(asyncContext, CMGetCertDetailWant(asyncContext), uiExtCallback);
     CM_LOG_I("cert open detail dialog end");
     return result;

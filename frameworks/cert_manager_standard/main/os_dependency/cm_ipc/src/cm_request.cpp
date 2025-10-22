@@ -71,6 +71,7 @@ static int32_t CmReadRequestReply(MessageParcel &reply, struct CmBlob *outBlob)
 
     const uint8_t *outData = reply.ReadBuffer(outLen);
     if (outData == nullptr) {
+        CM_LOG_E("outData is nullptr");
         return CMR_ERROR_NULL_POINTER;
     }
     if (outBlob->size < outLen) {

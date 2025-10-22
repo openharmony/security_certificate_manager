@@ -30,6 +30,9 @@
 #include "cm_napi_sign_verify.h"
 #include "cm_napi_user_trusted_cert.h"
 #include "cm_napi_get_cert_store_path.h"
+#include "cm_napi_get_app_cert_list_by_uid.h"
+#include "cm_napi_get_ukey_cert_list.h"
+#include "cm_napi_get_ukey_cert.h"
 
 namespace CMNapi {
     inline void AddInt32Property(napi_env env, napi_value object, const char *name, int32_t value)
@@ -152,14 +155,72 @@ namespace CMNapi {
         AddInt32Property(env, algorithm, "SM", CM_ALG_SM);
         return algorithm;
     }
+
+    static napi_value CreateCmCertificatePurpose(napi_env env)
+    {
+        napi_value certificatePurpose = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &certificatePurpose));
+
+        AddInt32Property(env, certificatePurpose, "PURPOSE_ALL", PURPOSE_ALL);
+        AddInt32Property(env, certificatePurpose, "PURPOSE_SIGN", PURPOSE_SIGN);
+        AddInt32Property(env, certificatePurpose, "PURPOSE_ENCRYPT", PURPOSE_ENCRYPT);
+
+        return certificatePurpose;
+    }
 }  // namespace CertManagerNapi
 
 using namespace CMNapi;
 
 extern "C" {
+    napi_property_descriptor NAPI_FUNC_DESC[] = {
+        DECLARE_NAPI_FUNCTION("getSystemTrustedCertificateList", CMNapiGetSystemCertList),
+        DECLARE_NAPI_FUNCTION("getSystemTrustedCertificate", CMNapiGetSystemCertInfo),
+        DECLARE_NAPI_FUNCTION("setCertificateStatus", CMNapiSetCertStatus),
+        /* user public cred */
+        DECLARE_NAPI_FUNCTION("installPublicCertificate", CMNapiInstallPublicCert),
+        DECLARE_NAPI_FUNCTION("uninstallAllAppCertificate", CMNapiUninstallAllAppCert),
+        DECLARE_NAPI_FUNCTION("uninstallPublicCertificate", CMNapiUninstallPublicCert),
+        DECLARE_NAPI_FUNCTION("getAllPublicCertificates", CMNapiGetAllPublicCertList),
+        DECLARE_NAPI_FUNCTION("getPublicCertificate", CMNapiGetPublicCertInfo),
+        /* user ca */
+        DECLARE_NAPI_FUNCTION("installUserTrustedCertificate", CMNapiInstallUserTrustedCert),
+        DECLARE_NAPI_FUNCTION("installUserTrustedCertificateSync", CMNapiInstallUserTrustedCertSync),
+        DECLARE_NAPI_FUNCTION("uninstallAllUserTrustedCertificate", CMNapiUninstallAllUserTrustedCert),
+        DECLARE_NAPI_FUNCTION("uninstallUserTrustedCertificate", CMNapiUninstallUserTrustedCert),
+        DECLARE_NAPI_FUNCTION("getAllUserTrustedCertificates", CMNapiGetAllUserTrustedCertList),
+        DECLARE_NAPI_FUNCTION("getUserTrustedCertificate", CMNapiGetUserTrustedCertInfo),
+        DECLARE_NAPI_FUNCTION("uninstallUserTrustedCertificateSync", CMNapiUninstallUserCertSync),
+        /* private cred */
+        DECLARE_NAPI_FUNCTION("installPrivateCertificate", CMNapiInstallPrivateAppCert),
+        DECLARE_NAPI_FUNCTION("uninstallPrivateCertificate", CMNapiUninstallPrivateAppCert),
+        DECLARE_NAPI_FUNCTION("getAllAppPrivateCertificates", CMNapiGetPrivateAppCertList),
+        DECLARE_NAPI_FUNCTION("getAllAppPrivateCertificatesByUid", CMNapiGetPrivateAppCertListByUid),
+        DECLARE_NAPI_FUNCTION("getPrivateCertificate", CMNapiGetPrivateAppCertInfo),
+        DECLARE_NAPI_FUNCTION("getPrivateCertificates", CMNapiGetCallingPrivateAppCertList),
+        /* grant, sign and verify */
+        DECLARE_NAPI_FUNCTION("grantPublicCertificate", CMNapiGrantPublicCertificate),
+        DECLARE_NAPI_FUNCTION("isAuthorizedApp", CMNapiIsAuthorizedApp),
+        DECLARE_NAPI_FUNCTION("getAuthorizedAppList", CMNapiGetAuthorizedAppList),
+        DECLARE_NAPI_FUNCTION("removeGrantedPublicCertificate", CMNapiRemoveGrantedPublic),
+        DECLARE_NAPI_FUNCTION("init", CMNapiInit),
+        DECLARE_NAPI_FUNCTION("update", CMNapiUpdate),
+        DECLARE_NAPI_FUNCTION("finish", CMNapiFinish),
+        DECLARE_NAPI_FUNCTION("abort", CMNapiAbort),
+        /* system cred */
+        DECLARE_NAPI_FUNCTION("installSystemAppCertificate", CMNapiInstallSystemAppCert),
+        DECLARE_NAPI_FUNCTION("uninstallSystemAppCertificate", CMNapiUninstallSystemAppCert),
+        DECLARE_NAPI_FUNCTION("getAllSystemAppCertificates", CMNapiGetSystemAppCertList),
+        DECLARE_NAPI_FUNCTION("getSystemAppCertificate", CMNapiGetSystemAppCertInfo),
+        /* get store path */
+        DECLARE_NAPI_FUNCTION("getCertificateStorePath", CMNapiGetCertStorePath),
+        /* ukey cred */
+        DECLARE_NAPI_FUNCTION("getUkeyCertificateList", CMNapiGetUkeyCertList),
+        DECLARE_NAPI_FUNCTION("getUkeyCertificate", CMNapiGetUkeyCert),
+    };
+
     static napi_value CMNapiRegister(napi_env env, napi_value exports)
     {
-        napi_property_descriptor desc[] = {
+        napi_property_descriptor propDesc[] = {
             DECLARE_NAPI_PROPERTY("CMErrorCode", CreateCMErrorCode(env)),
             DECLARE_NAPI_PROPERTY("CmKeyPurpose", CreateCMKeyPurpose(env)),
             DECLARE_NAPI_PROPERTY("CmKeyDigest", CreateCMKeyDigest(env)),
@@ -169,54 +230,20 @@ extern "C" {
             DECLARE_NAPI_PROPERTY("CertFileFormat", CreateCertFileFormat(env)),
             DECLARE_NAPI_PROPERTY("AuthStorageLevel", CreateAuthStorageLevel(env)),
             DECLARE_NAPI_PROPERTY("CertAlgorithm", CreateCertAlgorithm(env)),
-
-            /* system ca */
-            DECLARE_NAPI_FUNCTION("getSystemTrustedCertificateList", CMNapiGetSystemCertList),
-            DECLARE_NAPI_FUNCTION("getSystemTrustedCertificate", CMNapiGetSystemCertInfo),
-            DECLARE_NAPI_FUNCTION("setCertificateStatus", CMNapiSetCertStatus),
-
-            /* user public cred */
-            DECLARE_NAPI_FUNCTION("installPublicCertificate", CMNapiInstallPublicCert),
-            DECLARE_NAPI_FUNCTION("uninstallAllAppCertificate", CMNapiUninstallAllAppCert),
-            DECLARE_NAPI_FUNCTION("uninstallPublicCertificate", CMNapiUninstallPublicCert),
-            DECLARE_NAPI_FUNCTION("getAllPublicCertificates", CMNapiGetAllPublicCertList),
-            DECLARE_NAPI_FUNCTION("getPublicCertificate", CMNapiGetPublicCertInfo),
-
-            /* user ca */
-            DECLARE_NAPI_FUNCTION("installUserTrustedCertificate", CMNapiInstallUserTrustedCert),
-            DECLARE_NAPI_FUNCTION("installUserTrustedCertificateSync", CMNapiInstallUserTrustedCertSync),
-            DECLARE_NAPI_FUNCTION("uninstallAllUserTrustedCertificate", CMNapiUninstallAllUserTrustedCert),
-            DECLARE_NAPI_FUNCTION("uninstallUserTrustedCertificate", CMNapiUninstallUserTrustedCert),
-            DECLARE_NAPI_FUNCTION("getAllUserTrustedCertificates", CMNapiGetAllUserTrustedCertList),
-            DECLARE_NAPI_FUNCTION("getUserTrustedCertificate", CMNapiGetUserTrustedCertInfo),
-            DECLARE_NAPI_FUNCTION("uninstallUserTrustedCertificateSync", CMNapiUninstallUserCertSync),
-
-            /* private cred */
-            DECLARE_NAPI_FUNCTION("installPrivateCertificate", CMNapiInstallPrivateAppCert),
-            DECLARE_NAPI_FUNCTION("uninstallPrivateCertificate", CMNapiUninstallPrivateAppCert),
-            DECLARE_NAPI_FUNCTION("getAllAppPrivateCertificates", CMNapiGetPrivateAppCertList),
-            DECLARE_NAPI_FUNCTION("getPrivateCertificate", CMNapiGetPrivateAppCertInfo),
-            DECLARE_NAPI_FUNCTION("getPrivateCertificates", CMNapiGetCallingPrivateAppCertList),
-
-            /* grant, sign and verify */
-            DECLARE_NAPI_FUNCTION("grantPublicCertificate", CMNapiGrantPublicCertificate),
-            DECLARE_NAPI_FUNCTION("isAuthorizedApp", CMNapiIsAuthorizedApp),
-            DECLARE_NAPI_FUNCTION("getAuthorizedAppList", CMNapiGetAuthorizedAppList),
-            DECLARE_NAPI_FUNCTION("removeGrantedPublicCertificate", CMNapiRemoveGrantedPublic),
-            DECLARE_NAPI_FUNCTION("init", CMNapiInit),
-            DECLARE_NAPI_FUNCTION("update", CMNapiUpdate),
-            DECLARE_NAPI_FUNCTION("finish", CMNapiFinish),
-            DECLARE_NAPI_FUNCTION("abort", CMNapiAbort),
-
-            /* system cred */
-            DECLARE_NAPI_FUNCTION("installSystemAppCertificate", CMNapiInstallSystemAppCert),
-            DECLARE_NAPI_FUNCTION("uninstallSystemAppCertificate", CMNapiUninstallSystemAppCert),
-            DECLARE_NAPI_FUNCTION("getAllSystemAppCertificates", CMNapiGetSystemAppCertList),
-            DECLARE_NAPI_FUNCTION("getSystemAppCertificate", CMNapiGetSystemAppCertInfo),
-
-            /* get store path */
-            DECLARE_NAPI_FUNCTION("getCertificateStorePath", CMNapiGetCertStorePath),
+            DECLARE_NAPI_PROPERTY("CertificatePurpose", CreateCmCertificatePurpose(env)),
         };
+        uint32_t enumLen = static_cast<uint32_t>(sizeof(propDesc) / sizeof(propDesc[0]));
+        uint32_t funcLen = static_cast<uint32_t>(sizeof(NAPI_FUNC_DESC) / sizeof(NAPI_FUNC_DESC[0]));
+        napi_property_descriptor desc[enumLen + funcLen];
+
+        for (uint32_t i = 0; i < funcLen; ++i) {
+            desc[i] = NAPI_FUNC_DESC[i];
+        }
+
+        for (uint32_t i = 0; i < enumLen; ++i) {
+            desc[funcLen + i] = propDesc[i];
+        }
+
         NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
         return exports;
     }

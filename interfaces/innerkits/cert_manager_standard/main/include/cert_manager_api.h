@@ -41,6 +41,9 @@ CM_API_EXPORT int32_t CmUninstallAllAppCert(void);
 
 CM_API_EXPORT int32_t CmGetAppCertList(const uint32_t store, struct CredentialList *certificateList);
 
+CM_API_EXPORT int32_t CmGetAppCertListByUid(const uint32_t store, uint32_t appUid,
+    struct CredentialList *certificateList);
+
 CM_API_EXPORT int32_t CmCallingGetAppCertList(const uint32_t store, struct CredentialList *certificateList);
 
 CM_API_EXPORT int32_t CmGetAppCert(const struct CmBlob *keyUri, const uint32_t store, struct Credential *certificate);
@@ -88,6 +91,19 @@ CM_API_EXPORT int32_t CmGetCertStorePath(const enum CmCertType type, const uint3
 
 CM_API_EXPORT int32_t CmInstallUserTrustedP7BCert(const struct CmInstallCertInfo *installCertInfo, const bool status,
     struct CertUriList *certUriList);
+
+CM_API_EXPORT int32_t CmGetUkeyCertList(const struct CmBlob *ukeyProvider, const struct UkeyInfo *ukeyInfo,
+    struct CredentialDetailList *certificateList);
+
+CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *ukeyCertIndex, const struct UkeyInfo *ukeyInfo,
+    struct CredentialDetailList *certificateList);
+
+CM_API_EXPORT int32_t CmCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,
+    enum CmPermissionState *hasPermission, struct CmBlob *huksAlias);
+
+CM_API_EXPORT void CmFreeUkeyCertificate(struct CredentialDetailList *certificateList);
+
+CM_API_EXPORT void CmFreeCredential(struct Credential *certificate);
 
 #ifdef __cplusplus
 }

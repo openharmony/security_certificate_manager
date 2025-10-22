@@ -23,7 +23,7 @@
 #include "cm_mem.h"
 #include "cm_type_inner.h"
 
-enum CmTagType GetTagType(enum CmTag tag)
+enum CmTagType CmGetTagType(enum CmTag tag)
 {
     return (enum CmTagType)((uint32_t)tag & CM_TAG_TYPE_MASK);
 }
@@ -80,7 +80,7 @@ static int32_t CmFreshParamSet(struct CmParamSet *paramSet, bool isCopy)
             CM_LOG_E("invalid param set offset!");
             return CMR_ERROR_INVALID_PARAMSET_ARG;
         }
-        if (GetTagType(paramSet->params[i].tag) == CM_TAG_TYPE_BYTES) {
+        if (CmGetTagType(paramSet->params[i].tag) == CM_TAG_TYPE_BYTES) {
             if (CmIsAdditionOverflow(offset, paramSet->params[i].blob.size)) {
                 CM_LOG_E("blob size overflow!");
                 return CMR_ERROR_INVALID_PARAMSET_ARG;
@@ -183,7 +183,7 @@ static int32_t FreshParamSet(struct CmParamSet *paramSet, bool isCopy)
             CM_LOG_E("FreshParamSet invalid param set offset!");
             return CMR_ERROR_INVALID_PARAMSET_ARG;
         }
-        if (GetTagType(paramSet->params[i].tag) == CM_TAG_TYPE_BYTES) {
+        if (CmGetTagType(paramSet->params[i].tag) == CM_TAG_TYPE_BYTES) {
             if (CmIsAdditionOverflow(offset, paramSet->params[i].blob.size)) {
                 CM_LOG_E("FreshParamSet blob size overflow!");
                 return CMR_ERROR_INVALID_PARAMSET_ARG;
@@ -239,7 +239,7 @@ static int32_t CheckBeforeAddParams(const struct CmParamSet *paramSet, const str
     }
 
     for (uint32_t i = 0; i < paramCnt; i++) {
-        if ((GetTagType(params[i].tag) == CM_TAG_TYPE_BYTES) &&
+        if ((CmGetTagType(params[i].tag) == CM_TAG_TYPE_BYTES) &&
             (params[i].blob.data == NULL)) {
             CM_LOG_E("invalid blob param!");
             return CMR_ERROR_INVALID_PARAMSET_ARG;
@@ -257,7 +257,7 @@ int32_t CmAddParams(struct CmParamSet *paramSet, const struct CmParam *params, u
 
     for (uint32_t i = 0; i < paramCnt; i++) {
         paramSet->paramSetSize += sizeof(struct CmParam);
-        if (GetTagType(params[i].tag) == CM_TAG_TYPE_BYTES) {
+        if (CmGetTagType(params[i].tag) == CM_TAG_TYPE_BYTES) {
             if (CmIsAdditionOverflow(paramSet->paramSetSize, params[i].blob.size)) {
                 CM_LOG_E("params size overflow!");
                 paramSet->paramSetSize -= sizeof(struct CmParam);

@@ -37,6 +37,12 @@ const std::string CERT_MANAGER_CALLER_UID = "appUid";
 const std::string CERT_MANAGER_CERT_URI = "certUri";
 const std::string CERT_MANAGER_OPERATION_TYPE = "operationType";
 const std::string CERT_MANAGER_SHOW_INSTALL_BUTTON = "showInstallButton";
+const std::string CERT_MANAGER_CERT_TYPES = "certTypes";
+const std::string CERT_MANAGER_CERT_PURPOSE = "certPurpose";
+const std::string CERT_MANAGER_CERT_TYPE = "certType";
+const std::string CERT_MANAGER_CERT_INDEX = "index";
+const std::string CERT_MANAGER_CERT_UKEY_INDEX = "ukeyCertIndex";
+
 
 constexpr int32_t PARAM0 = 0;
 constexpr int32_t PARAM1 = 1;
@@ -58,43 +64,23 @@ struct CommonAsyncContext {
     napi_deferred deferred = nullptr;  // promise handle
     std::string uri = "";
     int32_t opType = 0;
+    uint32_t certificateType = 0;
+    std::string index = "";
 };
 
 struct CmUIExtensionRequestContext : public CommonAsyncContext {
     explicit CmUIExtensionRequestContext(napi_env env) : CommonAsyncContext(env) {};
     std::shared_ptr<OHOS::AbilityRuntime::AbilityContext> context = nullptr;
     uint32_t pageType = 0;
-    uint32_t certificateType = 0;
     uint32_t certificateScope = 0;
     int32_t appUid = -1;
     std::string certStr = "";
     std::string labelName = "";
     CmBlob *certUri = nullptr;
     bool showInstallButton = false;
+    std::vector<int32_t> certTypes;
+    uint32_t certPurpose = 0;
+    CmBlob *ukeyCertIndex = nullptr;
 };
-
-class CmUIExtensionCallback {
-public:
-    explicit CmUIExtensionCallback(std::shared_ptr<CmUIExtensionRequestContext>& reqContext);
-    virtual ~CmUIExtensionCallback();
-    virtual void SetSessionId(const int32_t sessionId);
-    virtual void OnRelease(const int32_t releaseCode);
-    virtual void OnResult(const int32_t resultCode, const OHOS::AAFwk::Want& result);
-    virtual void OnReceive(const OHOS::AAFwk::WantParams& request);
-    virtual void OnError(const int32_t code, const std::string& name, const std::string& message);
-    virtual void OnRemoteReady(const std::shared_ptr<OHOS::Ace::ModalUIExtensionProxy>& uiProxy);
-    virtual void OnDestroy();
-    virtual void SendMessageBack();
-    virtual void ProcessCallback(napi_env env, const CommonAsyncContext* asyncContext);
-
-private:
-    bool SetErrorCode(int32_t errCode);
-    int32_t sessionId_ = 0;
-    int32_t resultCode_ = 0;
-    OHOS::AAFwk::Want resultWant_;
-    std::shared_ptr<CmUIExtensionRequestContext> reqContext_ = nullptr;
-    bool alreadyCallback_ = false;
-};
-
 }  // namespace CertManagerNapi
 #endif  // CM_NAPI_OPEN_DIALOG_H

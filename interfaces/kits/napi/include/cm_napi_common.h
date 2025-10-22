@@ -53,10 +53,13 @@ static const std::string CM_RESULT_PRPPERTY_CERTLIST = "certList";
 static const std::string CM_RESULT_PRPPERTY_CERTINFO = "certInfo";
 static const std::string CM_RESULT_PRPPERTY_CREDENTIAL_LIST = "credentialList";
 static const std::string CM_RESULT_PRPPERTY_CREDENTIAL = "credential";
+static const std::string CM_RESULT_PROPERTY_CREDENTIAL_DETAIL_LIST = "credentialDetailList";
 
 static const std::string CM_CERT_SCOPE_STR = "certScope";
 static const std::string CM_CERT_TYPE_STR = "certType";
 static const std::string CM_CERT_ALG_STR = "certAlg";
+
+static const std::string CM_CERT_PURPOSE = "certPurpose";
 
 static const std::string GENERIC_MSG = "There is an internal error. Possible causes: "
     "1.IPC communication failed. 2.Memory operation error.";
@@ -72,6 +75,7 @@ napi_value ParseCertAlias(napi_env env, napi_value napiObj, CmBlob *&certAlias);
 napi_value ParseString(napi_env env, napi_value object, CmBlob *&stringBlob);
 napi_value ParsePasswd(napi_env env, napi_value object, CmBlob *&stringBlob);
 napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob);
+napi_value ParseStringOrEmpty(napi_env env, napi_value object, CmBlob *&stringBlob);
 
 napi_ref GetCallback(napi_env env, napi_value object);
 int32_t GetCallback(napi_env env, napi_value object, napi_ref &callback);
@@ -82,9 +86,14 @@ napi_value GenerateCertAbstractArray(
 napi_value GenerateCredentialAbstractArray(napi_env env,
     const struct CredentialAbstract *credentialAbstract, const uint32_t credentialCount);
 
+napi_value GenerateCredentialArray(napi_env env,
+    const struct Credential *credentialList, const uint32_t credentialCount);
+
 napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo);
 napi_value GenerateAppCertInfo(napi_env env, const struct Credential *credential);
 void ThrowError(napi_env env, int32_t errorCode, std::string errMsg);
+// ukey
+void GenerateUkeyCertList(struct CredentialDetailList *certificateList);
 napi_value GenerateBusinessError(napi_env env, int32_t errorCode);
 
 void DeleteNapiContext(napi_env env, napi_async_work &asyncWork, napi_ref &callback);
@@ -93,6 +102,7 @@ void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
     napi_value *result, int32_t arrLength);
 void GenerateCallback(napi_env env, napi_ref callback, napi_value *result, int32_t arrLength, int32_t ret);
 void GenerateNapiPromise(napi_env env, napi_ref callback, napi_deferred *deferred, napi_value *promise);
+napi_value GenerateUkeyCertInfo(napi_env env, const struct Credential *credential);
 
 bool IsValidCertType(const uint32_t certType);
 bool IsValidCertScope(const uint32_t scope);
@@ -154,6 +164,7 @@ inline void FreeCredentialAbstract(CredentialAbstract *&credentialAbstract)
 
 void FreeCertList(CertList *&certList);
 void FreeCredentialList(CredentialList *&credentialList);
+void FreeUkeyCertList(CredentialDetailList *&certificateList);
 void FreeCertInfo(CertInfo *&certInfo);
 void FreeCredential(Credential *&credential);
 
@@ -162,6 +173,7 @@ enum ErrorCode {
     HAS_NO_PERMISSION = 201,
     NOT_SYSTEM_APP = 202,
     PARAM_ERROR = 401,
+    CAPABILITY_NOT_SUPPORTED = 801,
     INNER_FAILURE = 17500001,
     NOT_FOUND = 17500002,
     INVALID_CERT_FORMAT = 17500003,
@@ -171,6 +183,8 @@ enum ErrorCode {
     DEVICE_ENTER_ADVSECMODE = 17500007,
     PASSWORD_IS_ERROR = 17500008,
     STORE_PATH_NOT_SUPPORTED = 17500009,
+    ACCESS_UKEY_SERVICE_FAILED = 17500010,
+    PARAMETER_VALIDATION_FAILED = 17500011,
 };
 
 enum CmJSKeyDigest {
@@ -206,6 +220,12 @@ struct CertInfoValue {
     napi_value notAfter;
     napi_value fingerprintSha256;
     napi_value certInfoBlob;
+};
+
+enum CertificatePurpose {
+    PURPOSE_ALL = 1, // all user cert
+    PURPOSE_SIGN = 2, // sign cert
+    PURPOSE_ENCRYPT = 3, // encrypt cert
 };
 }  // namespace CertManagerNapi
 

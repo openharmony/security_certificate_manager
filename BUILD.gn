@@ -57,6 +57,12 @@ group("cert_manager_dialog_ani") {
   }
 }
 
+group("cert_manager_capi") {
+  if (os_level == "standard") {
+    deps = [ "./interfaces/kits/c:cm_ndk" ]
+  }
+}
+
 group("cert_manager_cjapi") {
   if (os_level == "standard") {
     deps = [ "./interfaces/kits/cj:cj_cert_manager_ffi" ]
@@ -78,6 +84,7 @@ group("cert_manager_type_base") {
       ":cert_manager_dialog_ani",
       ":cert_manager_cjapi",
       ":cert_manager_napi",
+      ":cert_manager_capi",
       "./config:trusted_system_certificate0",
       "./config:trusted_system_certificate1",
       "./config:trusted_system_certificate10",
@@ -199,8 +206,9 @@ group("cert_manager_type_base") {
 
 group("cert_manager_type_fwk") {
   if (os_level == "standard") {
-    deps =
-        [ "./interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk" ]
+    deps = [ 
+      "./interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+    ]
   } else if (os_level == "small") {
     deps = []
   } else {

@@ -65,6 +65,9 @@ static struct CmIpcPoint g_cmIpcHandler[] = {
     { CM_MSG_GET_APP_CERTIFICATE_LIST, CmIpcServiceGetAppCertList },
     { CM_MSG_GET_CALLING_APP_CERTIFICATE_LIST, CmIpcServiceGetCallingAppCertList },
     { CM_MSG_GET_APP_CERTIFICATE, CmIpcServiceGetAppCert },
+    { CM_MSG_GET_APP_CERTIFICATE_LIST_BY_UID, CmIpcServiceGetAppCertListByUid },
+    { CM_MSG_GET_UKEY_CERTIFICATE_LIST, CmIpcServiceGetUkeyCertList },
+    { CM_MSG_GET_UKEY_CERTIFICATE, CmIpcServiceGetUkeyCert },
 
     { CM_MSG_GRANT_APP_CERT, CmIpcServiceGrantAppCertificate },
     { CM_MSG_GET_AUTHED_LIST, CmIpcServiceGetAuthorizedAppList },
@@ -85,6 +88,7 @@ static struct CmIpcPoint g_cmIpcHandler[] = {
     { CM_MSG_GET_CERTIFICATE_LIST, CmIpcServiceGetCertificateList },
     { CM_MSG_GET_CERTIFICATE_INFO, CmIpcServiceGetCertificateInfo },
     { CM_MSG_SET_CERTIFICATE_STATUS, CmIpcServiceSetCertStatus },
+    { CM_MSG_CHECK_APP_PERMISSION, CmIpcServiceCheckAppPermission },
 };
 
 static void SubscribEvent()

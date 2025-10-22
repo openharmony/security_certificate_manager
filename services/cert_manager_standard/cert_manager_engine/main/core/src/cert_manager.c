@@ -28,6 +28,7 @@
 #include "cert_manager_storage.h"
 #include "cert_manager_uri.h"
 #include "cert_manager_query.h"
+#include "cert_manager_ukey_operation.h"
 #include "cm_cert_property_rdb.h"
 #include "cert_manager_crypto_operation.h"
 #include "cm_log.h"
@@ -334,7 +335,7 @@ static int32_t CmAppCertGetFilePath(const struct CmContext *context, const uint3
     return CM_SUCCESS;
 }
 
-static int32_t CmCallingAppCertGetFilePath(const struct CmContext *context, const uint32_t store, struct CmBlob *path)
+static int32_t CmAppCertWithUidGetFilePath(const struct CmContext *context, const uint32_t store, struct CmBlob *path)
 {
     int32_t ret = CM_FAILURE;
 
@@ -546,13 +547,56 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
     return CM_SUCCESS;
 }
 
+int32_t CmServiceGetAppCertListByUid(const struct CmContext *context, uint32_t store, struct CmBlob *fileNames,
+    const uint32_t fileSize, uint32_t *fileCount)
+{
+    char pathBuf[CERT_MAX_PATH_LEN] = {0};
+    struct CmBlob path = { sizeof(pathBuf), (uint8_t*)pathBuf };
+
+    int32_t ret = CmAppCertWithUidGetFilePath(context, store, &path);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get file path for store:%u faild", store);
+        return CM_FAILURE;
+    }
+
+    ret = CmUidLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("Get file count and names from path faild ret:%d", ret);
+        return ret;
+    }
+
+    return CM_SUCCESS;
+}
+
+int32_t CmServiceGetUkeyCertList(const struct CmBlob *ukeyProvider, uint32_t certPurpose, uint32_t paramsCount,
+    struct CmBlob *certificateList)
+{
+    int32_t ret = CmGetUkeyCertListByHksCertInfoSet(ukeyProvider, certPurpose, paramsCount, certificateList);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CmGetCertListByHksCertInfoSet failed, ret = %d", ret);
+        return CM_FAILURE;
+    }
+    return CM_SUCCESS;
+}
+
+int32_t CmServiceGetUkeyCert(const struct CmBlob *ukeyCertIndex, uint32_t certPurpose, uint32_t paramsCount,
+    struct CmBlob *certificateList)
+{
+    int32_t ret = CmGetUkeyCertByHksCertInfoSet(ukeyCertIndex, certPurpose, paramsCount, certificateList);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CmGetUkeyCertByHksCertInfoSet failed, ret = %d", ret);
+        return CM_FAILURE;
+    }
+    return CM_SUCCESS;
+}
+
 int32_t CmServiceGetCallingAppCertList(const struct CmContext *context, uint32_t store, struct CmBlob *fileNames,
     const uint32_t fileSize, uint32_t *fileCount)
 {
     char pathBuf[CERT_MAX_PATH_LEN] = {0};
     struct CmBlob path = { sizeof(pathBuf), (uint8_t*)pathBuf };
 
-    int32_t ret = CmCallingAppCertGetFilePath(context, store, &path);
+    int32_t ret = CmAppCertWithUidGetFilePath(context, store, &path);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get file path for store:%u faild", store);
         return CM_FAILURE;

@@ -24,7 +24,9 @@ ohos_unittest("cm_sdk_test") {
     "unittest/src/cm_finish_test.cpp",
     "unittest/src/cm_get_auth_list_test.cpp",
     "unittest/src/cm_get_certinfo_test.cpp",
+    "unittest/src/cm_app_cert_by_uid_test.cpp",
     "unittest/src/cm_get_certlist_test.cpp",
+    "unittest/src/cm_get_ukey_cert_test.cpp",
     "unittest/src/cm_get_user_ca_cert_list.cpp",
     "unittest/src/cm_grant_test.cpp",
     "unittest/src/cm_init_test.cpp",
@@ -57,6 +59,7 @@ ohos_unittest("cm_sdk_test") {
   deps = [
     "${cert_manager_root_dir}/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
     "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+    "${cert_manager_root_dir}/services/cert_manager_standard/cert_manager_engine/main/core:cert_manager_engine_core_standard",
   ]
   external_deps = [
     "access_token:libaccesstoken_sdk",

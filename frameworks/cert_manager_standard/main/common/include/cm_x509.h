@@ -75,6 +75,8 @@ int32_t GetX509SerialNumber(X509 *x509cert, char *outBuf, uint32_t outBufMaxSize
 
 int32_t GetX509SubjectName(const X509 *x509cert, const char *subjectObjName, char *outBuf, uint32_t outBufMaxSize);
 
+int32_t GetX509FirstSubjectName(const X509 *x509cert, struct CmBlob *displayName);
+
 int32_t GetX509SubjectNameLongFormat(const X509 *x509cert, char *outBuf, uint32_t outBufMaxSize);
 
 int32_t GetSubjectNameAndAlias(X509 *x509cert, const struct CmBlob *certAlias,

@@ -43,6 +43,15 @@ void CmIpcServiceUninstallAllAppCert(const struct CmBlob *paramSetBlob, struct C
 void CmIpcServiceGetAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context);
 
+void CmIpcServiceGetAppCertListByUid(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceGetUkeyCertList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceGetUkeyCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
 void CmIpcServiceGetCallingAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context);
 
@@ -89,6 +98,9 @@ void CmIpcServiceUninstallUserCert(const struct CmBlob *paramSetBlob, struct CmB
     const struct CmContext *context);
 
 void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context);
+
+void CmIpcServiceCheckAppPermission(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context);
 
 #ifdef __cplusplus

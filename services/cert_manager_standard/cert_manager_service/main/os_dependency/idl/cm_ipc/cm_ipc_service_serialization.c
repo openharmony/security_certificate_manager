@@ -38,6 +38,22 @@ int32_t CopyUint32ToBuffer(uint32_t value, const struct CmBlob *destBlob, uint32
     return CM_SUCCESS;
 }
 
+int32_t CopyBoolToBuffer(bool value, const struct CmBlob *destBlob, uint32_t *destOffset)
+{
+    if (CmCheckBlob(destBlob) != CM_SUCCESS || destOffset == NULL) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if ((*destOffset > destBlob->size) || ((destBlob->size - *destOffset) < sizeof(value))) {
+        return CMR_ERROR_BUFFER_TOO_SMALL;
+    }
+
+    if (memcpy_s(destBlob->data + *destOffset, destBlob->size - *destOffset, &value, sizeof(value)) != EOK) {
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+    *destOffset += sizeof(value);
+    return CM_SUCCESS;
+}
+
 int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlob, uint32_t *destOffset)
 {
     if (CmCheckBlob(blob) != CM_SUCCESS || CmCheckBlob(destBlob) != CM_SUCCESS || destOffset == NULL) {
@@ -64,7 +80,7 @@ int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlo
 
 static int32_t GetNormalParam(const struct CmParam *param, struct CmParamOut *outParams)
 {
-    switch (GetTagType(outParams->tag)) {
+    switch (CmGetTagType(outParams->tag)) {
         case CM_TAG_TYPE_INT:
             *(outParams->int32Param) = param->int32Param;
             break;
@@ -81,7 +97,7 @@ static int32_t GetNormalParam(const struct CmParam *param, struct CmParamOut *ou
             *(outParams->blob) = param->blob;
             break;
         default:
-            CM_LOG_E("invalid tag type:%x", GetTagType(outParams->tag));
+            CM_LOG_E("invalid tag type:%x", CmGetTagType(outParams->tag));
             return CMR_ERROR_INVALID_PARAMSET_ARG;
     }
     return CM_SUCCESS;
@@ -89,7 +105,7 @@ static int32_t GetNormalParam(const struct CmParam *param, struct CmParamOut *ou
 
 static int32_t GetNullBlobParam(const struct CmParamSet *paramSet, struct CmParamOut *outParams)
 {
-    if (GetTagType(outParams->tag) != CM_TAG_TYPE_BYTES) {
+    if (CmGetTagType(outParams->tag) != CM_TAG_TYPE_BYTES) {
         CM_LOG_E("param tag[0x%x] is not bytes", outParams->tag);
         return CMR_ERROR_PARAM_NOT_EXIST;
     }
