@@ -1237,7 +1237,7 @@ int32_t CmClientInstallSystemAppCert(const struct CmAppCertParam *certParam, str
     return CmClientInstallAppCert(&certParamEx, keyUri);
 }
 
-int32_t CmClientGetUkeyCertList(const struct CmBlob *ukeyProvider, const struct UkeyInfo *ukeyInfo, 
+int32_t CmClientGetUkeyCertList(const struct CmBlob *ukeyProvider, const struct UkeyInfo *ukeyInfo,
     struct CredentialDetailList *certificateList)
 {
     int32_t ret;

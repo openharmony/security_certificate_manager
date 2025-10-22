@@ -80,14 +80,15 @@ static void InitUkeyCertList(struct CredentialDetailList *certificateList)
         certificateList->credential[i].credData.data = static_cast<uint8_t *>(CmMalloc(MAX_LEN_CERTIFICATE_CHAIN));
         ASSERT_TRUE(certificateList->credential[i].credData.data != nullptr);
 
-        (void)memset_s(certificateList->credential[i].credData.data, MAX_LEN_CERTIFICATE_CHAIN, 0, MAX_LEN_CERTIFICATE_CHAIN);
+        (void)memset_s(certificateList->credential[i].credData.data, MAX_LEN_CERTIFICATE_CHAIN, 0,
+            MAX_LEN_CERTIFICATE_CHAIN);
         certificateList->credential[i].credData.size = MAX_LEN_CERTIFICATE_CHAIN;
     }
 }
 
 static void FreeUkeyCertList(struct CredentialDetailList *certificateList)
 {
-    if (certificateList == NULL || certificateList->credential == NULL) {
+    if (certificateList == nullptr || certificateList->credential == nullptr) {
         return;
     }
     for (uint32_t i = 0; i < MAX_COUNT_UKEY_CERTIFICATE; ++i) {
@@ -95,13 +96,16 @@ static void FreeUkeyCertList(struct CredentialDetailList *certificateList)
     }
     certificateList->credentialCount = 0;
     CM_FREE_PTR(certificateList->credential);
-    certificateList = NULL;
+    certificateList = nullptr;
 }
 
 static int32_t buildCertIndex(const string providerName, CmBlob &providerNameBlob)
 {
     char *data = static_cast<char*>(CmMalloc(providerName.length() + 1));
-    memcpy_s(data, providerName.length() + 1, providerName.c_str(), providerName.length() + 1);
+    if (memcpy_s(data, providerName.length() + 1, providerName.c_str(), providerName.length()
+         + 1) != EOK) {
+        return CM_FAILURE;
+    }
 
     providerNameBlob.data = reinterpret_cast<uint8_t *>(data);
     providerNameBlob.size = static_cast<uint32_t>((providerName.length() + 1) & UINT32_MAX);
@@ -131,7 +135,8 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestBaseTest001, TestSize.Level0)
     EXPECT_EQ(ret, CM_FAILURE) << "CmGetUkeyCertList test failed, retcode:" << ret;
 
     uint8_t *uriBuf = static_cast<uint8_t*>(CmMalloc(sizeof(ukeyList.credential[0].alias)));
-    memcpy_s(uriBuf, sizeof(ukeyList.credential[0].alias), ukeyList.credential[0].alias, sizeof(ukeyList.credential[0].alias));
+    EXPECT_EQ(memcpy_s(uriBuf, sizeof(ukeyList.credential[0].alias), ukeyList.credential[0].alias,
+        sizeof(ukeyList.credential[0].alias)), EOK) << "copy failed";
     struct CmBlob retUri = { sizeof(ukeyList.credential[0].alias), uriBuf };
 
     struct CredentialDetailList certificateList = { 0, nullptr };

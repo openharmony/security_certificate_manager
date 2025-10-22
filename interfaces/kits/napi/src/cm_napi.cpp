@@ -34,8 +34,6 @@
 #include "cm_napi_get_ukey_cert_list.h"
 #include "cm_napi_get_ukey_cert.h"
 
-#define CM_ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
-
 namespace CMNapi {
     inline void AddInt32Property(napi_env env, napi_value object, const char *name, int32_t value)
     {
@@ -234,14 +232,16 @@ extern "C" {
             DECLARE_NAPI_PROPERTY("CertAlgorithm", CreateCertAlgorithm(env)),
             DECLARE_NAPI_PROPERTY("CertificatePurpose", CreateCmCertificatePurpose(env)),
         };
-        napi_property_descriptor desc[CM_ARRAY_SIZE(NAPI_FUNC_DESC) + CM_ARRAY_SIZE(propDesc)];
+        uint32_t enumLen = static_cast<uint32_t>(sizeof(propDesc) / sizeof(propDesc[0]));
+        uint32_t funcLen = static_cast<uint32_t>(sizeof(NAPI_FUNC_DESC) / sizeof(NAPI_FUNC_DESC[0]));
+        napi_property_descriptor desc[enumLen + funcLen];
 
-        for (uint32_t i = 0; i < CM_ARRAY_SIZE(NAPI_FUNC_DESC); ++i) {
+        for (uint32_t i = 0; i < funcLen; ++i) {
             desc[i] = NAPI_FUNC_DESC[i];
         }
 
-        for (uint32_t i = 0; i < CM_ARRAY_SIZE(propDesc); ++i) {
-            desc[CM_ARRAY_SIZE(NAPI_FUNC_DESC) + i] = propDesc[i];
+        for (uint32_t i = 0; i < enumLen; ++i) {
+            desc[funcLen + i] = propDesc[i];
         }
 
         NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));

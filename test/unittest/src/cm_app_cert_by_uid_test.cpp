@@ -125,8 +125,9 @@ HWTEST_F(CmGetAppCertListByUidTest, CmGetAppCertListPerformanceTest001, TestSize
  */
 HWTEST_F(CmGetAppCertListByUidTest, CmGetAppCertListByUidAbnormalTest002, TestSize.Level0)
 {
-    int32_t ret = CmGetAppCertListByUid(CM_PRI_CREDENTIAL_STORE , 0, nullptr);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) << "Abnormal CmGetAppCertListByUidAbnormalTest002 test failed, retcode:" << ret;
+    int32_t ret = CmGetAppCertListByUid(CM_PRI_CREDENTIAL_STORE, 0, nullptr);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT) <<
+        "Abnormal CmGetAppCertListByUidAbnormalTest002 test failed, retcode:" << ret;
 }
 } // end of namespace
 
