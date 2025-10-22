@@ -99,6 +99,14 @@ MockHapToken::MockHapToken()
     SetSelfTokenID(tokenIdEx.tokenIDEx);
 }
 
+MockHapToken::MockHapToken(const std::vector<std::string> permissionList)
+{
+    selfToken_ = GetSelfTokenID();
+    AccessTokenIDEx tokenIdEx = CmTestCommon::SetupHapAndAllocateToken(permissionList);
+    mockToken_ = tokenIdEx.tokenIdExStruct.tokenID;
+    SetSelfTokenID(tokenIdEx.tokenIDEx);
+}
+
 MockHapToken::~MockHapToken()
 {
     if (mockToken_ != INVALID_TOKENID) {
@@ -193,6 +201,16 @@ AccessTokenIDEx CmTestCommon::SetupHapAndAllocateToken()
     HapInfoParams hapInfo;
     HapPolicyParams hapPolicy;
     CmTestCommon::SetHapInfoAndPolicy(BUNDLE_NAME, PERMISSION_LIST, IS_SYSTEM_APP,
+        hapInfo, hapPolicy);
+    AccessTokenIDEx tokenIdEx = CmTestCommon::AllocTestHapToken(hapInfo, hapPolicy);
+    return tokenIdEx;
+}
+
+AccessTokenIDEx CmTestCommon::SetupHapAndAllocateToken(const std::vector<std::string> permissionList)
+{
+    HapInfoParams hapInfo;
+    HapPolicyParams hapPolicy;
+    CmTestCommon::SetHapInfoAndPolicy(BUNDLE_NAME, permissionList, IS_SYSTEM_APP,
         hapInfo, hapPolicy);
     AccessTokenIDEx tokenIdEx = CmTestCommon::AllocTestHapToken(hapInfo, hapPolicy);
     return tokenIdEx;

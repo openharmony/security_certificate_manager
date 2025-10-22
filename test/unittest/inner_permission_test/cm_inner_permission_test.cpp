@@ -22,10 +22,13 @@
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
+#include "cert_manager_api.h"
 
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
+static uint32_t g_selfTokenId = 0;
+static MockHapToken* g_MockHap = nullptr;
 static constexpr uint32_t SIGNATURE_SIZE = 1024;
 class CmInnerPermissionTest : public testing::Test {
 public:
@@ -40,34 +43,26 @@ public:
 
 void CmInnerPermissionTest::SetUpTestCase(void)
 {
-    const char **permission = new const char *[1]; // 1 permission
-    permission[0] = "ohos.permission.ACCESS_CERT_MANAGER"; // normal
-    NativeTokenInfoParams infoInstance = {
-        .dcapsNum = 0,
-        .permsNum = 1,
-        .dcaps = nullptr,
-        .perms = permission,
-        .acls = nullptr,
-        .processName = "TestCmInnerPermisson",
-        .aplStr = "system_basic",
-    };
-
-    auto tokenId = GetAccessTokenId(&infoInstance);
-    SetSelfTokenID(tokenId);
-    OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
-    delete[] permission;
+    g_selfTokenId = GetSelfTokenID();
+    CmTestCommon::SetTestEnvironment(g_selfTokenId);
 }
 
 void CmInnerPermissionTest::TearDownTestCase(void)
 {
+    CmTestCommon::ResetTestEnvironment();
 }
 
 void CmInnerPermissionTest::SetUp()
 {
+    g_MockHap = new (std::nothrow) MockHapToken({"ohos.permission.ACCESS_CERT_MANAGER"});
 }
 
 void CmInnerPermissionTest::TearDown()
 {
+    if (g_MockHap != nullptr) {
+        delete g_MockHap;
+        g_MockHap = nullptr;
+    }
 }
 
 /**
