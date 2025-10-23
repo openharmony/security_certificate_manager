@@ -70,7 +70,7 @@ static int32_t GetUkeyCertListInitOutData(struct CmBlob *outListBlob)
 static int32_t CheckAppPermissionInitOutData(struct CmBlob *outListBlob)
 {
     /* buff struct: hasPermission + certAlias*/
-    uint32_t buffSize = sizeof(bool) + sizeof(uint32_t) + MAX_LEN_CERT_ALIAS;
+    uint32_t buffSize = sizeof(uint32_t) + sizeof(uint32_t) + MAX_LEN_CERT_ALIAS;
     outListBlob->data = (uint8_t *)CmMalloc(buffSize);
     if (outListBlob->data == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
@@ -545,6 +545,8 @@ static int32_t CmUkeyCertListUnpackFromService(const struct CmBlob *outData,
 static int32_t CmAppPermissionUnpackFromService(const struct CmBlob *outData,
     enum CmPermissionState *hasPermission, struct CmBlob *huksAlias)
 {
+    struct CmBlob blob = { 0, NULL };
+
     uint32_t offset = 0;
     if ((outData == NULL) || (huksAlias == NULL) ||
         (outData->data == NULL) || (huksAlias->data == NULL)) {
@@ -557,10 +559,20 @@ static int32_t CmAppPermissionUnpackFromService(const struct CmBlob *outData,
         return ret;
     }
 
-    ret = CmGetBlobFromBuffer(huksAlias, outData, &offset);
+    ret = CmGetBlobFromBuffer(&blob, outData, &offset);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get huksAlias failed");
+        CM_LOG_E("Get huksAlias blob failed");
         return ret;
+    }
+
+    if ((blob.size > huksAlias->size)) {
+        CM_LOG_E("size failed");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (memcpy_s(huksAlias->data, huksAlias->size, blob.data, blob.size) != EOK) {
+        CM_LOG_E("copy huksAlias failed");
+        return CMR_ERROR_MEM_OPERATION_COPY;
     }
 
     return CM_SUCCESS;
