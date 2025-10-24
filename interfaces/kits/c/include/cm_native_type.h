@@ -52,7 +52,7 @@ extern "C" {
 /**
  * include 1 byte: the terminator('\0')
  */
-#define OH_CM_MAX_LEN_CERT_ALIAS       257
+#define OH_CM_MAX_LEN_CERT_ALIAS       129
 /**
  * include 1 byte: the terminator('\0')
  */

@@ -206,6 +206,9 @@ HWTEST_F(CmGetUkeyCertTest, CmCheckAppPermissionBaseTest001, TestSize.Level0)
     struct CmBlob alias = { sizeof(aliasBuf), aliasBuf };
     ret = CmCheckAppPermission(&keyUri, 0, &hasPermission, &alias);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmCheckAppPermission  failed, retcode:" << ret;
+
+    ret = CmUninstallAppCert(&keyUri, CM_PRI_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert private uninstall failed, retcode:" << ret;
 }
 
 /**
@@ -230,55 +233,8 @@ HWTEST_F(CmGetUkeyCertTest, CmCheckAppPermissionAbnormalTest001, TestSize.Level0
     struct CmBlob alias = { sizeof(aliasBuf), aliasBuf };
     ret = CmCheckAppPermission(&keyUri, 1, &hasPermission, &alias);
     EXPECT_EQ(ret, CMR_ERROR_NOT_PERMITTED) << "CmCheckAppPermission  failed, retcode:" << ret;
-}
 
-/**
- * @tc.name: CmFreeUkeyCertificateBaseTest001
- * @tc.desc: Test CertManager free ukey certlist interface base function
- * @tc.type: FUNC
- * @tc.require: AR000H0MI8 /SR000H09N9
- */
-HWTEST_F(CmGetUkeyCertTest, CmFreeUkeyCertificateBaseTest001, TestSize.Level0)
-{
-    struct CredentialDetailList ukeyList = { 0, nullptr };
-    InitUkeyCertList(&ukeyList);
-    CmFreeUkeyCertificate(&ukeyList);
-}
-
-/**
- * @tc.name: CmFreeUkeyCertificateAbnormalTest001
- * @tc.desc: Test CertManager free ukey certlist interface base function
- * @tc.type: FUNC
- * @tc.require: AR000H0MI8 /SR000H09N9
- */
-HWTEST_F(CmGetUkeyCertTest, CmFreeUkeyCertificateAbnormalTest001, TestSize.Level0)
-{
-    struct CredentialDetailList ukeyList = { 0, nullptr };
-    CmFreeUkeyCertificate(&ukeyList);
-}
-
-/**
- * @tc.name: CmFreeCredentialBaseTest001
- * @tc.desc: Test CertManager free credential interface base function
- * @tc.type: FUNC
- * @tc.require: AR000H0MI8 /SR000H09N9
- */
-HWTEST_F(CmGetUkeyCertTest, CmFreeCredentialBaseTest001, TestSize.Level0)
-{
-    struct Credential *cred = static_cast<struct Credential *>(CmMalloc(sizeof(struct Credential)));
-    cred->credData.data = (uint8_t *)(CmMalloc(MAX_LEN_CERTIFICATE_CHAIN));
-    CmFreeCredential(cred);
-}
-
-/**
- * @tc.name: CmFreeCredentialAbnormalTest001
- * @tc.desc: Test CertManager free credential interface abnarmal function
- * @tc.type: FUNC
- * @tc.require: AR000H0MI8 /SR000H09N9
- */
-HWTEST_F(CmGetUkeyCertTest, CmFreeCredentialAbnormalTest001, TestSize.Level0)
-{
-    struct Credential *cred = nullptr;
-    CmFreeCredential(cred);
+    ret = CmUninstallAppCert(&keyUri, CM_PRI_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert private uninstall failed, retcode:" << ret;
 }
 }

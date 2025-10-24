@@ -807,9 +807,11 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest027, TestSize.Level0)
     ret = CmInstallUserTrustedP7BCert(&installCertInfo, true, &certUriList);
     EXPECT_EQ(ret, CM_SUCCESS) << "install p7b user ca cert test failed, recode:" << ret;
     EXPECT_EQ(certUriList.certCount == 2, true) << "install p7b user ca cert test failed, certUriList.certCount != 2";
+    for (uint32_t i = 0; i < certUriList.certCount; i++) {
+        ret = CmUninstallUserTrustedCert(&certUriList.uriList[i]);
+        EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall test failed, recode:" << ret;
+    }
     CM_FREE_PTR(certUriList.uriList);
-    ret = CmUninstallAllUserTrustedCert();
-    EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall All test failed, recode:" << ret;
 }
 
 /**
@@ -858,7 +860,7 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest029, TestSize.Level0)
     };
 
     ret = CmInstallUserTrustedP7BCert(&installCertInfo, true, &certUriList);
-    EXPECT_EQ(ret, CM_SUCCESS) << "install p7b user ca cert test failed, recode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_BUFFER_TOO_SMALL) << "install p7b user ca cert test failed, recode:" << ret;
     CM_FREE_PTR(certUriList.uriList);
     ret = CmUninstallAllUserTrustedCert();
     EXPECT_EQ(ret, CM_SUCCESS) << "Normal user cert Uninstall All test failed, recode:" << ret;
