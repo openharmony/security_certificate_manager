@@ -40,7 +40,6 @@
 
 #include "hks_api.h"
 
-// LCOV_EXCL_START
 #define MAX_PATH_LEN                        256
 
 #ifdef __cplusplus
@@ -1091,4 +1090,4 @@ int32_t GetObjNameFromCertData(const struct CmBlob *certData, const struct CmBlo
 #ifdef __cplusplus
 }
 #endif
-// LCOV_EXCL_STOP
+ 

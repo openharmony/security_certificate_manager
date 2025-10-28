@@ -49,7 +49,6 @@
 #define CURVE25519_KEY_LEN_BYTES 32
 #define CM_OPENSSL_SUCCESS 1
 
-// LCOV_EXCL_START
 static int32_t TransEccKeyToKeyBlob(const EC_KEY *eccKey, const struct HksKeyMaterialEcc *keyMaterial,
     struct CmBlob *rawMaterial)
 {
@@ -584,4 +583,4 @@ int32_t CmInstallAppCertPro(
     EVP_PKEY_free(priKey);
     return ret;
 }
-// LCOV_EXCL_STOP
+ 

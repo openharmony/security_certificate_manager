@@ -358,7 +358,6 @@ int32_t CmServiceAbort(const struct CmContext *context, const struct CmBlob *han
     return CmKeyOpProcess(SIGN_VERIFY_CMD_ABORT, context, handle, NULL, NULL);
 }
 
-// LCOV_EXCL_START
 static int32_t DeepCopyPath(const uint8_t *srcData, uint32_t srcLen, struct CmMutableBlob *dest)
 {
     uint8_t *data = (uint8_t *)CMMalloc(srcLen);
@@ -540,8 +539,7 @@ static int32_t CmServiceGetUserCACertList(const struct CmContext *context, const
     }
     return ret;
 }
-// LCOV_EXCL_STOP
-
+ 
 int32_t CmServiceGetCertList(const struct CmContext *context, const struct UserCAProperty *prop,
     uint32_t store, struct CmMutableBlob *certFileList)
 {
@@ -696,7 +694,6 @@ int32_t CmServiceGetCertInfo(struct CmContext *context, const struct CmBlob *cer
     return ret;
 }
 
-// LCOV_EXCL_START
 int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem)
 {
     int32_t ret = CM_SUCCESS;
@@ -1346,4 +1343,4 @@ int32_t CmServiceCheckAppPermission(const struct CmContext *context, const struc
     CM_FREE_PTR(commonUri.data);
     return ret;
 }
-// LCOV_EXCL_STOP
+ 

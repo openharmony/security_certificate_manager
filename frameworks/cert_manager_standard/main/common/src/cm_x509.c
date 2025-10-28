@@ -34,7 +34,6 @@ typedef ASN1_TIME *(TIME_FUNC)(const X509 *);
 #define CONVERT(p) (((p)[0] - '0') * 10 + (p)[1] - '0')
 #define BASE_YEAR 1900
 
-// LCOV_EXCL_START
 X509 *InitCertContext(const uint8_t *certBuf, uint32_t size)
 {
     if (certBuf == NULL || size > MAX_LEN_CERTIFICATE || size == 0) {
@@ -557,4 +556,4 @@ void FreeCertContext(X509 *x509cert)
     }
     X509_free(x509cert);
 }
-// LCOV_EXCL_STOP
+ 

@@ -41,7 +41,6 @@ extern "C" {
 static const char UPDATE_FLAG_DIR_PATH[] = "/data/service/el1/public/cert_manager_service/certificates/user";
 static const char UPDATE_FLAG_FILE_NAME[] = "update.flag";
 
-// LCOV_EXCL_START
 enum UpdateFlagEnum {
     NEED_UPDATE = '0',
     ALREADY_UPDATE = '1',
@@ -507,4 +506,4 @@ int32_t CmBackupAllSaUserCerts(void)
 #ifdef __cplusplus
 }
 #endif
-// LCOV_EXCL_STOP
+ 

@@ -38,7 +38,6 @@
 
 static pthread_mutex_t g_authMgrLock = PTHREAD_MUTEX_INITIALIZER;
 
-// LCOV_EXCL_START
 static char HexToChar(uint8_t hex)
 {
     return (hex > NUMBER_9_IN_DECIMAL) ? (hex + 0x37) : (hex + 0x30); /* Convert to the corresponding character */
@@ -844,4 +843,4 @@ int32_t CmCheckCallerIsProducer(const struct CmContext *context, const struct Cm
     (void)CertManagerFreeUri(&uriObj);
     return ret;
 }
-// LCOV_EXCL_STOP
+ 

@@ -99,7 +99,6 @@ bool CmPermissionCheck(const uint32_t store)
     }
 }
 
-// LCOV_EXCL_START
 static sptr<IBundleMgr> GetBundleMgr()
 {
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -144,4 +143,4 @@ bool CmGetCertManagerAppUid(int32_t *uid, int32_t userId)
     *uid = tmpUid;
     return true;
 }
-// LCOV_EXCL_STOP
+ 
