@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -369,6 +369,55 @@ bool IpcServiceApiFuzzerTest(const uint8_t *data, const size_t size, CertManager
 
     CmFree(myData);
     CmFreeParamSet(&paramSet);
+    return true;
+}
+
+bool CreateCmContext(struct CmContext &cmContext, uint8_t *myData, uint32_t &remainSize, uint32_t &offset)
+{
+    uint32_t userId;
+    if (!GetUintFromBuffer(myData, &remainSize, &offset, &userId)) {
+        return false;
+    }
+
+    uint32_t uid;
+    if (!GetUintFromBuffer(myData, &remainSize, &offset, &uid)) {
+        return false;
+    }
+
+    cmContext.uid = uid;
+    cmContext.userId = userId;
+    return true;
+}
+
+bool GetDynamicStringFromBuffer(uint8_t *srcData, uint32_t *remainSize, uint32_t *offset, char **outStr)
+{
+    if (*remainSize < sizeof(uint32_t)) {
+        return false;
+    }
+
+    uint32_t strLen = 0;
+    (void)memcpy_s(&strLen, sizeof(uint8_t), srcData + *offset, sizeof(uint8_t));
+    *offset += sizeof(uint8_t);
+    *remainSize -= sizeof(uint8_t);
+    if (strLen == 0) {
+        return false;
+    }
+
+    const int maxStrlen = 10;
+    strLen = strLen % maxStrlen;
+    if (*remainSize < strLen) {
+        strLen = *remainSize;
+    }
+
+    *outStr = new char[strLen + 1];
+    errno_t result = memcpy_s(*outStr, strLen, srcData + *offset, strLen);
+    if (result != 0) {
+        return false;
+    }
+    
+    (*outStr)[strLen] = '\0';
+    *offset += strLen;
+    *remainSize -= strLen;
     return true;
 }
 }

@@ -130,7 +130,7 @@ static int32_t SaveKeyMaterialEcc(const EC_KEY *eccKey, const uint32_t keySize,
     if (ret != CM_SUCCESS) {
         CM_LOG_E("transfer ecc key to key blob failed");
         (void)memset_s(rawMaterial.data, rawMaterial.size, 0, rawMaterial.size);
-        CMFree(rawMaterial.data);
+        CM_FREE_BLOB(rawMaterial);
         return ret;
     }
 
@@ -186,6 +186,7 @@ static int32_t SaveKeyMaterialRsa(const RSA *rsa, const uint32_t keySize, struct
     if (ret != CM_SUCCESS) {
         (void)memset_s(rawMaterial, rawMaterialLen, 0, rawMaterialLen);
         CMFree(rawMaterial);
+        rawMaterial = NULL;
     }
 
     return ret;
@@ -267,7 +268,7 @@ static int32_t ImportRsaKey(const EVP_PKEY *priKey, const struct CmBlob *keyUri,
     } while (0);
     if (keyPair.data != NULL) {
         (void)memset_s(keyPair.data, keyPair.size, 0, keyPair.size);
-        CMFree(keyPair.data);
+        CM_FREE_BLOB(keyPair);
     }
     return ret;
 }
@@ -338,7 +339,7 @@ static int32_t ImportEd25519Key(const EVP_PKEY *priKey, const struct CmBlob *key
     }
     if (keyPair.data != NULL) {
         (void)memset_s(keyPair.data, keyPair.size, 0, keyPair.size);
-        CMFree(keyPair.data);
+        CM_FREE_BLOB(keyPair);
     }
 
     return ret;

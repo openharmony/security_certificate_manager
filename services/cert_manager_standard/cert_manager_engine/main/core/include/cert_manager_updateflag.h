@@ -72,6 +72,16 @@ int32_t CmBackupUserCert(const struct CmContext *context, const struct CmBlob *c
  */
 int32_t CmBackupAllSaUserCerts(void);
 
+/**
+* @brief Construct context from uri
+*
+* @param[in] context Context information
+* @param[in] certUri Certificate uri
+* @return int32_t result
+* @retval 0 success
+* @retval <0 failure
+*/
+int32_t CmConstructContextFromUri(const char *certUri, struct CmContext *context);
 #ifdef __cplusplus
 }
 #endif

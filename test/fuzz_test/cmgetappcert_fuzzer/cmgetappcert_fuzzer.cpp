@@ -32,18 +32,22 @@ namespace OHOS {
         if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &credCert.credData)) {
             return false;
         }
+
         uint32_t isExist;
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &isExist)) {
             return false;
         }
+
         uint32_t certNum;
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &certNum)) {
             return false;
         }
+
         uint32_t keyNum;
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &keyNum)) {
             return false;
         }
+        
         credCert.isExist = isExist;
         credCert.certNum = certNum;
         credCert.keyNum = keyNum;

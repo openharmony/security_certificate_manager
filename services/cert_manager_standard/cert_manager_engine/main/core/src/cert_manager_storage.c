@@ -84,6 +84,11 @@ int32_t ConstructUserIdPath(const struct CmContext *context, uint32_t store,
 int32_t ConstructUidPath(const struct CmContext *context, uint32_t store,
     char *uidPath, uint32_t pathLen)
 {
+    if (context == NULL) {
+        CM_LOG_E("context is NULL");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     char userIdPath[CERT_MAX_PATH_LEN] = { 0 };
     int32_t ret = ConstructUserIdPath(context, store, userIdPath, CERT_MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
