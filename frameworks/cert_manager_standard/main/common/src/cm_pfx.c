@@ -25,7 +25,6 @@
 #include "cm_type_inner.h"
 #include "cm_x509.h"
 
-// LCOV_EXCL_START
 static int32_t CmGetAppCertChain(X509 *cert, STACK_OF(X509) *caCert, struct AppCert *appCert)
 {
     int32_t ret = CM_SUCCESS; uint32_t certCount = 0;
@@ -326,4 +325,4 @@ int32_t CmParseCertChainAndPrivKey(const struct CmBlob *certChain, const struct 
     }
     return ret;
 }
-// LCOV_EXCL_STOP
+ 

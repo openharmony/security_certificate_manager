@@ -70,7 +70,6 @@ static struct PropertyToHuks g_cmLevelProperty[] = {
 #define INVALID_PROPERTY_VALUE 0xFFFF
 #define DEFAULT_LEN_USED_FOR_MALLOC 1024
 
-// LCOV_EXCL_START
 static int32_t AddUserIdParam(struct HksParamSet *paramSet, enum CmAuthStorageLevel level, const struct CmBlob *uri)
 {
     if (level == CM_AUTH_STORAGE_LEVEL_EL1) {
@@ -691,4 +690,4 @@ int32_t CmKeyOpProcess(enum CmSignVerifyCmd cmdId, const struct CmContext *conte
     HksFreeParamSet(&paramSet);
     return ret;
 }
-// LCOV_EXCL_STOP
+ 
