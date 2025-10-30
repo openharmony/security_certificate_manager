@@ -68,6 +68,7 @@ ohos_static_library("libcert_manager_ipc_client_static") {
     "./cm_ipc/src/cm_ipc_client.c",
     "./cm_ipc/src/cm_ipc_client_serialization.c",
     "./cm_ipc/src/cm_request.cpp",
+    "./cm_ipc/src/cm_ipc_service_serialization.c",
   ]
   deps = [ "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static" ]
   external_deps = [

@@ -35,20 +35,6 @@ int32_t GetUint32FromBuffer(uint32_t *value, const struct CmBlob *srcBlob, uint3
     return CM_SUCCESS;
 }
 
-int32_t GetBoolFromBuffer(bool *value, const struct CmBlob *srcBlob, uint32_t *srcOffset)
-{
-    if ((*srcOffset > srcBlob->size) || (srcBlob->size - *srcOffset < sizeof(bool))) {
-        return CMR_ERROR_BUFFER_TOO_SMALL;
-    }
-
-    if (memcpy_s(value, sizeof(bool), srcBlob->data + *srcOffset, sizeof(bool)) != EOK) {
-        return CMR_ERROR_MEM_OPERATION_COPY;
-    }
-
-    *srcOffset += sizeof(bool);
-    return CM_SUCCESS;
-}
-
 int32_t CmGetBlobFromBuffer(struct CmBlob *blob, const struct CmBlob *srcBlob, uint32_t *srcOffset)
 {
     if ((*srcOffset > srcBlob->size) || ((srcBlob->size - *srcOffset) < sizeof(uint32_t))) {
