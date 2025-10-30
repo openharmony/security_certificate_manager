@@ -575,7 +575,7 @@ int32_t GenerateBusinessError(ani_env *env, const int32_t errorCode, const char 
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (env->Object_SetFieldByName_Double(objectOut, "code", static_cast<ani_double>(errorCode)) != ANI_OK) {
+    if (env->Object_SetFieldByName_Int(objectOut, "code_", static_cast<ani_double>(errorCode)) != ANI_OK) {
         CM_LOG_E("set businessError field code error");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
