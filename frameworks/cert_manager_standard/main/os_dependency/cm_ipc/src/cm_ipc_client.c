@@ -1219,7 +1219,7 @@ int32_t CmClientInstallSystemAppCert(const struct CmAppCertParam *certParam, str
     return CmClientInstallAppCert(&certParamEx, keyUri);
 }
 
-static int32_t GetUkeyCertList(enum CertManagerInterfaceCode type, const struct CmBlob *ukeyQueryParam, 
+static int32_t GetUkeyCertList(enum CertManagerInterfaceCode type, const struct CmBlob *ukeyQueryParam,
     const struct UkeyInfo *ukeyInfo, struct CredentialDetailList *certificateList)
 {
     int32_t ret;

@@ -633,8 +633,8 @@ void CmIpcServiceGetUkeyCertList(const struct CmBlob *paramSetBlob, struct CmBlo
 void CmIpcServiceGetUkeyCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context)
 {
-   int32_t ret = CmIpcServiceGetUkeyCertListCommon(paramSetBlob, outData, context, SINGLE_UKEY);
-   CM_LOG_I("leave CmIpcServiceGetUkeyCert: ret = %d", ret);
+    int32_t ret = CmIpcServiceGetUkeyCertListCommon(paramSetBlob, outData, context, SINGLE_UKEY);
+    CM_LOG_I("leave CmIpcServiceGetUkeyCert: ret = %d", ret);
 }
 
 void CmIpcServiceGetCallingAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,

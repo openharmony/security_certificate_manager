@@ -316,7 +316,7 @@ HWTEST_F(CmGetUkeyCertTest, CmCheckAppPermissionAbnormalTest004, TestSize.Level0
 
 /**
  * @tc.name: CmGetUkeyCertNDKBaseTest001
- * @tc.desc: Test CertManager get ukey cert NDK interface base function
+ * @tc.desc: Test CertManager get ukey cert c-api interface base function
  * @tc.type: FUNC
  * @tc.require: AR000H0MI8 /SR000H09N9
  */
@@ -360,7 +360,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKBaseTest001, TestSize.Level0)
 
 /**
  * @tc.name: CmGetPrivateCertNDKBaseTest002
- * @tc.desc: Test CertManager get private cert NDK interface base function
+ * @tc.desc: Test CertManager get private cert c-api interface base function
  * @tc.type: FUNC
  * @tc.require: AR000H0MI8 /SR000H09N9
  */
@@ -389,7 +389,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPrivateCertNDKBaseTest002, TestSize.Level0)
 
 /**
  * @tc.name: CmGetPublicCertNDKBaseTest003
- * @tc.desc: Test CertManager get public cert NDK interface base function
+ * @tc.desc: Test CertManager get public cert c-api interface base function
  * @tc.type: FUNC
  * @tc.require: AR000H0MI8 /SR000H09N9
  */
@@ -422,7 +422,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKBaseTest003, TestSize.Level0)
 
 /**
  * @tc.name: CmGetUkeyCertNDKAbnormalTest001
- * @tc.desc: Test CertManager get ukey cert NDK interface abnormal function
+ * @tc.desc: Test CertManager get ukey cert c-api interface abnormal function
  * @tc.type: FUNC
  * @tc.require: AR000H0MI8 /SR000H09N9
  */
@@ -465,7 +465,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest001, TestSize.Level0)
 
 /**
  * @tc.name: CmGetPrivateCertNDKAbnormalTest002
- * @tc.desc: Test CertManager get private cert NDK interface abnormal function
+ * @tc.desc: Test CertManager get private cert c-api interface abnormal function
  * @tc.type: FUNC
  * @tc.require: AR000H0MI8 /SR000H09N9
  */
@@ -494,7 +494,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPrivateCertNDKAbnormalTest002, TestSize.Level0)
 
 /**
  * @tc.name: CmGetPublicCertNDKAbnormalTest003
- * @tc.desc: Test CertManager get public cert NDK interface abnormal function
+ * @tc.desc: Test CertManager get public cert c-api interface abnormal function
  * @tc.type: FUNC
  * @tc.require: AR000H0MI8 /SR000H09N9
  */
