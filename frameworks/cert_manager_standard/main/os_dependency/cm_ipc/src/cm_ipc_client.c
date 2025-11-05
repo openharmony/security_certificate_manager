@@ -364,7 +364,7 @@ static int32_t CmUkeyCertListGetCertCount(const struct CmBlob *outData,
     }
 
     if (credCount == 0) {
-        CM_LOG_W("ukey cert list is null");
+        CM_LOG_W("ukey cert list is empty");
     }
 
     if (credCount > certificateList->credentialCount) {
@@ -582,7 +582,7 @@ static int32_t CmAppPermissionUnpackFromService(const struct CmBlob *outData,
 }
 
 static int32_t GetAppCertListCommon(enum CertManagerInterfaceCode type, struct CmParam *params,
-    uint32_t paramCount, struct CredentialList *certificateList, const char *logTag)
+    uint32_t paramCount, struct CredentialList *certificateList)
 {
     int32_t ret;
     struct CmBlob outBlob = { 0, NULL };
@@ -591,7 +591,7 @@ static int32_t GetAppCertListCommon(enum CertManagerInterfaceCode type, struct C
     do {
         ret = CmParamsToParamSet(params, paramCount, &sendParamSet);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("%s CmParamSetPack fail", logTag);
+            CM_LOG_E("CmParamSetPack fail");
             break;
         }
 
@@ -602,13 +602,13 @@ static int32_t GetAppCertListCommon(enum CertManagerInterfaceCode type, struct C
 
         ret = GetAppCertListInitBlob(&outBlob);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("%s request fail", logTag);
+            CM_LOG_E("request fail");
             break;
         }
 
         ret = SendRequest(type, &parcelBlob, &outBlob);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("%s request fail", logTag);
+            CM_LOG_E("request fail");
             break;
         }
 
@@ -631,7 +631,7 @@ static int32_t GetAppCertList(enum CertManagerInterfaceCode type, const uint32_t
         { .tag = CM_TAG_PARAM0_UINT32,
           .uint32Param = store },
     };
-    return GetAppCertListCommon(type, params, CM_ARRAY_SIZE(params), certificateList, "GetAppCertList");
+    return GetAppCertListCommon(type, params, CM_ARRAY_SIZE(params), certificateList);
 }
 
 static int32_t GetAppCertListByUid(enum CertManagerInterfaceCode type, const uint32_t store,
@@ -641,17 +641,27 @@ static int32_t GetAppCertListByUid(enum CertManagerInterfaceCode type, const uin
         { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = store },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = appUid }
     };
-    return GetAppCertListCommon(type, params, CM_ARRAY_SIZE(params), certificateList, "GetAppCertListByUid");
+    return GetAppCertListCommon(type, params, CM_ARRAY_SIZE(params), certificateList);
 }
 
 int32_t CmClientGetAppCertList(const uint32_t store, struct CredentialList *certificateList)
 {
-    return GetAppCertList(CM_MSG_GET_APP_CERTIFICATE_LIST, store, certificateList);
+    int32_t ret = GetAppCertList(CM_MSG_GET_APP_CERTIFICATE_LIST, store, certificateList);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CmClientGetAppCertList failed");
+        return ret;
+    }
+    return ret;
 }
 
 int32_t CmClientGetAppCertListByUid(const uint32_t store, uint32_t appUid, struct CredentialList *certificateList)
 {
-    return GetAppCertListByUid(CM_MSG_GET_APP_CERTIFICATE_LIST_BY_UID, store, appUid, certificateList);
+    int32_t ret = GetAppCertListByUid(CM_MSG_GET_APP_CERTIFICATE_LIST_BY_UID, store, appUid, certificateList);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CmClientGetAppCertListByUid failed");
+        return ret;
+    }
+    return ret;
 }
 
 int32_t CmClientGetCallingAppCertList(const uint32_t store, struct CredentialList *certificateList)

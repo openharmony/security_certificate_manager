@@ -48,9 +48,9 @@ namespace OHOS {
             return false;
         }
 
-        struct UkeyInfo = {
-            .certPurpose = static_cast<CmCertificatePurpose>(certPurpose);
-        }
+        struct UkeyInfo ukeyInfo = {
+            .certPurpose = static_cast<CmCertificatePurpose>(certPurpose % MAX_CERTPURPOSE)
+        };
 
         struct CredentialDetailList certificateList = { 0, nullptr };
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &(certificateList.credentialCount))) {
@@ -64,9 +64,9 @@ namespace OHOS {
         certificateList.credential = reinterpret_cast<struct Credential *>(myData + offset);
 
         CertmanagerTest::MockHapToken mockHap;
-        (void)CmGetUkeyCertList(&ukeyParam, &UkeyInfo, &certificateList);
+        (void)CmGetUkeyCertList(&ukeyParam, &ukeyInfo, &certificateList);
 
-        (void)CmGetUkeyCert(&ukeyParam, &UkeyInfo, &certificateList);
+        (void)CmGetUkeyCert(&ukeyParam, &ukeyInfo, &certificateList);
 
         CmFree(myData);
         return true;

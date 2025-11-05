@@ -163,6 +163,8 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestBaseTest001, TestSize.Level0)
 
     FreeUkeyCertList(&certificateList);
     FreeUkeyCertList(&ukeyList);
+    CM_FREE_BLOB(providerNameBlob);
+    CM_FREE_PTR(uriBuf);
 }
 
 /**
@@ -356,6 +358,8 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKBaseTest001, TestSize.Level0)
 
     FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&certificateList));
     FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&ukeyList));
+    CM_FREE_BLOB(providerNameBlob);
+    CM_FREE_PTR(uriBuf);
 }
 
 /**
@@ -461,6 +465,8 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest001, TestSize.Level0)
 
     FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&certificateList));
     FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&ukeyList));
+    CM_FREE_BLOB(providerNameBlob);
+    CM_FREE_PTR(uriBuf);
 }
 
 /**

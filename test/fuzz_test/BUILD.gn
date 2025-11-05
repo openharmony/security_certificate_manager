@@ -26,6 +26,7 @@ group("fuzztest") {
       "./cmgetauthorizedapplist_fuzzer:fuzztest",
       "./cmgetcertinfo_fuzzer:fuzztest",
       "./cmgetcertlist_fuzzer:fuzztest",
+      "./cmgetukeycertlist_fuzzer:fuzztest",
       "./cmgetusercacertlist_fuzzer:fuzztest",
       "./cmgetusercertinfo_fuzzer:fuzztest",
       "./cmgetusercertlist_fuzzer:fuzztest",
