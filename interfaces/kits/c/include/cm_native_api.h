@@ -28,7 +28,7 @@
  *
  * @brief Defines the Certificate APIs.
  *
- * @library libcm_ndk.z.so
+ * @library libohcert_manager.z.so
  * @kit DeviceCertificateKit
  * @syscap SystemCapability.Security.CertificateManager
  * @since 22
@@ -46,7 +46,7 @@ extern "C" {
 /**
  * @brief Get the detail of USB key certificate.
  *
- * @param ukeyCertIndex Indicates the USB key certificate index.
+ * @param keyUri Indicates the USB key certificate uri.
  * @param ukeyInfo Indicates the USB key certificate attribute information.
  * @param certificateList Indicates the detail to a information of USB key certificate.
  * @return {@link OH_CM_ErrCode#OH_CM_SUCCESS} 0 - The operation is successful.
@@ -62,7 +62,7 @@ extern "C" {
  * @permission ohos.permission.ACCESS_CERT_MANAGER
  * @since 22
  */
-int32_t OH_CertManager_GetUkeyCertificate(const OH_CM_Blob *ukeyCertIndex,
+int32_t OH_CertManager_GetUkeyCertificate(const OH_CM_Blob *keyUri,
     const OH_CM_UkeyInfo *ukeyInfo, OH_CM_CredentialDetailList *certificateList);
 
 /**

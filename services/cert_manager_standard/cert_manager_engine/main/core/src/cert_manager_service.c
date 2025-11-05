@@ -1281,7 +1281,7 @@ int32_t CmSetStatusBackupCert(
 static int32_t GetHksAlias(const struct CmBlob *alias, struct CmBlob *huksAlias)
 {
     if (alias == NULL || alias->data == NULL || huksAlias == NULL ||
-        alias->size > MAX_LEN_CERT_ALIAS) {
+        alias->size > MAX_LEN_CERT_ALIAS || huksAlias->data == NULL) {
         CM_LOG_E("input params invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }

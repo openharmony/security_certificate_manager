@@ -46,6 +46,9 @@ void CmIpcServiceGetAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob
 void CmIpcServiceGetAppCertListByUid(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context);
 
+int32_t CmIpcServiceGetUkeyCertListCommon(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+    const struct CmContext *context, uint32_t mode);
+
 void CmIpcServiceGetUkeyCertList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context);
 

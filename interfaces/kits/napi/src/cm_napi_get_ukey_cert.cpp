@@ -34,7 +34,7 @@ struct GetUkeyCertAsyncContextT {
     napi_deferred deferred = nullptr;
     napi_ref callback = nullptr;
 
-    struct CmBlob *ukeyCertIndex = nullptr;
+    struct CmBlob *keyUri = nullptr;
     struct UkeyInfo *ukeyInfo = nullptr;
     struct CredentialDetailList *certificateList = nullptr;
     int32_t result = 0;
@@ -60,8 +60,8 @@ static void DeleteGetUkeyCertAsyncContext(napi_env env, GetUkeyCertAsyncContext 
 
     DeleteNapiContext(env, context->asyncWork, context->callback);
 
-    if (context->ukeyCertIndex != nullptr) {
-        FreeCmBlob(context->ukeyCertIndex);
+    if (context->keyUri != nullptr) {
+        FreeCmBlob(context->keyUri);
     }
 
     if (context->certificateList != nullptr) {
@@ -166,10 +166,10 @@ static napi_value GetUkeyCertParseParams(
     }
     
     size_t index = 0;
-    napi_value result = ParseString(env, argv[index], context->ukeyCertIndex);
+    napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get ukeyCertIndex.");
-        CM_LOG_E("could not get ukeyCertIndex");
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get keyUri.");
+        CM_LOG_E("could not get keyUri");
         return nullptr;
     }
     ++index;
@@ -196,8 +196,8 @@ static void GetUkeyCertExecute(napi_env env, void *data)
     if (context->certificateList != nullptr) {
         GenerateUkeyCertList(context->certificateList);
     }
-    context->ukeyCertIndex->size -= 1;
-    context->result = CmGetUkeyCert(context->ukeyCertIndex, context->ukeyInfo, context->certificateList);
+    context->keyUri->size -= 1;
+    context->result = CmGetUkeyCert(context->keyUri, context->ukeyInfo, context->certificateList);
 }
 
 static void GetUkeyCertComplete(napi_env env, napi_status status, void *data)

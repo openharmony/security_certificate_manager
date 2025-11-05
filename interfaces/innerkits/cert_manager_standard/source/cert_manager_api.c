@@ -570,16 +570,16 @@ CM_API_EXPORT int32_t CmGetUkeyCertList(const struct CmBlob *ukeyProvider, const
     return ret;
 }
 
-CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *ukeyCertIndex, const struct UkeyInfo *ukeyInfo,
+CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *keyUri, const struct UkeyInfo *ukeyInfo,
     struct CredentialDetailList *certificateList)
 {
     CM_LOG_D("enter get ukey cert");
-    if (ukeyCertIndex == NULL || ukeyInfo == NULL || certificateList == NULL) {
+    if (keyUri == NULL || ukeyInfo == NULL || certificateList == NULL) {
         CM_LOG_E("CmGetUkeyCert params is invalid");
         return CMR_ERROR_NULL_POINTER;
     }
     
-    int32_t ret = CmClientGetUkeyCert(ukeyCertIndex, ukeyInfo, certificateList);
+    int32_t ret = CmClientGetUkeyCert(keyUri, ukeyInfo, certificateList);
     CM_LOG_I("leave get ukey cert, result = %d", ret);
     return ret;
 }

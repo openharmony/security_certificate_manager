@@ -18,7 +18,7 @@ config("cm_config") {
   include_dirs = [ "include" ]
 }
 
-ohos_shared_library("cm_ndk") {
+ohos_shared_library("ohcert_manager") {
   public_configs = [ ":cm_config" ]
 
   branch_protector_ret = "pac_ret"

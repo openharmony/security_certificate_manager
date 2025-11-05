@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,7 +27,6 @@ int32_t CmServiceGetCertListPack(const struct CmContext *context, uint32_t store
 
 int32_t CmServiceGetCertInfoPack(const uint32_t store, const struct CmBlob *certificateData,
     uint32_t status, const struct CmBlob *certUri, struct CmBlob *certificateInfo);
-
 
 #ifdef __cplusplus
 }

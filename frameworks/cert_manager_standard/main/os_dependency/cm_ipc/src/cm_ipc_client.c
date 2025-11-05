@@ -1273,10 +1273,10 @@ int32_t CmClientGetUkeyCertList(const struct CmBlob *ukeyProvider, const struct 
     return GetUkeyCertList(CM_MSG_GET_UKEY_CERTIFICATE_LIST, ukeyProvider, ukeyInfo, certificateList);
 }
 
-int32_t CmClientGetUkeyCert(const struct CmBlob *ukeyCertIndex, const struct UkeyInfo *ukeyInfo,
+int32_t CmClientGetUkeyCert(const struct CmBlob *keyUri, const struct UkeyInfo *ukeyInfo,
     struct CredentialDetailList *certificateList)
 {
-    return GetUkeyCertList(CM_MSG_GET_UKEY_CERTIFICATE, ukeyCertIndex, ukeyInfo, certificateList);
+    return GetUkeyCertList(CM_MSG_GET_UKEY_CERTIFICATE, keyUri, ukeyInfo, certificateList);
 }
 
 int32_t CmClientCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,

@@ -573,18 +573,18 @@ int32_t CmServiceGetUkeyCertList(const struct CmBlob *ukeyProvider, uint32_t cer
     int32_t ret = CmGetUkeyCertListByHksCertInfoSet(ukeyProvider, certPurpose, paramsCount, certificateList);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmGetUkeyCertListByHksCertInfoSet failed, ret = %d", ret);
-        return CM_FAILURE;
+        return ret;
     }
     return CM_SUCCESS;
 }
 
-int32_t CmServiceGetUkeyCert(const struct CmBlob *ukeyCertIndex, uint32_t certPurpose, uint32_t paramsCount,
+int32_t CmServiceGetUkeyCert(const struct CmBlob *keyUri, uint32_t certPurpose, uint32_t paramsCount,
     struct CmBlob *certificateList)
 {
-    int32_t ret = CmGetUkeyCertByHksCertInfoSet(ukeyCertIndex, certPurpose, paramsCount, certificateList);
+    int32_t ret = CmGetUkeyCertByHksCertInfoSet(keyUri, certPurpose, paramsCount, certificateList);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmGetUkeyCertByHksCertInfoSet failed, ret = %d", ret);
-        return CM_FAILURE;
+        return ret;
     }
     return CM_SUCCESS;
 }

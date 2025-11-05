@@ -45,7 +45,7 @@ int32_t CmClientGetAppCertListByUid(const uint32_t store, uint32_t appUid, struc
 int32_t CmClientGetUkeyCertList(const struct CmBlob *ukeyProvider, const struct UkeyInfo *ukeyInfo,
     struct CredentialDetailList *certificateList);
 
-int32_t CmClientGetUkeyCert(const struct CmBlob *ukeyCertIndex, const struct UkeyInfo *ukeyInfo,
+int32_t CmClientGetUkeyCert(const struct CmBlob *keyUri, const struct UkeyInfo *ukeyInfo,
     struct CredentialDetailList *certificateList);
 
 int32_t CmClientGetCallingAppCertList(const uint32_t store, struct CredentialList *certificateList);

@@ -33,7 +33,7 @@ void CmUIExtensionCertIndexCallback::OnReceive(const OHOS::AAFwk::WantParams& re
 {
     CM_LOG_D("CmUIExtensionCertIndexCallback OnReceive()");
     this->reqContext_->certificateType = static_cast<uint32_t>(request.GetIntParam("certType", 0));
-    this->reqContext_->index = request.GetStringParam("uri");
+    this->reqContext_->uri = request.GetStringParam("uri");
     if (SetErrorCode(0)) {
         SendMessageBack();
     }
@@ -44,15 +44,15 @@ void CmUIExtensionCertIndexCallback::ProcessCallback(napi_env env, const CommonA
     napi_value args = nullptr;
     NAPI_CALL_RETURN_VOID(env, napi_create_object(env, &args));
     if (asyncContext->errCode == CM_SUCCESS) {
-        napi_value index = nullptr;
+        napi_value keyUri = nullptr;
         napi_value certificateType = nullptr;
         NAPI_CALL_RETURN_VOID(env,
-            napi_create_string_utf8(env, asyncContext->index.c_str(), NAPI_AUTO_LENGTH, &index));
+            napi_create_string_utf8(env, asyncContext->uri.c_str(), NAPI_AUTO_LENGTH, &keyUri));
         NAPI_CALL_RETURN_VOID(env,
             napi_create_uint32(env, asyncContext->certificateType, &certificateType));
         NAPI_CALL_RETURN_VOID(env, napi_set_named_property(env, args, CERT_MANAGER_CERT_TYPE.c_str(),
             certificateType));
-        NAPI_CALL_RETURN_VOID(env, napi_set_named_property(env, args, CERT_MANAGER_CERT_INDEX.c_str(), index));
+        NAPI_CALL_RETURN_VOID(env, napi_set_named_property(env, args, CERT_MANAGER_CERT_KEY_URI.c_str(), keyUri));
     } else {
         args = GenerateBusinessError(env, asyncContext->errCode);
     }

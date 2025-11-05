@@ -59,7 +59,7 @@ group("cert_manager_dialog_ani") {
 
 group("cert_manager_capi") {
   if (os_level == "standard") {
-    deps = [ "./interfaces/kits/c:cm_ndk" ]
+    deps = [ "./interfaces/kits/c:ohcert_manager" ]
   }
 }
 

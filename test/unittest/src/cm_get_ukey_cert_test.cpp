@@ -19,6 +19,7 @@
 #include "cm_test_common.h"
 #include "cm_mem.h"
 #include "cert_manager_api.h"
+#include "cm_native_api.h"
 #include "cm_cert_data_part1_rsa.h"
 
 using namespace testing::ext;
@@ -99,18 +100,28 @@ static void FreeUkeyCertList(struct CredentialDetailList *certificateList)
     certificateList = nullptr;
 }
 
-static int32_t buildCertIndex(const string providerName, CmBlob &providerNameBlob)
+static void FreeCredential(Credential *credential)
+{
+    if (credential == nullptr) {
+        return;
+    }
+    CM_FREE_BLOB(credential->credData);
+    credential = nullptr;
+}
+
+static void buildCertIndex(const string providerName, CmBlob &providerNameBlob)
 {
     char *data = static_cast<char*>(CmMalloc(providerName.length() + 1));
+    ASSERT_TRUE(data != nullptr);
     if (memcpy_s(data, providerName.length() + 1, providerName.c_str(), providerName.length()
          + 1) != EOK) {
-        return CM_FAILURE;
+        return;
     }
 
     providerNameBlob.data = reinterpret_cast<uint8_t *>(data);
     providerNameBlob.size = static_cast<uint32_t>((providerName.length() + 1) & UINT32_MAX);
 
-    return CM_SUCCESS;
+    return;
 }
 
 /**
@@ -123,7 +134,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestBaseTest001, TestSize.Level0)
 {
     string providerName = "testHap";
     CmBlob providerNameBlob = { 0, nullptr };
-    int32_t ret = buildCertIndex(providerName, providerNameBlob);
+    buildCertIndex(providerName, providerNameBlob);
     struct UkeyInfo ukeyInfo1;
     ukeyInfo1.certPurpose = CM_CERT_PURPOSE_SIGN;
 
@@ -131,10 +142,11 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestBaseTest001, TestSize.Level0)
     InitUkeyCertList(&ukeyList);
     ASSERT_TRUE(ukeyList.credential[0].credData.data != nullptr);
     providerNameBlob.size -= 1;
-    ret = CmGetUkeyCertList(&providerNameBlob, &ukeyInfo1, &ukeyList);
-    EXPECT_EQ(ret, CM_FAILURE) << "CmGetUkeyCertList test failed, retcode:" << ret;
+    int32_t ret = CmGetUkeyCertList(&providerNameBlob, &ukeyInfo1, &ukeyList);
+    EXPECT_EQ(ret, CMR_ERROR_UKEY_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
 
     uint8_t *uriBuf = static_cast<uint8_t*>(CmMalloc(sizeof(ukeyList.credential[0].alias)));
+    ASSERT_TRUE(uriBuf != nullptr);
     EXPECT_EQ(memcpy_s(uriBuf, sizeof(ukeyList.credential[0].alias), ukeyList.credential[0].alias,
         sizeof(ukeyList.credential[0].alias)), EOK) << "copy failed";
     struct CmBlob retUri = { sizeof(ukeyList.credential[0].alias), uriBuf };
@@ -147,7 +159,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestBaseTest001, TestSize.Level0)
     ukeyInfo2.certPurpose = CM_CERT_PURPOSE_SIGN;
 
     ret = CmGetUkeyCert(&retUri, &ukeyInfo2, &certificateList);
-    EXPECT_EQ(ret, CM_FAILURE) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_UKEY_GENERAL_ERROR) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
 
     FreeUkeyCertList(&certificateList);
     FreeUkeyCertList(&ukeyList);
@@ -186,7 +198,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestAbnormalTest002, TestSize.Level0)
 
 /**
  * @tc.name: CmCheckAppPermissionBaseTest001
- * @tc.desc: Test CertManager check app permission interface base function
+ * @tc.desc: Test CertManager check private app permission interface base function
  * @tc.type: FUNC
  * @tc.require: AR000H0MI8 /SR000H09N9
  */
@@ -212,12 +224,12 @@ HWTEST_F(CmGetUkeyCertTest, CmCheckAppPermissionBaseTest001, TestSize.Level0)
 }
 
 /**
- * @tc.name: CmCheckAppPermissionAbnormalTest001
- * @tc.desc: Test CertManager check app permission interface abnormal function
+ * @tc.name: CmCheckAppPermissionAbnormalTest002
+ * @tc.desc: Test CertManager check private app permission interface abnormal function
  * @tc.type: FUNC
  * @tc.require: AR000H0MI8 /SR000H09N9
  */
-HWTEST_F(CmGetUkeyCertTest, CmCheckAppPermissionAbnormalTest001, TestSize.Level0)
+HWTEST_F(CmGetUkeyCertTest, CmCheckAppPermissionAbnormalTest002, TestSize.Level0)
 {
     uint8_t certAliasBuf[] = "keyA";
     struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
@@ -236,5 +248,279 @@ HWTEST_F(CmGetUkeyCertTest, CmCheckAppPermissionAbnormalTest001, TestSize.Level0
 
     ret = CmUninstallAppCert(&keyUri, CM_PRI_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert private uninstall failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: CmCheckAppPermissionBaseTest003
+ * @tc.desc: Test CertManager check public app permission interface base function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmGetUkeyCertTest, CmCheckAppPermissionBaseTest003, TestSize.Level0)
+{
+    uint8_t certAliasBuf[] = "keyA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    uint8_t uriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(uriBuf), uriBuf };
+
+    int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmInstallAppCert failed, retcode:" << ret;
+
+    uint8_t authUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob authUri = { sizeof(authUriBuf), authUriBuf };
+    ret = CmGrantAppCertificate(&keyUri, 0, &authUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmGrantAppCertificate  failed, retcode:" << ret;
+
+    enum CmPermissionState hasPermission;
+    uint8_t aliasBuf[MAX_LEN_CERT_ALIAS] = {0};
+    struct CmBlob alias = { sizeof(aliasBuf), aliasBuf };
+    ret = CmCheckAppPermission(&authUri, 0, &hasPermission, &alias);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmCheckAppPermission  failed, retcode:" << ret;
+
+    ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert private uninstall failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: CmCheckAppPermissionAbnormalTest004
+ * @tc.desc: Test CertManager check public app permission interface abnormal function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmGetUkeyCertTest, CmCheckAppPermissionAbnormalTest004, TestSize.Level0)
+{
+    uint8_t certAliasBuf[] = "keyA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    uint8_t uriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(uriBuf), uriBuf };
+
+    int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmInstallAppCert failed, retcode:" << ret;
+
+    uint8_t authUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob authUri = { sizeof(authUriBuf), authUriBuf };
+    ret = CmGrantAppCertificate(&keyUri, 0, &authUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmGrantAppCertificate  failed, retcode:" << ret;
+
+    enum CmPermissionState hasPermission;
+    uint8_t aliasBuf[MAX_LEN_CERT_ALIAS] = {0};
+    struct CmBlob alias = { sizeof(aliasBuf), aliasBuf };
+    ret = CmCheckAppPermission(&authUri, 1, &hasPermission, &alias);
+    EXPECT_EQ(ret, CMR_ERROR_NOT_PERMITTED) << "CmCheckAppPermission  failed, retcode:" << ret;
+
+    ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert private uninstall failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: CmGetUkeyCertNDKBaseTest001
+ * @tc.desc: Test CertManager get ukey cert NDK interface base function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKBaseTest001, TestSize.Level0)
+{
+    string providerName = "testHap";
+    CmBlob providerNameBlob = { 0, nullptr };
+    buildCertIndex(providerName, providerNameBlob);
+    struct UkeyInfo ukeyInfo1;
+    ukeyInfo1.certPurpose = CM_CERT_PURPOSE_SIGN;
+
+    struct CredentialDetailList ukeyList = { 0, nullptr };
+    InitUkeyCertList(&ukeyList);
+    ASSERT_TRUE(ukeyList.credential[0].credData.data != nullptr);
+    providerNameBlob.size -= 1;
+    int32_t ret = CmGetUkeyCertList(&providerNameBlob, &ukeyInfo1, &ukeyList);
+    EXPECT_EQ(ret, CMR_ERROR_UKEY_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
+
+    uint8_t *uriBuf = static_cast<uint8_t*>(CmMalloc(sizeof(ukeyList.credential[0].keyUri)));
+    ASSERT_TRUE(uriBuf != nullptr);
+    EXPECT_EQ(memcpy_s(uriBuf, sizeof(ukeyList.credential[0].keyUri), ukeyList.credential[0].keyUri,
+        sizeof(ukeyList.credential[0].keyUri)), EOK) << "copy failed";
+    struct CmBlob retUri = { sizeof(ukeyList.credential[0].keyUri), uriBuf };
+
+    struct CredentialDetailList certificateList = { 0, nullptr };
+    InitUkeyCertList(&certificateList);
+    ASSERT_TRUE(certificateList.credential[0].credData.data != nullptr);
+
+    struct UkeyInfo ukeyInfo2;
+    ukeyInfo2.certPurpose = CM_CERT_PURPOSE_SIGN;
+
+    ret = OH_CertManager_GetUkeyCertificate(reinterpret_cast<OH_CM_Blob*>(&retUri),
+        reinterpret_cast<OH_CM_UkeyInfo*>(&ukeyInfo2),
+        reinterpret_cast<OH_CM_CredentialDetailList*>(&certificateList));
+    EXPECT_EQ(ret, OH_CM_ACCESS_UKEY_SERVICE_FAILED) <<
+        "OH_CertManager_GetUkeyCertificate test failed, retcode:" << ret;
+
+    FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&certificateList));
+    FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&ukeyList));
+}
+
+/**
+ * @tc.name: CmGetPrivateCertNDKBaseTest002
+ * @tc.desc: Test CertManager get private cert NDK interface base function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmGetUkeyCertTest, CmGetPrivateCertNDKBaseTest002, TestSize.Level0)
+{
+    uint8_t certAliasBuf[] = "keyA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    uint8_t uriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(uriBuf), uriBuf };
+
+    int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmCheckAppPermissionBaseTest001 private install failed, retcode:" << ret;
+
+    struct Credential cert;
+
+    ret = OH_CertManager_GetPrivateCertificate(reinterpret_cast<OH_CM_Blob*>(&keyUri),
+        reinterpret_cast<OH_CM_Credential*>(&cert));
+    
+    EXPECT_EQ(ret, CM_SUCCESS) << "OH_CertManager_GetPrivateCertificate  failed, retcode:" << ret;
+
+    ret = CmUninstallAppCert(&keyUri, CM_PRI_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert private uninstall failed, retcode:" << ret;
+    FreeCredential(reinterpret_cast<Credential*>(&cert));
+}
+
+/**
+ * @tc.name: CmGetPublicCertNDKBaseTest003
+ * @tc.desc: Test CertManager get public cert NDK interface base function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKBaseTest003, TestSize.Level0)
+{
+    uint8_t certAliasBuf[] = "keyA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    uint8_t uriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(uriBuf), uriBuf };
+
+    int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmCheckAppPermissionBaseTest001 private install failed, retcode:" << ret;
+
+    uint8_t authUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob authUri = { sizeof(authUriBuf), authUriBuf };
+    ret = CmGrantAppCertificate(&keyUri, 0, &authUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmGrantAppCertificate  failed, retcode:" << ret;
+
+    struct Credential cert;
+
+    ret = OH_CertManager_GetPublicCertificate(reinterpret_cast<OH_CM_Blob*>(&authUri),
+        reinterpret_cast<OH_CM_Credential*>(&cert));
+    EXPECT_EQ(ret, CM_SUCCESS) << "OH_CertManager_GetPublicCertificate  failed, retcode:" << ret;
+
+    ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert public uninstall failed, retcode:" << ret;
+    FreeCredential(reinterpret_cast<Credential*>(&cert));
+}
+
+/**
+ * @tc.name: CmGetUkeyCertNDKAbnormalTest001
+ * @tc.desc: Test CertManager get ukey cert NDK interface abnormal function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest001, TestSize.Level0)
+{
+    string providerName = "testHap";
+    CmBlob providerNameBlob = { 0, nullptr };
+    buildCertIndex(providerName, providerNameBlob);
+    struct UkeyInfo ukeyInfo1;
+    ukeyInfo1.certPurpose = CM_CERT_PURPOSE_SIGN;
+
+    struct CredentialDetailList ukeyList = { 0, nullptr };
+    InitUkeyCertList(&ukeyList);
+    ASSERT_TRUE(ukeyList.credential[0].credData.data != nullptr);
+    providerNameBlob.size -= 1;
+    int32_t ret = CmGetUkeyCertList(&providerNameBlob, &ukeyInfo1, &ukeyList);
+    EXPECT_EQ(ret, CMR_ERROR_UKEY_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
+
+    uint8_t *uriBuf = static_cast<uint8_t*>(CmMalloc(sizeof(ukeyList.credential[0].keyUri)));
+    ASSERT_TRUE(uriBuf != nullptr);
+    EXPECT_EQ(memcpy_s(uriBuf, sizeof(ukeyList.credential[0].keyUri), ukeyList.credential[0].keyUri,
+        sizeof(ukeyList.credential[0].keyUri)), EOK) << "copy failed";
+    struct CmBlob retUri = { sizeof(ukeyList.credential[0].keyUri), uriBuf };
+
+    struct CredentialDetailList certificateList = { 0, nullptr };
+    InitUkeyCertList(&certificateList);
+    ASSERT_TRUE(certificateList.credential[0].credData.data != nullptr);
+
+    struct UkeyInfo ukeyInfo2;
+    ukeyInfo2.certPurpose = CM_CERT_PURPOSE_ENCRYPT;
+    retUri.data[0] = 0x99;
+    ret = OH_CertManager_GetUkeyCertificate(reinterpret_cast<OH_CM_Blob*>(&retUri),
+        reinterpret_cast<OH_CM_UkeyInfo*>(&ukeyInfo2),
+        reinterpret_cast<OH_CM_CredentialDetailList*>(&certificateList));
+    EXPECT_EQ(ret, OH_CM_ACCESS_UKEY_SERVICE_FAILED) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
+
+    FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&certificateList));
+    FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&ukeyList));
+}
+
+/**
+ * @tc.name: CmGetPrivateCertNDKAbnormalTest002
+ * @tc.desc: Test CertManager get private cert NDK interface abnormal function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmGetUkeyCertTest, CmGetPrivateCertNDKAbnormalTest002, TestSize.Level0)
+{
+    uint8_t certAliasBuf[] = "keyA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    uint8_t uriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(uriBuf), uriBuf };
+
+    int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmCheckAppPermissionBaseTest001 private install failed, retcode:" << ret;
+
+    ret = CmUninstallAppCert(&keyUri, CM_PRI_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert private uninstall failed, retcode:" << ret;
+
+    struct Credential cert;
+    ret = OH_CertManager_GetPrivateCertificate(reinterpret_cast<OH_CM_Blob*>(&keyUri),
+        reinterpret_cast<OH_CM_Credential*>(&cert));
+    
+    EXPECT_EQ(ret, OH_CM_NOT_FOUND) << "OH_CertManager_GetPrivateCertificate  failed, retcode:" << ret;
+
+    FreeCredential(reinterpret_cast<Credential*>(&cert));
+}
+
+/**
+ * @tc.name: CmGetPublicCertNDKAbnormalTest003
+ * @tc.desc: Test CertManager get public cert NDK interface abnormal function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest003, TestSize.Level0)
+{
+    uint8_t certAliasBuf[] = "keyA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    uint8_t uriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(uriBuf), uriBuf };
+
+    int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmCheckAppPermissionBaseTest001 private install failed, retcode:" << ret;
+
+    uint8_t authUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob authUri = { sizeof(authUriBuf), authUriBuf };
+    ret = CmGrantAppCertificate(&keyUri, 0, &authUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmGrantAppCertificate  failed, retcode:" << ret;
+
+    ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert public uninstall failed, retcode:" << ret;
+
+    struct Credential cert;
+    ret = OH_CertManager_GetPublicCertificate(reinterpret_cast<OH_CM_Blob*>(&authUri),
+        reinterpret_cast<OH_CM_Credential*>(&cert));
+    EXPECT_EQ(ret, OH_CM_NOT_FOUND) << "OH_CertManager_GetPublicCertificate  failed, retcode:" << ret;
+    FreeCredential(reinterpret_cast<Credential*>(&cert));
 }
 }

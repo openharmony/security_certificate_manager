@@ -95,7 +95,7 @@ CM_API_EXPORT int32_t CmInstallUserTrustedP7BCert(const struct CmInstallCertInfo
 CM_API_EXPORT int32_t CmGetUkeyCertList(const struct CmBlob *ukeyProvider, const struct UkeyInfo *ukeyInfo,
     struct CredentialDetailList *certificateList);
 
-CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *ukeyCertIndex, const struct UkeyInfo *ukeyInfo,
+CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *keyUri, const struct UkeyInfo *ukeyInfo,
     struct CredentialDetailList *certificateList);
 
 CM_API_EXPORT int32_t CmCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,

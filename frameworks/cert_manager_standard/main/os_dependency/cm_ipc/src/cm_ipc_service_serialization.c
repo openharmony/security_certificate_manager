@@ -22,13 +22,16 @@
 int32_t CopyUint32ToBuffer(uint32_t value, const struct CmBlob *destBlob, uint32_t *destOffset)
 {
     if (CmCheckBlob(destBlob) != CM_SUCCESS || destOffset == NULL) {
+        CM_LOG_E("CopyUint32ToBuffer invalid arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     if ((*destOffset > destBlob->size) || ((destBlob->size - *destOffset) < sizeof(value))) {
+        CM_LOG_E("buffer is not enough");
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
 
     if (memcpy_s(destBlob->data + *destOffset, destBlob->size - *destOffset, &value, sizeof(value)) != EOK) {
+        CM_LOG_E("memcpy_s failed");
         return CMR_ERROR_MEM_OPERATION_COPY;
     }
     *destOffset += sizeof(value);
@@ -38,20 +41,24 @@ int32_t CopyUint32ToBuffer(uint32_t value, const struct CmBlob *destBlob, uint32
 int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlob, uint32_t *destOffset)
 {
     if (CmCheckBlob(blob) != CM_SUCCESS || CmCheckBlob(destBlob) != CM_SUCCESS || destOffset == NULL) {
+        CM_LOG_E("CopyBlobToBuffer invalid arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     if ((*destOffset > destBlob->size) ||
         ((destBlob->size - *destOffset) < (sizeof(blob->size) + ALIGN_SIZE(blob->size)))) {
+        CM_LOG_E("buffer is not enough");
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
 
     if (memcpy_s(destBlob->data + *destOffset, destBlob->size - *destOffset,
                  &(blob->size), sizeof(blob->size)) != EOK) {
+        CM_LOG_E("memcpy_s failed");
         return CMR_ERROR_MEM_OPERATION_COPY;
     }
     *destOffset += sizeof(blob->size);
 
     if (memcpy_s(destBlob->data + *destOffset, destBlob->size - *destOffset, blob->data, blob->size) != EOK) {
+        CM_LOG_E("memcpy_s failed");
         *destOffset -= sizeof(blob->size);
         return CMR_ERROR_MEM_OPERATION_COPY;
     }

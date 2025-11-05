@@ -38,7 +38,7 @@ static int32_t ConvertHuksErrCode(int32_t huksErrCode)
     switch (huksErrCode) {
         case HKS_ERROR_NOT_EXIST:
             return CMR_ERROR_NOT_EXIST;
-        case CMR_ERROR_UKEY_DEVICE_SUPPORT:
+        case HKS_ERROR_API_NOT_SUPPORTED:
             return CMR_ERROR_UKEY_DEVICE_SUPPORT;
         default:
             return CMR_ERROR_UKEY_GENERAL_ERROR;
@@ -248,6 +248,7 @@ static int32_t BuildCertSetToCmBlob(const struct HksExtCertInfoSet *certSet, str
         CM_LOG_E("Copy certificate count failed");
         return ret;
     }
+    CM_LOG_I("get ukey cert count: %u", certSet->count);
     for (uint32_t i = 0; i < certSet->count; i++) {
         ret = BuildCredentialToCmBlob(&certSet->certs[i], certificateList, &offset);
         if (ret != CM_SUCCESS) {
@@ -293,10 +294,10 @@ int32_t CmGetUkeyCertListByHksCertInfoSet(const struct CmBlob *ukeyProvider, uin
     return ret;
 }
 
-int32_t CmGetUkeyCertByHksCertInfoSet(const struct CmBlob *ukeyCertIndex, uint32_t certPurpose, uint32_t paramsCount,
+int32_t CmGetUkeyCertByHksCertInfoSet(const struct CmBlob *keyUri, uint32_t certPurpose, uint32_t paramsCount,
     struct CmBlob *certificateList)
 {
-    if (ukeyCertIndex == NULL ukeyCertIndex->data == NULL || certificateList->data == NULL) {
+    if (keyUri == NULL || keyUri->data == NULL || certificateList->data == NULL) {
         CM_LOG_E("CmGetUkeyCertByHksCertInfoSet arguments invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -305,7 +306,7 @@ int32_t CmGetUkeyCertByHksCertInfoSet(const struct CmBlob *ukeyCertIndex, uint32
     struct HksExtCertInfoSet certSet = { 0, NULL };
     int32_t ret = CM_SUCCESS;
     do {
-        ret = BuildCmBlobToHuksParams(ukeyCertIndex, certPurpose, paramsCount, &index, &paramSetIn);
+        ret = BuildCmBlobToHuksParams(keyUri, certPurpose, paramsCount, &index, &paramSetIn);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("BuildCmBlobToHuksParams failed, ret = %d", ret);
             break;

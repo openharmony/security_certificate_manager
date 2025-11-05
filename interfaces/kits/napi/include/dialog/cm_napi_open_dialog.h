@@ -40,8 +40,7 @@ const std::string CERT_MANAGER_SHOW_INSTALL_BUTTON = "showInstallButton";
 const std::string CERT_MANAGER_CERT_TYPES = "certTypes";
 const std::string CERT_MANAGER_CERT_PURPOSE = "certPurpose";
 const std::string CERT_MANAGER_CERT_TYPE = "certType";
-const std::string CERT_MANAGER_CERT_INDEX = "index";
-const std::string CERT_MANAGER_CERT_UKEY_INDEX = "ukeyCertIndex";
+const std::string CERT_MANAGER_CERT_KEY_URI = "keyUri";
 
 
 constexpr int32_t PARAM0 = 0;
@@ -65,7 +64,6 @@ struct CommonAsyncContext {
     std::string uri = "";
     int32_t opType = 0;
     uint32_t certificateType = 0;
-    std::string index = "";
 };
 
 struct CmUIExtensionRequestContext : public CommonAsyncContext {
@@ -80,7 +78,6 @@ struct CmUIExtensionRequestContext : public CommonAsyncContext {
     bool showInstallButton = false;
     std::vector<int32_t> certTypes;
     uint32_t certPurpose = 0;
-    CmBlob *ukeyCertIndex = nullptr;
 };
 }  // namespace CertManagerNapi
 #endif  // CM_NAPI_OPEN_DIALOG_H

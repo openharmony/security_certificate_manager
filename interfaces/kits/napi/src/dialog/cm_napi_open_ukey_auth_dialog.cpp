@@ -29,27 +29,27 @@ static OHOS::AAFwk::Want CMGetAuthCertWant(std::shared_ptr<CmUIExtensionRequestC
     want.SetParam(CERT_MANAGER_CALLER_UID, asyncContext->appUid);
     want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
     want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(CmDialogPageType::PAGE_UKEY_PIN_AUTHORIZE));
-    CmBlob *ukeyCertIndex = asyncContext->ukeyCertIndex;
-    std::string uriStr(reinterpret_cast<char *>(ukeyCertIndex->data), ukeyCertIndex->size);
-    want.SetParam(CERT_MANAGER_CERT_UKEY_INDEX, uriStr);
+    CmBlob *keyUri = asyncContext->certUri;
+    std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
+    want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
     return want;
 }
 
 static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
 {
     bool hasProperty = false;
-    napi_status status = napi_has_named_property(asyncContext->env, arg, CERT_MANAGER_CERT_UKEY_INDEX.c_str(),
+    napi_status status = napi_has_named_property(asyncContext->env, arg, CERT_MANAGER_CERT_KEY_URI.c_str(),
         &hasProperty);
     if (status != napi_ok || !hasProperty) {
-        CM_LOG_E("Failed to check ukeyCertIndex");
+        CM_LOG_E("Failed to check keyUri");
         return nullptr;
     }
 
     napi_value value = nullptr;
-    status = napi_get_named_property(asyncContext->env, arg, CERT_MANAGER_CERT_UKEY_INDEX.c_str(),
+    status = napi_get_named_property(asyncContext->env, arg, CERT_MANAGER_CERT_KEY_URI.c_str(),
         &value);
     if (status != napi_ok || value == nullptr) {
-        CM_LOG_E("Failed to get ukeyCertIndex");
+        CM_LOG_E("Failed to get keyUri");
         return nullptr;
     }
 
@@ -60,7 +60,7 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
         return nullptr;
     }
 
-    napi_value result = ParseString(asyncContext->env, value, asyncContext->ukeyCertIndex);
+    napi_value result = ParseString(asyncContext->env, value, asyncContext->certUri);
     if (result == nullptr) {
         CM_LOG_E("Failed to get certPurpose value");
         return nullptr;
