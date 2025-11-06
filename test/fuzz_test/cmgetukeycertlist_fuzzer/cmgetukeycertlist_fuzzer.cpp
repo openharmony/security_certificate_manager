@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,17 +13,21 @@
  * limitations under the License.
  */
 
-#include "cmgetappcertlist_fuzzer.h"
+#include "cmgetukeycertlist_fuzzer.h"
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
 #include "cm_test_common.h"
 
+namespace {
+const uint32_t MAX_CERTPURPOSE = 6;
+}
+
 using namespace CmFuzzTest;
 namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
-        uint32_t minSize = sizeof(uint32_t) + sizeof(struct CredentialList);
+        uint32_t minSize = sizeof(uint32_t) + sizeof(struct CredentialDetailList);
         uint8_t *myData = nullptr;
         if (!CopyMyData(data, size, minSize, &myData)) {
             return false;
@@ -32,33 +36,37 @@ namespace OHOS {
         uint32_t remainSize = static_cast<uint32_t>(size);
         uint32_t offset = 0;
 
-        uint32_t credStore;
-        if (!GetUintFromBuffer(myData, &remainSize, &offset, &credStore)) {
+        struct CmBlob ukeyParam = { 0, nullptr };
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &ukeyParam)) {
             CmFree(myData);
             return false;
         }
 
-        uint32_t appUid;
-        if (!GetUintFromBuffer(myData, &remainSize, &offset, &appUid)) {
+        uint32_t certPurpose;
+        if (!GetUintFromBuffer(myData, &remainSize, &offset, &certPurpose)) {
             CmFree(myData);
             return false;
         }
 
-        struct CredentialList credCertList = { 0, nullptr };
-        if (!GetUintFromBuffer(myData, &remainSize, &offset, &(credCertList.credentialCount))) {
+        struct UkeyInfo ukeyInfo = {
+            .certPurpose = static_cast<CmCertificatePurpose>(certPurpose % MAX_CERTPURPOSE)
+        };
+
+        struct CredentialDetailList certificateList = { 0, nullptr };
+        if (!GetUintFromBuffer(myData, &remainSize, &offset, &(certificateList.credentialCount))) {
             CmFree(myData);
             return false;
         }
-        if (credCertList.credentialCount > (remainSize / sizeof(struct CredentialAbstract))) {
+        if (certificateList.credentialCount > (remainSize / sizeof(struct Credential))) {
             CmFree(myData);
             return false;
         }
-        credCertList.credentialAbstract = reinterpret_cast<struct CredentialAbstract *>(myData + offset);
+        certificateList.credential = reinterpret_cast<struct Credential *>(myData + offset);
 
         CertmanagerTest::MockHapToken mockHap;
-        (void)CmGetAppCertList(credStore, &credCertList);
+        (void)CmGetUkeyCertList(&ukeyParam, &ukeyInfo, &certificateList);
 
-        (void)CmGetAppCertListByUid(credStore, appUid, &credCertList);
+        (void)CmGetUkeyCert(&ukeyParam, &ukeyInfo, &certificateList);
 
         CmFree(myData);
         return true;
@@ -72,3 +80,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     OHOS::DoSomethingInterestingWithMyAPI(data, size);
     return 0;
 }
+

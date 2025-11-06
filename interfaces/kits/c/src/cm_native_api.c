@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -44,6 +44,10 @@ static struct CmErrorCodeAdapter g_errCodeTable[] = {
     { CMR_ERROR_MAX_CERT_COUNT_REACHED, OH_CM_MAX_CERT_COUNT_REACHED },
     { CMR_ERROR_AUTH_CHECK_FAILED, OH_CM_NO_AUTHORIZATION },
     { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, OH_CM_DEVICE_ENTER_ADVSECMODE },
+
+    // ukey
+    { CMR_ERROR_UKEY_GENERAL_ERROR, OH_CM_ACCESS_UKEY_SERVICE_FAILED },
+    { CMR_ERROR_UKEY_DEVICE_SUPPORT, OH_CM_CAPABILITY_NOT_SUPPORTED },
 };
 
 static int32_t TranformErrorCode(int32_t errorCode)
@@ -99,14 +103,14 @@ static int32_t InitAppCert(OH_CM_Credential *credential)
     return CM_SUCCESS;
 }
 
-int32_t OH_CertManager_GetUkeyCertificate(const OH_CM_Blob *ukeyCertIndex,
+int32_t OH_CertManager_GetUkeyCertificate(const OH_CM_Blob *keyUri,
     const OH_CM_UkeyInfo *ukeyInfo, OH_CM_CredentialDetailList *certificateList)
 {
     int32_t result = InitUkeyCertList(certificateList);
     if (result != CM_SUCCESS) {
         return TranformErrorCode(result);
     }
-    result = CmGetUkeyCert((const struct CmBlob *) ukeyCertIndex, (const struct UkeyInfo *) ukeyInfo,
+    result = CmGetUkeyCert((const struct CmBlob *) keyUri, (const struct UkeyInfo *) ukeyInfo,
         (struct CredentialDetailList *) certificateList);
     return TranformErrorCode(result);
 }

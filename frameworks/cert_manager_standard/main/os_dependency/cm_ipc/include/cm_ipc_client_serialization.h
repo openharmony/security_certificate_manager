@@ -28,8 +28,6 @@ extern "C" {
 
 int32_t GetUint32FromBuffer(uint32_t *value, const struct CmBlob *srcBlob, uint32_t *srcOffset);
 
-int32_t GetBoolFromBuffer(bool *value, const struct CmBlob *srcBlob, uint32_t *srcOffset);
-
 int32_t CmGetBlobFromBuffer(struct CmBlob *blob, const struct CmBlob *srcBlob, uint32_t *srcOffset);
 
 int32_t CmCertificateListUnpackFromService(const struct CmBlob *outData, struct CertList *certificateList);

@@ -143,7 +143,7 @@ static int32_t CmGetFilePath(const struct CmContext *context, uint32_t store, st
     }
     int32_t ret = GetFilePath(context, store, pathPtr, suffixBuf, &suffixLen);
     if (ret != CMR_OK) {
-        CM_LOG_E("Get file path faild");
+        CM_LOG_E("Get file path failed");
         return ret;
     }
 
@@ -449,7 +449,7 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
     do {
         ret = CmAppCertGetFilePath(context, store, &path);
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Get file path for store:%u faild", store);
+            CM_LOG_E("Get file path for store:%u failed", store);
             break;
         }
 
@@ -459,13 +459,13 @@ static int32_t CmRemoveSpecifiedAppCert(const struct CmContext *context, const u
             ret = CmUserIdLayerGetFileCountAndNames(pathBuf, fileNames, MAX_COUNT_CERTIFICATE, &fileCount);
         }
         if (ret != CM_SUCCESS) {
-            CM_LOG_E("Get file count and names from path faild");
+            CM_LOG_E("Get file count and names from path failed");
             break;
         }
 
         for (uint32_t i = 0; i < fileCount; i++) {
             if (CertManagerFileRemove(NULL, (char *)fileNames[i].data) != CM_SUCCESS) {
-                CM_LOG_E("App cert %u remove faild", i);
+                CM_LOG_E("App cert %u remove failed", i);
                 continue;
             }
 
@@ -503,19 +503,19 @@ int32_t CmRemoveAllAppCert(const struct CmContext *context)
     /* remove pubic credential app cert */
     int32_t ret = CmRemoveSpecifiedAppCert(context, CM_CREDENTIAL_STORE);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("remove pubic credential app cert faild");
+        CM_LOG_E("remove pubic credential app cert failed");
     }
 
     /* remove private credential app cert */
     ret = CmRemoveSpecifiedAppCert(context, CM_PRI_CREDENTIAL_STORE);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("remove private credential app cert faild");
+        CM_LOG_E("remove private credential app cert failed");
     }
 
     /* remove system credential app cert */
     ret = CmRemoveSpecifiedAppCert(context, CM_SYS_CREDENTIAL_STORE);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("remove system credential app cert faild");
+        CM_LOG_E("remove system credential app cert failed");
     }
 
     return ret;
@@ -529,7 +529,7 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
 
     int32_t ret = CmAppCertGetFilePath(context, store, &path);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get file path for store:%u faild", store);
+        CM_LOG_E("Get file path for store:%u failed", store);
         return CM_FAILURE;
     }
 
@@ -539,7 +539,7 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
         ret = CmUserIdLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
     }
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get file count and names from path faild ret:%d", ret);
+        CM_LOG_E("Get file count and names from path failed ret:%d", ret);
         return ret;
     }
 
@@ -554,13 +554,13 @@ int32_t CmServiceGetAppCertListByUid(const struct CmContext *context, uint32_t s
 
     int32_t ret = CmAppCertWithUidGetFilePath(context, store, &path);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get file path for store:%u faild", store);
+        CM_LOG_E("Get file path for store:%u failed", store);
         return CM_FAILURE;
     }
 
     ret = CmUidLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get file count and names from path faild ret:%d", ret);
+        CM_LOG_E("Get file count and names from path failed ret:%d", ret);
         return ret;
     }
 
@@ -572,19 +572,19 @@ int32_t CmServiceGetUkeyCertList(const struct CmBlob *ukeyProvider, uint32_t cer
 {
     int32_t ret = CmGetUkeyCertListByHksCertInfoSet(ukeyProvider, certPurpose, paramsCount, certificateList);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("CmGetCertListByHksCertInfoSet failed, ret = %d", ret);
-        return CM_FAILURE;
+        CM_LOG_E("CmGetUkeyCertListByHksCertInfoSet failed, ret = %d", ret);
+        return ret;
     }
     return CM_SUCCESS;
 }
 
-int32_t CmServiceGetUkeyCert(const struct CmBlob *ukeyCertIndex, uint32_t certPurpose, uint32_t paramsCount,
+int32_t CmServiceGetUkeyCert(const struct CmBlob *keyUri, uint32_t certPurpose, uint32_t paramsCount,
     struct CmBlob *certificateList)
 {
-    int32_t ret = CmGetUkeyCertByHksCertInfoSet(ukeyCertIndex, certPurpose, paramsCount, certificateList);
+    int32_t ret = CmGetUkeyCertByHksCertInfoSet(keyUri, certPurpose, paramsCount, certificateList);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmGetUkeyCertByHksCertInfoSet failed, ret = %d", ret);
-        return CM_FAILURE;
+        return ret;
     }
     return CM_SUCCESS;
 }
@@ -597,13 +597,13 @@ int32_t CmServiceGetCallingAppCertList(const struct CmContext *context, uint32_t
 
     int32_t ret = CmAppCertWithUidGetFilePath(context, store, &path);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get file path for store:%u faild", store);
+        CM_LOG_E("Get file path for store:%u failed", store);
         return CM_FAILURE;
     }
 
     ret = CmUidLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("Get file count and names from path faild ret:%d", ret);
+        CM_LOG_E("Get file count and names from path failed ret:%d", ret);
         return ret;
     }
 

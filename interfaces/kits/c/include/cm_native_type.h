@@ -28,7 +28,7 @@
  *
  * @brief Defines the stucture and enumeration.
  *
- * @library libcm_ndk.z.so
+ * @library libohcert_manager.z.so
  * @kit DeviceCertificateKit
  * @syscap SystemCapability.Security.CertificateManager
  * @since 22

@@ -23,6 +23,7 @@
 #include "cm_mem.h"
 #include "cert_manager_uri.h"
 #include "cert_manager_query.h"
+#include "cm_ipc_service_serialization.h"
 
 #include "hks_api.h"
 #include "hks_type.h"
@@ -37,52 +38,11 @@ static int32_t ConvertHuksErrCode(int32_t huksErrCode)
     switch (huksErrCode) {
         case HKS_ERROR_NOT_EXIST:
             return CMR_ERROR_NOT_EXIST;
-        case CMR_ERROR_UKEY_DEVICE_SUPPORT:
+        case HKS_ERROR_API_NOT_SUPPORTED:
             return CMR_ERROR_UKEY_DEVICE_SUPPORT;
         default:
             return CMR_ERROR_UKEY_GENERAL_ERROR;
     }
-}
-
-static int32_t CopyUint32ToBuffer(uint32_t value, const struct CmBlob *destBlob, uint32_t *destOffset)
-{
-    if (CmCheckBlob(destBlob) != CM_SUCCESS || destOffset == NULL) {
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    if ((*destOffset > destBlob->size) || ((destBlob->size - *destOffset) < sizeof(value))) {
-        return CMR_ERROR_BUFFER_TOO_SMALL;
-    }
-
-    if (memcpy_s(destBlob->data + *destOffset, destBlob->size - *destOffset, &value, sizeof(value)) != EOK) {
-        return CMR_ERROR_MEM_OPERATION_COPY;
-    }
-    *destOffset += sizeof(value);
-    return CM_SUCCESS;
-}
-
-
-static int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlob, uint32_t *destOffset)
-{
-    if (CmCheckBlob(blob) != CM_SUCCESS || CmCheckBlob(destBlob) != CM_SUCCESS || destOffset == NULL) {
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    if ((*destOffset > destBlob->size) ||
-        ((destBlob->size - *destOffset) < (sizeof(blob->size) + ALIGN_SIZE(blob->size)))) {
-        return CMR_ERROR_BUFFER_TOO_SMALL;
-    }
-
-    if (memcpy_s(destBlob->data + *destOffset, destBlob->size - *destOffset,
-                 &(blob->size), sizeof(blob->size)) != EOK) {
-        return CMR_ERROR_MEM_OPERATION_COPY;
-    }
-    *destOffset += sizeof(blob->size);
-
-    if (memcpy_s(destBlob->data + *destOffset, destBlob->size - *destOffset, blob->data, blob->size) != EOK) {
-        *destOffset -= sizeof(blob->size);
-        return CMR_ERROR_MEM_OPERATION_COPY;
-    }
-    *destOffset += ALIGN_SIZE(blob->size);
-    return CM_SUCCESS;
 }
 
 static int32_t ParseParamsToHuksParamSet(uint32_t certPurpose, struct HksParamSet **paramSetIn,
@@ -94,14 +54,17 @@ static int32_t ParseParamsToHuksParamSet(uint32_t certPurpose, struct HksParamSe
 
     int32_t ret = HksInitParamSet(paramSetIn);
     if (ret != CM_SUCCESS) {
+        CM_LOG_E("HksInitParamSet failed");
         return ret;
     }
     ret = HksAddParams(*paramSetIn, params, paramsCount - 1);
     if (ret != CM_SUCCESS) {
+        CM_LOG_E("HksAddParams failed");
         return ret;
     }
     ret = HksBuildParamSet(paramSetIn);
     if (ret != CM_SUCCESS) {
+        CM_LOG_E("HksBuildParamSet failed");
         return ret;
     }
     return ret;
@@ -110,7 +73,7 @@ static int32_t ParseParamsToHuksParamSet(uint32_t certPurpose, struct HksParamSe
 static int32_t BuildCmBlobToHuksParams(const struct CmBlob *cmParam, uint32_t certPurpose,
     uint32_t paramsCount, struct HksBlob *hksParam, struct HksParamSet **paramSetIn)
 {
-    CM_LOG_I("enter CopyCmBlobToHuksBlob");
+    CM_LOG_I("enter BuildCmBlobToHuksParams");
     if (cmParam == NULL) {
         CM_LOG_E("cmParam is NULL");
         return CMR_ERROR_NULL_POINTER;
@@ -150,8 +113,8 @@ static int32_t GetCertAliasByCertInfo(const struct HksExtCertInfo *certInfo, str
         if (certInfo->index.size > MAX_LEN_CERT_ALIAS) {
             aliasLen = MAX_LEN_CERT_ALIAS; // truncate copy
         }
-        if (memcpy_s(certAlias->data, certInfo->index.size, certInfo->index.data, aliasLen) != EOK) {
-            CM_LOG_E("failed to copy certUri->data");
+        if (memcpy_s(certAlias->data, certAlias->size, certInfo->index.data, aliasLen) != EOK) {
+            CM_LOG_E("failed to copy certAlias->data");
             return CMR_ERROR_MEM_OPERATION_COPY;
         }
     }
@@ -285,6 +248,7 @@ static int32_t BuildCertSetToCmBlob(const struct HksExtCertInfoSet *certSet, str
         CM_LOG_E("Copy certificate count failed");
         return ret;
     }
+    CM_LOG_I("get ukey cert count: %u", certSet->count);
     for (uint32_t i = 0; i < certSet->count; i++) {
         ret = BuildCredentialToCmBlob(&certSet->certs[i], certificateList, &offset);
         if (ret != CM_SUCCESS) {
@@ -298,6 +262,10 @@ static int32_t BuildCertSetToCmBlob(const struct HksExtCertInfoSet *certSet, str
 int32_t CmGetUkeyCertListByHksCertInfoSet(const struct CmBlob *ukeyProvider, uint32_t certPurpose, uint32_t paramsCount,
     struct CmBlob *certificateList)
 {
+    if (ukeyProvider == NULL || certificateList->data == NULL) {
+        CM_LOG_E("CmGetUkeyCertByHksCertInfoSet arguments invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     struct HksBlob providerName = { 0, NULL };
     struct HksParamSet *paramSetIn = NULL;
     struct HksExtCertInfoSet certSet = { 0, NULL };
@@ -322,18 +290,23 @@ int32_t CmGetUkeyCertListByHksCertInfoSet(const struct CmBlob *ukeyProvider, uin
     } while (0);
     HksFreeExtCertSet(&certSet);
     HksFreeParamSet(&paramSetIn);
+    CM_FREE_BLOB(providerName);
     return ret;
 }
 
-int32_t CmGetUkeyCertByHksCertInfoSet(const struct CmBlob *ukeyCertIndex, uint32_t certPurpose, uint32_t paramsCount,
+int32_t CmGetUkeyCertByHksCertInfoSet(const struct CmBlob *keyUri, uint32_t certPurpose, uint32_t paramsCount,
     struct CmBlob *certificateList)
 {
+    if (keyUri == NULL || keyUri->data == NULL || certificateList->data == NULL) {
+        CM_LOG_E("CmGetUkeyCertByHksCertInfoSet arguments invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     struct HksBlob index = { 0, NULL };
     struct HksParamSet *paramSetIn = NULL;
     struct HksExtCertInfoSet certSet = { 0, NULL };
     int32_t ret = CM_SUCCESS;
     do {
-        ret = BuildCmBlobToHuksParams(ukeyCertIndex, certPurpose, paramsCount, &index, &paramSetIn);
+        ret = BuildCmBlobToHuksParams(keyUri, certPurpose, paramsCount, &index, &paramSetIn);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("BuildCmBlobToHuksParams failed, ret = %d", ret);
             break;
@@ -352,5 +325,6 @@ int32_t CmGetUkeyCertByHksCertInfoSet(const struct CmBlob *ukeyCertIndex, uint32
     } while (0);
     HksFreeExtCertSet(&certSet);
     HksFreeParamSet(&paramSetIn);
+    CM_FREE_BLOB(index);
     return ret;
 }

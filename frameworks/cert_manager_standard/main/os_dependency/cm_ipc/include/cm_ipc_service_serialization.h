@@ -13,23 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef CERT_MANAGER_UKEY_OPERATION_H
-#define CERT_MANAGER_UKEY_OPERATION_H
+#ifndef CM_IPC_SERVICE_SERIALIZATION_H
+#define CM_IPC_SERVICE_SERIALIZATION_H
 
-#include "cm_type.h"
+#include "cm_type_inner.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int32_t CmGetUkeyCertListByHksCertInfoSet(const struct CmBlob *ukeyProvider, uint32_t certPurpose, uint32_t paramsCount,
-    struct CmBlob *certificateList);
+int32_t CopyUint32ToBuffer(uint32_t value, const struct CmBlob *destBlob, uint32_t *destOffset);
 
-int32_t CmGetUkeyCertByHksCertInfoSet(const struct CmBlob *keyUri, uint32_t certPurpose, uint32_t paramsCount,
-    struct CmBlob *certificateList);
+int32_t CopyBlobToBuffer(const struct CmBlob *blob, const struct CmBlob *destBlob, uint32_t *destOffset);
+
+int32_t CmParamSetToParams(const struct CmParamSet *paramSet, struct CmParamOut *outParams, uint32_t cnt);
+
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* CERT_MANAGER_UKEY_OPERATION_H */
+#endif /* CM_IPC_SERVICE_SERIALIZATION_H */
