@@ -21,17 +21,17 @@
 #include "napi/native_node_api.h"
 
 namespace CMNapi {
-CmUIExtensionCertIndexCallback::CmUIExtensionCertIndexCallback(
+CmUIExtensionCertReferenceCallback::CmUIExtensionCertReferenceCallback(
     std::shared_ptr<CmUIExtensionRequestContext>& reqContext) : CmUIExtensionCallback(reqContext) {}
 
-CmUIExtensionCertIndexCallback::~CmUIExtensionCertIndexCallback()
+CmUIExtensionCertReferenceCallback::~CmUIExtensionCertReferenceCallback()
 {
-    CM_LOG_D("~CmUIExtensionCertIndexCallback");
+    CM_LOG_D("~CmUIExtensionCertReferenceCallback");
 }
 
-void CmUIExtensionCertIndexCallback::OnReceive(const OHOS::AAFwk::WantParams& request)
+void CmUIExtensionCertReferenceCallback::OnReceive(const OHOS::AAFwk::WantParams& request)
 {
-    CM_LOG_D("CmUIExtensionCertIndexCallback OnReceive()");
+    CM_LOG_D("CmUIExtensionCertReferenceCallback OnReceive()");
     this->reqContext_->certificateType = static_cast<uint32_t>(request.GetIntParam("certType", 0));
     this->reqContext_->uri = request.GetStringParam("uri");
     if (SetErrorCode(0)) {
@@ -39,7 +39,7 @@ void CmUIExtensionCertIndexCallback::OnReceive(const OHOS::AAFwk::WantParams& re
     }
 }
 
-void CmUIExtensionCertIndexCallback::ProcessCallback(napi_env env, const CommonAsyncContext* asyncContext)
+void CmUIExtensionCertReferenceCallback::ProcessCallback(napi_env env, const CommonAsyncContext* asyncContext)
 {
     napi_value args = nullptr;
     NAPI_CALL_RETURN_VOID(env, napi_create_object(env, &args));

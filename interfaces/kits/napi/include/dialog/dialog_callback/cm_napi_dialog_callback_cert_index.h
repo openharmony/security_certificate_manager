@@ -13,20 +13,20 @@
  * limitations under the License.
  */
 
-#ifndef CM_NAPI_DIALOG_CALLBACK_CERTINDEX_H
-#define CM_NAPI_DIALOG_CALLBACK_CERTINDEX_H
+#ifndef CM_NAPI_DIALOG_CALLBACK_CERTREFERENCE_H
+#define CM_NAPI_DIALOG_CALLBACK_CERTREFERENCE_H
 
 #include "cm_napi_dialog_callback.h"
 
 namespace CMNapi {
-class CmUIExtensionCertIndexCallback : public CmUIExtensionCallback {
+class CmUIExtensionCertReferenceCallback : public CmUIExtensionCallback {
 public:
-    explicit CmUIExtensionCertIndexCallback(std::shared_ptr<CmUIExtensionRequestContext>& reqContext);
-    ~CmUIExtensionCertIndexCallback();
+    explicit CmUIExtensionCertReferenceCallback(std::shared_ptr<CmUIExtensionRequestContext>& reqContext);
+    ~CmUIExtensionCertReferenceCallback();
 
     void OnReceive(const OHOS::AAFwk::WantParams& request) override;
     void ProcessCallback(napi_env env, const CommonAsyncContext* asyncContext) override;
 };
 } // namespace CMNapi
 
-#endif  // CM_NAPI_DIALOG_CALLBACK_CERTINDEX_H
+#endif  // CM_NAPI_DIALOG_CALLBACK_CERTREFERENCE_H
