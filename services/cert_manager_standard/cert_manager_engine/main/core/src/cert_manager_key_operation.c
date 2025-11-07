@@ -216,43 +216,6 @@ int32_t CmKeyOpGenMacKey(const struct CmBlob *alias, enum CmAuthStorageLevel lev
     return CM_SUCCESS;
 }
 
-int32_t CmKeyOpGenMacKeyIfNotExist(const struct CmBlob *alias)
-{
-    struct HksParam keyExistParams[] = {
-        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_DE },
-    };
-    struct HksParamSet *paramSet = NULL;
-    int32_t ret = ConstructParamSet(keyExistParams, sizeof(keyExistParams) / sizeof(struct HksParam), &paramSet,
-        CM_AUTH_STORAGE_LEVEL_EL1, alias);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("Failed to construct key exist paramSet");
-        return CMR_ERROR_KEY_CHECK_EXIST_PARAM_FAILED;
-    }
-
-    struct HksBlob keyAlias = { alias->size, alias->data };
-
-    uint8_t encodeBuf[MAX_LEN_BASE64URL_SHA256] = { 0 };
-    struct CmBlob encodeTarget = { sizeof(encodeBuf), encodeBuf };
-    ret = GetKeyAlias(&keyAlias, &encodeTarget);
-    if (ret != CM_SUCCESS) {
-        HksFreeParamSet(&paramSet);
-        CM_LOG_E("get keyalias failed");
-        return ret;
-    }
-
-    ret = HksKeyExist(&keyAlias, paramSet);
-    HksFreeParamSet(&paramSet);
-    if (ret == HKS_SUCCESS) {
-        return ret;
-    }
-    if (ret != HKS_ERROR_NOT_EXIST) {
-        CM_LOG_E("find mac key failed, ret = %d", ret);
-        return CMR_ERROR_KEY_CHECK_EXIST_FAILED;
-    }
-
-    return CmKeyOpGenMacKey(alias, CM_AUTH_STORAGE_LEVEL_EL1);
-}
-
 int32_t CmKeyOpDeleteKey(const struct CmBlob *alias, enum CmAuthStorageLevel level)
 {
     uint32_t huksAuthStorageLevel = TranslateToHuksLevel(level);
@@ -690,4 +653,4 @@ int32_t CmKeyOpProcess(enum CmSignVerifyCmd cmdId, const struct CmContext *conte
     HksFreeParamSet(&paramSet);
     return ret;
 }
- 
+
