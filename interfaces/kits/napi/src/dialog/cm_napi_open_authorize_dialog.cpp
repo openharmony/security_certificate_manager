@@ -18,7 +18,7 @@
 #include "cm_log.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_napi_dialog_callback_string.h"
-#include "cm_napi_dialog_callback_cert_index.h"
+#include "cm_napi_dialog_callback_cert_reference.h"
  
 namespace CMNapi {
 
