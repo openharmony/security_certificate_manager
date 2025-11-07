@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "cm_napi_dialog_callback_cert_index.h"
+#include "cm_napi_dialog_callback_cert_reference.h"
 
 #include "cm_napi_dialog_common.h"
 #include "cm_log.h"
