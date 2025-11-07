@@ -104,7 +104,7 @@ ohos_shared_library("certmanagerdialog") {
     "src/dialog/dialog_callback/cm_napi_dialog_callback_void.cpp",
     "src/dialog/dialog_callback/cm_napi_dialog_callback_string.cpp",
     "src/dialog/dialog_callback/cm_napi_dialog_callback_int_bool.cpp",
-    "src/dialog/dialog_callback/cm_napi_dialog_callback_cert_index.cpp",
+    "src/dialog/dialog_callback/cm_napi_dialog_callback_cert_reference.cpp",
   ]
 
   external_deps = [

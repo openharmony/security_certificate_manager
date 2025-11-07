@@ -18,7 +18,7 @@
 #include "cm_log.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_napi_dialog_callback_string.h"
-#include "cm_napi_dialog_callback_cert_index.h"
+#include "cm_napi_dialog_callback_cert_reference.h"
  
 namespace CMNapi {
 
@@ -154,7 +154,7 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
         auto uiExtCallback = std::make_shared<CmUIExtensionStringCallback>(asyncContext);
         StartUIExtensionAbility(asyncContext, CMGetAuthCertWant(asyncContext), uiExtCallback);
     } else if (argc == PARAM_SIZE_TWO) {
-        auto uiExtCallback = std::make_shared<CmUIExtensionCertIndexCallback>(asyncContext);
+        auto uiExtCallback = std::make_shared<CmUIExtensionCertReferenceCallback>(asyncContext);
         StartUIExtensionAbility(asyncContext, CMGetAuthCertWant(asyncContext), uiExtCallback);
     }
     CM_LOG_I("cert authorize dialog end");

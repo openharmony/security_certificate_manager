@@ -109,7 +109,7 @@ static void FreeCredential(Credential *credential)
     credential = nullptr;
 }
 
-static void buildCertIndex(const string providerName, CmBlob &providerNameBlob)
+static void buildCertReference(const string providerName, CmBlob &providerNameBlob)
 {
     char *data = static_cast<char*>(CmMalloc(providerName.length() + 1));
     ASSERT_TRUE(data != nullptr);
@@ -134,7 +134,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestBaseTest001, TestSize.Level0)
 {
     string providerName = "testHap";
     CmBlob providerNameBlob = { 0, nullptr };
-    buildCertIndex(providerName, providerNameBlob);
+    buildCertReference(providerName, providerNameBlob);
     struct UkeyInfo ukeyInfo1;
     ukeyInfo1.certPurpose = CM_CERT_PURPOSE_SIGN;
 
@@ -326,7 +326,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKBaseTest001, TestSize.Level0)
 {
     string providerName = "testHap";
     CmBlob providerNameBlob = { 0, nullptr };
-    buildCertIndex(providerName, providerNameBlob);
+    buildCertReference(providerName, providerNameBlob);
     struct UkeyInfo ukeyInfo1;
     ukeyInfo1.certPurpose = CM_CERT_PURPOSE_SIGN;
 
@@ -434,7 +434,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest001, TestSize.Level0)
 {
     string providerName = "testHap";
     CmBlob providerNameBlob = { 0, nullptr };
-    buildCertIndex(providerName, providerNameBlob);
+    buildCertReference(providerName, providerNameBlob);
     struct UkeyInfo ukeyInfo1;
     ukeyInfo1.certPurpose = CM_CERT_PURPOSE_SIGN;
 

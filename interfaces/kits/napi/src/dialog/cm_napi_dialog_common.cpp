@@ -393,7 +393,7 @@ napi_value GetCertTypeArray(napi_env env, napi_value object, std::vector<int32_t
             return nullptr;
         }
         
-        if (certType < CA_CERT || certType > CREDENTIAL_UKEY) {
+        if (certType < CREDENTIAL_USER || certType > CREDENTIAL_UKEY) {
             CM_LOG_E("certtype is invalid");
             return nullptr;
         }
