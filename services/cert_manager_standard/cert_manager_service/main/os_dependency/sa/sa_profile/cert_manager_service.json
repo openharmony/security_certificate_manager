@@ -18,7 +18,8 @@
                 }
               ]
             },
-            "recycle-strategy":"low-memory"
+            "recycle-strategy":"low-memory",
+            "min_hdi_proxy_version": []
         }
     ]
   }
