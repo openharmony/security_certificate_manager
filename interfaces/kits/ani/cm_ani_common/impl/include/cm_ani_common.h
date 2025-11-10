@@ -26,6 +26,8 @@ static const uint32_t APPLICATION_PRIVATE_CERTIFICATE_STORE = 3;
 static const uint32_t APPLICATION_SYSTEM_CERTIFICATE_STORE = 4;
 static const uint32_t OUT_HANDLE_SIZE = 8;
 static const uint32_t OUT_AUTH_URI_SIZE = 1000;
+static const uint32_t SINGLE_UKEY = 1;
+static const uint32_t LIST_UKEY = 2;
 
 ani_object GetAniErrorResult(ani_env *env, int32_t resultCode);
 

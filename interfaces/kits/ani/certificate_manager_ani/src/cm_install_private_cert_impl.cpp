@@ -67,8 +67,18 @@ int32_t CmInstallPrivateCertImpl::GetParamsFromEnv()
 
 int32_t CmInstallPrivateCertImpl::InvokeInnerApi()
 {
-    struct CmAppCertParam certParam = { &this->keystore, &this->keystorePwd, &this->certAlias,
-        APPLICATION_PRIVATE_CERTIFICATE_STORE, INIT_INVALID_VALUE, level };
+    struct CmBlob privKey = { 0, NULL };
+    struct CmAppCertParam certParam = {
+        &this->keystore,
+        &this->keystorePwd,
+        &this->certAlias,
+        APPLICATION_PRIVATE_CERTIFICATE_STORE,
+        INIT_INVALID_VALUE,
+        level,
+        FILE_P12,
+        &privKey,
+        DEFAULT_FORMAT
+    };
 
     int32_t ret = CmInstallAppCertEx(&certParam, &this->retUri);
     if (ret == CMR_ERROR_PASSWORD_IS_ERR) {

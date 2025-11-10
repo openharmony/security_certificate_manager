@@ -39,6 +39,9 @@ const std::string CERT_MANAGER_CALLER_UID = "appUid";
 const std::string CERT_MANAGER_CERT_URI = "certUri";
 const std::string CERT_MANAGER_OPERATION_TYPE = "operationType";
 const std::string CERT_MANAGER_SHOW_INSTALL_BUTTON = "showInstallButton";
+const std::string CERT_MANAGER_CERT_TYPES = "certTypes";
+const std::string CERT_MANAGER_CERT_PURPOSE = "certPurpose";
+const std::string CERT_MANAGER_CERT_KEY_URI = "keyUri";
 
 constexpr int32_t PARAM0 = 0;
 constexpr int32_t PARAM1 = 1;
@@ -54,7 +57,8 @@ enum CmDialogPageType {
     PAGE_CREDENTIAL = 3,
     PAGE_INSTALL_CERTIFICATE = 4,
     PAGE_INSTALL_CA_GUIDE = 5,
-    PAGE_REQUEST_AUTHORIZE = 6
+    PAGE_REQUEST_AUTHORIZE = 6,
+    PAGE_UKEY_PIN_AUTHORIZE = 7,
 };
 
 enum CmCertificateType {
@@ -108,6 +112,14 @@ class CmAniUIExtensionCallbackString : public CmAniUIExtensionCallback {
 public:
     CmAniUIExtensionCallbackString(ani_vm *vm, std::shared_ptr<AbilityContext> context, ani_ref aniCallback);
     ~CmAniUIExtensionCallbackString() {}
+    void OnReceive(const OHOS::AAFwk::WantParams &request) override;
+    ani_object GetDefaultResult(ani_env *env) override;
+};
+
+class CmAniUIExtensionCallbackCertReference : public CmAniUIExtensionCallback {
+public:
+    CmAniUIExtensionCallbackCertReference(ani_vm *vm, std::shared_ptr<AbilityContext> context, ani_ref aniCallback);
+    ~CmAniUIExtensionCallbackCertReference() {}
     void OnReceive(const OHOS::AAFwk::WantParams &request) override;
     ani_object GetDefaultResult(ani_env *env) override;
 };

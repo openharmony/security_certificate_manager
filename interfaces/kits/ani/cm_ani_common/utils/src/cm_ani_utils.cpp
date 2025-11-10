@@ -24,10 +24,12 @@
 namespace OHOS::Security::CertManager::Ani {
 namespace AniUtils {
 const char *ETS_CTOR = "<ctor>";
+const char *ETS_GET = "$_get";
 const char *NATIVE_RESULT_CLASS = "@ohos.security.certManager.NativeResult";
 const char *CALLBACK_WRAPPER_CLASS = "@ohos.security.certManagerDialog.AsyncCallbackWrapper";
 const char *BUSINESS_ERROR_CLASS = "@ohos.base.BusinessError";
 const char *CM_RESULT_CLASS = "@ohos.security.certManager.CMResultClass";
+const char *CM_CERT_REFERENCE_CLASS = "@ohos.security.certManagerDialog.CertReferenceClass";
 const char *CRED_ABSTRACT_CLASS = "@ohos.security.certManager.CredentialAbstractClass";
 const char *CREDENTIAL_CLASS = "@ohos.security.certManager.CredentialClass";
 const char *CERT_ABSTRACT_CLASS = "@ohos.security.certManager.CertAbstractClass";
@@ -38,6 +40,33 @@ const char *KEY_PADDING_ENUM = "@ohos.security.certManager.certificateManager.Cm
 const char *KEY_DIGEST_ENUM = "@ohos.security.certManager.certificateManager.CmKeyDigest";
 const char *CM_HANDLE_CLASS = "@ohos.security.certManager.CMHandleClass";
 const char *BOOLEAN_CLASS = "std.core.Boolean";
+const char *INT_CLASS = "std.core.Int";
+const char *CERTIFICATE_TYPE_ENUM = "@ohos.security.certManagerDialog.certificateManagerDialog.CertificateType";
+
+static int32_t CreateResultObject(ani_env *env, ani_object &resultObjOut, const char *mangling)
+{
+    if (env == nullptr || mangling == nullptr) {
+        CM_LOG_E("env is nullptr.");
+        return CMR_ERROR_NULL_POINTER;
+    }
+    ani_class cls;
+    if (env->FindClass(mangling, &cls) != ANI_OK) {
+        CM_LOG_E("find class failed, class %s not found.", mangling);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    ani_method ctor;
+    if (env->Class_FindMethod(cls, ETS_CTOR, ":", &ctor) != ANI_OK) {
+        CM_LOG_E("find class method failed, method %s not found.", ETS_CTOR);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (env->Object_New(cls, ctor, &resultObjOut) != ANI_OK) {
+        CM_LOG_E("create %s object failed.", mangling);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    return CM_SUCCESS;
+}
 
 bool IsUndefined(ani_env *env, ani_object object)
 {
@@ -106,6 +135,47 @@ int32_t ParseString(ani_env *env, ani_string ani_str, CmBlob &outBlob)
     return CM_SUCCESS;
 }
 
+int32_t ParseIntArray(ani_env *env, ani_object ani_array, std::vector<int32_t> &outParam)
+{
+    ani_int aniLength;
+    auto ret = env->Object_GetPropertyByName_Int(ani_array, "length", &aniLength);
+    if (ret != ANI_OK) {
+        CM_LOG_E("get array length failed, ret = %d", static_cast<int32_t>(ret));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    int32_t arrayCount = static_cast<int32_t>(aniLength);
+    if (arrayCount == 0) {
+        CM_LOG_E("invalid arrayCount");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    for (int i = 0; i < arrayCount; ++i) {
+        ani_ref elemRef;
+        ret = env->Object_CallMethodByName_Ref(ani_array, ETS_GET, "i:C{std.core.Object}", &elemRef, i);
+        if (ret != ANI_OK) {
+            CM_LOG_E("get elem from arkTs array failed, index = %d, ret: %d", i, static_cast<int32_t>(ret));
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        ani_boolean isUndefined;
+        env->Reference_IsUndefined(elemRef, &isUndefined);
+        if (isUndefined) {
+            CM_LOG_E("element is undefine");
+            continue;
+        }
+        ani_int intValue;
+        ani_status ret = env->EnumItem_GetValue_Int(static_cast<ani_enum_item>(elemRef), &intValue);
+        if (ret != ANI_OK) {
+            CM_LOG_E("EnumItem_GetValue_Int failed, index = %d, ret: %d", i, static_cast<int32_t>(ret));
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        outParam.emplace_back(std::move(intValue));
+    }
+    if (static_cast<int32_t>(outParam.size()) != arrayCount) {
+        CM_LOG_E("not all elements in the array have been initialized");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    return CM_SUCCESS;
+}
+
 ani_string GenerateCharStr(ani_env *env, const char *strData, uint32_t length)
 {
     if (env == nullptr) {
@@ -124,6 +194,65 @@ ani_string GenerateCharStr(ani_env *env, const char *strData, uint32_t length)
 ani_string GenerateString(ani_env *env, CmBlob &outBlob)
 {
     return GenerateCharStr(env, (char *)outBlob.data, outBlob.size - 1);
+}
+
+static ani_size MapCertificateTypeIndex(ani_size value) {
+    CM_LOG_I("MapCertificateTypeIndex %d", value);
+    switch(value) {
+        case CA_CERT:
+            return CA_CERT_IDX;
+        case CREDENTIAL_USER:
+            return CREDENTIAL_USER_IDX;
+        case CREDENTIAL_APP:
+            return CREDENTIAL_APP_IDX;
+        case CREDENTIAL_UKEY:
+            return CREDENTIAL_UKEY_IDX;
+        default:
+            return CREDENTIAL_INVALID_TYPE_IDX;
+    }
+}
+
+ani_object GenerateCertReference(ani_env *env, ani_int intValue, ani_string strValue)
+{
+    if (env == nullptr) {
+        CM_LOG_E("env is nullptr.");
+        return nullptr;
+    }
+
+    if (strValue == nullptr) {
+        CM_LOG_E("certIndex parameters failed.");
+        return nullptr;
+    }
+    ani_object resultObjOut{};
+    if (CreateResultObject(env, resultObjOut, CM_CERT_REFERENCE_CLASS) != CM_SUCCESS) {
+        CM_LOG_E("create cmResult object failed.");
+        return nullptr;
+    }
+
+    ani_enum certTypeEnum;
+    ani_status status = env->FindEnum(CERTIFICATE_TYPE_ENUM, &certTypeEnum);
+    if (status != ANI_OK) {
+        CM_LOG_E("find certTypeEnum failed, status: %d", static_cast<int32_t>(status));
+        return nullptr;
+    }
+
+    ani_enum_item = certTypeEnumItem;
+    status = env->Enum_GetEnumItemByIndex(certTypeEnum, MapCertificateTypeIndex(intValue), &certTypeEnumItem)
+    if (status != ANI_OK) {
+        CM_LOG_E("get certTypeEnumItem failed, status: %d", static_cast<int32_t>(status));
+        return nullptr;
+    }
+
+    if ((status = env->Object_SetPropertyByName_Int(resultObjOut, "certType", intValue)) != ANI_OK) {
+        CM_LOG_E("set certType property type failed, status: %d", static_cast<int32_t>(status));
+        return nullptr;
+    }
+
+    if ((status = env->Object_SetPropertyByName_Ref(resultObjOut, "keyUri", strValue)) != ANI_OK) {
+        CM_LOG_E("set keyUri property type failed, status: %d", static_cast<int32_t>(status));
+        return nullptr;
+    }
+    return resultObjOut;
 }
 
 int32_t CreateBooleanObject(ani_env *env, bool value, ani_object &resultObjOut)
@@ -146,31 +275,6 @@ int32_t CreateBooleanObject(ani_env *env, bool value, ani_object &resultObjOut)
 
     if (env->Object_New(cls, ctor, &resultObjOut) != ANI_OK) {
         CM_LOG_E("create %s object failed.", BOOLEAN_CLASS);
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    return CM_SUCCESS;
-}
-
-static int32_t CreateResultObject(ani_env *env, ani_object &resultObjOut, const char *mangling)
-{
-    if (env == nullptr || mangling == nullptr) {
-        CM_LOG_E("env is nullptr.");
-        return CMR_ERROR_NULL_POINTER;
-    }
-    ani_class cls;
-    if (env->FindClass(mangling, &cls) != ANI_OK) {
-        CM_LOG_E("find class failed, class %s not found.", mangling);
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-
-    ani_method ctor;
-    if (env->Class_FindMethod(cls, ETS_CTOR, ":", &ctor) != ANI_OK) {
-        CM_LOG_E("find class method failed, method %s not found.", ETS_CTOR);
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-
-    if (env->Object_New(cls, ctor, &resultObjOut) != ANI_OK) {
-        CM_LOG_E("create %s object failed.", mangling);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     return CM_SUCCESS;
@@ -255,6 +359,56 @@ int32_t GenerateCredObj(ani_env *env, ani_string type, ani_string alias, ani_str
     return CM_SUCCESS;
 }
 
+int32_t GenerateCredDetailObj(ani_env *env, Credential *credential, ani_object &resultObjOut)
+{
+    if (credential == nullptr) {
+        CM_LOG_D("cmResult credential is nullptr");
+        return CM_SUCCESS;
+    }
+    int32_t ret = GenerateCredentialObj(env, resultObjOut);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_I("generate credentialObj failed. ret = %d", ret);
+        return ret;
+    }
+    ani_string aniCredType{};
+    ani_string aniCredAlias{};
+    ani_string aniCredKeyUri{};
+    env->String_NewUTF8(credential->type, strlen(credential->type), &aniCredType);
+    env->String_NewUTF8(credential->alias, strlen(credential->alias), &aniCredAlias);
+    env->String_NewUTF8(credential->keyUri, strlen(credential->keyUri), &aniCredKeyUri);
+    ret = GenerateCredObj(env, aniCredType, aniCredAlias, aniCredKeyUri, resultObjOut);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_I("credentialObj set string property failed. ret = %d", ret);
+        return ret;
+    }
+    ani_object credData;
+    ret = AniUtils::GenerateUint8Array(env, &credential->credData, credData);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_I("generate credData object failed. ret = %d", ret);
+        return ret;
+    }
+    if (env->Object_SetPropertyByName_Int(resultObjOut, "certNum",
+        static_cast<ani_int>(credential->certNum)) != ANI_OK) {
+        CM_LOG_E("set credential property certNum failed");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if (env->Object_SetPropertyByName_Int(resultObjOut, "keyNum",
+        static_cast<ani_int>(credential->keyNum)) != ANI_OK) {
+        CM_LOG_E("set credential property keyNum failed");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if (env->Object_SetPropertyByName_Ref(resultObjOut, "credentialData", credData) != ANI_OK) {
+        CM_LOG_E("set credential property credData failed");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if (env->Object_SetPropertyByName_Int(resultObjOut, "certPurpose",
+        static_cast<ani_int>(credential->certPurpose)) != ANI_OK) {
+        CM_LOG_E("set credential property certPurpose failed");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    return CM_SUCCESS;
+}
+
 int32_t GenerateCredArray(ani_env *env, CredentialAbstract *credentialAbstract, uint32_t credCount,
     ani_array &outArrayRef)
 {
@@ -274,7 +428,6 @@ int32_t GenerateCredArray(ani_env *env, CredentialAbstract *credentialAbstract, 
         env->String_NewUTF8(credentialAbstract[i].type, strlen(credentialAbstract[i].type), &aniCredType);
         env->String_NewUTF8(credentialAbstract[i].alias, strlen(credentialAbstract[i].alias), &aniCredAlias);
         env->String_NewUTF8(credentialAbstract[i].keyUri, strlen(credentialAbstract[i].keyUri), &aniCredKeyUri);
-
         ani_object credAbstractObj{};
         int32_t ret = GenerateCredObj(env, aniCredType, aniCredAlias, aniCredKeyUri, credAbstractObj);
         if (ret != CM_SUCCESS) {
@@ -282,6 +435,33 @@ int32_t GenerateCredArray(ani_env *env, CredentialAbstract *credentialAbstract, 
             return CMR_ERROR_INVALID_ARGUMENT;
         }
         if (env->Array_Set(resultArray, i, credAbstractObj) != ANI_OK) {
+            CM_LOG_E("credArray setRef failed.");
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+    }
+    outArrayRef = resultArray;
+    return CM_SUCCESS;
+}
+
+int32_t GenerateCredDetailArrayObj(ani_env *env, Credential *credential, uint32_t credCount, ani_array &outArrayRef)
+{
+    if (env == nullptr) {
+        CM_LOG_E("env is nullptr.");
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    ani_ref undefinedRef;
+    env->GetUndefined(&undefinedRef);
+    ani_array resultArray;
+    env->Array_New(credCount, undefinedRef, &resultArray);
+    for (uint32_t i = 0; i < credCount; i++) {
+        ani_object credentialObj{};
+        int32_t ret = GenerateCredDetailObj(env, &credential[i], credentialObj);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("generate cred detail object failed. ret = %d", ret);
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        if (env->Array_Set(resultArray, i, credentialObj) != ANI_OK) {
             CM_LOG_E("credArray setRef failed.");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
@@ -575,7 +755,7 @@ int32_t GenerateBusinessError(ani_env *env, const int32_t errorCode, const char 
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (env->Object_SetFieldByName_Double(objectOut, "code", static_cast<ani_double>(errorCode)) != ANI_OK) {
+    if (env->Object_SetFieldByName_Int(objectOut, "code_", static_cast<ani_int>(errorCode)) != ANI_OK) {
         CM_LOG_E("set businessError field code error");
         return CMR_ERROR_INVALID_ARGUMENT;
     }

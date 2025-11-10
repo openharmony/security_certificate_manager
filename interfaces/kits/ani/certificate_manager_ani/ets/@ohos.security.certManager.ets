@@ -22,6 +22,8 @@ native function uninstallPrivateCertificateNative(keyUri: string): NativeResult<
 
 native function getAllAppPrivateCertificatesNative(): NativeResult<certificateManager.CMResult>;
 
+native function getAllAppPrivateCertificatesByUidNative(appUid: int): NativeResult<certificateManager.CMResult>;
+
 native function getPrivateCertificateNative(keyUri: string): NativeResult<certificateManager.CMResult>;
 
 native function initNative(authUri: string,
@@ -71,6 +73,16 @@ native function installPrivateCertWithLevelNative(
   level: certificateManager.AuthStorageLevel
 ): NativeResult<certificateManager.CMResult>;
 
+native function getUkeyCertificateListNative(
+  ukeyProvider: string,
+  certPurpose: certificateManager.CertificatePurpose
+): NativeResult<certificateManager.CMResult>;
+
+native function getUkeyCertificateNative(
+  keyUri: string,
+  certPurpose: certificateManager.CertificatePurpose
+): NativeResult<certificateManager.CMResult>;
+
 class NativeResult<T> {
   code: int;
   message: string = "";
@@ -91,6 +103,7 @@ class CMResultClass implements certificateManager.CMResult{
   appUidList?: Array<string>;
   uri?: string;
   outData?: Uint8Array;
+  credentialDetailList?: Array<certificateManager.Credential>;
 }
 
 class CredentialClass implements certificateManager.Credential {
@@ -100,6 +113,7 @@ class CredentialClass implements certificateManager.Credential {
   certNum: int;
   keyNum: int;
   credentialData: Uint8Array = new Uint8Array();
+  certPurpose?: certificateManager.CertificatePurpose;
 }
 
 class CMHandleClass implements certificateManager.CMHandle {
@@ -172,12 +186,17 @@ export namespace certificateManager {
     certNum: int;
     keyNum: int;
     credentialData: Uint8Array;
+    certPurpose?: CertificatePurpose;
   }
 
   export interface CredentialAbstract {
     type: string;
     alias: string;
     keyUri: string;
+  }
+
+  export interface UkeyInfo {
+    certPurpose?: CertificatePurpose;
   }
 
   export interface CMResult {
@@ -188,6 +207,7 @@ export namespace certificateManager {
     appUidList?: Array<string>;
     uri?: string;
     outData?: Uint8Array;
+    credentialDetailList?: Array<Credential>;
   }
 
   export enum CmKeyPurpose {
@@ -247,6 +267,13 @@ export namespace certificateManager {
     EL1 = 1,
     EL2 = 2,
     EL4 = 4,
+  }
+
+  export enum CertificatePurpose {
+    PURPOSE_DEFAULT = 0, 
+    PURPOSE_ALL = 1,
+    PURPOSE_SIGN = 2,
+    PURPOSE_ENCRYPT = 3
   }
 
   const MIN_DATA_LEN: double = 1;
@@ -343,6 +370,10 @@ export namespace certificateManager {
 
   export function getAllAppPrivateCertificates(): Promise<CMResult> {
     return createPromise<CMResult>(() => getAllAppPrivateCertificatesNative(), {});
+  }
+
+  export function getAllAppPrivateCertificatesByUid(appUid: int): Promise<CMResult> {
+    return createPromise<CMResult>(() => getAllAppPrivateCertificatesByUidNative(appUid), {});
   }
 
   export function getPrivateCertificate(keyUri: string, callback: AsyncCallback<CMResult>): void {
@@ -502,6 +533,22 @@ export namespace certificateManager {
     checkBufferLen(keystore, MIN_DATA_LEN, MAX_DATA_LEN);
     return createPromise<CMResult>(
       () => installPrivateCertWithLevelNative(keystore.buffer as ArrayBuffer, keystorePwd, certAlias, level),
+      {}
+    );
+  }
+
+  export function getUkeyCertificateList(ukeyProvider: string, ukeyInfo: UkeyInfo): Promise<CMResult> {
+    let certPurpose = ukeyInfo.certPurpose?? CertificatePurpose.PURPOSE_DEFAULT;
+    return createPromise<CMResult>(
+      () => getUkeyCertificateListNative(ukeyProvider, certPurpose),
+      {}
+    );
+  }
+
+  export function getUkeyCertificate(keyUri: string, ukeyInfo: UkeyInfo): Promise<CMResult> {
+    let certPurpose = ukeyInfo.certPurpose?? CertificatePurpose.PURPOSE_DEFAULT;
+    return createPromise<CMResult>(
+      () => getUkeyCertificateNative(keyUri, certPurpose),
       {}
     );
   }

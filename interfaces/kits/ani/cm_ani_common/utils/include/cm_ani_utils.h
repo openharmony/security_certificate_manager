@@ -23,11 +23,30 @@
 
 namespace OHOS::Security::CertManager::Ani {
 namespace AniUtils {
+enum CmCertificateType {
+    CA_CERT = 1,
+    CREDENTIAL_USER = 2, // private type
+    CREDENTIAL_APP = 3, // app type
+    CREDENTIAL_UKEY = 4, // ukey type
+    CREDENTIAL_INVALID_TYPE, // invalid type
+};
+
+enum CmCertificateTypeIndex {
+    CA_CERT_IDX = 1,
+    CREDENTIAL_USER_IDX = 2,
+    CREDENTIAL_APP_IDX = 3,
+    CREDENTIAL_UKEY_IDX = 4,
+    CREDENTIAL_INVALID_TYPE_IDX,
+};
+
+
 bool IsUndefined(ani_env *env, ani_object object);
 
 int32_t ParseUint8Array(ani_env *env, ani_arraybuffer uint8Array, CmBlob &outBlob);
 
 int32_t ParseString(ani_env *env, ani_string ani_str, CmBlob &strBlob);
+
+int32_t ParseIntArray(ani_env *env, ani_object ani_array, std::vector<int32_t> &outParam);
 
 ani_string GenerateCharStr(ani_env *env, const char *strData, uint32_t length);
 
@@ -36,14 +55,24 @@ ani_string GenerateString(ani_env *env, CmBlob &outBlob);
 int32_t GenerateNativeResult(ani_env *env, const int32_t code, const char *message,
     ani_object result, ani_object &resultObjOut);
 
+ani_object GenerateCertReference(ani_env *env, ani_int intValue, ani_string strValue);
+
+int32_t CreateBooleanObject(ani_env *env, bool value, ani_object &resultObjOut);
+
 int32_t CreateBooleanObject(ani_env *env, bool value, ani_object &resultObjOut);
 
 int32_t GenerateCmResult(ani_env *env, ani_object &resultObjOut);
 
 int32_t GenerateCredObj(ani_env *env, ani_string type, ani_string alias, ani_string keyUri, ani_object &resultObjOut);
 
+int32_t GenerateCredDetailObj(ani_env *env, ani_string type, ani_string alias, ani_string keyUri, ani_object &resultObjOut);
+
 int32_t GenerateCredArray(ani_env *env, CredentialAbstract *credentialAbstract, uint32_t credCount,
     ani_array &outArrayRef);
+
+int32_t GenerateCredDetailArrayObj(ani_env *env, Credential *credential, uint32_t credCount, ani_array &outArrayRef);
+
+int32_t GenerateCredDetailArray(ani_env *env, Credential *credential, uint32_t credCount, ani_array &outArrayRef);
 
 int32_t GenerateCredentialObj(ani_env *env, ani_object &resultObjOut);
 
