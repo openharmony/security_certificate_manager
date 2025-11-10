@@ -39,7 +39,6 @@ enum CmCertificateTypeIndex {
     CREDENTIAL_INVALID_TYPE_IDX,
 };
 
-
 bool IsUndefined(ani_env *env, ani_object object);
 
 int32_t ParseUint8Array(ani_env *env, ani_arraybuffer uint8Array, CmBlob &outBlob);
