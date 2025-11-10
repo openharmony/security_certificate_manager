@@ -70,11 +70,6 @@ int32_t CertManagerInitialize(void)
         return ret;
     }
 
-    ret = CertManagerStatusInit();
-    if (ret != CM_SUCCESS) {
-        return (ret == CM_FAILURE) ? CMR_ERROR_SA_START_STATUS_INIT_FAILED : ret;
-    }
-
     return CM_SUCCESS;
 }
 
@@ -1090,4 +1085,3 @@ int32_t GetObjNameFromCertData(const struct CmBlob *certData, const struct CmBlo
 #ifdef __cplusplus
 }
 #endif
- 
