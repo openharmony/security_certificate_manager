@@ -18,7 +18,7 @@
 #include "cm_log.h"
 
 namespace OHOS::Security::CertManager::Dialog {
-static OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
+static OHOS::sptr<OHOS::AppExecFwk::IBundleMgr> GetBundleMgrProxy()
 {
     auto systemAbilityManager = OHOS::SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (!systemAbilityManager) {
@@ -31,13 +31,13 @@ static OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> GetBundleMgrProxy()
         CM_LOG_E("fail to get bundle manager proxy.");
         return nullptr;
     }
-    return OHOS::iface_cast<OHOS::AppExecFwk::BundleMgrProxy>(remoteObject);
+    return OHOS::iface_cast<OHOS::AppExecFwk::IBundleMgr>(remoteObject);
 }
 
 int32_t GetCallerLabelName(std::shared_ptr<OHOS::AbilityRuntime::AbilityContext> abilityContext,
     std::string &labelName)
 {
-    OHOS::sptr<OHOS::AppExecFwk::BundleMgrProxy> bundleMgrProxy = GetBundleMgrProxy();
+    OHOS::sptr<OHOS::AppExecFwk::IBundleMgr> bundleMgrProxy = GetBundleMgrProxy();
     if (bundleMgrProxy == nullptr) {
         CM_LOG_E("Failed to get bundle manager proxy.");
         return CM_FAILURE;

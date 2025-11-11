@@ -40,7 +40,7 @@ private:
 
     std::string path = "";
 
-    sptr<OHOS::AppExecFwk::BundleMgrProxy> GetBundleMgrProxy();
+    sptr<OHOS::AppExecFwk::IBundleMgr> GetBundleMgrProxy();
     int32_t GetUserCaStorePath();
     int32_t GetSysCaStorePath();
 

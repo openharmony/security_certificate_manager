@@ -39,8 +39,6 @@ struct CmKeyProperties {
 
 int32_t CmKeyOpGenMacKey(const struct CmBlob *alias, enum CmAuthStorageLevel level);
 
-int32_t CmKeyOpGenMacKeyIfNotExist(const struct CmBlob *alias);
-
 int32_t CmKeyOpDeleteKey(const struct CmBlob *alias, enum CmAuthStorageLevel level);
 
 int32_t CmKeyOpCalcMac(const struct CmBlob *alias, const struct CmBlob *srcData,
