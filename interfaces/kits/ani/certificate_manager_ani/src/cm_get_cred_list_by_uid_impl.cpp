@@ -21,7 +21,8 @@
 #include "cm_ani_common.h"
 
 namespace OHOS::Security::CertManager::Ani {
-CmGetCredListByUidImpl::CmGetCredListByUidImpl(ani_env *env, uint32_t store, ani_int aniAppUid) : CmGetCredListImpl(env, store)
+CmGetCredListByUidImpl::CmGetCredListByUidImpl(ani_env *env, uint32_t store, ani_int aniAppUid)
+    : CmGetCredListImpl(env, store)
 {
     this->aniAppUid = aniAppUid;
 }

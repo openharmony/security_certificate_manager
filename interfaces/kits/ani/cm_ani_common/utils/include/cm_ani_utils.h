@@ -64,7 +64,8 @@ int32_t GenerateCmResult(ani_env *env, ani_object &resultObjOut);
 
 int32_t GenerateCredObj(ani_env *env, ani_string type, ani_string alias, ani_string keyUri, ani_object &resultObjOut);
 
-int32_t GenerateCredDetailObj(ani_env *env, ani_string type, ani_string alias, ani_string keyUri, ani_object &resultObjOut);
+int32_t GenerateCredDetailObj(ani_env *env, ani_string type, ani_string alias, ani_string keyUri,
+    ani_object &resultObjOut);
 
 int32_t GenerateCredArray(ani_env *env, CredentialAbstract *credentialAbstract, uint32_t credCount,
     ani_array &outArrayRef);

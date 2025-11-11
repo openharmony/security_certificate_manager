@@ -196,9 +196,10 @@ ani_string GenerateString(ani_env *env, CmBlob &outBlob)
     return GenerateCharStr(env, (char *)outBlob.data, outBlob.size - 1);
 }
 
-static ani_size MapCertificateTypeIndex(ani_size value) {
+static ani_size MapCertificateTypeIndex(ani_size value)
+{
     CM_LOG_I("MapCertificateTypeIndex %d", value);
-    switch(value) {
+    switch (value) {
         case CA_CERT:
             return CA_CERT_IDX;
         case CREDENTIAL_USER:
@@ -236,8 +237,8 @@ ani_object GenerateCertReference(ani_env *env, ani_int intValue, ani_string strV
         return nullptr;
     }
 
-    ani_enum_item = certTypeEnumItem;
-    status = env->Enum_GetEnumItemByIndex(certTypeEnum, MapCertificateTypeIndex(intValue), &certTypeEnumItem)
+    ani_enum_item certTypeEnumItem;
+    status = env->Enum_GetEnumItemByIndex(certTypeEnum, MapCertificateTypeIndex(intValue), &certTypeEnumItem);
     if (status != ANI_OK) {
         CM_LOG_E("get certTypeEnumItem failed, status: %d", static_cast<int32_t>(status));
         return nullptr;

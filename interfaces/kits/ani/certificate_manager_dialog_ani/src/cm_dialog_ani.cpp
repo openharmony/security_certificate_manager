@@ -63,7 +63,8 @@ ani_object openAuthorizeDialogNative(ani_env *env, ani_object context, ani_objec
 ani_object openAuthorizeDialogWithReqNative(ani_env *env, ani_object context, ani_object certTypes,
     ani_enum_item certPurpose, ani_object callback)
 {
-    auto openAuthDialogWithReqImpl = std::make_shared<CmOpenAuthDialogWithReq>(env, context, certTypes, certPurpose, callback);
+    auto openAuthDialogWithReqImpl = std::make_shared<CmOpenAuthDialogWithReq>(
+        env, context, certTypes, certPurpose, callback);
     return openAuthDialogWithReqImpl->Invoke();
 }
 

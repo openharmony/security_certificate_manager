@@ -47,7 +47,8 @@ int32_t CmGetUkeyCertListImpl::Init()
     (void)memset_s(this->certificateList->credential, buffSize, 0, buffSize);
     this->certificateList->credentialCount = MAX_COUNT_UKEY_CERTIFICATE;
     for (uint32_t i = 0; i < MAX_COUNT_UKEY_CERTIFICATE; ++i) {
-        this->certificateList->credential[i].credData.data = static_cast<uint8_t *>(CmMalloc(MAX_LEN_CERTIFICATE_CHAIN));
+        this->certificateList->credential[i].credData.data = static_cast<uint8_t *>(
+            CmMalloc(MAX_LEN_CERTIFICATE_CHAIN));
         if (this->certificateList->credential[i].credData.data == nullptr) {
             CM_LOG_E("malloc file buffer failed");
             return CMR_ERROR_MALLOC_FAIL;
@@ -80,8 +81,7 @@ int32_t CmGetUkeyCertListImpl::InvokeInnerApi()
     };
     if (this->mode == LIST_UKEY) {
         return CmGetUkeyCertList(&this->strParam, &ukeyInfo, this->certificateList);
-    }
-    else {
+    } else {
         return CmGetUkeyCert(&this->strParam, &ukeyInfo, this->certificateList);
     }
 }
