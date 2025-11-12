@@ -362,7 +362,8 @@ int32_t GenerateCredObj(ani_env *env, ani_string type, ani_string alias, ani_str
 
 int32_t GenerateCredDetailObj(ani_env *env, Credential *credential, ani_object &resultObjOut)
 {
-    if (credential == nullptr) {
+    if (credential == nullptr || credential->type == nullptr || credential->alias == nullptr ||
+        credential->keyUri == nullptr) {
         CM_LOG_D("cmResult credential is nullptr");
         return CM_SUCCESS;
     }
