@@ -103,14 +103,17 @@ int32_t CmGetUkeyCertListImpl::UnpackResult()
 
 void CmGetUkeyCertListImpl::OnFinish()
 {
-    if (this->certificateList == nullptr || this->certificateList->credential == nullptr) {
+    if (this->certificateList == nullptr) {
         return;
     }
-    for (uint32_t i = 0; i < MAX_COUNT_UKEY_CERTIFICATE; ++i) {
-        CM_FREE_BLOB(this->certificateList->credential[i].credData);
+    if (this->certificateList->credential != nullptr) {
+        for (uint32_t i = 0; i < MAX_COUNT_UKEY_CERTIFICATE; ++i) {
+            CM_FREE_BLOB(this->certificateList->credential[i].credData);
+        }
+        CM_FREE_PTR(this->certificateList->credential);
     }
     this->certificateList->credentialCount = 0;
-    CM_FREE_PTR(this->certificateList->credential);
+    CM_FREE_PTR(this->certificateList);
     this->certificateList = nullptr;
     return;
 }
