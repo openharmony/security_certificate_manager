@@ -37,6 +37,7 @@ static const std::string DEVICE_ENTER_ADVSECMODE_MSG = "the device enters advanc
 static const std::string PASSWORD_IS_ERROR_MSG = "the input password is error";
 static const std::string ACCESS_UKEY_SERVICE_FAILED_MSG = "the access USB key service failed";
 static const std::string CAPABILITY_NOT_SUPPORTED_MSG = "capability not support";
+static const std::string HUKS_ABNORMAL_MSG = "huks encountered an exception";
 
 static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     // invalid params
@@ -59,6 +60,7 @@ static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     // ukey
     { CMR_ERROR_UKEY_GENERAL_ERROR, ACCESS_UKEY_SERVICE_FAILED },
     { CMR_ERROR_UKEY_DEVICE_SUPPORT, CAPABILITY_NOT_SUPPORTED },
+    { CMR_ERROR_HUKS_GENERAL_ERROR, INNER_FAILURE },
 };
 
 static const std::unordered_map<int32_t, std::string> NATIVE_CODE_TO_MSG_MAP = {
@@ -76,6 +78,7 @@ static const std::unordered_map<int32_t, std::string> NATIVE_CODE_TO_MSG_MAP = {
     { CMR_ERROR_PASSWORD_IS_ERR, PASSWORD_IS_ERROR_MSG },
     { CMR_ERROR_UKEY_GENERAL_ERROR, ACCESS_UKEY_SERVICE_FAILED_MSG },
     { CMR_ERROR_UKEY_DEVICE_SUPPORT, CAPABILITY_NOT_SUPPORTED_MSG },
+    { CMR_ERROR_HUKS_GENERAL_ERROR, HUKS_ABNORMAL_MSG },
 };
 }  // namespace
 

@@ -188,6 +188,7 @@ enum CmErrorCode {
     /* ukey failed */
     CMR_ERROR_UKEY_GENERAL_ERROR = -51,
     CMR_ERROR_UKEY_DEVICE_SUPPORT = -52,
+    CMR_ERROR_HUKS_GENERAL_ERROR = -53,
 
     /* invalid argument */
     CMR_ERROR_INVALID_ARGUMENT_BEGIN = -10000,

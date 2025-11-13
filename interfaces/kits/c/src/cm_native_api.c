@@ -112,6 +112,10 @@ int32_t OH_CertManager_GetUkeyCertificate(const OH_CM_Blob *keyUri,
     }
     result = CmGetUkeyCert((const struct CmBlob *) keyUri, (const struct UkeyInfo *) ukeyInfo,
         (struct CredentialDetailList *) certificateList);
+    if (certificateList->credentialCount == 0) {
+        CM_LOG_E("no available cert");
+        result = CMR_ERROR_NOT_FOUND;
+    }
     return TranformErrorCode(result);
 }
 
