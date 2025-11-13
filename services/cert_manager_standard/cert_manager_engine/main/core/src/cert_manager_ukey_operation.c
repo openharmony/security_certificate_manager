@@ -36,12 +36,12 @@
 static int32_t ConvertHuksErrCode(int32_t huksErrCode)
 {
     switch (huksErrCode) {
-        case HKS_ERROR_NOT_EXIST:
-            return CMR_ERROR_NOT_EXIST;
         case HKS_ERROR_API_NOT_SUPPORTED:
             return CMR_ERROR_UKEY_DEVICE_SUPPORT;
-        default:
+        case HKS_ERROR_REMOTE_OPERATION_FAILED:
             return CMR_ERROR_UKEY_GENERAL_ERROR;
+        default:
+            return CMR_ERROR_HUKS_GENERAL_ERROR;
     }
 }
 

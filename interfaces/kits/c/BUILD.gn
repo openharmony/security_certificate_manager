@@ -57,7 +57,10 @@ ohos_shared_library("ohcert_manager") {
     "-Werror",
   ]
 
-  innerapi_tags = [ "platformsdk" ]
+  innerapi_tags = [
+    "ndk",
+    "platformsdk"
+  ]
   subsystem_name = "security"
   part_name = "certificate_manager"
 }
