@@ -143,7 +143,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestBaseTest001, TestSize.Level0)
     ASSERT_TRUE(ukeyList.credential[0].credData.data != nullptr);
     providerNameBlob.size -= 1;
     int32_t ret = CmGetUkeyCertList(&providerNameBlob, &ukeyInfo1, &ukeyList);
-    EXPECT_EQ(ret, CMR_ERROR_UKEY_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_HUKS_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
 
     uint8_t *uriBuf = static_cast<uint8_t*>(CmMalloc(sizeof(ukeyList.credential[0].alias)));
     ASSERT_TRUE(uriBuf != nullptr);
@@ -159,7 +159,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestBaseTest001, TestSize.Level0)
     ukeyInfo2.certPurpose = CM_CERT_PURPOSE_SIGN;
 
     ret = CmGetUkeyCert(&retUri, &ukeyInfo2, &certificateList);
-    EXPECT_EQ(ret, CMR_ERROR_UKEY_GENERAL_ERROR) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_HUKS_GENERAL_ERROR) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
 
     FreeUkeyCertList(&certificateList);
     FreeUkeyCertList(&ukeyList);
@@ -335,7 +335,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKBaseTest001, TestSize.Level0)
     ASSERT_TRUE(ukeyList.credential[0].credData.data != nullptr);
     providerNameBlob.size -= 1;
     int32_t ret = CmGetUkeyCertList(&providerNameBlob, &ukeyInfo1, &ukeyList);
-    EXPECT_EQ(ret, CMR_ERROR_UKEY_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_HUKS_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
 
     uint8_t *uriBuf = static_cast<uint8_t*>(CmMalloc(sizeof(ukeyList.credential[0].keyUri)));
     ASSERT_TRUE(uriBuf != nullptr);
@@ -353,7 +353,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKBaseTest001, TestSize.Level0)
     ret = OH_CertManager_GetUkeyCertificate(reinterpret_cast<OH_CM_Blob*>(&retUri),
         reinterpret_cast<OH_CM_UkeyInfo*>(&ukeyInfo2),
         reinterpret_cast<OH_CM_CredentialDetailList*>(&certificateList));
-    EXPECT_EQ(ret, OH_CM_ACCESS_UKEY_SERVICE_FAILED) <<
+    EXPECT_EQ(ret, OH_CM_INNER_FAILURE) <<
         "OH_CertManager_GetUkeyCertificate test failed, retcode:" << ret;
 
     FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&certificateList));
@@ -443,7 +443,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest001, TestSize.Level0)
     ASSERT_TRUE(ukeyList.credential[0].credData.data != nullptr);
     providerNameBlob.size -= 1;
     int32_t ret = CmGetUkeyCertList(&providerNameBlob, &ukeyInfo1, &ukeyList);
-    EXPECT_EQ(ret, CMR_ERROR_UKEY_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
+    EXPECT_EQ(ret, CMR_ERROR_HUKS_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
 
     uint8_t *uriBuf = static_cast<uint8_t*>(CmMalloc(sizeof(ukeyList.credential[0].keyUri)));
     ASSERT_TRUE(uriBuf != nullptr);
@@ -461,7 +461,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest001, TestSize.Level0)
     ret = OH_CertManager_GetUkeyCertificate(reinterpret_cast<OH_CM_Blob*>(&retUri),
         reinterpret_cast<OH_CM_UkeyInfo*>(&ukeyInfo2),
         reinterpret_cast<OH_CM_CredentialDetailList*>(&certificateList));
-    EXPECT_EQ(ret, OH_CM_ACCESS_UKEY_SERVICE_FAILED) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
+    EXPECT_EQ(ret, OH_CM_INNER_FAILURE) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
 
     FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&certificateList));
     FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&ukeyList));
