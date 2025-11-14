@@ -270,8 +270,8 @@ export namespace certificateManager {
     }
   }
 
-  function taskExecuteReturn<T>(pool: Promise<NullishType>, callback: AsyncCallback<T>, result: T): void {
-    pool.then<void>((ret: NullishType) => {
+  function taskExecuteReturn<T>(pool: Promise<Any>, callback: AsyncCallback<T>, result: T): void {
+    pool.then<void>((ret: Any) => {
       let nativeResult: NativeResult<T> = ret as NativeResult<T>;
       let err = new BusinessError();
       if (nativeResult.result !== undefined) {
