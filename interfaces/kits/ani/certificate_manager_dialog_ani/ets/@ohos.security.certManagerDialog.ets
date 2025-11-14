@@ -16,6 +16,7 @@
 import type common from '@ohos.app.ability.common';
 import { BusinessError, AsyncCallback } from '@ohos.base';
 import util from '@ohos.util';
+import type certificateManager from '@ohos.security.certManager';
 
 native function openCertificateManagerDialogNative(
   context: common.Context,
@@ -52,6 +53,19 @@ native function openCertificateDetailDialogNative(
 native function openAuthorizeDialogNative(context: common.Context,
   callback: AsyncCallbackWrapper<string>): NativeResult<void>;
 
+native function openAuthorizeDialogWithReqNative(
+  context: common.Context,
+  certTypes: Array<certificateManagerDialog.CertificateType>,
+  certPurpose: certificateManager.CertificatePurpose,
+  callback: AsyncCallbackWrapper<certificateManagerDialog.CertReference>
+): NativeResult<void>;
+
+native function openUkeyAuthDialogNative(
+  context: common.Context,
+  keyUri: string,
+  callback: AsyncCallbackWrapper<void>
+): NativeResult<void>;
+
 class NativeResult<T> {
   code: int;
   message: string = "";
@@ -70,10 +84,29 @@ class AsyncCallbackWrapper<T> {
   }
 }
 
+class CertReferenceClass implements certificateManagerDialog.CertReference {
+    certType: certificateManagerDialog.CertificateType = certificateManagerDialog.CertificateType.CA_CERT;
+    keyUri: string = '';
+}
+
 export namespace certificateManagerDialog {
 
   static {
     loadLibrary("certmanager_dialog_ani.z");
+  }
+
+  export interface AuthorizeRequest {
+    certTypes: Array<CertificateType>;
+    certPurpose?: certificateManager.CertificatePurpose;
+  }
+
+  export interface CertReference {
+    certType: CertificateType;
+    keyUri: string;
+  }
+
+  export interface UkeyAuthRequest {
+    keyUri: string
   }
 
   export enum CertificateDialogErrorCode {
@@ -92,7 +125,10 @@ export namespace certificateManagerDialog {
   }
 
   export enum CertificateType {
-    CA_CERT = 1
+    CA_CERT = 1,
+    CREDENTIAL_USER = 2,
+    CREDENTIAL_APP = 3,
+    CREDENTIAL_UKEY = 4,
   }
 
   export enum CertificateScope {
@@ -125,11 +161,11 @@ export namespace certificateManagerDialog {
   export function openCertificateManagerDialog(context: common.Context, pageType: CertificateDialogPageType): Promise<void> {
     return new Promise<void>((resolve, reject: (error: BusinessError) => void) => {
         let callback = new AsyncCallbackWrapper<void>((err: BusinessError | null) => {
-            if (err?.code !== 0) {
-                reject(err as BusinessError);
-            } else {
-                resolve(undefined);
-            }
+          if (err?.code !== 0) {
+              reject(err as BusinessError);
+          } else {
+              resolve(undefined);
+          }
         });
         let result: NativeResult<void> = openCertificateManagerDialogNative(context, pageType, callback);
         if (result.code !== 0) {
@@ -225,6 +261,65 @@ export namespace certificateManagerDialog {
             }
         });
         let result: NativeResult<void> = openAuthorizeDialogNative(context, callback);
+        if (result.code !== 0) {
+          let err = new BusinessError();
+          err.code = result.code;
+          err.message = result.message;
+          reject(err);
+        }
+    });
+  }
+
+  export function openAuthorizeDialog(context: common.Context, authorizeRequest: AuthorizeRequest): Promise<CertReference> {
+    return new Promise<CertReference>((resolve, reject: (error: BusinessError) => void) => {
+        let certReference: CertReference = {
+           certType: CertificateType.CA_CERT,
+           keyUri: "" 
+        };
+        let callback = new AsyncCallbackWrapper<CertReference>((err: BusinessError | null, data: CertReference | undefined) => {
+            if (err?.code !== 0) {
+                reject(err as BusinessError);
+            } else {
+                resolve(data?? certReference);
+            }
+        });
+        let certTypes: Array<CertificateType> = authorizeRequest.certTypes;
+        if (certTypes === undefined) {
+          let error = new BusinessError();
+          error.code = 401;
+          error.message = 'the input parameters is invalid.';
+          throw error;
+        }
+        let certPurpose: certificateManager.CertificatePurpose = authorizeRequest.certPurpose??
+          certificateManager.CertificatePurpose.PURPOSE_DEFAULT;
+        let result: NativeResult<void> = openAuthorizeDialogWithReqNative(context, certTypes, certPurpose, callback);
+        if (result.code !== 0) {
+          let err = new BusinessError();
+          err.code = result.code;
+          err.message = result.message;
+          reject(err);
+        }
+    });
+  }
+
+  export function openUkeyAuthDialog(context: common.Context, ukeyAuthRequest: UkeyAuthRequest): Promise<void> {
+    return new Promise<void>((resolve, reject: (error: BusinessError) => void) => {
+        let callback = new AsyncCallbackWrapper<void>((err: BusinessError | null) => {
+            if (err?.code !== 0) {
+                reject(err as BusinessError);
+            } else {
+                resolve(undefined);
+            }
+        });
+
+        let keyUri: string = ukeyAuthRequest.keyUri;
+        if (keyUri === undefined) {
+          let error = new BusinessError();
+          error.code = 401;
+          error.message = 'the input parameters is invalid.';
+          throw error;
+        }
+        let result: NativeResult<void> = openUkeyAuthDialogNative(context, keyUri, callback);
         if (result.code !== 0) {
           let err = new BusinessError();
           err.code = result.code;

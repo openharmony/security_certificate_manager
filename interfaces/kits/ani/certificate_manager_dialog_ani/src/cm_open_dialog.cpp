@@ -70,6 +70,7 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
     int32_t ret;
     ani_object businessError{};
     if (code != CM_SUCCESS) {
+        CM_LOG_E("invokeCallback with error, code: %d", code);
         businessError = GetDialogAniErrorResult(env, code);
         if (businessError == nullptr) {
             CM_LOG_E("get businessError failed.");
@@ -178,6 +179,47 @@ void CmAniUIExtensionCallbackString::OnReceive(const OHOS::AAFwk::WantParams &re
     ani_string aniResult = AniUtils::GenerateCharStr(env, result.c_str(), result.size());
     if (aniResult == nullptr) {
         aniResult = reinterpret_cast<ani_string>(GetDefaultResult(env));
+    }
+    this->invokeCallback(env, CM_SUCCESS, reinterpret_cast<ani_object>(aniResult));
+}
+
+CmAniUIExtensionCallbackCertReference::CmAniUIExtensionCallbackCertReference(
+    ani_vm *vm,
+    std::shared_ptr<AbilityContext> context,
+    ani_ref aniCallback
+) : CmAniUIExtensionCallback(vm, context, aniCallback) {}
+
+ani_object CmAniUIExtensionCallbackCertReference::GetDefaultResult(ani_env *env)
+{
+    ani_int aniIntResult = 0;
+    ani_string aniStrResult = AniUtils::GenerateCharStr(env, "", 0);
+    ani_object aniResult = AniUtils::GenerateCertReference(env, aniIntResult, aniStrResult);
+    if (aniResult == nullptr) {
+        CM_LOG_E("generate keyUri failed");
+        return nullptr;
+    }
+    return reinterpret_cast<ani_object>(aniResult);
+}
+
+void CmAniUIExtensionCallbackCertReference::OnReceive(const OHOS::AAFwk::WantParams &request)
+{
+    CM_LOG_D("UIExtensionComponent OnReceive");
+    ani_env *env = GetEnv(this->vm);
+    if (env == nullptr) {
+        CM_LOG_E("get env failed.");
+        return;
+    }
+    uint32_t certificateType = static_cast<uint32_t>(request.GetIntParam("certType", 0));
+    ani_int aniCertType = static_cast<ani_int>(certificateType);
+
+    std::string keyUri = request.GetStringParam("uri");
+    ani_string aniKeyUri = AniUtils::GenerateCharStr(env, keyUri.c_str(), keyUri.size());
+
+    ani_object aniResult{};
+    if (aniKeyUri == nullptr) {
+        aniResult = GetDefaultResult(env);
+    } else {
+        aniResult = AniUtils::GenerateCertReference(env, aniCertType, aniKeyUri);
     }
     this->invokeCallback(env, CM_SUCCESS, reinterpret_cast<ani_object>(aniResult));
 }

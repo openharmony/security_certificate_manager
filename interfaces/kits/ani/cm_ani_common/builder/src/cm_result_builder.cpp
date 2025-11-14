@@ -58,6 +58,12 @@ CMResultBuilder *CMResultBuilder::setCredentialList(CredentialList *credentialLi
     return this;
 }
 
+CMResultBuilder *CMResultBuilder::setCredentialDetailList(CredentialDetailList *certificateList)
+{
+    this->certificateList = certificateList;
+    return this;
+}
+
 int32_t CMResultBuilder::buildCredentialList()
 {
     if (credentialList == nullptr) {
@@ -79,6 +85,36 @@ int32_t CMResultBuilder::buildCredentialList()
     ani_status status = env->Object_SetPropertyByName_Ref(cmResult, "credentialList", aniCredArray);
     if (status != ANI_OK) {
         CM_LOG_E("cmResult set property credentialList failed. ret = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    return CM_SUCCESS;
+}
+
+int32_t CMResultBuilder::buildCredentialDetailList()
+{
+    if (certificateList == nullptr) {
+        CM_LOG_D("cmResult certificateList is nullptr");
+        return CM_SUCCESS;
+    }
+    uint32_t credCount = certificateList->credentialCount;
+    Credential *credential = certificateList->credential;
+    if (credCount == 0 || credential == nullptr) {
+        return CM_SUCCESS;
+    }
+    if (env == nullptr) {
+        CM_LOG_E("env is nullptr.");
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    ani_array aniCredArray;
+    int32_t ret = AniUtils::GenerateCredDetailArrayObj(env, credential, credCount, aniCredArray);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("generate cred array failed.");
+        return ret;
+    }
+    ani_status status = env->Object_SetPropertyByName_Ref(cmResult, "credentialDetailList", aniCredArray);
+    if (status != ANI_OK) {
+        CM_LOG_E("cmResult set property credentialDetailList failed. ret = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     return CM_SUCCESS;
@@ -312,6 +348,11 @@ int32_t CMResultBuilder::build()
     ret = buildCertInfo();
     if (ret != CM_SUCCESS) {
         CM_LOG_E("cmResult build certInfo failed.");
+        return ret;
+    }
+    ret = buildCredentialDetailList();
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("cmResult build credDetailList failed.");
         return ret;
     }
     return CM_SUCCESS;

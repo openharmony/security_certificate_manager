@@ -17,11 +17,13 @@
 
 #include "ani.h"
 #include "cm_log.h"
+#include "cm_open_auth_dialog_with_request.h"
 #include "cm_open_certmanager_dialog.h"
 #include "cm_open_install_dialog.h"
 #include "cm_open_uninstall_dialog.h"
 #include "cm_open_cert_detail_dialog.h"
 #include "cm_open_auth_dialog.h"
+#include "cm_open_ukey_auth_dialog.h"
 
 namespace OHOS::Security::CertManager::Ani {
 ani_object openCertificateManagerDialogNative(ani_env *env, ani_object context, ani_enum_item pageType,
@@ -57,6 +59,20 @@ ani_object openAuthorizeDialogNative(ani_env *env, ani_object context, ani_objec
     auto openAuthDialogImpl = std::make_shared<CmOpenAuthDialog>(env, context, callback);
     return openAuthDialogImpl->Invoke();
 }
+
+ani_object openAuthorizeDialogWithReqNative(ani_env *env, ani_object context, ani_object certTypes,
+    ani_enum_item certPurpose, ani_object callback)
+{
+    auto openAuthDialogWithReqImpl = std::make_shared<CmOpenAuthDialogWithReq>(
+        env, context, certTypes, certPurpose, callback);
+    return openAuthDialogWithReqImpl->Invoke();
+}
+
+ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string keyUri, ani_object callback)
+{
+    auto openUkeyAuthDialogImpl = std::make_shared<CmOpenUkeyAuthDialog>(env, context, keyUri, callback);
+    return openUkeyAuthDialogImpl->Invoke();
+}
 }
 
 ANI_EXPORT ani_status ANI_Constructor(ani_vm *vm, uint32_t *result)
@@ -87,6 +103,10 @@ ANI_EXPORT ani_status ANI_Constructor(ani_vm *vm, uint32_t *result)
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openCertificateDetailDialogNative)},
         ani_native_function {"openAuthorizeDialogNative", nullptr,
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openAuthorizeDialogNative)},
+        ani_native_function {"openAuthorizeDialogWithReqNative", nullptr,
+            reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openAuthorizeDialogWithReqNative)},
+        ani_native_function {"openUkeyAuthDialogNative", nullptr,
+            reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openUkeyAuthDialogNative)},
     };
     ret = env->Module_BindNativeFunctions(module, methods.data(), methods.size());
     if (ret != ANI_OK) {

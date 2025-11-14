@@ -25,6 +25,7 @@ private:
     ani_env *env = nullptr;
     CmBlob *uri = nullptr;
     CredentialList *credentialList = nullptr;
+    CredentialDetailList *certificateList = nullptr;
     Credential *credential = nullptr;
     CertList *certList = nullptr;
     CmBlob *outData = nullptr;
@@ -32,6 +33,7 @@ private:
 
     int32_t buildUri();
     int32_t buildCredentialList();
+    int32_t buildCredentialDetailList();
     int32_t buildCredential();
     int32_t buildCertList();
     int32_t buildCertInfo();
@@ -43,6 +45,7 @@ public:
 
     CMResultBuilder *setUri(CmBlob *uri);
     CMResultBuilder *setCredentialList(CredentialList *credentialList);
+    CMResultBuilder *setCredentialDetailList(CredentialDetailList *certificateList);
     CMResultBuilder *setCredential(Credential *credential);
     CMResultBuilder *setCertList(CertList *certList);
     CMResultBuilder *setCertInfo(CertInfo *certInfo);

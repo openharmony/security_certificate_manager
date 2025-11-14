@@ -35,6 +35,8 @@ ohos_shared_library("certmanager_ani") {
     "./src/cm_uninstall_private_cert_impl.cpp",
     "./src/cm_get_app_cert_impl.cpp",
     "./src/cm_get_cred_list_impl.cpp",
+    "./src/cm_get_cred_list_by_uid_impl.cpp",
+    "./src/cm_get_ukey_cert_list_impl.cpp",
     "./src/cm_init_impl.cpp",
     "./src/cm_update_impl.cpp",
     "./src/cm_finish_impl.cpp",

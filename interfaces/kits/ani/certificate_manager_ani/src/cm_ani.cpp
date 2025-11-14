@@ -20,7 +20,9 @@
 #include "cm_install_private_cert_impl.h"
 #include "cm_uninstall_private_cert_impl.h"
 #include "cm_get_app_cert_impl.h"
+#include "cm_get_cred_list_by_uid_impl.h"
 #include "cm_get_cred_list_impl.h"
+#include "cm_get_ukey_cert_list_impl.h"
 #include "cm_init_impl.h"
 #include "cm_update_impl.h"
 #include "cm_finish_impl.h"
@@ -163,6 +165,18 @@ static ani_object getCertificateStorePathNative(ani_env *env, ani_enum_item aniC
     return getCertStorePathImpl->Invoke();
 }
 
+static ani_object getUkeyCertificateListNative(ani_env *env, ani_string strParam, ani_enum_item certPurpose)
+{
+    auto getUkeyCertListImpl = std::make_shared<CmGetUkeyCertListImpl>(env, strParam, certPurpose, SINGLE_UKEY);
+    return getUkeyCertListImpl->Invoke();
+}
+
+static ani_object getUkeyCertificateNative(ani_env *env, ani_string strParam, ani_enum_item certPurpose)
+{
+    auto getUkeyCertListImpl = std::make_shared<CmGetUkeyCertListImpl>(env, strParam, certPurpose, LIST_UKEY);
+    return getUkeyCertListImpl->Invoke();
+}
+
 static const std::array NATIVE_METHODS {
     ani_native_function {"installPrivateCertificateNative", nullptr,
         reinterpret_cast<void *>(installPrivateCertificateNative)},
@@ -204,6 +218,10 @@ static const std::array NATIVE_METHODS {
         reinterpret_cast<void *>(installUserCASyncNative)},
     ani_native_function {"uninstallUserCASyncNative", nullptr,
         reinterpret_cast<void *>(uninstallUserCASyncNative)},
+    ani_native_function {"getUkeyCertificateListNative", nullptr,
+        reinterpret_cast<void *>(getUkeyCertificateListNative)},
+    ani_native_function {"getUkeyCertificateNative", nullptr,
+        reinterpret_cast<void *>(getUkeyCertificateNative)},
 };
 }
 
