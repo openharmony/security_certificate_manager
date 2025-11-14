@@ -49,7 +49,7 @@ int32_t CmGetCertStorePathImpl::GetParamsFromEnv()
     return CM_SUCCESS;
 }
 
-sptr<OHOS::AppExecFwk::BundleMgrProxy> CmGetCertStorePathImpl::GetBundleMgrProxy()
+sptr<OHOS::AppExecFwk::IBundleMgr> CmGetCertStorePathImpl::GetBundleMgrProxy()
 {
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (!systemAbilityManager) {
@@ -62,7 +62,7 @@ sptr<OHOS::AppExecFwk::BundleMgrProxy> CmGetCertStorePathImpl::GetBundleMgrProxy
         CM_LOG_E("Failed to get bundle manager proxy.");
         return nullptr;
     }
-    return iface_cast<OHOS::AppExecFwk::BundleMgrProxy>(remoteObject);
+    return iface_cast<OHOS::AppExecFwk::IBundleMgr>(remoteObject);
 }
 
 int32_t CmGetCertStorePathImpl::GetUserCaStorePath()
@@ -74,7 +74,7 @@ int32_t CmGetCertStorePathImpl::GetUserCaStorePath()
     }
 
     int32_t userId = 0;
-    sptr<OHOS::AppExecFwk::BundleMgrProxy> bundleMgrProxy = GetBundleMgrProxy();
+    sptr<OHOS::AppExecFwk::IBundleMgr> bundleMgrProxy = GetBundleMgrProxy();
     if (bundleMgrProxy == nullptr) {
         CM_LOG_E("Failed to get bundle manager proxy.");
         return CM_FAILURE;
