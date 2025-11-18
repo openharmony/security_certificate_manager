@@ -112,10 +112,10 @@ int32_t FfiCertManagerGetUserCertList(const uint32_t store, uint32_t *retCount, 
              * 1. Resource will be released by caller.
              * 2. strdup may return nullptr, but caller will handle nullptr
              */
-            (*retObj)->uri = strdup(certificateList.certAbstract[i].uri);
-            (*retObj)->certAlias = strdup(certificateList.certAbstract[i].certAlias);
+            (*retObj)[i].uri = strdup(certificateList.certAbstract[i].uri);
+            (*retObj)[i].certAlias = strdup(certificateList.certAbstract[i].certAlias);
             (*retObj)[i].status = certificateList.certAbstract[i].status;
-            (*retObj)->subjectName = strdup(certificateList.certAbstract[i].subjectName);
+            (*retObj)[i].subjectName = strdup(certificateList.certAbstract[i].subjectName);
         }
     }
     free(certificateList.certAbstract);
