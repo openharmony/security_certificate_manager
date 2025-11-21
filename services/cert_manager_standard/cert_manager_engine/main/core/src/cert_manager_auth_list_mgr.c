@@ -22,6 +22,7 @@
 #include "cert_manager_mem.h"
 #include "cert_manager_storage.h"
 #include "cert_manager_uri.h"
+#include "cert_manager_check.h"
 #include "cm_log.h"
 #include "cm_type.h"
 
@@ -328,6 +329,11 @@ static int32_t FormatAppUidList(const struct CmBlob *list, struct CmAppUidList *
 
 int32_t CmAddAuthUid(const struct CmContext *context, const struct CmBlob *uri, uint32_t uid)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     int32_t ret = CmCheckCredentialExist(context, uri);
     if (ret != CM_SUCCESS) {
         return ret;
@@ -348,6 +354,11 @@ int32_t CmAddAuthUid(const struct CmContext *context, const struct CmBlob *uri, 
 
 int32_t CmRemoveAuthUid(const struct CmContext *context, const struct CmBlob *uri, uint32_t uid)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     char authListPath[MAX_PATH_LEN] = { 0 };
     int32_t ret = ConstructAuthListPath(context, CM_CREDENTIAL_STORE, authListPath, MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
@@ -363,6 +374,11 @@ int32_t CmRemoveAuthUid(const struct CmContext *context, const struct CmBlob *ur
 
 int32_t CmGetAuthList(const struct CmContext *context, const struct CmBlob *uri, struct CmAppUidList *appUidList)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     char authListPath[MAX_PATH_LEN] = { 0 };
     int32_t ret = ConstructAuthListPath(context, CM_CREDENTIAL_STORE, authListPath, MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
@@ -390,6 +406,11 @@ int32_t CmGetAuthList(const struct CmContext *context, const struct CmBlob *uri,
 
 int32_t CmDeleteAuthListFile(const struct CmContext *context, const struct CmBlob *uri)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     char authListPath[MAX_PATH_LEN] = { 0 };
     int32_t ret = ConstructAuthListPath(context, CM_CREDENTIAL_STORE, authListPath, MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {
@@ -411,6 +432,11 @@ int32_t CmDeleteAuthListFile(const struct CmContext *context, const struct CmBlo
 int32_t CmCheckIsAuthUidExist(const struct CmContext *context, const struct CmBlob *uri,
     uint32_t targetUid, bool *isInAuthList)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     *isInAuthList = false;
 
     char authListPath[MAX_PATH_LEN] = { 0 };
@@ -446,6 +472,11 @@ int32_t CmCheckIsAuthUidExist(const struct CmContext *context, const struct CmBl
 
 int32_t CmRemoveAuthUidByUserId(uint32_t userId, uint32_t targetUid, const struct CmBlob *uri)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     uint32_t uid = 0;
     int32_t ret = CertManagerGetUidFromUri(uri, &uid);
     if (ret != CM_SUCCESS) {
@@ -458,6 +489,11 @@ int32_t CmRemoveAuthUidByUserId(uint32_t userId, uint32_t targetUid, const struc
 
 int32_t CmGetAuthListByUserId(uint32_t userId, const struct CmBlob *uri, struct CmAppUidList *appUidList)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     uint32_t uid = 0;
     int32_t ret = CertManagerGetUidFromUri(uri, &uid);
     if (ret != CM_SUCCESS) {
@@ -470,6 +506,11 @@ int32_t CmGetAuthListByUserId(uint32_t userId, const struct CmBlob *uri, struct 
 
 int32_t CmDeleteAuthListFileByUserId(uint32_t userId, const struct CmBlob *uri)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     uint32_t uid = 0;
     int32_t ret = CertManagerGetUidFromUri(uri, &uid);
     if (ret != CM_SUCCESS) {
@@ -483,6 +524,11 @@ int32_t CmDeleteAuthListFileByUserId(uint32_t userId, const struct CmBlob *uri)
 int32_t CmCheckIsAuthUidExistByUserId(uint32_t userId, uint32_t targetUid,
     const struct CmBlob *uri, bool *isInAuthList)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     uint32_t uid = 0;
     int32_t ret = CertManagerGetUidFromUri(uri, &uid);
     if (ret != CM_SUCCESS) {
@@ -495,6 +541,11 @@ int32_t CmCheckIsAuthUidExistByUserId(uint32_t userId, uint32_t targetUid,
 
 int32_t CmCheckCredentialExist(const struct CmContext *context, const struct CmBlob *uri)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+    
     char uidPath[MAX_PATH_LEN] = { 0 };
     int32_t ret = ConstructUidPath(context, CM_CREDENTIAL_STORE, uidPath, MAX_PATH_LEN);
     if (ret != CM_SUCCESS) {

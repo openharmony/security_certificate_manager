@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -47,5 +47,9 @@ bool ConstructParamSet(uint8_t *srcData, uint32_t *remainSize, uint32_t *offset,
 
 bool IpcServiceApiFuzzerTest(const uint8_t *data, const size_t size, CertManagerInterfaceCode code,
     bool isParamsetToBlob, void (*ipcServiceApi)(const struct CmBlob *, struct CmBlob *, const struct CmContext *));
+
+bool CreateCmContext(struct CmContext &cmContext, uint8_t *myData, uint32_t &remainSize, uint32_t &offset);
+
+bool GetDynamicStringFromBuffer(uint8_t *srcData, uint32_t *remainSize, uint32_t *offset, char **outStr);
 } // namespace CmFuzzTest
 #endif /* CM_FUZZ_TEST_COMMON_H */

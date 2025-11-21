@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include "securec.h"
+#include "cert_manager_check.h"
 
 #include "cm_log.h"
 #include "cm_util.h"
@@ -536,6 +537,11 @@ int32_t CertManagerUriDecode(struct CMUri *uri, const char *encoded)
 
 int32_t CertManagerGetUidFromUri(const struct CmBlob *uri, uint32_t *uid)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
     int32_t ret = CertManagerUriDecode(&uriObj, (char *)uri->data);
