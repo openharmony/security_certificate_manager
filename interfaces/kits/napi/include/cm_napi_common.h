@@ -223,6 +223,7 @@ struct CertInfoValue {
 };
 
 enum CertificatePurpose {
+    PURPOSE_DEFAULT = 0, //default purpose, sign cert
     PURPOSE_ALL = 1, // all user cert
     PURPOSE_SIGN = 2, // sign cert
     PURPOSE_ENCRYPT = 3, // encrypt cert

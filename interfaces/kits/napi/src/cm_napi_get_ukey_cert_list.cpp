@@ -167,7 +167,7 @@ static bool CheckParamsType(napi_env env, napi_value* argv)
     }
     ++index;
     napi_value ukeyInfoObj = argv[index];
-    napi_status status = napi_typeof(env, ukeyInfoObj, &valueType);
+    status = napi_typeof(env, ukeyInfoObj, &valueType);
     if (status != napi_ok) {
         CM_LOG_E("Failed to get object type");
         return false;
