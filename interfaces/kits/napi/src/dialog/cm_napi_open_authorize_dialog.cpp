@@ -110,12 +110,26 @@ static int32_t GetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestContext> 
     return CM_SUCCESS;
 }
 
+static int32_t CheckAndGetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
+{
+    if (!IsParamNotNull(asyncContext->env, arg)) {
+        ThrowError(env, PARAM_ERROR, "AuthorizeRequest is null");
+        return PARAM_ERROR;
+    }
+    asyncContext->opType = static_cast<int32_t>(DIALOG_OPERATION_AUTHORIZE_UKEY);
+    if (GetAuthorizeRequest(asyncContext, arg) != CM_SUCCESS) {
+        CM_LOG_E("parse AuthorizeRequest failed");
+        ThrowError(env, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, "parse AuthorizeRequest failed");
+        return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+    return CM_SUCCESS;
+}
+
 napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert authorize dialog enter");
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
-
     size_t argc = PARAM_SIZE_TWO;
     napi_value argv[PARAM_SIZE_TWO] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
@@ -137,9 +151,8 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
     ++index;
     if (index < argc) {
         asyncContext->opType = static_cast<int32_t>(DIALOG_OPERATION_AUTHORIZE_UKEY);
-        if (GetAuthorizeRequest(asyncContext, argv[index]) != CM_SUCCESS) {
+        if (CheckAndGetAuthorizeRequest(asyncContext, argv[index]) != CM_SUCCESS) {
             CM_LOG_E("parse AuthorizeRequest failed");
-            ThrowError(env, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, "parse AuthorizeRequest failed");
             return nullptr;
         }
     }

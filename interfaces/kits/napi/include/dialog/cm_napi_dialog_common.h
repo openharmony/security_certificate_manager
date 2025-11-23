@@ -49,6 +49,8 @@ void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
     napi_value *result, int32_t length);
 int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncContext);
 
+bool IsParamNotNull(napi_env env, napi_value obj);
+
 inline napi_value GetInt32(napi_env env, int32_t value)
 {
     napi_value result = nullptr;

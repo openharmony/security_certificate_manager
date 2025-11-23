@@ -501,6 +501,21 @@ static int32_t GetCallerBundleInfo(OHOS::AppExecFwk::BundleInfo &bundleInfo)
     return CM_SUCCESS;
 }
 
+bool IsParamNotNull(napi_env env, napi_value obj)
+{
+    napi_valuetype valueType = napi_undefined;
+    napi_status status = napi_typeof(env, obj, &valueType);
+    if (status != napi_ok) {
+        CM_LOG_E("Failed to get object type");
+        return false;
+    }
+    if (valueType == napi_null) {
+        CM_LOG_E("the type of param is null");
+        return false;
+    }
+    return true;
+}
+
 int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncContext)
 {
     if (asyncContext == nullptr || asyncContext->context == nullptr) {

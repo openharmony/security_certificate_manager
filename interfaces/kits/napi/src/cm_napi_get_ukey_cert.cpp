@@ -104,7 +104,6 @@ static bool CheckCertPurpose(uint32_t certPurpose)
     }
 }
 
-
 static napi_value ParseUkeyInfo(napi_env env, napi_value object, GetUkeyCertAsyncContext context)
 {
     bool hasProperty = false;
@@ -152,6 +151,34 @@ static napi_value ParseUkeyInfo(napi_env env, napi_value object, GetUkeyCertAsyn
     return GetInt32(env, 0);
 }
 
+static bool CheckParamsType(napi_env env, napi_value* argv)
+{
+    size_t index = 0;
+    napi_value keyUriObj = argv[index];
+    napi_valuetype valueType = napi_undefined;
+    napi_status status = napi_typeof(env, keyUriObj, &valueType);
+    if (status != napi_ok) {
+        CM_LOG_E("Failed to get object type");
+        return false;
+    }
+    if (valueType != napi_string) {
+        CM_LOG_E("the type of param is not string");
+        return false;
+    }
+    ++index;
+    napi_value ukeyInfoObj = argv[index];
+    napi_status status = napi_typeof(env, ukeyInfoObj, &valueType);
+    if (status != napi_ok) {
+        CM_LOG_E("Failed to get object type");
+        return false;
+    }
+    if (valueType == napi_null) {
+        CM_LOG_E("the type of param is null");
+        return false;
+    }
+    return true;
+}
+
 static napi_value GetUkeyCertParseParams(
     napi_env env, napi_callback_info info, GetUkeyCertAsyncContext context)
 {
@@ -162,6 +189,11 @@ static napi_value GetUkeyCertParseParams(
     if (argc != CM_NAPI_GET_UKEY_CERT_LIST_ARGS) {
         ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need 2.");
         CM_LOG_E("Missing parameter");
+        return nullptr;
+    }
+    if (!CheckParamsType(env, argv)) {
+        ThrowError(env, PARAM_ERROR, "The parameter type is invalid.");
+        CM_LOG_E("Invalid parameter type");
         return nullptr;
     }
     

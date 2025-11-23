@@ -44,6 +44,10 @@ static napi_value CreateCmErrorCode(napi_env env)
     AddInt32Property(env, dialogErrorCode, "ERROR_DEVICE_NOT_SUPPORTED", DIALOG_ERROR_NOT_SUPPORTED);
     AddInt32Property(env, dialogErrorCode, "ERROR_NOT_COMPLY_SECURITY_POLICY",
         DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY);
+    AddInt32Property(env, dialogErrorCode, "ERROR_PARAMETER_VALIDATION_FAILED",
+        DIALOG_ERROR_PARAMETER_VALIDATION_FAILED);
+    AddInt32Property(env, dialogErrorCode, "ERROR_NO_AVAILABLE_CERTIFICATE",
+        DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE);
 
     return dialogErrorCode;
 }
