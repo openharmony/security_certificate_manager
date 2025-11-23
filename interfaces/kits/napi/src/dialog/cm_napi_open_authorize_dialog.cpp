@@ -119,7 +119,7 @@ static int32_t CheckAndGetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestC
     asyncContext->opType = static_cast<int32_t>(DIALOG_OPERATION_AUTHORIZE_UKEY);
     if (GetAuthorizeRequest(asyncContext, arg) != CM_SUCCESS) {
         CM_LOG_E("parse AuthorizeRequest failed");
-        ThrowError(env, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, "parse AuthorizeRequest failed");
+        ThrowError(asyncContext->env, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, "parse AuthorizeRequest failed");
         return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     return CM_SUCCESS;
