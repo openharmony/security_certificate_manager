@@ -52,6 +52,7 @@ namespace CMNapi {
         AddInt32Property(env, errorCode, "CM_ERROR_ALIAS_LENGTH_REACHED_LIMIT", ALIAS_LENGTH_REACHED_LIMIT);
         AddInt32Property(env, errorCode, "CM_ERROR_DEVICE_ENTER_ADVSECMODE", DEVICE_ENTER_ADVSECMODE);
         AddInt32Property(env, errorCode, "CM_ERROR_PASSWORD_IS_ERR", PASSWORD_IS_ERROR);
+        AddInt32Property(env, errorCode, "CM_ERROR_STORE_PATH_NOT_SUPPORTED", STORE_PATH_NOT_SUPPORTED);
     }
 
     static napi_value CreateCMErrorCode(napi_env env)
