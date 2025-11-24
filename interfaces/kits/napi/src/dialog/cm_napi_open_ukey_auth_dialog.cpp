@@ -94,7 +94,7 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
     }
     ++index;
     asyncContext->opType = static_cast<int32_t>(DIALOG_OPERATION_AUTHORIZE_UKEY);
-    if (!IsParamNotNull(asyncContext->env, argv[index])) {
+    if (IsParamNull(asyncContext->env, argv[index])) {
         ThrowError(env, PARAM_ERROR, "UkeyAuthRequest is null");
         return nullptr;
     }

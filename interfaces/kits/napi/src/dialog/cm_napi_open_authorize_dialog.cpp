@@ -112,7 +112,7 @@ static int32_t GetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestContext> 
 
 static int32_t CheckAndGetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
 {
-    if (!IsParamNotNull(asyncContext->env, arg)) {
+    if (IsParamNull(asyncContext->env, arg)) {
         ThrowError(asyncContext->env, PARAM_ERROR, "AuthorizeRequest is null");
         return PARAM_ERROR;
     }
