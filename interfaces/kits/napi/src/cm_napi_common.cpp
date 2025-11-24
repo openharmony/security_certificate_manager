@@ -581,7 +581,7 @@ napi_value GenerateUkeyCertInfo(napi_env env, const struct Credential *credentia
 
 bool CheckUkeyParamsType(napi_env env, napi_value* argv, size_t argc)
 {
-    if (argc <= 0) {
+    if (argc <= 1) {
         CM_LOG_E("The number of Params is invalid");
         return false;
     }
