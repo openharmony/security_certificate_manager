@@ -104,7 +104,6 @@ static bool CheckCertPurpose(uint32_t certPurpose)
     }
 }
 
-
 static napi_value ParseUkeyInfo(napi_env env, napi_value object, GetUkeyCertAsyncContext context)
 {
     bool hasProperty = false;
@@ -162,6 +161,11 @@ static napi_value GetUkeyCertParseParams(
     if (argc != CM_NAPI_GET_UKEY_CERT_LIST_ARGS) {
         ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need 2.");
         CM_LOG_E("Missing parameter");
+        return nullptr;
+    }
+    if (!CheckUkeyParamsType(env, argv, argc)) {
+        ThrowError(env, PARAM_ERROR, "The parameter type is invalid.");
+        CM_LOG_E("Invalid parameter type");
         return nullptr;
     }
     

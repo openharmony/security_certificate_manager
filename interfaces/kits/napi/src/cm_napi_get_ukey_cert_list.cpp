@@ -163,6 +163,11 @@ static napi_value GetUkeyCertListParseParams(
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
+    if (!CheckUkeyParamsType(env, argv, argc)) {
+        ThrowError(env, PARAM_ERROR, "The parameter type is invalid.");
+        CM_LOG_E("Invalid parameter type");
+        return nullptr;
+    }
     
     size_t index = 0;
     napi_value result = ParseStringOrEmpty(env, argv[index], context->ukeyProvider);

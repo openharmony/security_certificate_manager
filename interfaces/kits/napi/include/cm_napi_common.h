@@ -103,6 +103,7 @@ void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
 void GenerateCallback(napi_env env, napi_ref callback, napi_value *result, int32_t arrLength, int32_t ret);
 void GenerateNapiPromise(napi_env env, napi_ref callback, napi_deferred *deferred, napi_value *promise);
 napi_value GenerateUkeyCertInfo(napi_env env, const struct Credential *credential);
+bool CheckUkeyParamsType(napi_env env, napi_value* argv, size_t argc);
 
 bool IsValidCertType(const uint32_t certType);
 bool IsValidCertScope(const uint32_t scope);
@@ -223,6 +224,7 @@ struct CertInfoValue {
 };
 
 enum CertificatePurpose {
+    PURPOSE_DEFAULT = 0, //default purpose, sign cert
     PURPOSE_ALL = 1, // all user cert
     PURPOSE_SIGN = 2, // sign cert
     PURPOSE_ENCRYPT = 3, // encrypt cert

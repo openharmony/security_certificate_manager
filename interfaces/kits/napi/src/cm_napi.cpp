@@ -55,6 +55,8 @@ namespace CMNapi {
         AddInt32Property(env, errorCode, "CM_ERROR_ALIAS_LENGTH_REACHED_LIMIT", ALIAS_LENGTH_REACHED_LIMIT);
         AddInt32Property(env, errorCode, "CM_ERROR_DEVICE_ENTER_ADVSECMODE", DEVICE_ENTER_ADVSECMODE);
         AddInt32Property(env, errorCode, "CM_ERROR_PASSWORD_IS_ERR", PASSWORD_IS_ERROR);
+        AddInt32Property(env, errorCode, "CM_ERROR_ACCESS_UKEY_SERVICE_FAILED", ACCESS_UKEY_SERVICE_FAILED);
+        AddInt32Property(env, errorCode, "CM_ERROR_PARAMETER_VALIDATION_FAILED", PARAMETER_VALIDATION_FAILED);
     }
 
     static napi_value CreateCMErrorCode(napi_env env)
@@ -161,6 +163,7 @@ namespace CMNapi {
         napi_value certificatePurpose = nullptr;
         NAPI_CALL(env, napi_create_object(env, &certificatePurpose));
 
+        AddInt32Property(env, certificatePurpose, "PURPOSE_DEFAULT", PURPOSE_DEFAULT);
         AddInt32Property(env, certificatePurpose, "PURPOSE_ALL", PURPOSE_ALL);
         AddInt32Property(env, certificatePurpose, "PURPOSE_SIGN", PURPOSE_SIGN);
         AddInt32Property(env, certificatePurpose, "PURPOSE_ENCRYPT", PURPOSE_ENCRYPT);
