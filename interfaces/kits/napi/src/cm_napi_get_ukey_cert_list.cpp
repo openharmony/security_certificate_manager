@@ -172,8 +172,8 @@ static bool CheckParamsType(napi_env env, napi_value* argv)
         CM_LOG_E("Failed to get object type");
         return false;
     }
-    if (valueType == napi_null) {
-        CM_LOG_E("the type of param is null");
+    if (valueType != napi_object) {
+        CM_LOG_E("the type of param is not object");
         return false;
     }
     return true;
