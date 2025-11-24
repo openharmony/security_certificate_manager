@@ -151,34 +151,6 @@ static napi_value ParseUkeyInfo(napi_env env, napi_value object, GetUkeyCertList
     return GetInt32(env, 0);
 }
 
-static bool CheckParamsType(napi_env env, napi_value* argv)
-{
-    size_t index = 0;
-    napi_value keyUriObj = argv[index];
-    napi_valuetype valueType = napi_undefined;
-    napi_status status = napi_typeof(env, keyUriObj, &valueType);
-    if (status != napi_ok) {
-        CM_LOG_E("Failed to get object type");
-        return false;
-    }
-    if (valueType != napi_string) {
-        CM_LOG_E("the type of param is not string");
-        return false;
-    }
-    ++index;
-    napi_value ukeyInfoObj = argv[index];
-    status = napi_typeof(env, ukeyInfoObj, &valueType);
-    if (status != napi_ok) {
-        CM_LOG_E("Failed to get object type");
-        return false;
-    }
-    if (valueType != napi_object) {
-        CM_LOG_E("the type of param is not object");
-        return false;
-    }
-    return true;
-}
-
 static napi_value GetUkeyCertListParseParams(
     napi_env env, napi_callback_info info, GetUkeyCertListAsyncContext context)
 {
@@ -191,7 +163,7 @@ static napi_value GetUkeyCertListParseParams(
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
-    if (!CheckParamsType(env, argv)) {
+    if (!CheckUkeyParamsType(env, argv, argc)) {
         ThrowError(env, PARAM_ERROR, "The parameter type is invalid.");
         CM_LOG_E("Invalid parameter type");
         return nullptr;
