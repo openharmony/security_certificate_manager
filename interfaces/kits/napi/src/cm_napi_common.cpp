@@ -605,7 +605,7 @@ bool CheckUkeyParamsType(napi_env env, napi_value* argv, size_t argc)
             CM_LOG_E("Failed to get object type");
             return false;
         }
-        if (valueType != napi_null) {
+        if (valueType == napi_null) {
             CM_LOG_E("the type of param is null");
             return false;
         }
