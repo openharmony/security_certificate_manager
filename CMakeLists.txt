@@ -1,0 +1,682 @@
+cmake_minimum_required(VERSION 4.0)
+project(security_certificate_manager)
+
+set(CMAKE_CXX_STANDARD 14)
+
+include_directories(frameworks/cert_manager_standard/main/common/include)
+include_directories(frameworks/cert_manager_standard/main/os_dependency/cm_ipc/include)
+include_directories(interfaces/innerkits/cert_manager_standard/main)
+include_directories(interfaces/innerkits/cert_manager_standard/main/include)
+include_directories(interfaces/kits/ani/certificate_manager_ani/include)
+include_directories(interfaces/kits/ani/certificate_manager_dialog_ani/include)
+include_directories(interfaces/kits/ani/cm_ani_common/builder/include)
+include_directories(interfaces/kits/ani/cm_ani_common/impl/include)
+include_directories(interfaces/kits/ani/cm_ani_common/utils/include)
+include_directories(interfaces/kits/c/include)
+include_directories(interfaces/kits/cj/include)
+include_directories(interfaces/kits/common/include)
+include_directories(interfaces/kits/napi/include)
+include_directories(interfaces/kits/napi/include/dialog)
+include_directories(interfaces/kits/napi/include/dialog/dialog_callback)
+include_directories(services/cert_manager_standard/cert_manager_engine/main/core/include)
+include_directories(services/cert_manager_standard/cert_manager_engine/main/rdb/include)
+include_directories(services/cert_manager_standard/cert_manager_service/main/hisysevent_wrapper/include)
+include_directories(services/cert_manager_standard/cert_manager_service/main/os_dependency/idl/cm_ipc)
+include_directories(services/cert_manager_standard/cert_manager_service/main/os_dependency/sa)
+include_directories(services/cert_manager_standard/cert_manager_service/main/security_guard_report/include)
+include_directories(test/fuzz_test/certmanagerfreeuri_fuzzer)
+include_directories(test/fuzz_test/certmanagergetuidfromuri_fuzzer)
+include_directories(test/fuzz_test/cmabort_fuzzer)
+include_directories(test/fuzz_test/cmaddauthuid_fuzzer)
+include_directories(test/fuzz_test/cmappcert_fuzzer)
+include_directories(test/fuzz_test/cmauthgrantappcertificate_fuzzer)
+include_directories(test/fuzz_test/cmauthlistmgr_fuzzer)
+include_directories(test/fuzz_test/cmauthmgr_fuzzer)
+include_directories(test/fuzz_test/cmcallinggetappcertlist_fuzzer)
+include_directories(test/fuzz_test/cmcertcommon_fuzzer)
+include_directories(test/fuzz_test/cmcertmanager_fuzzer)
+include_directories(test/fuzz_test/cmcertmanagercheck_fuzzer)
+include_directories(test/fuzz_test/cmcertmanagerfile_fuzzer)
+include_directories(test/fuzz_test/cmcertmanagerquery_fuzzer)
+include_directories(test/fuzz_test/cmcertmanagerservice_fuzzer)
+include_directories(test/fuzz_test/cmcertmanagerupdateflag_fuzzer)
+include_directories(test/fuzz_test/cmcheckandgetcommonuri_fuzzer)
+include_directories(test/fuzz_test/cmconstructcommonuri_fuzzer)
+include_directories(test/fuzz_test/cmcreatesession_fuzzer)
+include_directories(test/fuzz_test/cmdeletecertproperty_fuzzer)
+include_directories(test/fuzz_test/cmdeleteprocessInfo_fuzzer)
+include_directories(test/fuzz_test/cmfinish_fuzzer)
+include_directories(test/fuzz_test/cmfreefilenames_fuzzer)
+include_directories(test/fuzz_test/cmgetappcert_fuzzer)
+include_directories(test/fuzz_test/cmgetappcertlist_fuzzer)
+include_directories(test/fuzz_test/cmgetauthorizedapplist_fuzzer)
+include_directories(test/fuzz_test/cmgetcertbackupdir_fuzzer)
+include_directories(test/fuzz_test/cmgetcertbackupfilepath_fuzzer)
+include_directories(test/fuzz_test/cmgetcertconfpath_fuzzer)
+include_directories(test/fuzz_test/cmgetcertconfuserIddir_fuzzer)
+include_directories(test/fuzz_test/cmgetcertinfo_fuzzer)
+include_directories(test/fuzz_test/cmgetcertlist_fuzzer)
+include_directories(test/fuzz_test/cmgetcertmanagerappuid_fuzzer)
+include_directories(test/fuzz_test/cmgetcertorcredcount_fuzzer)
+include_directories(test/fuzz_test/cmgetdisplaynamebyuri_fuzzer)
+include_directories(test/fuzz_test/cmgetfilepath_fuzzer)
+include_directories(test/fuzz_test/cmgetnameencode_fuzzer)
+include_directories(test/fuzz_test/cmgetobjnamefromcertdata_fuzzer)
+include_directories(test/fuzz_test/cmgetrandom_fuzzer)
+include_directories(test/fuzz_test/cmgetukeycertlist_fuzzer)
+include_directories(test/fuzz_test/cmgeturi_fuzzer)
+include_directories(test/fuzz_test/cmgetusercacertlist_fuzzer)
+include_directories(test/fuzz_test/cmgetusercertinfo_fuzzer)
+include_directories(test/fuzz_test/cmgetusercertlist_fuzzer)
+include_directories(test/fuzz_test/cmgetx509issuenamelongformat_fuzzer)
+include_directories(test/fuzz_test/cmgetx509notbefore_fuzzer)
+include_directories(test/fuzz_test/cmgetx509serialnumber_fuzzer)
+include_directories(test/fuzz_test/cmgrantappcertificate_fuzzer)
+include_directories(test/fuzz_test/cminit_fuzzer)
+include_directories(test/fuzz_test/cminitcertstackcontext_fuzzer)
+include_directories(test/fuzz_test/cminsertcertproperty_fuzzer)
+include_directories(test/fuzz_test/cminstallappcert_fuzzer)
+include_directories(test/fuzz_test/cminstallappcertex_fuzzer)
+include_directories(test/fuzz_test/cminstallappcertpro_fuzzer)
+include_directories(test/fuzz_test/cminstallsystemappcert_fuzzer)
+include_directories(test/fuzz_test/cminstallusercert_fuzzer)
+include_directories(test/fuzz_test/cminstallusertrustedcert_fuzzer)
+include_directories(test/fuzz_test/cminstallusertrustedp7bcert_fuzzer)
+include_directories(test/fuzz_test/cmipcserviceabort_fuzzer)
+include_directories(test/fuzz_test/cmipcservicefinish_fuzzer)
+include_directories(test/fuzz_test/cmipcservicegetappcert_fuzzer)
+include_directories(test/fuzz_test/cmipcservicegetappcertlist_fuzzer)
+include_directories(test/fuzz_test/cmipcservicegetappcertlistbyuid_fuzzer)
+include_directories(test/fuzz_test/cmipcservicegetauthorizedapplist_fuzzer)
+include_directories(test/fuzz_test/cmipcservicegetcallingappcertlist_fuzzer)
+include_directories(test/fuzz_test/cmipcservicegetcertificateinfo_fuzzer)
+include_directories(test/fuzz_test/cmipcservicegetcertificatelist_fuzzer)
+include_directories(test/fuzz_test/cmipcservicegetukeycert_fuzzer)
+include_directories(test/fuzz_test/cmipcservicegetukeycertlist_fuzzer)
+include_directories(test/fuzz_test/cmipcservicegetusercertinfo_fuzzer)
+include_directories(test/fuzz_test/cmipcservicegetusercertlist_fuzzer)
+include_directories(test/fuzz_test/cmipcservicegrantappcertificate_fuzzer)
+include_directories(test/fuzz_test/cmipcserviceinit_fuzzer)
+include_directories(test/fuzz_test/cmipcserviceinstallappcert_fuzzer)
+include_directories(test/fuzz_test/cmipcserviceinstallusercert_fuzzer)
+include_directories(test/fuzz_test/cmipcserviceisauthorizedapp_fuzzer)
+include_directories(test/fuzz_test/cmipcserviceremovegrantedapp_fuzzer)
+include_directories(test/fuzz_test/cmipcservicesetcertstatus_fuzzer)
+include_directories(test/fuzz_test/cmipcservicesetusercertstatus_fuzzer)
+include_directories(test/fuzz_test/cmipcserviceuninstallallappcert_fuzzer)
+include_directories(test/fuzz_test/cmipcserviceuninstallallusercert_fuzzer)
+include_directories(test/fuzz_test/cmipcserviceuninstallappcert_fuzzer)
+include_directories(test/fuzz_test/cmipcserviceuninstallusercert_fuzzer)
+include_directories(test/fuzz_test/cmipcserviceupdate_fuzzer)
+include_directories(test/fuzz_test/cmisauthorizedapp_fuzzer)
+include_directories(test/fuzz_test/cmiscertneedbackup_fuzzer)
+include_directories(test/fuzz_test/cmkeyopimportkey_fuzzer)
+include_directories(test/fuzz_test/cmkeyopprocess_fuzzer)
+include_directories(test/fuzz_test/cmonremoterequest_fuzzer)
+include_directories(test/fuzz_test/cmonstop_fuzzer)
+include_directories(test/fuzz_test/cmparsecertchainandprivkey_fuzzer)
+include_directories(test/fuzz_test/cmparsepkcs12cert_fuzzer)
+include_directories(test/fuzz_test/cmpfx_fuzzer)
+include_directories(test/fuzz_test/cmrdbinsertcertproperty_fuzzer)
+include_directories(test/fuzz_test/cmreadcertdata_fuzzer)
+include_directories(test/fuzz_test/cmremoveappcert_fuzzer)
+include_directories(test/fuzz_test/cmremoveauthuid_fuzzer)
+include_directories(test/fuzz_test/cmremoveauthuidbyuserid_fuzzer)
+include_directories(test/fuzz_test/cmremovebackupusercert_fuzzer)
+include_directories(test/fuzz_test/cmremovegrantedapp_fuzzer)
+include_directories(test/fuzz_test/cmremoveusercert_fuzzer)
+include_directories(test/fuzz_test/cmrmusercert_fuzzer)
+include_directories(test/fuzz_test/cmsendrequest_fuzzer)
+include_directories(test/fuzz_test/cmservicegetappcert_fuzzer)
+include_directories(test/fuzz_test/cmservicegetappcertlist_fuzzer)
+include_directories(test/fuzz_test/cmservicegetcertinfo_fuzzer)
+include_directories(test/fuzz_test/cmserviceinit_fuzzer)
+include_directories(test/fuzz_test/cmservicinstallappcert_fuzzer)
+include_directories(test/fuzz_test/cmsetcertstatus_fuzzer)
+include_directories(test/fuzz_test/cmsetusercertstatus_fuzzer)
+include_directories(test/fuzz_test/cmstoragegetappcert_fuzzer)
+include_directories(test/fuzz_test/cmstoreusercert_fuzzer)
+include_directories(test/fuzz_test/cmsystemtrustedstore_fuzzer)
+include_directories(test/fuzz_test/cmuninstallallappcert_fuzzer)
+include_directories(test/fuzz_test/cmuninstallallusertrustedcert_fuzzer)
+include_directories(test/fuzz_test/cmuninstallappcert_fuzzer)
+include_directories(test/fuzz_test/cmuninstallusertrustedcert_fuzzer)
+include_directories(test/fuzz_test/cmupdate_fuzzer)
+include_directories(test/fuzz_test/cmusertrustedstore_fuzzer)
+include_directories(test/fuzz_test/cmwriteusercert_fuzzer)
+include_directories(test/fuzz_test/cmx509_fuzzer)
+include_directories(test/fuzz_test/cmx509topem_fuzzer)
+include_directories(test/fuzz_test/fuzz_test_common/include)
+include_directories(test/fuzz_test/getfilepath_fuzzer)
+include_directories(test/mocks/hks_api/include)
+include_directories(test/unittest/include)
+include_directories(test/unittest/module_test/include)
+
+add_executable(security_certificate_manager
+        frameworks/cert_manager_standard/main/common/include/cert_manager_service_ipc_interface_code.h
+        frameworks/cert_manager_standard/main/common/include/cm_advsecmode_check.h
+        frameworks/cert_manager_standard/main/common/include/cm_log.h
+        frameworks/cert_manager_standard/main/common/include/cm_mem.h
+        frameworks/cert_manager_standard/main/common/include/cm_param.h
+        frameworks/cert_manager_standard/main/common/include/cm_pfx.h
+        frameworks/cert_manager_standard/main/common/include/cm_type_inner.h
+        frameworks/cert_manager_standard/main/common/include/cm_util.h
+        frameworks/cert_manager_standard/main/common/include/cm_x509.h
+        frameworks/cert_manager_standard/main/common/src/cm_advsecmode_check.c
+        frameworks/cert_manager_standard/main/common/src/cm_param.c
+        frameworks/cert_manager_standard/main/common/src/cm_pfx.c
+        frameworks/cert_manager_standard/main/common/src/cm_util.c
+        frameworks/cert_manager_standard/main/common/src/cm_x509.c
+        frameworks/cert_manager_standard/main/os_dependency/cm_ipc/include/cm_ipc_client.h
+        frameworks/cert_manager_standard/main/os_dependency/cm_ipc/include/cm_ipc_client_serialization.h
+        frameworks/cert_manager_standard/main/os_dependency/cm_ipc/include/cm_ipc_service_serialization.h
+        frameworks/cert_manager_standard/main/os_dependency/cm_ipc/include/cm_request.h
+        frameworks/cert_manager_standard/main/os_dependency/cm_ipc/src/cm_ipc_client.c
+        frameworks/cert_manager_standard/main/os_dependency/cm_ipc/src/cm_ipc_client_serialization.c
+        frameworks/cert_manager_standard/main/os_dependency/cm_ipc/src/cm_ipc_service_serialization.c
+        frameworks/cert_manager_standard/main/os_dependency/cm_ipc/src/cm_request.cpp
+        frameworks/cert_manager_standard/main/os_dependency/log/cm_log.c
+        frameworks/cert_manager_standard/main/os_dependency/posix/cm_mem.c
+        interfaces/innerkits/cert_manager_standard/main/include/cert_manager_api.h
+        interfaces/innerkits/cert_manager_standard/main/include/cm_type.h
+        interfaces/innerkits/cert_manager_standard/source/cert_manager_api.c
+        interfaces/kits/ani/certificate_manager_ani/include/cm_abort_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_finish_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_get_app_cert_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_get_ca_list_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_get_cert_info_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_get_cert_store_path.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_get_cred_list_by_uid_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_get_cred_list_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_get_ukey_cert_list_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_init_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_install_private_cert_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_install_user_ca_sync_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_is_authorized_app_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_uninstall_private_cert_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_uninstall_user_ca_sync_impl.h
+        interfaces/kits/ani/certificate_manager_ani/include/cm_update_impl.h
+        interfaces/kits/ani/certificate_manager_ani/src/cm_abort_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_ani.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_finish_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_get_app_cert_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_get_ca_list_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_get_cert_info_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_get_cert_store_path.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_get_cred_list_by_uid_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_get_cred_list_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_get_ukey_cert_list_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_init_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_install_private_cert_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_install_user_ca_sync_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_is_authorized_app_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_uninstall_private_cert_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_uninstall_user_ca_sync_impl.cpp
+        interfaces/kits/ani/certificate_manager_ani/src/cm_update_impl.cpp
+        interfaces/kits/ani/certificate_manager_dialog_ani/include/cm_open_auth_dialog.h
+        interfaces/kits/ani/certificate_manager_dialog_ani/include/cm_open_auth_dialog_with_request.h
+        interfaces/kits/ani/certificate_manager_dialog_ani/include/cm_open_cert_detail_dialog.h
+        interfaces/kits/ani/certificate_manager_dialog_ani/include/cm_open_certmanager_dialog.h
+        interfaces/kits/ani/certificate_manager_dialog_ani/include/cm_open_dialog.h
+        interfaces/kits/ani/certificate_manager_dialog_ani/include/cm_open_install_dialog.h
+        interfaces/kits/ani/certificate_manager_dialog_ani/include/cm_open_ukey_auth_dialog.h
+        interfaces/kits/ani/certificate_manager_dialog_ani/include/cm_open_uninstall_dialog.h
+        interfaces/kits/ani/certificate_manager_dialog_ani/src/cm_dialog_ani.cpp
+        interfaces/kits/ani/certificate_manager_dialog_ani/src/cm_open_auth_dialog.cpp
+        interfaces/kits/ani/certificate_manager_dialog_ani/src/cm_open_auth_dialog_with_request.cpp
+        interfaces/kits/ani/certificate_manager_dialog_ani/src/cm_open_cert_detail_dialog.cpp
+        interfaces/kits/ani/certificate_manager_dialog_ani/src/cm_open_certmanager_dialog.cpp
+        interfaces/kits/ani/certificate_manager_dialog_ani/src/cm_open_dialog.cpp
+        interfaces/kits/ani/certificate_manager_dialog_ani/src/cm_open_install_dialog.cpp
+        interfaces/kits/ani/certificate_manager_dialog_ani/src/cm_open_ukey_auth_dialog.cpp
+        interfaces/kits/ani/certificate_manager_dialog_ani/src/cm_open_uninstall_dialog.cpp
+        interfaces/kits/ani/cm_ani_common/builder/include/cm_result_builder.h
+        interfaces/kits/ani/cm_ani_common/builder/src/cm_result_builder.cpp
+        interfaces/kits/ani/cm_ani_common/impl/include/cm_ani_async_impl.h
+        interfaces/kits/ani/cm_ani_common/impl/include/cm_ani_common.h
+        interfaces/kits/ani/cm_ani_common/impl/include/cm_ani_impl.h
+        interfaces/kits/ani/cm_ani_common/impl/src/cm_ani_async_impl.cpp
+        interfaces/kits/ani/cm_ani_common/impl/src/cm_ani_common.cpp
+        interfaces/kits/ani/cm_ani_common/impl/src/cm_ani_impl.cpp
+        interfaces/kits/ani/cm_ani_common/utils/include/cm_ani_utils.h
+        interfaces/kits/ani/cm_ani_common/utils/src/cm_ani_utils.cpp
+        interfaces/kits/c/include/cm_native_api.h
+        interfaces/kits/c/include/cm_native_type.h
+        interfaces/kits/c/src/cm_native_api.c
+        interfaces/kits/cj/include/cj_cert_manager_ffi.h
+        interfaces/kits/cj/src/cj_cert_manager_ffi.c
+        interfaces/kits/common/include/cm_api_common.h
+        interfaces/kits/common/include/cm_dialog_api_common.h
+        interfaces/kits/common/src/cm_dialog_api_common.cpp
+        interfaces/kits/napi/include/dialog/dialog_callback/cm_napi_dialog_callback.h
+        interfaces/kits/napi/include/dialog/dialog_callback/cm_napi_dialog_callback_cert_reference.h
+        interfaces/kits/napi/include/dialog/dialog_callback/cm_napi_dialog_callback_int_bool.h
+        interfaces/kits/napi/include/dialog/dialog_callback/cm_napi_dialog_callback_string.h
+        interfaces/kits/napi/include/dialog/dialog_callback/cm_napi_dialog_callback_void.h
+        interfaces/kits/napi/include/dialog/cm_napi_dialog_common.h
+        interfaces/kits/napi/include/dialog/cm_napi_open_authorize_dialog.h
+        interfaces/kits/napi/include/dialog/cm_napi_open_detail_dialog.h
+        interfaces/kits/napi/include/dialog/cm_napi_open_dialog.h
+        interfaces/kits/napi/include/dialog/cm_napi_open_install_dialog.h
+        interfaces/kits/napi/include/dialog/cm_napi_open_ukey_auth_dialog.h
+        interfaces/kits/napi/include/dialog/cm_napi_open_uninstall_dialog.h
+        interfaces/kits/napi/include/cm_napi_common.h
+        interfaces/kits/napi/include/cm_napi_get_app_cert_info.h
+        interfaces/kits/napi/include/cm_napi_get_app_cert_info_common.h
+        interfaces/kits/napi/include/cm_napi_get_app_cert_list.h
+        interfaces/kits/napi/include/cm_napi_get_app_cert_list_by_uid.h
+        interfaces/kits/napi/include/cm_napi_get_app_cert_list_by_uid_common.h
+        interfaces/kits/napi/include/cm_napi_get_app_cert_list_common.h
+        interfaces/kits/napi/include/cm_napi_get_cert_store_path.h
+        interfaces/kits/napi/include/cm_napi_get_system_cert_info.h
+        interfaces/kits/napi/include/cm_napi_get_system_cert_list.h
+        interfaces/kits/napi/include/cm_napi_get_ukey_cert.h
+        interfaces/kits/napi/include/cm_napi_get_ukey_cert_list.h
+        interfaces/kits/napi/include/cm_napi_grant.h
+        interfaces/kits/napi/include/cm_napi_install_app_cert.h
+        interfaces/kits/napi/include/cm_napi_install_app_cert_common.h
+        interfaces/kits/napi/include/cm_napi_set_cert_status.h
+        interfaces/kits/napi/include/cm_napi_sign_verify.h
+        interfaces/kits/napi/include/cm_napi_uninstall_all_app_cert.h
+        interfaces/kits/napi/include/cm_napi_uninstall_app_cert.h
+        interfaces/kits/napi/include/cm_napi_uninstall_app_cert_common.h
+        interfaces/kits/napi/include/cm_napi_user_trusted_cert.h
+        interfaces/kits/napi/src/dialog/dialog_callback/cm_napi_dialog_callback.cpp
+        interfaces/kits/napi/src/dialog/dialog_callback/cm_napi_dialog_callback_cert_reference.cpp
+        interfaces/kits/napi/src/dialog/dialog_callback/cm_napi_dialog_callback_int_bool.cpp
+        interfaces/kits/napi/src/dialog/dialog_callback/cm_napi_dialog_callback_string.cpp
+        interfaces/kits/napi/src/dialog/dialog_callback/cm_napi_dialog_callback_void.cpp
+        interfaces/kits/napi/src/dialog/cm_napi_dialog.cpp
+        interfaces/kits/napi/src/dialog/cm_napi_dialog_common.cpp
+        interfaces/kits/napi/src/dialog/cm_napi_open_authorize_dialog.cpp
+        interfaces/kits/napi/src/dialog/cm_napi_open_detail_dialog.cpp
+        interfaces/kits/napi/src/dialog/cm_napi_open_dialog.cpp
+        interfaces/kits/napi/src/dialog/cm_napi_open_install_dialog.cpp
+        interfaces/kits/napi/src/dialog/cm_napi_open_ukey_auth_dialog.cpp
+        interfaces/kits/napi/src/dialog/cm_napi_open_uninstall_dialog.cpp
+        interfaces/kits/napi/src/cm_napi.cpp
+        interfaces/kits/napi/src/cm_napi_common.cpp
+        interfaces/kits/napi/src/cm_napi_get_app_cert_info.cpp
+        interfaces/kits/napi/src/cm_napi_get_app_cert_info_common.cpp
+        interfaces/kits/napi/src/cm_napi_get_app_cert_list.cpp
+        interfaces/kits/napi/src/cm_napi_get_app_cert_list_by_uid.cpp
+        interfaces/kits/napi/src/cm_napi_get_app_cert_list_by_uid_common.cpp
+        interfaces/kits/napi/src/cm_napi_get_app_cert_list_common.cpp
+        interfaces/kits/napi/src/cm_napi_get_cert_store_path.cpp
+        interfaces/kits/napi/src/cm_napi_get_system_cert_info.cpp
+        interfaces/kits/napi/src/cm_napi_get_system_cert_list.cpp
+        interfaces/kits/napi/src/cm_napi_get_ukey_cert.cpp
+        interfaces/kits/napi/src/cm_napi_get_ukey_cert_list.cpp
+        interfaces/kits/napi/src/cm_napi_grant.cpp
+        interfaces/kits/napi/src/cm_napi_install_app_cert.cpp
+        interfaces/kits/napi/src/cm_napi_install_app_cert_common.cpp
+        interfaces/kits/napi/src/cm_napi_set_cert_status.cpp
+        interfaces/kits/napi/src/cm_napi_sign_verify.cpp
+        interfaces/kits/napi/src/cm_napi_uninstall_all_app_cert.cpp
+        interfaces/kits/napi/src/cm_napi_uninstall_app_cert.cpp
+        interfaces/kits/napi/src/cm_napi_uninstall_app_cert_common.cpp
+        interfaces/kits/napi/src/cm_napi_user_trusted_cert.cpp
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_app_cert_process.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_auth_list_mgr.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_auth_mgr.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_check.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_crypto_operation.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_double_list.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_file.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_file_operator.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_key_operation.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_mem.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_permission_check.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_query.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_service.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_session_mgr.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_status.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_storage.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_ukey_operation.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_updateflag.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cert_manager_uri.h
+        services/cert_manager_standard/cert_manager_engine/main/core/include/cm_event_process.h
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_app_cert_process.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_auth_list_mgr.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_auth_mgr.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_check.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_crypto_operation.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_double_list.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_file.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_file_operator.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_key_operation.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_mem.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_permission_check.cpp
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_query.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_service.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_session_mgr.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_status.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_storage.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_ukey_operation.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_updateflag.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cert_manager_uri.c
+        services/cert_manager_standard/cert_manager_engine/main/core/src/cm_event_process.c
+        services/cert_manager_standard/cert_manager_engine/main/rdb/include/cm_cert_property_rdb.h
+        services/cert_manager_standard/cert_manager_engine/main/rdb/include/cm_rdb_config.h
+        services/cert_manager_standard/cert_manager_engine/main/rdb/include/cm_rdb_data_manager.h
+        services/cert_manager_standard/cert_manager_engine/main/rdb/include/cm_rdb_open_callback.h
+        services/cert_manager_standard/cert_manager_engine/main/rdb/include/cm_scope_guard.h
+        services/cert_manager_standard/cert_manager_engine/main/rdb/src/cm_cert_property_rdb.cpp
+        services/cert_manager_standard/cert_manager_engine/main/rdb/src/cm_rdb_data_manager.cpp
+        services/cert_manager_standard/cert_manager_engine/main/rdb/src/cm_rdb_open_callback.cpp
+        services/cert_manager_standard/cert_manager_service/main/hisysevent_wrapper/include/cm_report_wrapper.h
+        services/cert_manager_standard/cert_manager_service/main/hisysevent_wrapper/include/hisysevent_wrapper.h
+        services/cert_manager_standard/cert_manager_service/main/hisysevent_wrapper/src/cm_report_wrapper.c
+        services/cert_manager_standard/cert_manager_service/main/hisysevent_wrapper/src/hisysevent_wrapper.cpp
+        services/cert_manager_standard/cert_manager_service/main/os_dependency/idl/cm_ipc/cm_ipc_service.c
+        services/cert_manager_standard/cert_manager_service/main/os_dependency/idl/cm_ipc/cm_ipc_service.h
+        services/cert_manager_standard/cert_manager_service/main/os_dependency/idl/cm_ipc/cm_ipc_service_cert_pack.c
+        services/cert_manager_standard/cert_manager_service/main/os_dependency/idl/cm_ipc/cm_ipc_service_cert_pack.h
+        services/cert_manager_standard/cert_manager_service/main/os_dependency/idl/cm_ipc/cm_response.cpp
+        services/cert_manager_standard/cert_manager_service/main/os_dependency/idl/cm_ipc/cm_response.h
+        services/cert_manager_standard/cert_manager_service/main/os_dependency/sa/cm_event_observer.cpp
+        services/cert_manager_standard/cert_manager_service/main/os_dependency/sa/cm_event_observer.h
+        services/cert_manager_standard/cert_manager_service/main/os_dependency/sa/cm_sa.cpp
+        services/cert_manager_standard/cert_manager_service/main/os_dependency/sa/cm_sa.h
+        services/cert_manager_standard/cert_manager_service/main/security_guard_report/include/cm_security_guard_info.h
+        services/cert_manager_standard/cert_manager_service/main/security_guard_report/include/cm_security_guard_report.h
+        services/cert_manager_standard/cert_manager_service/main/security_guard_report/src/cm_security_guard_info.c
+        services/cert_manager_standard/cert_manager_service/main/security_guard_report/src/cm_security_guard_report.cpp
+        test/fuzz_test/certmanagerfreeuri_fuzzer/certmanagerfreeuri_fuzzer.cpp
+        test/fuzz_test/certmanagerfreeuri_fuzzer/certmanagerfreeuri_fuzzer.h
+        test/fuzz_test/certmanagergetuidfromuri_fuzzer/certmanagergetuidfromuri_fuzzer.cpp
+        test/fuzz_test/certmanagergetuidfromuri_fuzzer/certmanagergetuidfromuri_fuzzer.h
+        test/fuzz_test/cmabort_fuzzer/cmabort_fuzzer.cpp
+        test/fuzz_test/cmabort_fuzzer/cmabort_fuzzer.h
+        test/fuzz_test/cmaddauthuid_fuzzer/cmaddauthuid_fuzzer.cpp
+        test/fuzz_test/cmaddauthuid_fuzzer/cmaddauthuid_fuzzer.h
+        test/fuzz_test/cmappcert_fuzzer/cmappcert_fuzzer.cpp
+        test/fuzz_test/cmappcert_fuzzer/cmappcert_fuzzer.h
+        test/fuzz_test/cmauthgrantappcertificate_fuzzer/cmauthgrantappcertificate_fuzzer.cpp
+        test/fuzz_test/cmauthgrantappcertificate_fuzzer/cmauthgrantappcertificate_fuzzer.h
+        test/fuzz_test/cmauthlistmgr_fuzzer/cmauthlistmgr_fuzzer.cpp
+        test/fuzz_test/cmauthlistmgr_fuzzer/cmauthlistmgr_fuzzer.h
+        test/fuzz_test/cmauthmgr_fuzzer/cmauthmgr_fuzzer.cpp
+        test/fuzz_test/cmauthmgr_fuzzer/cmauthmgr_fuzzer.h
+        test/fuzz_test/cmcallinggetappcertlist_fuzzer/cmcallinggetappcertlist_fuzzer.cpp
+        test/fuzz_test/cmcallinggetappcertlist_fuzzer/cmcallinggetappcertlist_fuzzer.h
+        test/fuzz_test/cmcertcommon_fuzzer/cmcertcommon_fuzzer.cpp
+        test/fuzz_test/cmcertcommon_fuzzer/cmcertcommon_fuzzer.h
+        test/fuzz_test/cmcertmanager_fuzzer/cmcertmanager_fuzzer.cpp
+        test/fuzz_test/cmcertmanager_fuzzer/cmcertmanager_fuzzer.h
+        test/fuzz_test/cmcertmanagercheck_fuzzer/cmcertmanagercheck_fuzzer.cpp
+        test/fuzz_test/cmcertmanagercheck_fuzzer/cmcertmanagercheck_fuzzer.h
+        test/fuzz_test/cmcertmanagerfile_fuzzer/cmcertmanagerfile_fuzzer.cpp
+        test/fuzz_test/cmcertmanagerfile_fuzzer/cmcertmanagerfile_fuzzer.h
+        test/fuzz_test/cmcertmanagerquery_fuzzer/cmcertmanagerquery_fuzzer.cpp
+        test/fuzz_test/cmcertmanagerquery_fuzzer/cmcertmanagerquery_fuzzer.h
+        test/fuzz_test/cmcertmanagerservice_fuzzer/cmcertmanagerservice_fuzzer.cpp
+        test/fuzz_test/cmcertmanagerservice_fuzzer/cmcertmanagerservice_fuzzer.h
+        test/fuzz_test/cmcertmanagerupdateflag_fuzzer/cmcertmanagerupdateflag_fuzzer.cpp
+        test/fuzz_test/cmcertmanagerupdateflag_fuzzer/cmcertmanagerupdateflag_fuzzer.h
+        test/fuzz_test/cmcheckandgetcommonuri_fuzzer/cmcheckandgetcommonuri_fuzzer.cpp
+        test/fuzz_test/cmcheckandgetcommonuri_fuzzer/cmcheckandgetcommonuri_fuzzer.h
+        test/fuzz_test/cmconstructcommonuri_fuzzer/cmconstructcommonuri_fuzzer.cpp
+        test/fuzz_test/cmconstructcommonuri_fuzzer/cmconstructcommonuri_fuzzer.h
+        test/fuzz_test/cmcreatesession_fuzzer/cmcreatesession_fuzzer.cpp
+        test/fuzz_test/cmcreatesession_fuzzer/cmcreatesession_fuzzer.h
+        test/fuzz_test/cmdeletecertproperty_fuzzer/cmdeletecertproperty_fuzzer.cpp
+        test/fuzz_test/cmdeletecertproperty_fuzzer/cmdeletecertproperty_fuzzer.h
+        test/fuzz_test/cmdeleteprocessInfo_fuzzer/cmdeleteprocessInfo_fuzzer.cpp
+        test/fuzz_test/cmdeleteprocessInfo_fuzzer/cmdeleteprocessInfo_fuzzer.h
+        test/fuzz_test/cmfinish_fuzzer/cmfinish_fuzzer.cpp
+        test/fuzz_test/cmfinish_fuzzer/cmfinish_fuzzer.h
+        test/fuzz_test/cmfreefilenames_fuzzer/cmfreefilenames_fuzzer.cpp
+        test/fuzz_test/cmfreefilenames_fuzzer/cmfreefilenames_fuzzer.h
+        test/fuzz_test/cmgetappcert_fuzzer/cmgetappcert_fuzzer.cpp
+        test/fuzz_test/cmgetappcert_fuzzer/cmgetappcert_fuzzer.h
+        test/fuzz_test/cmgetappcertlist_fuzzer/cmgetappcertlist_fuzzer.cpp
+        test/fuzz_test/cmgetappcertlist_fuzzer/cmgetappcertlist_fuzzer.h
+        test/fuzz_test/cmgetauthorizedapplist_fuzzer/cmgetauthorizedapplist_fuzzer.cpp
+        test/fuzz_test/cmgetauthorizedapplist_fuzzer/cmgetauthorizedapplist_fuzzer.h
+        test/fuzz_test/cmgetcertbackupdir_fuzzer/cmgetcertbackupdir_fuzzer.cpp
+        test/fuzz_test/cmgetcertbackupdir_fuzzer/cmgetcertbackupdir_fuzzer.h
+        test/fuzz_test/cmgetcertbackupfilepath_fuzzer/cmgetcertbackupfilepath_fuzzer.cpp
+        test/fuzz_test/cmgetcertbackupfilepath_fuzzer/cmgetcertbackupfilepath_fuzzer.h
+        test/fuzz_test/cmgetcertconfpath_fuzzer/cmgetcertconfpath_fuzzer.cpp
+        test/fuzz_test/cmgetcertconfpath_fuzzer/cmgetcertconfpath_fuzzer.h
+        test/fuzz_test/cmgetcertconfuserIddir_fuzzer/cmgetcertconfuserIddir_fuzzer.cpp
+        test/fuzz_test/cmgetcertconfuserIddir_fuzzer/cmgetcertconfuserIddir_fuzzer.h
+        test/fuzz_test/cmgetcertinfo_fuzzer/cmgetcertinfo_fuzzer.cpp
+        test/fuzz_test/cmgetcertinfo_fuzzer/cmgetcertinfo_fuzzer.h
+        test/fuzz_test/cmgetcertlist_fuzzer/cmgetcertlist_fuzzer.cpp
+        test/fuzz_test/cmgetcertlist_fuzzer/cmgetcertlist_fuzzer.h
+        test/fuzz_test/cmgetcertmanagerappuid_fuzzer/cmgetcertmanagerappuid_fuzzer.cpp
+        test/fuzz_test/cmgetcertmanagerappuid_fuzzer/cmgetcertmanagerappuid_fuzzer.h
+        test/fuzz_test/cmgetcertorcredcount_fuzzer/cmgetcertorcredcount_fuzzer.cpp
+        test/fuzz_test/cmgetcertorcredcount_fuzzer/cmgetcertorcredcount_fuzzer.h
+        test/fuzz_test/cmgetdisplaynamebyuri_fuzzer/cmgetdisplaynamebyuri_fuzzer.cpp
+        test/fuzz_test/cmgetdisplaynamebyuri_fuzzer/cmgetdisplaynamebyuri_fuzzer.h
+        test/fuzz_test/cmgetfilepath_fuzzer/cmgetfilepath_fuzzer.cpp
+        test/fuzz_test/cmgetfilepath_fuzzer/cmgetfilepath_fuzzer.h
+        test/fuzz_test/cmgetnameencode_fuzzer/cmgetnameencode_fuzzer.cpp
+        test/fuzz_test/cmgetnameencode_fuzzer/cmgetnameencode_fuzzer.h
+        test/fuzz_test/cmgetobjnamefromcertdata_fuzzer/cmgetobjnamefromcertdata_fuzzer.cpp
+        test/fuzz_test/cmgetobjnamefromcertdata_fuzzer/cmgetobjnamefromcertdata_fuzzer.h
+        test/fuzz_test/cmgetrandom_fuzzer/cmgetrandom_fuzzer.cpp
+        test/fuzz_test/cmgetrandom_fuzzer/cmgetrandom_fuzzer.h
+        test/fuzz_test/cmgetukeycertlist_fuzzer/cmgetukeycertlist_fuzzer.cpp
+        test/fuzz_test/cmgetukeycertlist_fuzzer/cmgetukeycertlist_fuzzer.h
+        test/fuzz_test/cmgeturi_fuzzer/cmgeturi_fuzzer.cpp
+        test/fuzz_test/cmgeturi_fuzzer/cmgeturi_fuzzer.h
+        test/fuzz_test/cmgetusercacertlist_fuzzer/cmgetusercacertlist_fuzzer.cpp
+        test/fuzz_test/cmgetusercacertlist_fuzzer/cmgetusercacertlist_fuzzer.h
+        test/fuzz_test/cmgetusercertinfo_fuzzer/cmgetusercertinfo_fuzzer.cpp
+        test/fuzz_test/cmgetusercertinfo_fuzzer/cmgetusercertinfo_fuzzer.h
+        test/fuzz_test/cmgetusercertlist_fuzzer/cmgetusercertlist_fuzzer.cpp
+        test/fuzz_test/cmgetusercertlist_fuzzer/cmgetusercertlist_fuzzer.h
+        test/fuzz_test/cmgetx509issuenamelongformat_fuzzer/cmgetx509issuenamelongformat_fuzzer.cpp
+        test/fuzz_test/cmgetx509issuenamelongformat_fuzzer/cmgetx509issuenamelongformat_fuzzer.h
+        test/fuzz_test/cmgetx509notbefore_fuzzer/cmgetx509notbefore_fuzzer.cpp
+        test/fuzz_test/cmgetx509notbefore_fuzzer/cmgetx509notbefore_fuzzer.h
+        test/fuzz_test/cmgetx509serialnumber_fuzzer/cmgetx509serialnumber_fuzzer.cpp
+        test/fuzz_test/cmgetx509serialnumber_fuzzer/cmgetx509serialnumber_fuzzer.h
+        test/fuzz_test/cmgrantappcertificate_fuzzer/cmgrantappcertificate_fuzzer.cpp
+        test/fuzz_test/cmgrantappcertificate_fuzzer/cmgrantappcertificate_fuzzer.h
+        test/fuzz_test/cminit_fuzzer/cminit_fuzzer.cpp
+        test/fuzz_test/cminit_fuzzer/cminit_fuzzer.h
+        test/fuzz_test/cminitcertstackcontext_fuzzer/cminitcertstackcontext_fuzzer.cpp
+        test/fuzz_test/cminitcertstackcontext_fuzzer/cminitcertstackcontext_fuzzer.h
+        test/fuzz_test/cminsertcertproperty_fuzzer/cminsertcertproperty_fuzzer.cpp
+        test/fuzz_test/cminsertcertproperty_fuzzer/cminsertcertproperty_fuzzer.h
+        test/fuzz_test/cminstallappcert_fuzzer/cminstallappcert_fuzzer.cpp
+        test/fuzz_test/cminstallappcert_fuzzer/cminstallappcert_fuzzer.h
+        test/fuzz_test/cminstallappcertex_fuzzer/cminstallappcertex_fuzzer.cpp
+        test/fuzz_test/cminstallappcertex_fuzzer/cminstallappcertex_fuzzer.h
+        test/fuzz_test/cminstallappcertpro_fuzzer/cminstallappcertpro_fuzzer.cpp
+        test/fuzz_test/cminstallappcertpro_fuzzer/cminstallappcertpro_fuzzer.h
+        test/fuzz_test/cminstallsystemappcert_fuzzer/cminstallsystemappcert_fuzzer.cpp
+        test/fuzz_test/cminstallsystemappcert_fuzzer/cminstallsystemappcert_fuzzer.h
+        test/fuzz_test/cminstallusercert_fuzzer/cminstallusercert_fuzzer.cpp
+        test/fuzz_test/cminstallusercert_fuzzer/cminstallusercert_fuzzer.h
+        test/fuzz_test/cminstallusertrustedcert_fuzzer/cminstallusertrustedcert_fuzzer.cpp
+        test/fuzz_test/cminstallusertrustedcert_fuzzer/cminstallusertrustedcert_fuzzer.h
+        test/fuzz_test/cminstallusertrustedp7bcert_fuzzer/cminstallusertrustedp7bcert_fuzzer.cpp
+        test/fuzz_test/cminstallusertrustedp7bcert_fuzzer/cminstallusertrustedp7bcert_fuzzer.h
+        test/fuzz_test/cmipcserviceabort_fuzzer/cmipcserviceabort_fuzzer.cpp
+        test/fuzz_test/cmipcserviceabort_fuzzer/cmipcserviceabort_fuzzer.h
+        test/fuzz_test/cmipcservicefinish_fuzzer/cmipcservicefinish_fuzzer.cpp
+        test/fuzz_test/cmipcservicefinish_fuzzer/cmipcservicefinish_fuzzer.h
+        test/fuzz_test/cmipcservicegetappcert_fuzzer/cmipcservicegetappcert_fuzzer.cpp
+        test/fuzz_test/cmipcservicegetappcert_fuzzer/cmipcservicegetappcert_fuzzer.h
+        test/fuzz_test/cmipcservicegetappcertlist_fuzzer/cmipcservicegetappcertlist_fuzzer.cpp
+        test/fuzz_test/cmipcservicegetappcertlist_fuzzer/cmipcservicegetappcertlist_fuzzer.h
+        test/fuzz_test/cmipcservicegetappcertlistbyuid_fuzzer/cmipcservicegetappcertlistbyuid_fuzzer.cpp
+        test/fuzz_test/cmipcservicegetappcertlistbyuid_fuzzer/cmipcservicegetappcertlistbyuid_fuzzer.h
+        test/fuzz_test/cmipcservicegetauthorizedapplist_fuzzer/cmipcservicegetauthorizedapplist_fuzzer.cpp
+        test/fuzz_test/cmipcservicegetauthorizedapplist_fuzzer/cmipcservicegetauthorizedapplist_fuzzer.h
+        test/fuzz_test/cmipcservicegetcallingappcertlist_fuzzer/cmipcservicegetcallingappcertlist_fuzzer.cpp
+        test/fuzz_test/cmipcservicegetcallingappcertlist_fuzzer/cmipcservicegetcallingappcertlist_fuzzer.h
+        test/fuzz_test/cmipcservicegetcertificateinfo_fuzzer/cmipcservicegetcertificateinfo_fuzzer.cpp
+        test/fuzz_test/cmipcservicegetcertificateinfo_fuzzer/cmipcservicegetcertificateinfo_fuzzer.h
+        test/fuzz_test/cmipcservicegetcertificatelist_fuzzer/cmipcservicegetcertificatelist_fuzzer.cpp
+        test/fuzz_test/cmipcservicegetcertificatelist_fuzzer/cmipcservicegetcertificatelist_fuzzer.h
+        test/fuzz_test/cmipcservicegetukeycert_fuzzer/cmipcservicegetukeycert_fuzzer.cpp
+        test/fuzz_test/cmipcservicegetukeycert_fuzzer/cmipcservicegetukeycert_fuzzer.h
+        test/fuzz_test/cmipcservicegetukeycertlist_fuzzer/cmipcservicegetukeycertlist_fuzzer.cpp
+        test/fuzz_test/cmipcservicegetukeycertlist_fuzzer/cmipcservicegetukeycertlist_fuzzer.h
+        test/fuzz_test/cmipcservicegetusercertinfo_fuzzer/cmipcservicegetusercertinfo_fuzzer.cpp
+        test/fuzz_test/cmipcservicegetusercertinfo_fuzzer/cmipcservicegetusercertinfo_fuzzer.h
+        test/fuzz_test/cmipcservicegetusercertlist_fuzzer/cmipcservicegetusercertlist_fuzzer.cpp
+        test/fuzz_test/cmipcservicegetusercertlist_fuzzer/cmipcservicegetusercertlist_fuzzer.h
+        test/fuzz_test/cmipcservicegrantappcertificate_fuzzer/cmipcservicegrantappcertificate_fuzzer.cpp
+        test/fuzz_test/cmipcservicegrantappcertificate_fuzzer/cmipcservicegrantappcertificate_fuzzer.h
+        test/fuzz_test/cmipcserviceinit_fuzzer/cmipcserviceinit_fuzzer.cpp
+        test/fuzz_test/cmipcserviceinit_fuzzer/cmipcserviceinit_fuzzer.h
+        test/fuzz_test/cmipcserviceinstallappcert_fuzzer/cmipcserviceinstallappcert_fuzzer.cpp
+        test/fuzz_test/cmipcserviceinstallappcert_fuzzer/cmipcserviceinstallappcert_fuzzer.h
+        test/fuzz_test/cmipcserviceinstallusercert_fuzzer/cmipcserviceinstallusercert_fuzzer.cpp
+        test/fuzz_test/cmipcserviceinstallusercert_fuzzer/cmipcserviceinstallusercert_fuzzer.h
+        test/fuzz_test/cmipcserviceisauthorizedapp_fuzzer/cmipcserviceisauthorizedapp_fuzzer.cpp
+        test/fuzz_test/cmipcserviceisauthorizedapp_fuzzer/cmipcserviceisauthorizedapp_fuzzer.h
+        test/fuzz_test/cmipcserviceremovegrantedapp_fuzzer/cmipcserviceremovegrantedapp_fuzzer.cpp
+        test/fuzz_test/cmipcserviceremovegrantedapp_fuzzer/cmipcserviceremovegrantedapp_fuzzer.h
+        test/fuzz_test/cmipcservicesetcertstatus_fuzzer/cmipcservicesetcertstatus_fuzzer.cpp
+        test/fuzz_test/cmipcservicesetcertstatus_fuzzer/cmipcservicesetcertstatus_fuzzer.h
+        test/fuzz_test/cmipcservicesetusercertstatus_fuzzer/cmipcservicesetusercertstatus_fuzzer.cpp
+        test/fuzz_test/cmipcservicesetusercertstatus_fuzzer/cmipcservicesetusercertstatus_fuzzer.h
+        test/fuzz_test/cmipcserviceuninstallallappcert_fuzzer/cmipcserviceuninstallallappcert_fuzzer.cpp
+        test/fuzz_test/cmipcserviceuninstallallappcert_fuzzer/cmipcserviceuninstallallappcert_fuzzer.h
+        test/fuzz_test/cmipcserviceuninstallallusercert_fuzzer/cmipcserviceuninstallallusercert_fuzzer.cpp
+        test/fuzz_test/cmipcserviceuninstallallusercert_fuzzer/cmipcserviceuninstallallusercert_fuzzer.h
+        test/fuzz_test/cmipcserviceuninstallappcert_fuzzer/cmipcserviceuninstallappcert_fuzzer.cpp
+        test/fuzz_test/cmipcserviceuninstallappcert_fuzzer/cmipcserviceuninstallappcert_fuzzer.h
+        test/fuzz_test/cmipcserviceuninstallusercert_fuzzer/cmipcserviceuninstallusercert_fuzzer.cpp
+        test/fuzz_test/cmipcserviceuninstallusercert_fuzzer/cmipcserviceuninstallusercert_fuzzer.h
+        test/fuzz_test/cmipcserviceupdate_fuzzer/cmipcserviceupdate_fuzzer.cpp
+        test/fuzz_test/cmipcserviceupdate_fuzzer/cmipcserviceupdate_fuzzer.h
+        test/fuzz_test/cmisauthorizedapp_fuzzer/cmisauthorizedapp_fuzzer.cpp
+        test/fuzz_test/cmisauthorizedapp_fuzzer/cmisauthorizedapp_fuzzer.h
+        test/fuzz_test/cmiscertneedbackup_fuzzer/cmiscertneedbackup_fuzzer.cpp
+        test/fuzz_test/cmiscertneedbackup_fuzzer/cmiscertneedbackup_fuzzer.h
+        test/fuzz_test/cmkeyopimportkey_fuzzer/cmkeyopimportkey_fuzzer.cpp
+        test/fuzz_test/cmkeyopimportkey_fuzzer/cmkeyopimportkey_fuzzer.h
+        test/fuzz_test/cmkeyopprocess_fuzzer/cmkeyopprocess_fuzzer.cpp
+        test/fuzz_test/cmkeyopprocess_fuzzer/cmkeyopprocess_fuzzer.h
+        test/fuzz_test/cmonremoterequest_fuzzer/cmonremoterequest_fuzzer.cpp
+        test/fuzz_test/cmonremoterequest_fuzzer/cmonremoterequest_fuzzer.h
+        test/fuzz_test/cmonstop_fuzzer/cmonstop_fuzzer.cpp
+        test/fuzz_test/cmonstop_fuzzer/cmonstop_fuzzer.h
+        test/fuzz_test/cmparsecertchainandprivkey_fuzzer/cmparsecertchainandprivkey_fuzzer.cpp
+        test/fuzz_test/cmparsecertchainandprivkey_fuzzer/cmparsecertchainandprivkey_fuzzer.h
+        test/fuzz_test/cmparsepkcs12cert_fuzzer/cmparsepkcs12cert_fuzzer.cpp
+        test/fuzz_test/cmparsepkcs12cert_fuzzer/cmparsepkcs12cert_fuzzer.h
+        test/fuzz_test/cmpfx_fuzzer/cmpfx_fuzzer.cpp
+        test/fuzz_test/cmpfx_fuzzer/cmpfx_fuzzer.h
+        test/fuzz_test/cmrdbinsertcertproperty_fuzzer/cmrdbinsertcertproperty_fuzzer.cpp
+        test/fuzz_test/cmrdbinsertcertproperty_fuzzer/cmrdbinsertcertproperty_fuzzer.h
+        test/fuzz_test/cmreadcertdata_fuzzer/cmreadcertdata_fuzzer.cpp
+        test/fuzz_test/cmreadcertdata_fuzzer/cmreadcertdata_fuzzer.h
+        test/fuzz_test/cmremoveappcert_fuzzer/cmremoveappcert_fuzzer.cpp
+        test/fuzz_test/cmremoveappcert_fuzzer/cmremoveappcert_fuzzer.h
+        test/fuzz_test/cmremoveauthuid_fuzzer/cmremoveauthuid_fuzzer.cpp
+        test/fuzz_test/cmremoveauthuid_fuzzer/cmremoveauthuid_fuzzer.h
+        test/fuzz_test/cmremoveauthuidbyuserid_fuzzer/cmremoveauthuidbyuserid_fuzzer.cpp
+        test/fuzz_test/cmremoveauthuidbyuserid_fuzzer/cmremoveauthuidbyuserid_fuzzer.h
+        test/fuzz_test/cmremovebackupusercert_fuzzer/cmremovebackupusercert_fuzzer.cpp
+        test/fuzz_test/cmremovebackupusercert_fuzzer/cmremovebackupusercert_fuzzer.h
+        test/fuzz_test/cmremovegrantedapp_fuzzer/cmremovegrantedapp_fuzzer.cpp
+        test/fuzz_test/cmremovegrantedapp_fuzzer/cmremovegrantedapp_fuzzer.h
+        test/fuzz_test/cmremoveusercert_fuzzer/cmremoveusercert_fuzzer.cpp
+        test/fuzz_test/cmremoveusercert_fuzzer/cmremoveusercert_fuzzer.h
+        test/fuzz_test/cmrmusercert_fuzzer/cmrmusercert_fuzzer.cpp
+        test/fuzz_test/cmrmusercert_fuzzer/cmrmusercert_fuzzer.h
+        test/fuzz_test/cmsendrequest_fuzzer/cmsendrequest_fuzzer.cpp
+        test/fuzz_test/cmsendrequest_fuzzer/cmsendrequest_fuzzer.h
+        test/fuzz_test/cmservicegetappcert_fuzzer/cmservicegetappcert_fuzzer.cpp
+        test/fuzz_test/cmservicegetappcert_fuzzer/cmservicegetappcert_fuzzer.h
+        test/fuzz_test/cmservicegetappcertlist_fuzzer/cmservicegetappcertlist_fuzzer.cpp
+        test/fuzz_test/cmservicegetappcertlist_fuzzer/cmservicegetappcertlist_fuzzer.h
+        test/fuzz_test/cmservicegetcertinfo_fuzzer/cmservicegetcertinfo_fuzzer.cpp
+        test/fuzz_test/cmservicegetcertinfo_fuzzer/cmservicegetcertinfo_fuzzer.h
+        test/fuzz_test/cmserviceinit_fuzzer/cmserviceinit_fuzzer.cpp
+        test/fuzz_test/cmserviceinit_fuzzer/cmserviceinit_fuzzer.h
+        test/fuzz_test/cmservicinstallappcert_fuzzer/cmservicinstallappcert_fuzzer.cpp
+        test/fuzz_test/cmservicinstallappcert_fuzzer/cmservicinstallappcert_fuzzer.h
+        test/fuzz_test/cmsetcertstatus_fuzzer/cmsetcertstatus_fuzzer.cpp
+        test/fuzz_test/cmsetcertstatus_fuzzer/cmsetcertstatus_fuzzer.h
+        test/fuzz_test/cmsetusercertstatus_fuzzer/cmsetusercertstatus_fuzzer.cpp
+        test/fuzz_test/cmsetusercertstatus_fuzzer/cmsetusercertstatus_fuzzer.h
+        test/fuzz_test/cmstoragegetappcert_fuzzer/cmstoragegetappcert_fuzzer.cpp
+        test/fuzz_test/cmstoragegetappcert_fuzzer/cmstoragegetappcert_fuzzer.h
+        test/fuzz_test/cmstoreusercert_fuzzer/cmstoreusercert_fuzzer.cpp
+        test/fuzz_test/cmstoreusercert_fuzzer/cmstoreusercert_fuzzer.h
+        test/fuzz_test/cmsystemtrustedstore_fuzzer/cmsystemtrustedstore_fuzzer.cpp
+        test/fuzz_test/cmsystemtrustedstore_fuzzer/cmsystemtrustedstore_fuzzer.h
+        test/fuzz_test/cmuninstallallappcert_fuzzer/cmuninstallallappcert_fuzzer.cpp
+        test/fuzz_test/cmuninstallallappcert_fuzzer/cmuninstallallappcert_fuzzer.h
+        test/fuzz_test/cmuninstallallusertrustedcert_fuzzer/cmuninstallallusertrustedcert_fuzzer.cpp
+        test/fuzz_test/cmuninstallallusertrustedcert_fuzzer/cmuninstallallusertrustedcert_fuzzer.h
+        test/fuzz_test/cmuninstallappcert_fuzzer/cmuninstallappcert_fuzzer.cpp
+        test/fuzz_test/cmuninstallappcert_fuzzer/cmuninstallappcert_fuzzer.h
+        test/fuzz_test/cmuninstallusertrustedcert_fuzzer/cmuninstallusertrustedcert_fuzzer.cpp
+        test/fuzz_test/cmuninstallusertrustedcert_fuzzer/cmuninstallusertrustedcert_fuzzer.h
+        test/fuzz_test/cmupdate_fuzzer/cmupdate_fuzzer.cpp
+        test/fuzz_test/cmupdate_fuzzer/cmupdate_fuzzer.h
+        test/fuzz_test/cmusertrustedstore_fuzzer/cmusertrustedstore_fuzzer.cpp
+        test/fuzz_test/cmusertrustedstore_fuzzer/cmusertrustedstore_fuzzer.h
+        test/fuzz_test/cmwriteusercert_fuzzer/cmwriteusercert_fuzzer.cpp
+        test/fuzz_test/cmwriteusercert_fuzzer/cmwriteusercert_fuzzer.h
+        test/fuzz_test/cmx509_fuzzer/cmx509_fuzzer.cpp
+        test/fuzz_test/cmx509_fuzzer/cmx509_fuzzer.h
+        test/fuzz_test/cmx509topem_fuzzer/cmx509topem_fuzzer.cpp
+        test/fuzz_test/cmx509topem_fuzzer/cmx509topem_fuzzer.h
+        test/fuzz_test/fuzz_test_common/include/cm_cert_data_rsa.h
+        test/fuzz_test/fuzz_test_common/include/cm_cert_data_user.h
+        test/fuzz_test/fuzz_test_common/include/cm_fuzz_test_common.h
+        test/fuzz_test/fuzz_test_common/src/cm_fuzz_test_common.cpp
+        test/fuzz_test/getfilepath_fuzzer/getfilepath_fuzzer.cpp
+        test/fuzz_test/getfilepath_fuzzer/getfilepath_fuzzer.h
+        test/mocks/hks_api/include/hks_api.h
+        test/mocks/hks_api/include/hks_param.h
+        test/mocks/hks_api/include/hks_type.h
+        test/mocks/hks_api/src/hks_api.c
+        test/mocks/hks_api/src/hks_param.c
+        test/unittest/common_permission_test/cm_common_permission_test.cpp
+        test/unittest/include/cm_cert_data_chain_key.h
+        test/unittest/include/cm_cert_data_ecc.h
+        test/unittest/include/cm_cert_data_ed25519.h
+        test/unittest/include/cm_cert_data_p7b.h
+        test/unittest/include/cm_cert_data_part1_rsa.h
+        test/unittest/include/cm_cert_data_part2_rsa.h
+        test/unittest/include/cm_cert_data_part3_rsa.h
+        test/unittest/include/cm_cert_data_user.h
+        test/unittest/include/cm_test_common.h
+        test/unittest/include/cm_test_log.h
+        test/unittest/inner_permission_test/cm_inner_permission_test.cpp
+        test/unittest/module_test/include/cm_module_cert_data.h
+        test/unittest/module_test/src/cm_cert_parse_test.cpp
+        test/unittest/module_test/src/cm_log_test.cpp
+        test/unittest/module_test/src/cm_param_test.cpp
+        test/unittest/multi_thread_test/src/cm_app_cert_multi_thread_test.cpp
+        test/unittest/multi_thread_test/src/cm_get_auth_list_multi_thread_test.cpp
+        test/unittest/multi_thread_test/src/cm_grant_multi_thread_test.cpp
+        test/unittest/multi_thread_test/src/cm_remove_grant_multi_thread_test.cpp
+        test/unittest/src/cm_abort_test.cpp
+        test/unittest/src/cm_app_cert_by_uid_test.cpp
+        test/unittest/src/cm_app_cert_test.cpp
+        test/unittest/src/cm_finish_test.cpp
+        test/unittest/src/cm_get_auth_list_test.cpp
+        test/unittest/src/cm_get_certinfo_test.cpp
+        test/unittest/src/cm_get_certlist_test.cpp
+        test/unittest/src/cm_get_ukey_cert_test.cpp
+        test/unittest/src/cm_get_user_ca_cert_list.cpp
+        test/unittest/src/cm_grant_test.cpp
+        test/unittest/src/cm_init_test.cpp
+        test/unittest/src/cm_is_authed_test.cpp
+        test/unittest/src/cm_pfx.cpp
+        test/unittest/src/cm_pri_app_cert_test.cpp
+        test/unittest/src/cm_remove_grant_test.cpp
+        test/unittest/src/cm_set_status_test.cpp
+        test/unittest/src/cm_sys_app_cert_test.cpp
+        test/unittest/src/cm_test_common.cpp
+        test/unittest/src/cm_update_test.cpp
+        test/unittest/src/cm_user_cert_test.cpp
+        frameworks/cert_manager_standard/main/common/src/cm_pfx.c)

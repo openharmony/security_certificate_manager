@@ -632,4 +632,104 @@ HWTEST_F(CmCertParseTest, CmCertParseTest032, TestSize.Level0)
     ret = CmIsNumeric(errorStr, sizeof(errorStr), &value);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 }
+
+/**
+* @tc.name: CmCertParseTest033
+* @tc.desc: test InitCertContext
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCertParseTest, CmCertParseTest033, TestSize.Level0)
+{
+    uint8_t certBuf[] = "certBufTest";
+    uint32_t size = sizeof(certBuf);
+    X509 *x509 = InitCertContext(certBuf, size);
+    EXPECT_EQ(x509, nullptr);
+    FreeCertContext(x509);
+}
+
+/**
+* @tc.name: CmCertParseTest034
+* @tc.desc: test InitCertStackContext
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCertParseTest, CmCertParseTest034, TestSize.Level0)
+{
+    uint8_t certBuf[] = "certBufTest";
+    uint32_t size = sizeof(certBuf);
+    STACK_OF(X509) *x509 = InitCertStackContext(certBuf, size);
+    EXPECT_EQ(x509, nullptr);
+}
+
+/**
+* @tc.name: CmCertParseTest035
+* @tc.desc: test GetX509FirstSubjectName
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCertParseTest, CmCertParseTest035, TestSize.Level0)
+{
+    X509 *x509cert = nullptr;
+    struct CmBlob *displayName = nullptr;
+    int32_t ret = GetX509FirstSubjectName(x509cert, displayName);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+    FreeCertContext(x509cert);
+}
+
+/**
+* @tc.name: CmCertParseTest036
+* @tc.desc: test GetX509FirstSubjectName
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCertParseTest, CmCertParseTest036, TestSize.Level0)
+{
+    uint8_t displayNameBuf[] = "displayName";
+    struct CmBlob displayName = { sizeof(displayNameBuf), displayNameBuf};
+    X509 *x509 = InitCertContext(g_certData, sizeof(g_certData));
+    int32_t ret = GetX509FirstSubjectName(x509, &displayName);
+    EXPECT_EQ(ret, CMR_ERROR_BUFFER_TOO_SMALL);
+    FreeCertContext(x509);
+}
+
+/**
+* @tc.name: CmCertParseTest037
+* @tc.desc: test GetSubjectNameAndAlias
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCertParseTest, CmCertParseTest037, TestSize.Level0)
+{
+    uint8_t certAliasBuf[MAX_LEN_URI];
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf};
+    uint8_t subjectNameBuf[MAX_LEN_URI];
+    struct CmBlob subjectName = { sizeof(subjectNameBuf), subjectNameBuf};
+    uint8_t displayNameBuf[MAX_LEN_URI];
+    struct CmBlob displayName = { sizeof(displayNameBuf), displayNameBuf};
+    X509 *x509 = InitCertContext(g_certData, sizeof(g_certData));
+    int32_t ret = GetSubjectNameAndAlias(x509, &certAlias, &subjectName, &displayName);
+    EXPECT_EQ(ret, CM_SUCCESS);
+    FreeCertContext(x509);
+}
+
+/**
+* @tc.name: CmCertParseTest038
+* @tc.desc: test GetSubjectNameAndAlias
+* @tc.type: FUNC
+* @tc.require: AR000H0MIA /SR000H09NA
+*/
+HWTEST_F(CmCertParseTest, CmCertParseTest038, TestSize.Level0)
+{
+    uint8_t certAliasBuf[MAX_LEN_URI];
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf};
+    uint8_t subjectNameBuf[MAX_LEN_URI];
+    struct CmBlob subjectName = { sizeof(subjectNameBuf), subjectNameBuf};
+    uint8_t displayNameBuf[MAX_LEN_URI];
+    struct CmBlob displayName = { sizeof(displayNameBuf), displayNameBuf};
+    X509 *x509 = nullptr;
+    int32_t ret = GetSubjectNameAndAlias(x509, &certAlias, &subjectName, &displayName);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
+    FreeCertContext(x509);
+}
 } // end of namespace

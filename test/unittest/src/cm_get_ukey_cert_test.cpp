@@ -383,7 +383,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPrivateCertNDKBaseTest002, TestSize.Level0)
 
     ret = OH_CertManager_GetPrivateCertificate(reinterpret_cast<OH_CM_Blob*>(&keyUri),
         reinterpret_cast<OH_CM_Credential*>(&cert));
-    
+
     EXPECT_EQ(ret, CM_SUCCESS) << "OH_CertManager_GetPrivateCertificate  failed, retcode:" << ret;
 
     ret = CmUninstallAppCert(&keyUri, CM_PRI_CREDENTIAL_STORE);
@@ -492,7 +492,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPrivateCertNDKAbnormalTest002, TestSize.Level0)
     struct Credential cert;
     ret = OH_CertManager_GetPrivateCertificate(reinterpret_cast<OH_CM_Blob*>(&keyUri),
         reinterpret_cast<OH_CM_Credential*>(&cert));
-    
+
     EXPECT_EQ(ret, OH_CM_NOT_FOUND) << "OH_CertManager_GetPrivateCertificate  failed, retcode:" << ret;
 
     FreeCredential(reinterpret_cast<Credential*>(&cert));
@@ -528,5 +528,117 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest003, TestSize.Level0)
         reinterpret_cast<OH_CM_Credential*>(&cert));
     EXPECT_EQ(ret, OH_CM_NOT_FOUND) << "OH_CertManager_GetPublicCertificate  failed, retcode:" << ret;
     FreeCredential(reinterpret_cast<Credential*>(&cert));
+}
+
+/**
+ * @tc.name: CmGetPublicCertNDKAbnormalTest004
+ * @tc.desc: Test CertManager get public cert c-api interface abnormal function
+ * @tc.type: FUNC CmFreeUkeyCertificate
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest004, TestSize.Level0)
+{
+    struct CredentialDetailList ukeyList = { 0, nullptr };
+    InitUkeyCertList(&ukeyList);
+    ASSERT_TRUE(ukeyList.credential[0].credData.data != nullptr);
+    CmFreeUkeyCertificate(&ukeyList);
+}
+
+/**
+* @tc.name: CmGetPublicCertNDKAbnormalTest005
+* @tc.desc: Test CertManager get public cert c-api interface abnormal function
+* @tc.type: FUNC CmFreeUkeyCertificate
+* @tc.require: AR000H0MI8 /SR000H09N9
+*/
+HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest005, TestSize.Level0)
+{
+    struct CredentialDetailList *ukeyList = nullptr;
+    CmFreeUkeyCertificate(ukeyList);
+}
+
+/**
+* @tc.name: CmGetPublicCertNDKAbnormalTest006
+* @tc.desc: Test CertManager get public cert c-api interface abnormal function
+* @tc.type: FUNC CmFreeCredential
+* @tc.require: AR000H0MI8 /SR000H09N9
+*/
+HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest006, TestSize.Level0)
+{
+    uint8_t certAliasBuf[] = "keyA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    uint8_t uriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob keyUri = { sizeof(uriBuf), uriBuf };
+
+    int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &keyUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmCheckAppPermissionBaseTest001 private install failed, retcode:" << ret;
+
+    uint8_t authUriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob authUri = { sizeof(authUriBuf), authUriBuf };
+    ret = CmGrantAppCertificate(&keyUri, 0, &authUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmGrantAppCertificate  failed, retcode:" << ret;
+
+    ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "CmUninstallAppCert public uninstall failed, retcode:" << ret;
+
+    struct Credential *cert = new Credential();
+    OH_CertManager_GetPublicCertificate(reinterpret_cast<OH_CM_Blob*>(&authUri),
+        reinterpret_cast<OH_CM_Credential*>(cert));
+    CmFreeCredential(cert);
+}
+
+/**
+* @tc.name: CmGetPublicCertNDKAbnormalTest007
+* @tc.desc: Test CertManager get public cert c-api interface abnormal function
+* @tc.type: FUNC CmFreeCredential
+* @tc.require: AR000H0MI8 /SR000H09N9
+*/
+HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest007, TestSize.Level0)
+{
+    struct Credential *cert = nullptr;
+    CmFreeCredential(cert);
+}
+
+/**
+* @tc.name: CmGetPublicCertNDKAbnormalTest008
+* @tc.desc: Test CertManager get public cert c-api interface abnormal function
+* @tc.type: FUNC OH_CertManager_GetPublicCertificate
+* @tc.require: AR000H0MI8 /SR000H09N9
+*/
+HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest008, TestSize.Level0)
+{
+    OH_CM_Blob *keyUri = nullptr;
+    OH_CM_Credential *certificate = nullptr;
+    int32_t ret = OH_CertManager_GetPublicCertificate(keyUri, certificate);
+    EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
+}
+
+/**
+* @tc.name: CmGetPublicCertNDKAbnormalTest009
+* @tc.desc: Test CertManager get public cert c-api interface abnormal function
+* @tc.type: FUNC OH_CertManager_GetPublicCertificate
+* @tc.require: AR000H0MI8 /SR000H09N9
+*/
+HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest009, TestSize.Level0)
+{
+    OH_CM_Blob *keyUri = nullptr;
+    OH_CM_Credential *certificate = nullptr;
+    int32_t ret = OH_CertManager_GetPrivateCertificate(keyUri, certificate);
+    EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
+}
+
+/**
+* @tc.name: CmGetPublicCertNDKAbnormalTest010
+* @tc.desc: Test CertManager get public cert c-api interface abnormal function
+* @tc.type: FUNC OH_CertManager_GetPublicCertificate
+* @tc.require: AR000H0MI8 /SR000H09N9
+*/
+HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest010, TestSize.Level0)
+{
+    OH_CM_Blob *keyUri = nullptr;
+    OH_CM_UkeyInfo *ukeyInfo = nullptr;
+    OH_CM_CredentialDetailList *certificateList = nullptr;
+    int32_t ret = OH_CertManager_GetUkeyCertificate(keyUri, ukeyInfo, certificateList);
+    EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
 }
 }
