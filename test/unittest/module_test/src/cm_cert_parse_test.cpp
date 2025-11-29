@@ -660,6 +660,7 @@ HWTEST_F(CmCertParseTest, CmCertParseTest034, TestSize.Level0)
     uint32_t size = sizeof(certBuf);
     STACK_OF(X509) *x509 = InitCertStackContext(certBuf, size);
     EXPECT_EQ(x509, nullptr);
+    sk_X509_pop_free(x509, X509_free);
 }
 
 /**
@@ -674,7 +675,6 @@ HWTEST_F(CmCertParseTest, CmCertParseTest035, TestSize.Level0)
     struct CmBlob *displayName = nullptr;
     int32_t ret = GetX509FirstSubjectName(x509cert, displayName);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
-    FreeCertContext(x509cert);
 }
 
 /**
@@ -730,6 +730,5 @@ HWTEST_F(CmCertParseTest, CmCertParseTest038, TestSize.Level0)
     X509 *x509 = nullptr;
     int32_t ret = GetSubjectNameAndAlias(x509, &certAlias, &subjectName, &displayName);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
-    FreeCertContext(x509);
 }
 } // end of namespace

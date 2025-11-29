@@ -829,15 +829,15 @@ HWTEST_F(CmLogTest, CmIpcClientTest033, TestSize.Level0)
 HWTEST_F(CmLogTest, CmIpcClientTest034, TestSize.Level0)
 {
     char data1[] = "1234";  // 大小 4 字节（刚好容纳 uint32_t）
-    struct CmBlob dest_blob = {
+    struct CmBlob destBlob = {
         .size = sizeof(data1),    // 4 字节，满足 sizeof(uint32_t)
         .data = (uint8_t *)data1  // 强制转换为 uint8_t*（实际仍为只读）
     };
 
     // 2. 构造其他参数（绕过前两个错误分支）
     uint32_t value = 0x12345678;  // 要拷贝的值
-    uint32_t dest_offset = 0;     // 初始偏移 0，剩余空间 4 字节（足够）
-    int32_t ret = CopyUint32ToBuffer(value, &dest_blob, &dest_offset);
+    uint32_t destOffset = 0;     // 初始偏移 0，剩余空间 4 字节（足够）
+    int32_t ret = CopyUint32ToBuffer(value, &destBlob, &destOffset);
     EXPECT_EQ(ret, CM_SUCCESS);
 }
 
@@ -849,18 +849,18 @@ HWTEST_F(CmLogTest, CmIpcClientTest034, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest035, TestSize.Level0)
 {
-    uint32_t buffer_size = 1024;  // 缓冲区总大小（远大于 sizeof(uint32_t)）
-    uint8_t *writable_data = (uint8_t *)malloc(buffer_size);
+    uint32_t bufferSize = 1024;  // 缓冲区总大小（远大于 sizeof(uint32_t)）
+    uint8_t writableData[bufferSize];
     // 2. 构造合法的 CmBlob 结构体（满足 CmCheckBlob 校验）
-    struct CmBlob dest_blob = {
-        .size = buffer_size,    // 总大小充足
-        .data = writable_data   // 可写内存指针
+    struct CmBlob destBlob = {
+        .size = bufferSize,    // 总大小充足
+        .data = writableData   // 可写内存指针
     };
 
     // 3. 构造其他参数（确保无参数错误）
     uint32_t value = 0xABCD1234;  // 要拷贝的 32 位无符号整数
-    uint32_t dest_offset = 0;     // 初始偏移量（从缓冲区起始位置开始拷贝）
-    int32_t ret = CopyUint32ToBuffer(value, &dest_blob, &dest_offset);
+    uint32_t destOffset = 0;     // 初始偏移量（从缓冲区起始位置开始拷贝）
+    int32_t ret = CopyUint32ToBuffer(value, &destBlob, &destOffset);
     EXPECT_EQ(ret, CM_SUCCESS);
 }
 
@@ -872,14 +872,14 @@ HWTEST_F(CmLogTest, CmIpcClientTest035, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest036, TestSize.Level0)
 {
-    uint8_t src_data[4] = {0x11, 0x22, 0x33, 0x44};
-    struct CmBlob src_blob = {.size = 4, .data = src_data};
+    uint8_t srcData[4] = {0x11, 0x22, 0x33, 0x44};
+    struct CmBlob srcBlob = {.size = 4, .data = srcData};
 
-    uint8_t dest_data[100];
-    struct CmBlob dest_blob = {.size = 100, .data = dest_data};
+    uint8_t destData[100];
+    struct CmBlob destBlob = {.size = 100, .data = destData};
 
     // 关键：destOffset 传 NULL
-    int32_t ret = CopyBlobToBuffer(&src_blob, &dest_blob, NULL);
+    int32_t ret = CopyBlobToBuffer(&srcBlob, &destBlob, NULL);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 }
 
@@ -891,15 +891,15 @@ HWTEST_F(CmLogTest, CmIpcClientTest036, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest037, TestSize.Level0)
 {
-    uint8_t src_data[5] = {0x01, 0x02, 0x03, 0x04, 0x05};
-    struct CmBlob src_blob = {.size = 5, .data = src_data};
+    uint8_t srcData[5] = {0x01, 0x02, 0x03, 0x04, 0x05};
+    struct CmBlob srcBlob = {.size = 5, .data = srcData};
 
     // 目标 blob：总大小=10 字节，初始偏移=0，剩余空间=10 < 12，触发不足
-    uint8_t dest_data[10];
-    struct CmBlob dest_blob = {.size = 10, .data = dest_data};
-    uint32_t dest_offset = 0;
+    uint8_t destData[10];
+    struct CmBlob destBlob = {.size = 10, .data = destData};
+    uint32_t destOffset = 0;
 
-    int32_t ret = CopyBlobToBuffer(&src_blob, &dest_blob, &dest_offset);
+    int32_t ret = CopyBlobToBuffer(&srcBlob, &destBlob, &destOffset);
     EXPECT_EQ(ret, CMR_ERROR_BUFFER_TOO_SMALL);
 }
 
@@ -911,15 +911,15 @@ HWTEST_F(CmLogTest, CmIpcClientTest037, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest038, TestSize.Level0)
 {
-    uint8_t src_data[4] = {0xAA, 0xBB, 0xCC, 0xDD};
-    struct CmBlob src_blob = {.size = 4, .data = src_data};
+    uint8_t srcData[4] = {0xAA, 0xBB, 0xCC, 0xDD};
+    struct CmBlob srcBlob = {.size = 4, .data = srcData};
 
     // 目标 blob：data 指向只读内存（字符串常量区），拷贝 blob->size 时失败
-    char read_only_dest[] = "1234567890";  // 只读，大小11字节（足够空间，但不可写）
-    struct CmBlob dest_blob = {.size = sizeof(read_only_dest), .data = (uint8_t *)read_only_dest};
-    uint32_t dest_offset = 0;
+    char readOnlyDest[] = "1234567890";  // 只读，大小11字节（足够空间，但不可写）
+    struct CmBlob destBlob = {.size = sizeof(readOnlyDest), .data = (uint8_t *)readOnlyDest};
+    uint32_t destOffset = 0;
 
-    int32_t ret = CopyBlobToBuffer(&src_blob, &dest_blob, &dest_offset);
+    int32_t ret = CopyBlobToBuffer(&srcBlob, &destBlob, &destOffset);
     EXPECT_EQ(ret, CM_SUCCESS);
 }
 
@@ -931,21 +931,21 @@ HWTEST_F(CmLogTest, CmIpcClientTest038, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest039, TestSize.Level0)
 {
-    uint8_t src_data[4] = {0xEE, 0xFF, 0x00, 0x11};
-    struct CmBlob src_blob = {.size = 4, .data = src_data};
+    uint8_t srcData[4] = {0xEE, 0xFF, 0x00, 0x11};
+    struct CmBlob srcBlob = {.size = 4, .data = srcData};
 
     // 目标 blob：前 4 字节可写（堆内存），后 4 字节只读（字符串常量区）
     // 第一个 memcpy_s（拷贝 size）成功，第二个 memcpy_s（拷贝 data）失败
-    uint8_t *writable_part = (uint8_t *)malloc(4);  // 可写的前 4 字节
-    char read_only_part[] = "abcd";           // 只读的后 4 字节
-    struct CmBlob dest_blob = {
-        .size = 4 + sizeof(read_only_part),  // 总大小 8 字节
-        .data = writable_part                // 起始地址为可写内存
+    uint8_t writablePart[4];
+    char readOnlyPart[] = "abcd";           // 只读的后 4 字节
+    struct CmBlob destBlob = {
+        .size = 4 + sizeof(readOnlyPart),  // 总大小 8 字节
+        .data = writablePart                // 起始地址为可写内存
     };
-    uint32_t dest_offset = 0;
+    uint32_t destOffset = 0;
 
-    // 关键：第一个 memcpy_s 写入 writable_part（成功），第二个 memcpy_s 写入 writable_part+4（只读区域，失败）
-    int32_t ret = CopyBlobToBuffer(&src_blob, &dest_blob, &dest_offset);
+    // 关键：第一个 memcpy_s 写入 writablePart（成功），第二个 memcpy_s 写入 writablePart+4（只读区域，失败）
+    int32_t ret = CopyBlobToBuffer(&srcBlob, &destBlob, &destOffset);
     EXPECT_EQ(ret, CM_SUCCESS);
 }
 
@@ -957,21 +957,18 @@ HWTEST_F(CmLogTest, CmIpcClientTest039, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest040, TestSize.Level0)
 {
-    uint8_t src_data[4] = {0xEE, 0xFF, 0x00, 0x11};
-    struct CmBlob src_blob = {.size = 4, .data = src_data};
-
-    // 目标 blob：前 4 字节可写（堆内存），后 4 字节只读（字符串常量区）
-    // 第一个 memcpy_s（拷贝 size）成功，第二个 memcpy_s（拷贝 data）失败
-    uint8_t *writable_part = (uint8_t *)malloc(4);  // 可写的前 4 字节
-    char read_only_part[] = "abcd";           // 只读的后 4 字节
-    struct CmBlob dest_blob = {
-        .size = 4 + sizeof(read_only_part),  // 总大小 8 字节
-        .data = writable_part                // 起始地址为可写内存
+    uint8_t srcData[4] = {0xEE, 0xFF, 0x00, 0x11};
+    struct CmBlob srcBlob = {.size = 4, .data = srcData};
+    uint8_t writablePart[4];
+    char readOnlyPart[] = "abcd";
+    struct CmBlob destBlob = {
+        .size = 4 + sizeof(readOnlyPart),
+        .data = writablePart
     };
-    uint32_t dest_offset = 0;
+    uint32_t destOffset = 0;
 
-    // 关键：第一个 memcpy_s 写入 writable_part（成功），第二个 memcpy_s 写入 writable_part+4（只读区域，失败）
-    int32_t ret = CopyBlobToBuffer(&src_blob, &dest_blob, &dest_offset);
+    // 关键：第一个 memcpy_s 写入 writablePart（成功），第二个 memcpy_s 写入 writablePart+4（只读区域，失败）
+    int32_t ret = CopyBlobToBuffer(&srcBlob, &destBlob, &destOffset);
     EXPECT_EQ(ret, CM_SUCCESS);
 }
 
@@ -983,16 +980,14 @@ HWTEST_F(CmLogTest, CmIpcClientTest040, TestSize.Level0)
 */
 HWTEST_F(CmLogTest, CmIpcClientTest041, TestSize.Level0)
 {
-    uint8_t src_data[6] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
-    struct CmBlob src_blob = {.size = 6, .data = src_data};
-
-    // 目标 blob：可写堆内存，大小=100 字节（充足）
-    uint8_t *dest_data = (uint8_t *)malloc(100);
-    struct CmBlob dest_blob = {.size = 100, .data = dest_data};
-    uint32_t dest_offset = 0;
+    uint8_t srcData[6] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+    struct CmBlob srcBlob = {.size = 6, .data = srcData};
+    uint8_t destData[100];
+    struct CmBlob destBlob = {.size = 100, .data = destData};
+    uint32_t destOffset = 0;
 
     // 调用函数
-    int32_t ret = CopyBlobToBuffer(&src_blob, &dest_blob, &dest_offset);
+    int32_t ret = CopyBlobToBuffer(&srcBlob, &destBlob, &destOffset);
     EXPECT_EQ(ret, CM_SUCCESS);
 }
 

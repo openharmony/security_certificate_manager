@@ -610,7 +610,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest008, TestSize.Level0)
     OH_CM_Blob *keyUri = nullptr;
     OH_CM_Credential *certificate = nullptr;
     int32_t ret = OH_CertManager_GetPublicCertificate(keyUri, certificate);
-    EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
+    EXPECT_EQ(ret, OH_CM_INNER_FAILURE);
 }
 
 /**
@@ -624,7 +624,7 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest009, TestSize.Level0)
     OH_CM_Blob *keyUri = nullptr;
     OH_CM_Credential *certificate = nullptr;
     int32_t ret = OH_CertManager_GetPrivateCertificate(keyUri, certificate);
-    EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
+    EXPECT_EQ(ret, OH_CM_INNER_FAILURE);
 }
 
 /**
@@ -639,6 +639,6 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest010, TestSize.Level0)
     OH_CM_UkeyInfo *ukeyInfo = nullptr;
     OH_CM_CredentialDetailList *certificateList = nullptr;
     int32_t ret = OH_CertManager_GetUkeyCertificate(keyUri, ukeyInfo, certificateList);
-    EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
+    EXPECT_EQ(ret, OH_CM_INNER_FAILURE);
 }
 }
