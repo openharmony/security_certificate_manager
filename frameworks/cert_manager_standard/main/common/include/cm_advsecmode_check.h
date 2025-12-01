@@ -18,6 +18,13 @@
 
 #include "cm_type.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int32_t CheckAdvSecMode(bool *isAdvSecMode);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* CM_ADVSECMODE_CHECK_H */
