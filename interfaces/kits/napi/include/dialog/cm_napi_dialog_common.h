@@ -73,6 +73,7 @@ enum CmCertificateType {
     CREDENTIAL_USER = 2, // private type
     CREDENTIAL_APP = 3, // app type
     CREDENTIAL_UKEY = 4, // ukey type
+    CREDENTIAL_SYSTEM = 5,
     CREDENTIAL_INVLAID_TYPE, // invalid type
 };
 

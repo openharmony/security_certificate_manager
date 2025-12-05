@@ -74,6 +74,7 @@ static napi_value CreateCmCertificateType(napi_env env)
     AddInt32Property(env, certificateType, "CREDENTIAL_USER", CREDENTIAL_USER);
     AddInt32Property(env, certificateType, "CREDENTIAL_APP", CREDENTIAL_APP);
     AddInt32Property(env, certificateType, "CREDENTIAL_UKEY", CREDENTIAL_UKEY);
+    AddInt32Property(env, certificateType, "CREDENTIAL_SYSTEM", CREDENTIAL_SYSTEM);
 
     return certificateType;
 }

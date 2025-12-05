@@ -39,6 +39,7 @@ const std::string CERT_MANAGER_CALLER_UID = "appUid";
 const std::string CERT_MANAGER_CERT_URI = "certUri";
 const std::string CERT_MANAGER_OPERATION_TYPE = "operationType";
 const std::string CERT_MANAGER_SHOW_INSTALL_BUTTON = "showInstallButton";
+const std::string CERT_MANAGER_CERT_TYPE = "certType";
 const std::string CERT_MANAGER_CERT_TYPES = "certTypes";
 const std::string CERT_MANAGER_CERT_PURPOSE = "certPurpose";
 const std::string CERT_MANAGER_CERT_KEY_URI = "keyUri";
@@ -62,7 +63,12 @@ enum CmDialogPageType {
 };
 
 enum CmCertificateType {
-    CA_CERT = 1
+    CA_CERT = 1,
+    CREDENTIAL_USER = 2, // private type
+    CREDENTIAL_APP = 3, // app type
+    CREDENTIAL_UKEY = 4, // ukey type
+    CREDENTIAL_SYSTEM = 5,
+    CREDENTIAL_INVLAID_TYPE, // invalid type
 };
 
 enum CertificateScope {
