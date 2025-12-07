@@ -30,6 +30,7 @@ private:
     ani_string aniCert = nullptr;
     /* parsed params */
     CmDialogPageType pageType = PAGE_MAIN;
+    CmCertificateType certType = CREDENTIAL_INVLAID_TYPE;
     CertificateScope certScope = NOT_SPECIFIED;
     CmBlob cert = { 0 };
 public:

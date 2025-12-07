@@ -131,6 +131,7 @@ export namespace certificateManagerDialog {
     CREDENTIAL_USER = 2,
     CREDENTIAL_APP = 3,
     CREDENTIAL_UKEY = 4,
+    CREDENTIAL_SYSTEM = 5,
   }
 
   export enum CertificateScope {
