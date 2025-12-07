@@ -131,12 +131,11 @@ group("fuzztest") {
       "./cmauthlistmgr_fuzzer:fuzztest",
       "./cmcertmanagercheck_fuzzer:fuzztest",
       "./cmauthmgr_fuzzer:fuzztest",
-      "./cmcertmanagerfile_fuzzer:fuzztest",
       "./cmcertmanagerupdateflag_fuzzer:fuzztest",
       "./cmcertmanagerservice_fuzzer:fuzztest",
       "./cmcertcommon_fuzzer:fuzztest",
       "./cmcertmanagerquery_fuzzer:fuzztest",
-
+      "./cmcertmanagerapi_fuzzer:fuzztest",
     ]
   }
 }

@@ -18,9 +18,9 @@ import("//build/test.gni")
 module_output_path = "certificate_manager/certificate_manager"
 
 ##############################fuzztest##########################################
-ohos_fuzztest("CmCertManagerFileFuzzTest") {
+ohos_fuzztest("CmCertManagerApiFuzzTest") {
   module_out_path = module_output_path
-  fuzz_config_file = "${cert_manager_root_dir}/test/fuzz_test/cmcertmanagerfile_fuzzer"
+  fuzz_config_file = "${cert_manager_root_dir}/test/fuzz_test/cmcertmanagerapi_fuzzer"
 
   include_dirs = [
     "${cert_manager_root_dir}/test/unittest/module_test/include",
@@ -34,7 +34,7 @@ ohos_fuzztest("CmCertManagerFileFuzzTest") {
     "-fno-omit-frame-pointer",
   ]
   sources = [
-  "cmcertmanagerfile_fuzzer.cpp",
+  "cmcertmanagerapi_fuzzer.cpp",
    "../../mocks/hks_api/src/hks_api.c",
    "../../mocks/hks_api/src/hks_param.c",
    ]
@@ -44,6 +44,7 @@ ohos_fuzztest("CmCertManagerFileFuzzTest") {
     "${cert_manager_root_dir}/test/fuzz_test/fuzz_test_common:libcert_manager_fuzz_test_common_static",
     "${cert_manager_root_dir}/services/cert_manager_standard/cert_manager_engine/main/core:cert_manager_engine_core_standard",
     "${cert_manager_root_dir}/services/cert_manager_standard/cert_manager_engine/main/rdb:libcert_manager_rdb_static",
+    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_ipc_client_static",
 
   ]
   external_deps = [
@@ -65,7 +66,7 @@ group("fuzztest") {
 
   deps += [
     # deps file
-    ":CmCertManagerFileFuzzTest",
+    ":CmCertManagerApiFuzzTest",
   ]
 }
 ###############################################################################

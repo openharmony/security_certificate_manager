@@ -14,5 +14,5 @@
  */
 
 #ifndef FUZZ_PROJECT_NAME
-#define FUZZ_PROJECT_NAME "cmcertmanagerfile_fuzzer"
+#define FUZZ_PROJECT_NAME "cmcertmanagerapi_fuzzer"
 #endif

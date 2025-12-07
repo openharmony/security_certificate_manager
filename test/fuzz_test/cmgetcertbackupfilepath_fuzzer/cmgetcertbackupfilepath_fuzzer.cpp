@@ -24,6 +24,7 @@
 namespace {
 const uint32_t UINT32_COUNT = 4;
 const uint32_t CM_BLOB_COUNT = 2;
+const uint32_t MAX_PATH_LEN = 1024;
 }
 
 using namespace CmFuzzTest;
@@ -55,14 +56,14 @@ namespace OHOS {
             return false;
         }
 
-        char *backupFilePath = nullptr;
-        if (!GetDynamicStringFromBuffer(myData, &remainSize, &offset, &backupFilePath)) {
+        if (backupFilePathLen > MAX_PATH_LEN) {
             CmFree(myData);
+            X509_free(x509);
+            return false;
         }
-
+        char backupFilePath[backupFilePathLen];
         CertmanagerTest::MockHapToken mockHap;
         (void)CmGetCertBackupFilePath(x509, userId, backupFilePath, backupFilePathLen);
-        delete[] backupFilePath;
         CmFree(myData);
         X509_free(x509);
         return true;

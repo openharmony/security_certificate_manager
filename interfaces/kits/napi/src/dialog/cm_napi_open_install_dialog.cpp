@@ -36,6 +36,12 @@ static bool IsCmCertificateTypeAndConvert(const uint32_t value, uint32_t &pageTy
         case CmCertificateType::CA_CERT:
             pageType = CmDialogPageType::PAGE_INSTALL_CA_GUIDE;
             return true;
+        case CmCertificateType::CREDENTIAL_USER:
+            pageType = CmDialogPageType::PAGE_INSTALL_CA_GUIDE;
+            return true;
+        case CmCertificateType::CREDENTIAL_SYSTEM:
+            pageType = CmDialogPageType::PAGE_INSTALL_CA_GUIDE;
+            return true;
         default:
             return false;
     }
@@ -60,10 +66,11 @@ static napi_value CMCheckArgvAndInitContext(std::shared_ptr<CmUIExtensionRequest
         CM_LOG_E("parse type failed");
         return nullptr;
     }
-    if (!IsCmCertificateTypeAndConvert(certificateType, asyncContext->certificateType)) {
+    if (!IsCmCertificateTypeAndConvert(certificateType, asyncContext->pageType)) {
         CM_LOG_E("certificateType invalid");
         return nullptr;
     }
+    asyncContext->certificateType = certificateType;
 
     // Parse third argument for certificateScope.
     if (ParseUint32(asyncContext->env, argv[PARAM2], asyncContext->certificateScope) == nullptr) {
@@ -87,7 +94,8 @@ static OHOS::AAFwk::Want CMGetInstallCertWant(std::shared_ptr<CmUIExtensionReque
 {
     OHOS::AAFwk::Want want;
     want.SetElementName(CERT_MANAGER_BUNDLENAME, CERT_MANAGER_ABILITYNAME);
-    want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(asyncContext->certificateType));
+    want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(asyncContext->pageType));
+    want.SetParam(CERT_MANAGER_CERT_TYPE, static_cast<int32_t>(asyncContext->certificateType));
     want.SetParam(CERT_MANAGER_CERTIFICATE_DATA, asyncContext->certStr);
     want.SetParam(CERT_MANAGER_CERTSCOPE_TYPE, static_cast<int32_t>(asyncContext->certificateScope));
     want.SetParam(CERT_MANAGER_CALLER_BUNDLENAME, asyncContext->labelName);

@@ -46,12 +46,19 @@ int32_t CmOpenInstallDialog::GetParamsFromEnv()
         CM_LOG_E("get certType value failed.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    switch (static_cast<CmCertificateType>(aniCertType)) {
+    certType = static_cast<CmCertificateType>(aniCertType);
+    switch (certType) {
         case CmCertificateType::CA_CERT:
             this->pageType = CmDialogPageType::PAGE_INSTALL_CA_GUIDE;
             break;
+        case CmCertificateType::CREDENTIAL_USER:
+            this->pageType = CmDialogPageType::PAGE_INSTALL_CA_GUIDE;
+            break;
+        case CmCertificateType::CREDENTIAL_SYSTEM:
+            this->pageType = CmDialogPageType::PAGE_INSTALL_CA_GUIDE;
+            break;
         default:
-            return CM_SUCCESS;
+            return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     int32_t aniCertScope = 0;
@@ -90,6 +97,7 @@ int32_t CmOpenInstallDialog::InvokeAsyncWork()
     OHOS::AAFwk::Want want;
     want.SetElementName(CERT_MANAGER_BUNDLENAME, CERT_MANAGER_ABILITYNAME);
     want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(this->pageType));
+    want.SetParam(CERT_MANAGER_CERT_TYPE, static_cast<int32_t>(this->certType));
     want.SetParam(CERT_MANAGER_CERTIFICATE_DATA, certStr);
     want.SetParam(CERT_MANAGER_CERTSCOPE_TYPE, static_cast<int32_t>(this->certScope));
     want.SetParam(CERT_MANAGER_CALLER_BUNDLENAME, labelName);

@@ -20,6 +20,7 @@
 #include "securec.h"
 
 #include "cert_manager_auth_list_mgr.h"
+#include "cert_manager_check.h"
 #include "cert_manager_key_operation.h"
 #include "cert_manager_mem.h"
 #include "cert_manager_session_mgr.h"
@@ -400,6 +401,11 @@ int32_t CmAuthGrantAppCertificate(const struct CmContext *context, const struct 
 int32_t CmAuthGetAuthorizedAppList(const struct CmContext *context, const struct CmBlob *keyUri,
     struct CmAppUidList *appUidList)
 {
+    if (CheckUri(keyUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid keyUri");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     pthread_mutex_lock(&g_authMgrLock);
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
@@ -515,6 +521,11 @@ static int32_t CheckIsAuthorizedApp(const struct CMUri *uriObj, enum CmAuthStora
 
 int32_t CmAuthIsAuthorizedApp(const struct CmContext *context, const struct CmBlob *authUri)
 {
+    if (CheckUri(authUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid authUri");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
     int32_t ret = GetAndCheckUriObj(&uriObj, authUri, CM_URI_TYPE_APP_KEY);
@@ -556,6 +567,11 @@ int32_t CmAuthIsAuthorizedApp(const struct CmContext *context, const struct CmBl
 
 int32_t CmAuthRemoveGrantedApp(const struct CmContext *context, const struct CmBlob *keyUri, uint32_t appUid)
 {
+    if (CheckUri(keyUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid keyUri");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     pthread_mutex_lock(&g_authMgrLock);
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
@@ -636,6 +652,11 @@ static int32_t DeleteAuthInfo(uint32_t userId, const struct CmBlob *uri, const s
 /* clear auth info when delete public credential */
 int32_t CmAuthDeleteAuthInfo(const struct CmContext *context, const struct CmBlob *uri, enum CmAuthStorageLevel level)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid uri");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     pthread_mutex_lock(&g_authMgrLock);
     struct CmAppUidList appUidList = { 0, NULL };
     int32_t ret;
@@ -671,6 +692,11 @@ int32_t CmAuthDeleteAuthInfo(const struct CmContext *context, const struct CmBlo
 /* clear auth info when delete user */
 int32_t CmAuthDeleteAuthInfoByUserId(uint32_t userId, const struct CmBlob *uri)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid uri");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     pthread_mutex_lock(&g_authMgrLock);
     struct CmAppUidList appUidList = { 0, NULL };
     enum CmAuthStorageLevel level;
@@ -831,6 +857,11 @@ int32_t CmCheckAndGetCommonUri(const struct CmContext *context, uint32_t store, 
 
 int32_t CmCheckCallerIsProducer(const struct CmContext *context, const struct CmBlob *uri)
 {
+    if (CheckUri(uri) != CM_SUCCESS) {
+        CM_LOG_E("invalid uri");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     struct CMUri uriObj;
     (void)memset_s(&uriObj, sizeof(uriObj), 0, sizeof(uriObj));
     int32_t ret = GetAndCheckUriObj(&uriObj, uri, CM_URI_TYPE_APP_KEY);
