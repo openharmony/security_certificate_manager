@@ -128,6 +128,11 @@ static const std::string CMR_ERROR_KEY_CHECK_EXIST_FAILED_MSG = "failed to check
 static const std::string CMR_ERROR_AUTH_FAILED_MAC_FAILED_MSG = "failed to calc the mac value";
 static const std::string CMR_ERROR_AUTH_FAILED_MAC_MISMATCH_MSG = "the auth result is not same with mac value";
 
+/* ukey failed msg */
+static const std::string ACCESS_UKEY_SERVICE_FAILED_MSG = "the access USB key service failed";
+static const std::string CAPABILITY_NOT_SUPPORTED_MSG = "capability not support";
+static const std::string HUKS_ABNORMAL_MSG = "huks encountered an exception";
+
 static const std::unordered_map<int32_t, std::string> ERROR_CODE_TO_MSG_MAP = {
     { CM_FAILURE, CM_UNKNOWN_MSG },
     { CMR_ERROR_NOT_PERMITTED, CMR_ERROR_NOT_PERMITTED_MSG },
@@ -218,6 +223,11 @@ static const std::unordered_map<int32_t, std::string> ERROR_CODE_TO_MSG_MAP = {
     /* auth check failed */
     { CMR_ERROR_AUTH_FAILED_MAC_FAILED, CMR_ERROR_AUTH_FAILED_MAC_FAILED_MSG },
     { CMR_ERROR_AUTH_FAILED_MAC_MISMATCH, CMR_ERROR_AUTH_FAILED_MAC_MISMATCH_MSG },
+
+    /* ukey failed */
+    { CMR_ERROR_UKEY_GENERAL_ERROR, ACCESS_UKEY_SERVICE_FAILED_MSG },
+    { CMR_ERROR_UKEY_DEVICE_SUPPORT, CAPABILITY_NOT_SUPPORTED_MSG },
+    { CMR_ERROR_HUKS_GENERAL_ERROR, HUKS_ABNORMAL_MSG },
 };
 
 static const char *GetErrorMsg(int32_t errCode)

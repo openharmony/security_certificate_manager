@@ -111,12 +111,13 @@ static int32_t GetCertAliasByCertInfo(const struct HksExtCertInfo *certInfo, str
         CM_LOG_E("failed to get cert subject name, ret = %d", ret);
         uint32_t aliasLen = (uint32_t)certInfo->index.size;
         if (certInfo->index.size > MAX_LEN_CERT_ALIAS) {
-            aliasLen = MAX_LEN_CERT_ALIAS; // truncate copy
+            aliasLen = MAX_LEN_CERT_ALIAS - 1; // truncate copy
         }
         if (memcpy_s(certAlias->data, certAlias->size, certInfo->index.data, aliasLen) != EOK) {
             CM_LOG_E("failed to copy certAlias->data");
             return CMR_ERROR_MEM_OPERATION_COPY;
         }
+        certAlias->data[aliasLen] = '\0';
     }
     return CM_SUCCESS;
 }
