@@ -35,6 +35,7 @@
 #include "cm_type.h"
 #include "cm_x509.h"
 #include "cm_util.h"
+#include "cert_manager_check.h"
 
 #include "securec.h"
 
@@ -867,6 +868,11 @@ int32_t CmGenerateSaConf(const char *userCertConfigPath, const char *userCertBak
 
 int32_t CmRemoveUserCert(struct CmMutableBlob *pathBlob, const struct CmBlob *certUri)
 {
+    if (CheckUri(certUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid certUri");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     return CertManagerFileRemove((char *)pathBlob->data, (char *)certUri->data);
 }
 

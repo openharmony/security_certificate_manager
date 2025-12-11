@@ -70,9 +70,6 @@ int32_t HksExportPublicKey(const struct HksBlob *keyAlias,
 
 int32_t HksDeleteKey(const struct HksBlob *keyAlias, const struct HksParamSet *paramSet);
 
-int32_t HksGetKeyParamSet(const struct HksBlob *keyAlias,
-    const struct HksParamSet *paramSetIn, struct HksParamSet *paramSetOut);
-
 int32_t HksKeyExist(const struct HksBlob *keyAlias, const struct HksParamSet *paramSet);
 
 int32_t HksGenerateRandom(const struct HksParamSet *paramSet, struct HksBlob *random);

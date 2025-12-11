@@ -74,7 +74,6 @@ namespace OHOS {
         static void ExecuteUninstallOperations(CertOperationContext& ctx)
         {
             (void)CmUninstallAppCert(ctx.keyUri, CM_CREDENTIAL_STORE);
-            (void)CmFreeCertBlob(ctx.certBlob);
         }
     };
 

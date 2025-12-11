@@ -42,6 +42,7 @@ namespace {
     const uint32_t  CM_BLOB_COUNT = 2;
     const uint32_t uid = 20020156;
     const uint32_t userId = 100;
+    const uint32_t STORE_VALUE = 5;
 }
 
 using namespace CmFuzzTest;
@@ -68,17 +69,20 @@ namespace OHOS {
             return false;
         }
         bool isGmSysCert = store % 2;
-        const uint32_t STORE_VALUE = 5;
         store %= STORE_VALUE;
-        struct CmBlob path;
-        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &path)) {
+        char *random = nullptr;
+        if (!GetDynamicStringFromBuffer(myData, &remainSize, &offset, &random)) {
             CmFree(myData);
             return false;
         }
 
-        struct CmMutableBlob pathList;
-        pathList.data = path.data;
-        pathList.size = sizeof(path.data);
+        struct CmMutableBlob cmBlob = { strlen(random) + 1, (uint8_t *)random };
+        struct CmMutableBlob blobArray[] = {cmBlob};
+        struct CmMutableBlob pathList = {
+            .size = sizeof(blobArray) / sizeof(struct CmMutableBlob),
+            .data = (uint8_t*)blobArray
+        };
+
         CertmanagerTest::MockHapToken mockHap;
         struct CmBlob certData = { sizeof(g_certData01), const_cast<uint8_t *>(g_certData01)};
         static uint8_t certAliasBuf01[] = "40dc992e";
@@ -94,6 +98,8 @@ namespace OHOS {
         (void)CmRemoveAllUserCert(&cmContext, store, &pathList);
         (void)CertManagerFindCertFileNameByUri(&cmContext, &certUri, store, isGmSysCert, &pathList);
         (void)CertManagerFindCertFileNameByUri(&cmContext, &certUri, store, true, &pathList);
+        CmFree(myData);
+        delete[] random;
         return true;
     }
 
