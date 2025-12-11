@@ -1223,5 +1223,93 @@ ohos_prebuilt_etc("trusted_system_certificate110") {
   ]
 }
 
+ohos_prebuilt_etc("trusted_system_certificate111") {
+  source = "systemCertificates/9b46e03d.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
+
+ohos_prebuilt_etc("trusted_system_certificate112") {
+  source = "systemCertificates/865fbdf9.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
+
+ohos_prebuilt_etc("trusted_system_certificate113") {
+  source = "systemCertificates/5860aaa6.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
+
+ohos_prebuilt_etc("trusted_system_certificate114") {
+  source = "systemCertificates/9046744a.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
+
+ohos_prebuilt_etc("trusted_system_certificate115") {
+  source = "systemCertificates/9846683b.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
+
+ohos_prebuilt_etc("trusted_system_certificate116") {
+  source = "systemCertificates/a89d74c2.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
+
+ohos_prebuilt_etc("trusted_system_certificate117") {
+  source = "systemCertificates/da0cfd1d.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
+
+ohos_prebuilt_etc("trusted_system_certificate118") {
+  source = "systemCertificates/fb717492.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
+
 
 
