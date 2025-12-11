@@ -100,6 +100,14 @@ group("cert_manager_type_base") {
       "./config:trusted_system_certificate109",
       "./config:trusted_system_certificate11",
       "./config:trusted_system_certificate110",
+      "./config:trusted_system_certificate111",
+      "./config:trusted_system_certificate112",
+      "./config:trusted_system_certificate113",
+      "./config:trusted_system_certificate114",
+      "./config:trusted_system_certificate115",
+      "./config:trusted_system_certificate116",
+      "./config:trusted_system_certificate117",
+      "./config:trusted_system_certificate118",
       "./config:trusted_system_certificate12",
       "./config:trusted_system_certificate13",
       "./config:trusted_system_certificate14",
@@ -206,7 +214,7 @@ group("cert_manager_type_base") {
 
 group("cert_manager_type_fwk") {
   if (os_level == "standard") {
-    deps = [ 
+    deps = [
       "./interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
     ]
   } else if (os_level == "small") {
