@@ -33,6 +33,8 @@ using namespace CmFuzzTest;
 namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
+        (void)data;
+        (void)size;
         CertmanagerTest::MockHapToken mockHap;
         struct AppCert appCert;
         (void)memset_s(&appCert, sizeof(struct AppCert), 0, sizeof(struct AppCert));

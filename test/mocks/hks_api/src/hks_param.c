@@ -17,23 +17,31 @@
 
 int32_t HksInitParamSet(struct HksParamSet **paramSet)
 {
+    (void)paramSet;
     return 0;
 }
 
 int32_t HksAddParams(struct HksParamSet *paramSet,
     const struct HksParam *params, uint32_t paramCnt)
 {
+    (void)paramSet;
+    (void)params;
+    (void)paramCnt;
     return 0;
 }
 
 int32_t HksAddParamsWithFilter(struct HksParamSet *paramSet,
     const struct HksParam *params, uint32_t paramCnt)
 {
+    (void)paramSet;
+    (void)params;
+    (void)paramCnt;
     return 0;
 }
 
 int32_t HksBuildParamSet(struct HksParamSet **paramSet)
 {
+    (void)paramSet;
     return 0;
 }
 
@@ -68,42 +76,62 @@ void HksFreeExtCertSet(struct HksExtCertInfoSet *certInfoSet)
 int32_t HksGetParamSet(const struct HksParamSet *inParamSet, uint32_t inParamSetSize,
     struct HksParamSet **outParamSet)
 {
+    (void)inParamSet;
+    (void)inParamSetSize;
+    (void)outParamSet;
     return 0;
 }
 
 int32_t HksGetParam(const struct HksParamSet *paramSet, uint32_t tag, struct HksParam **param)
 {
+    (void)paramSet;
+    (void)tag;
+    (void)param;
     return 0;
 }
 
 int32_t HksFreshParamSet(struct HksParamSet *paramSet, bool isCopy)
 {
+    (void)paramSet;
+    (void)isCopy;
     return 0;
 }
 
 int32_t HksCheckParamSetTag(const struct HksParamSet *paramSet)
 {
+    (void)paramSet;
     return 0;
 }
 
 int32_t HksCheckParamSet(const struct HksParamSet *paramSet, uint32_t size)
 {
+    (void)paramSet;
+    (void)size;
     return 0;
 }
 
 int32_t HksCheckParamMatch(const struct HksParam *baseParam, const struct HksParam *param)
 {
+    (void)baseParam;
+    (void)param;
     return 0;
 }
 
 int32_t HksCheckIsTagAlreadyExist(const struct HksParam *params, uint32_t paramsCnt,
     const struct HksParamSet *targetParamSet)
 {
+    (void)params;
+    (void)paramsCnt;
+    (void)targetParamSet;
     return 0;
 }
 
 int32_t HksDeleteTagsFromParamSet(const uint32_t *tag, uint32_t tagCount,
     const struct HksParamSet *paramSet, struct HksParamSet **outParamSet)
 {
+    (void)tag;
+    (void)tagCount;
+    (void)paramSet;
+    (void)outParamSet;
     return 0;
 }
