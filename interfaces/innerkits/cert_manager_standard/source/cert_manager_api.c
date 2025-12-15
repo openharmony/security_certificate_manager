@@ -15,11 +15,15 @@
 
 #include "cert_manager_api.h"
 
+#include "systemcapability.h"
+
 #include "cm_advsecmode_check.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_ipc_client.h"
 #include "cm_type.h"
+
+const char *HUKS_SYSCAP = "SystemCapability.Security.Huks.CryptoExtension";
 
 CM_API_EXPORT int32_t CmGetCertList(uint32_t store, struct CertList *certificateList)
 {
@@ -564,7 +568,11 @@ CM_API_EXPORT int32_t CmGetUkeyCertList(const struct CmBlob *ukeyProvider, const
         CM_LOG_E("CmGetUkeyCertList params is invalid");
         return CMR_ERROR_NULL_POINTER;
     }
-
+    bool isSupport = HasSystemCapability(HUKS_SYSCAP);
+    if (isSupport == false) {
+        CM_LOG_E("the device is not support");
+        return CMR_ERROR_UKEY_DEVICE_SUPPORT;
+    }
     int32_t ret = CmClientGetUkeyCertList(ukeyProvider, ukeyInfo, certificateList);
     CM_LOG_I("leave get ukey cert list, result = %d", ret);
     return ret;
@@ -578,7 +586,11 @@ CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *keyUri, const struct Uk
         CM_LOG_E("CmGetUkeyCert params is invalid");
         return CMR_ERROR_NULL_POINTER;
     }
-    
+    bool isSupport = HasSystemCapability(HUKS_SYSCAP);
+    if (isSupport == false) {
+        CM_LOG_E("the device is not support");
+        return CMR_ERROR_UKEY_DEVICE_SUPPORT;
+    }
     int32_t ret = CmClientGetUkeyCert(keyUri, ukeyInfo, certificateList);
     CM_LOG_I("leave get ukey cert, result = %d", ret);
     return ret;

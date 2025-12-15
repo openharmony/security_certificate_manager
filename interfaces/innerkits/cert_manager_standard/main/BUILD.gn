@@ -47,6 +47,7 @@ if (os_level == "standard") {
     deps = [ "${cert_manager_root_dir}/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks" ]
 
     external_deps = [
+      "init:libbegetutil",
       "bounds_checking_function:libsec_shared",
       "hilog:libhilog",
     ]
