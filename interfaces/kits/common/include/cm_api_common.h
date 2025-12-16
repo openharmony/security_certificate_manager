@@ -25,6 +25,7 @@ enum ErrorCode {
     HAS_NO_PERMISSION = 201,
     NOT_SYSTEM_APP = 202,
     PARAM_ERROR = 401,
+    CAPABILITY_NOT_SUPPORTED = 801,
     INNER_FAILURE = 17500001,
     NOT_FOUND = 17500002,
     INVALID_CERT_FORMAT = 17500003,
@@ -34,6 +35,8 @@ enum ErrorCode {
     DEVICE_ENTER_ADVSECMODE = 17500007,
     PASSWORD_IS_ERROR = 17500008,
     STORE_PATH_NOT_SUPPORTED = 17500009,
+    ACCESS_UKEY_SERVICE_FAILED = 17500010,
+    PARAMETER_VALIDATION_FAILED = 17500011,
 };
 
 constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M
@@ -50,6 +53,9 @@ static const std::string ALIAS_LENGTH_REACHED_LIMIT_MSG = "the input alias lengt
 static const std::string DEVICE_ENTER_ADVSECMODE_MSG = "the device enters advanced security mode";
 static const std::string PASSWORD_IS_ERROR_MSG = "the input password is error";
 static const std::string STORE_PATH_NOT_SUPPORTED_MSG = "the device does not support specified certificate store path";
+static const std::string ACCESS_UKEY_SERVICE_FAILED_MSG = "the access USB key service failed";
+static const std::string CAPABILITY_NOT_SUPPORTED_MSG = "capability not support";
+static const std::string HUKS_ABNORMAL_MSG = "huks encountered an exception";
 
 static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     // invalid params
@@ -69,6 +75,11 @@ static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE },
     { CMR_ERROR_PASSWORD_IS_ERR, PASSWORD_IS_ERROR },
     { CMR_ERROR_STORE_PATH_NOT_SUPPORTED, STORE_PATH_NOT_SUPPORTED },
+    
+    // ukey
+    { CMR_ERROR_UKEY_GENERAL_ERROR, ACCESS_UKEY_SERVICE_FAILED },
+    { CMR_ERROR_UKEY_DEVICE_SUPPORT, CAPABILITY_NOT_SUPPORTED },
+    { CMR_ERROR_HUKS_GENERAL_ERROR, INNER_FAILURE },
 };
 
 static const std::unordered_map<int32_t, std::string> NATIVE_CODE_TO_MSG_MAP = {
@@ -85,6 +96,9 @@ static const std::unordered_map<int32_t, std::string> NATIVE_CODE_TO_MSG_MAP = {
     { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE_MSG },
     { CMR_ERROR_PASSWORD_IS_ERR, PASSWORD_IS_ERROR_MSG },
     { CMR_ERROR_STORE_PATH_NOT_SUPPORTED, STORE_PATH_NOT_SUPPORTED_MSG },
+    { CMR_ERROR_UKEY_GENERAL_ERROR, ACCESS_UKEY_SERVICE_FAILED_MSG },
+    { CMR_ERROR_UKEY_DEVICE_SUPPORT, CAPABILITY_NOT_SUPPORTED_MSG },
+    { CMR_ERROR_HUKS_GENERAL_ERROR, HUKS_ABNORMAL_MSG },
 };
 
 enum CmCertAlg {
