@@ -258,6 +258,7 @@ ani_object GenerateCertReference(ani_env *env, ani_int intValue, ani_string strV
 
 int32_t CreateBooleanObject(ani_env *env, bool value, ani_object &resultObjOut)
 {
+    (void)value;
     if (env == nullptr) {
         CM_LOG_E("env is nullptr.");
         return CMR_ERROR_NULL_POINTER;

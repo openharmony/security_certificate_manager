@@ -272,6 +272,8 @@ namespace OHOS {
 
     bool DoSomethingInterestingWithMyAPICmService(const uint8_t* data, size_t size)
     {
+        (void)data;
+        (void)size;
         char retUriBuf[MAX_OUT_BLOB_SIZE] = {0};
         struct CmBlob keyUri = {sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
         uint8_t certAliasBuf[] = "PrivKeyA";
@@ -308,6 +310,8 @@ namespace OHOS {
 
     bool DoSomethingInterestingWithMyAPICmServiceManager(const uint8_t* data, size_t size)
     {
+        (void)data;
+        (void)size;
         char retUriBuf[MAX_OUT_BLOB_SIZE] = {0};
         struct CmBlob keyUri = {sizeof(retUriBuf), reinterpret_cast<uint8_t *>(retUriBuf) };
         uint8_t certAliasBuf[] = "PrivKeyA";
