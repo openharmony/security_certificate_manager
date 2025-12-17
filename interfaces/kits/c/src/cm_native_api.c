@@ -32,7 +32,7 @@ static struct CmErrorCodeAdapter g_errCodeTable[] = {
     // success
     { CM_SUCCESS, OH_CM_SUCCESS},
     // invalid params
-    { CMR_ERROR_INVALID_ARGUMENT, OH_CM_STORE_PATH_NOT_SUPPORTED },
+    { CMR_ERROR_INVALID_ARGUMENT, OH_CM_PARAMETER_VALIDATION_FAILED },
 
     // no permission
     { CMR_ERROR_PERMISSION_DENIED, OH_CM_HAS_NO_PERMISSION },
