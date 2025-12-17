@@ -63,7 +63,7 @@ enum CmDialogPageType {
 };
 
 enum CmCertificateType {
-    CREDENTIAL_INVLAID_TYPE = 0, // invalid type
+    CREDENTIAL_INVALID_TYPE = 0, // invalid type
     CA_CERT = 1,
     CREDENTIAL_USER = 2, // private type
     CREDENTIAL_APP = 3, // app type

@@ -60,17 +60,10 @@ static napi_value CMCheckArgvAndInitContext(std::shared_ptr<CmUIExtensionRequest
         return nullptr;
     }
 
-    // Parse second argument for certificate type.
-    uint32_t certificateType = 0;
-    if (ParseUint32(asyncContext->env, argv[PARAM1], certificateType) == nullptr) {
-        CM_LOG_E("parse type failed");
-        return nullptr;
-    }
-    if (!IsCmCertificateTypeAndConvert(certificateType, asyncContext->pageType)) {
+    if (!IsCmCertificateTypeAndConvert(asyncContext->certificateType, asyncContext->pageType)) {
         CM_LOG_E("certificateType invalid");
         return nullptr;
     }
-    asyncContext->certificateType = certificateType;
 
     // Parse third argument for certificateScope.
     if (ParseUint32(asyncContext->env, argv[PARAM2], asyncContext->certificateScope) == nullptr) {
@@ -104,21 +97,42 @@ static OHOS::AAFwk::Want CMGetInstallCertWant(std::shared_ptr<CmUIExtensionReque
     return want;
 }
 
+static uint32_t GetCertificateType(napi_env env, napi_value argv[], size_t length)
+{
+    if (length < PARAM_SIZE_TWO) {
+        CM_LOG_E("check param size invalid");
+        return CREDENTIAL_INVALID_TYPE;
+    }
+    uint32_t certificateType = CREDENTIAL_INVALID_TYPE;
+    if (ParseUint32(env, argv[PARAM1], certificateType) == nullptr) {
+        CM_LOG_E("parse cert type failed");
+        return CREDENTIAL_INVALID_TYPE;
+    }
+    return certificateType;
+}
+
 napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert install dialog enter");
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
-    if (OHOS::system::GetParameter("const.product.devicetype", "") != "2in1") {
+
+    size_t argc = PARAM_SIZE_FOUR;
+    napi_value argv[PARAM_SIZE_FOUR] = { nullptr };
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+
+    auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
+    asyncContext->env = env;
+    asyncContext->certificateType = GetCertificateType(env, argv, argc);
+
+    if (asyncContext->certificateType == CA_CERT &&
+        OHOS::system::GetParameter("const.product.devicetype", "") != "2in1") {
         CM_LOG_E("deviceType is not 2in1");
         std::string errMsg = "DeviceType Error. deviceType is not 2in1";
         ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, errMsg);
         return result;
     }
 
-    size_t argc = PARAM_SIZE_FOUR;
-    napi_value argv[PARAM_SIZE_FOUR] = { nullptr };
-    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
     if (argc != PARAM_SIZE_FOUR) {
         CM_LOG_E("params number mismatch");
         std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_FOUR)
@@ -127,8 +141,6 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
         return result;
     }
 
-    auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
-    asyncContext->env = env;
     asyncContext->opType = static_cast<int32_t>(DIALOG_OPERATION_INSTALL);
     if (CMCheckArgvAndInitContext(asyncContext, argv, sizeof(argv) / sizeof(argv[0])) == nullptr) {
         CM_LOG_E("check argv vaild and init faild");
