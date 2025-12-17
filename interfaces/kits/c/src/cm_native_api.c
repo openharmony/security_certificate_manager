@@ -48,6 +48,7 @@ static struct CmErrorCodeAdapter g_errCodeTable[] = {
     // ukey
     { CMR_ERROR_UKEY_GENERAL_ERROR, OH_CM_ACCESS_UKEY_SERVICE_FAILED },
     { CMR_ERROR_UKEY_DEVICE_SUPPORT, OH_CM_CAPABILITY_NOT_SUPPORTED },
+    { CMR_ERROR_HUKS_GENERAL_ERROR, OH_CM_INNER_FAILURE },
 };
 
 static int32_t TranformErrorCode(int32_t errorCode)
