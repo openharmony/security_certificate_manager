@@ -32,7 +32,7 @@ static struct CmErrorCodeAdapter g_errCodeTable[] = {
     // success
     { CM_SUCCESS, OH_CM_SUCCESS},
     // invalid params
-    { CMR_ERROR_INVALID_ARGUMENT, OH_CM_STORE_PATH_NOT_SUPPORTED },
+    { CMR_ERROR_INVALID_ARGUMENT, OH_CM_PARAMETER_VALIDATION_FAILED },
 
     // no permission
     { CMR_ERROR_PERMISSION_DENIED, OH_CM_HAS_NO_PERMISSION },
@@ -48,6 +48,7 @@ static struct CmErrorCodeAdapter g_errCodeTable[] = {
     // ukey
     { CMR_ERROR_UKEY_GENERAL_ERROR, OH_CM_ACCESS_UKEY_SERVICE_FAILED },
     { CMR_ERROR_UKEY_DEVICE_SUPPORT, OH_CM_CAPABILITY_NOT_SUPPORTED },
+    { CMR_ERROR_HUKS_GENERAL_ERROR, OH_CM_INNER_FAILURE },
 };
 
 static int32_t TranformErrorCode(int32_t errorCode)

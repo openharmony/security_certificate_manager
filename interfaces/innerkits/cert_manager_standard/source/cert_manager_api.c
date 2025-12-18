@@ -631,6 +631,4 @@ CM_API_EXPORT void CmFreeCredential(struct Credential *certificate)
     if (certificate->credData.data != NULL) {
         CmFree(certificate->credData.data);
     }
-    
-    CmFree(certificate);
 }
