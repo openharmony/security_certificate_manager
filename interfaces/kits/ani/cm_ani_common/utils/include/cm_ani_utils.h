@@ -24,19 +24,21 @@
 namespace OHOS::Security::CertManager::Ani {
 namespace AniUtils {
 enum CmCertificateType {
+    CREDENTIAL_INVALID_TYPE = 0, // invalid type
     CA_CERT = 1,
     CREDENTIAL_USER = 2, // private type
     CREDENTIAL_APP = 3, // app type
     CREDENTIAL_UKEY = 4, // ukey type
-    CREDENTIAL_INVALID_TYPE, // invalid type
+    CREDENTIAL_SYSTEM = 5, // system type
 };
 
 enum CmCertificateTypeIndex {
+    CREDENTIAL_INVALID_TYPE_IDX = 0,
     CA_CERT_IDX = 1,
     CREDENTIAL_USER_IDX = 2,
     CREDENTIAL_APP_IDX = 3,
     CREDENTIAL_UKEY_IDX = 4,
-    CREDENTIAL_INVALID_TYPE_IDX,
+    CREDENTIAL_SYSTEM_IDX = 5, // system type
 };
 
 bool IsUndefined(ani_env *env, ani_object object);

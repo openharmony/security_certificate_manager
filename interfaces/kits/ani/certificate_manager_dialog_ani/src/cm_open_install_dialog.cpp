@@ -36,17 +36,17 @@ CmOpenInstallDialog::CmOpenInstallDialog(ani_env *env, ani_object aniContext, an
 
 int32_t CmOpenInstallDialog::GetParamsFromEnv()
 {
-    if (OHOS::system::GetParameter("const.product.devicetype", "") != "2in1") {
-        CM_LOG_E("deviceType is not 2in1");
-        return CMR_DIALOG_ERROR_NOT_SUPPORTED;
-    }
-
     int32_t aniCertType = 0;
     if (env->EnumItem_GetValue_Int(this->aniCertType, (ani_int *)&aniCertType) != ANI_OK) {
         CM_LOG_E("get certType value failed.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     certType = static_cast<CmCertificateType>(aniCertType);
+    if (certType == CA_CERT && OHOS::system::GetParameter("const.product.devicetype", "") != "2in1") {
+        CM_LOG_E("deviceType is not 2in1");
+        return CMR_DIALOG_ERROR_NOT_SUPPORTED;
+    }
+
     switch (certType) {
         case CmCertificateType::CA_CERT:
             this->pageType = CmDialogPageType::PAGE_INSTALL_CA_GUIDE;
