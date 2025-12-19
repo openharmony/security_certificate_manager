@@ -35,6 +35,11 @@ int32_t CheckUri(const struct CmBlob *keyUri)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
+    if (strstr((char *)(keyUri->data), "../") != NULL) {
+        CM_LOG_E("invalid keyUri");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     for (uint32_t i = 1; i < keyUri->size; ++i) { /* from index 1 has '\0' */
         if (keyUri->data[i] == 0) {
             return CM_SUCCESS;

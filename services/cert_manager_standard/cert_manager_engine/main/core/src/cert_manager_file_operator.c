@@ -196,6 +196,17 @@ static int32_t FileRemove(const char *fileName)
         return CMR_OK; /* if file not exist, return ok */
     }
 
+    if (strstr(fileName, "../") != NULL) {
+        CM_LOG_E("invalid fileName");
+        return CMR_ERROR_NOT_EXIST;
+    }
+
+    char filePath[PATH_MAX + 1] = {0};
+    if (realpath(fileName, filePath) == NULL) {
+        CM_LOG_E("invalid filePath: %s", fileName);
+        return CMR_ERROR_NOT_EXIST;
+    }
+
     struct stat tmp;
     if (stat(fileName, &tmp) != 0) {
         return CMR_ERROR_FILE_STAT;
@@ -238,6 +249,14 @@ int32_t CmFileRemove(const char *path, const char *fileName)
 
 int32_t CmMakeDir(const char *path)
 {
+    if (path == NULL) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (strstr(path, "../") != NULL) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
     if ((access(path, F_OK)) != -1) {
         return CMR_OK;
     }
