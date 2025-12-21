@@ -106,6 +106,14 @@ void CmUIExtensionCallback::SendMessageBack()
     }
 
     CM_LOG_D("ProcessCallback");
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(this->reqContext_->env, &scope);
+    if (scope == nullptr) {
+        CM_LOG_E("open handle scope failed.");
+    }
     ProcessCallback(this->reqContext_->env, this->reqContext_.get());
+    if (scope != nullptr) {
+        napi_close_handle_scope(this->reqContext_->env, scope);
+    }
 }
 }  // namespace CMNapi
