@@ -90,7 +90,7 @@ int32_t ParseUint8Array(ani_env *env, ani_arraybuffer uint8Array, CmBlob &outBlo
         CM_LOG_E("check uint8Array is undefined");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    
+
     void* resultData;
     ani_size resultSize;
     ani_status ret = env->ArrayBuffer_GetInfo(uint8Array, &resultData, &resultSize);
@@ -150,7 +150,7 @@ int32_t ParseIntArray(ani_env *env, ani_object ani_array, std::vector<int32_t> &
     }
     for (int i = 0; i < arrayCount; ++i) {
         ani_ref elemRef;
-        ret = env->Object_CallMethodByName_Ref(ani_array, ETS_GET, "i:C{std.core.Object}", &elemRef, i);
+        ret = env->Object_CallMethodByName_Ref(ani_array, ETS_GET, "i:Y", &elemRef, i);
         if (ret != ANI_OK) {
             CM_LOG_E("get elem from arkTs array failed, index = %d, ret: %d", i, static_cast<int32_t>(ret));
             return CMR_ERROR_INVALID_ARGUMENT;

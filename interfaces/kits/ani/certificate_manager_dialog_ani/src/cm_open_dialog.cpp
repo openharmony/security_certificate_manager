@@ -85,7 +85,7 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
     }
 
     ani_status status = env->Object_CallMethodByName_Void(reinterpret_cast<ani_object>(this->aniCallback), "invoke",
-        "C{@ohos.base.BusinessError}C{std.core.Object}:", businessError, result);
+        "C{@ohos.base.BusinessError}Y:", businessError, result);
     if (status != ANI_OK) {
         CM_LOG_E("invoke callback failed. status = %d", static_cast<int32_t>(status));
         return;
