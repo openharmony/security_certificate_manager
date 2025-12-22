@@ -104,9 +104,27 @@ static int32_t InitAppCert(OH_CM_Credential *credential)
     return CM_SUCCESS;
 }
 
+static bool CheckCertPurpose(uint32_t certPurpose)
+{
+    switch (certPurpose) {
+        case CM_CERT_PURPOSE_DEFAULT:
+        case CM_CERT_PURPOSE_ALL:
+        case CM_CERT_PURPOSE_SIGN:
+        case CM_CERT_PURPOSE_ENCRYPT:
+            return true;
+        default:
+            CM_LOG_E("invalid cert purpose: %u", certPurpose);
+            return false;
+    }
+}
+
 int32_t OH_CertManager_GetUkeyCertificate(const OH_CM_Blob *keyUri,
     const OH_CM_UkeyInfo *ukeyInfo, OH_CM_CredentialDetailList *certificateList)
 {
+    if (ukeyInfo == NULL || !CheckCertPurpose(ukeyInfo->certPurpose)) {
+        CM_LOG_E("cert purpose is invalid");
+        return OH_CM_PARAMETER_VALIDATION_FAILED;
+    }
     int32_t result = InitUkeyCertList(certificateList);
     if (result != CM_SUCCESS) {
         return TranformErrorCode(result);

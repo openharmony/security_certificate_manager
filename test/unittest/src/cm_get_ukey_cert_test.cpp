@@ -15,6 +15,9 @@
 
 #include <string>
 #include <gtest/gtest.h>
+
+#include "systemcapability.h"
+
 #include "cm_test_log.h"
 #include "cm_test_common.h"
 #include "cm_mem.h"
@@ -22,11 +25,14 @@
 #include "cm_native_api.h"
 #include "cm_cert_data_part1_rsa.h"
 
+const char *HUKS_SYSCAP = "SystemCapability.Security.Huks.CryptoExtension";
+
 using namespace testing::ext;
 using namespace CertmanagerTest;
 namespace {
 static uint32_t g_selfTokenId = 0;
 static MockHapToken* g_MockHap = nullptr;
+static bool g_isSupport = false;
 
 class CmGetUkeyCertTest : public testing::Test {
 public:
@@ -56,6 +62,7 @@ void CmGetUkeyCertTest::SetUp()
 {
     InitCertList(&lstCert);
     g_MockHap = new (std::nothrow) MockHapToken();
+    g_isSupport = HasSystemCapability(HUKS_SYSCAP);
 }
 
 void CmGetUkeyCertTest::TearDown()
@@ -97,7 +104,6 @@ static void FreeUkeyCertList(struct CredentialDetailList *certificateList)
     }
     certificateList->credentialCount = 0;
     CM_FREE_PTR(certificateList->credential);
-    certificateList = nullptr;
 }
 
 static void FreeCredential(Credential *credential)
@@ -106,7 +112,6 @@ static void FreeCredential(Credential *credential)
         return;
     }
     CM_FREE_BLOB(credential->credData);
-    credential = nullptr;
 }
 
 static void buildCertReference(const string providerName, CmBlob &providerNameBlob)
@@ -137,30 +142,32 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestBaseTest001, TestSize.Level0)
     buildCertReference(providerName, providerNameBlob);
     struct UkeyInfo ukeyInfo1;
     ukeyInfo1.certPurpose = CM_CERT_PURPOSE_SIGN;
-
     struct CredentialDetailList ukeyList = { 0, nullptr };
     InitUkeyCertList(&ukeyList);
     ASSERT_TRUE(ukeyList.credential[0].credData.data != nullptr);
     providerNameBlob.size -= 1;
     int32_t ret = CmGetUkeyCertList(&providerNameBlob, &ukeyInfo1, &ukeyList);
-    EXPECT_EQ(ret, CMR_ERROR_HUKS_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
-
+    if (g_isSupport) {
+        EXPECT_EQ(ret, CMR_ERROR_HUKS_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
+    } else {
+        EXPECT_EQ(ret, CMR_ERROR_UKEY_DEVICE_SUPPORT) << "CmGetUkeyCertList test failed, retcode:" << ret;
+    }
     uint8_t *uriBuf = static_cast<uint8_t*>(CmMalloc(sizeof(ukeyList.credential[0].alias)));
     ASSERT_TRUE(uriBuf != nullptr);
     EXPECT_EQ(memcpy_s(uriBuf, sizeof(ukeyList.credential[0].alias), ukeyList.credential[0].alias,
         sizeof(ukeyList.credential[0].alias)), EOK) << "copy failed";
     struct CmBlob retUri = { sizeof(ukeyList.credential[0].alias), uriBuf };
-
     struct CredentialDetailList certificateList = { 0, nullptr };
     InitUkeyCertList(&certificateList);
     ASSERT_TRUE(certificateList.credential[0].credData.data != nullptr);
-
     struct UkeyInfo ukeyInfo2;
     ukeyInfo2.certPurpose = CM_CERT_PURPOSE_SIGN;
-
     ret = CmGetUkeyCert(&retUri, &ukeyInfo2, &certificateList);
-    EXPECT_EQ(ret, CMR_ERROR_HUKS_GENERAL_ERROR) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
-
+    if (g_isSupport) {
+        EXPECT_EQ(ret, CMR_ERROR_HUKS_GENERAL_ERROR) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
+    } else {
+        EXPECT_EQ(ret, CMR_ERROR_UKEY_DEVICE_SUPPORT) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
+    }
     FreeUkeyCertList(&certificateList);
     FreeUkeyCertList(&ukeyList);
     CM_FREE_BLOB(providerNameBlob);
@@ -329,33 +336,36 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKBaseTest001, TestSize.Level0)
     buildCertReference(providerName, providerNameBlob);
     struct UkeyInfo ukeyInfo1;
     ukeyInfo1.certPurpose = CM_CERT_PURPOSE_SIGN;
-
     struct CredentialDetailList ukeyList = { 0, nullptr };
     InitUkeyCertList(&ukeyList);
     ASSERT_TRUE(ukeyList.credential[0].credData.data != nullptr);
     providerNameBlob.size -= 1;
     int32_t ret = CmGetUkeyCertList(&providerNameBlob, &ukeyInfo1, &ukeyList);
-    EXPECT_EQ(ret, CMR_ERROR_HUKS_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
-
+    if (g_isSupport) {
+        EXPECT_EQ(ret, CMR_ERROR_HUKS_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
+    } else {
+        EXPECT_EQ(ret, CMR_ERROR_UKEY_DEVICE_SUPPORT) << "CmGetUkeyCertList test failed, retcode:" << ret;
+    }
     uint8_t *uriBuf = static_cast<uint8_t*>(CmMalloc(sizeof(ukeyList.credential[0].keyUri)));
     ASSERT_TRUE(uriBuf != nullptr);
     EXPECT_EQ(memcpy_s(uriBuf, sizeof(ukeyList.credential[0].keyUri), ukeyList.credential[0].keyUri,
         sizeof(ukeyList.credential[0].keyUri)), EOK) << "copy failed";
     struct CmBlob retUri = { sizeof(ukeyList.credential[0].keyUri), uriBuf };
-
     struct CredentialDetailList certificateList = { 0, nullptr };
     InitUkeyCertList(&certificateList);
     ASSERT_TRUE(certificateList.credential[0].credData.data != nullptr);
-
     struct UkeyInfo ukeyInfo2;
     ukeyInfo2.certPurpose = CM_CERT_PURPOSE_SIGN;
-
     ret = OH_CertManager_GetUkeyCertificate(reinterpret_cast<OH_CM_Blob*>(&retUri),
         reinterpret_cast<OH_CM_UkeyInfo*>(&ukeyInfo2),
         reinterpret_cast<OH_CM_CredentialDetailList*>(&certificateList));
-    EXPECT_EQ(ret, OH_CM_INNER_FAILURE) <<
-        "OH_CertManager_GetUkeyCertificate test failed, retcode:" << ret;
-
+    if (g_isSupport) {
+        EXPECT_EQ(ret, OH_CM_INNER_FAILURE) <<
+            "OH_CertManager_GetUkeyCertificate test failed, retcode:" << ret;
+    } else {
+        EXPECT_EQ(ret, OH_CM_CAPABILITY_NOT_SUPPORTED) <<
+            "OH_CertManager_GetUkeyCertificate test failed, retcode:" << ret;
+    }
     FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&certificateList));
     FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&ukeyList));
     CM_FREE_BLOB(providerNameBlob);
@@ -437,32 +447,37 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest001, TestSize.Level0)
     buildCertReference(providerName, providerNameBlob);
     struct UkeyInfo ukeyInfo1;
     ukeyInfo1.certPurpose = CM_CERT_PURPOSE_SIGN;
-
     struct CredentialDetailList ukeyList = { 0, nullptr };
     InitUkeyCertList(&ukeyList);
     ASSERT_TRUE(ukeyList.credential[0].credData.data != nullptr);
     providerNameBlob.size -= 1;
     int32_t ret = CmGetUkeyCertList(&providerNameBlob, &ukeyInfo1, &ukeyList);
-    EXPECT_EQ(ret, CMR_ERROR_HUKS_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
-
+    if (g_isSupport) {
+        EXPECT_EQ(ret, CMR_ERROR_HUKS_GENERAL_ERROR) << "CmGetUkeyCertList test failed, retcode:" << ret;
+    } else {
+        EXPECT_EQ(ret, CMR_ERROR_UKEY_DEVICE_SUPPORT) << "CmGetUkeyCertList test failed, retcode:" << ret;
+    }
     uint8_t *uriBuf = static_cast<uint8_t*>(CmMalloc(sizeof(ukeyList.credential[0].keyUri)));
     ASSERT_TRUE(uriBuf != nullptr);
     EXPECT_EQ(memcpy_s(uriBuf, sizeof(ukeyList.credential[0].keyUri), ukeyList.credential[0].keyUri,
         sizeof(ukeyList.credential[0].keyUri)), EOK) << "copy failed";
     struct CmBlob retUri = { sizeof(ukeyList.credential[0].keyUri), uriBuf };
-
     struct CredentialDetailList certificateList = { 0, nullptr };
     InitUkeyCertList(&certificateList);
     ASSERT_TRUE(certificateList.credential[0].credData.data != nullptr);
-
     struct UkeyInfo ukeyInfo2;
     ukeyInfo2.certPurpose = CM_CERT_PURPOSE_ENCRYPT;
     retUri.data[0] = 0x99;
     ret = OH_CertManager_GetUkeyCertificate(reinterpret_cast<OH_CM_Blob*>(&retUri),
         reinterpret_cast<OH_CM_UkeyInfo*>(&ukeyInfo2),
         reinterpret_cast<OH_CM_CredentialDetailList*>(&certificateList));
-    EXPECT_EQ(ret, OH_CM_INNER_FAILURE) << "CmGetAppCertBaseTest001 test failed, retcode:" << ret;
-
+    if (g_isSupport) {
+        EXPECT_EQ(ret, OH_CM_INNER_FAILURE) <<
+            "CmGetUkeyCertNDKAbnormalTest001 test failed, retcode:" << ret;
+    } else {
+        EXPECT_EQ(ret, OH_CM_CAPABILITY_NOT_SUPPORTED) <<
+            "CmGetUkeyCertNDKAbnormalTest001 test failed, retcode:" << ret;
+    }
     FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&certificateList));
     FreeUkeyCertList(reinterpret_cast<CredentialDetailList*>(&ukeyList));
     CM_FREE_BLOB(providerNameBlob);
@@ -531,38 +546,40 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest003, TestSize.Level0)
 }
 
 /**
- * @tc.name: CmGetPublicCertNDKAbnormalTest004
+ * @tc.name: CmFreeUkeyCertificateBaseTest001
  * @tc.desc: Test CertManager get public cert c-api interface abnormal function
  * @tc.type: FUNC CmFreeUkeyCertificate
  * @tc.require: AR000H0MI8 /SR000H09N9
  */
-HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest004, TestSize.Level0)
+HWTEST_F(CmGetUkeyCertTest, CmFreeUkeyCertificateBaseTest001, TestSize.Level0)
 {
     struct CredentialDetailList ukeyList = { 0, nullptr };
     InitUkeyCertList(&ukeyList);
     ASSERT_TRUE(ukeyList.credential[0].credData.data != nullptr);
     CmFreeUkeyCertificate(&ukeyList);
+    EXPECT_EQ(ukeyList.credential, nullptr) << "CmFreeUkeyCertificate failed";
 }
 
 /**
-* @tc.name: CmGetPublicCertNDKAbnormalTest005
+* @tc.name: CmFreeUkeyCertificateAbnormalTest001
 * @tc.desc: Test CertManager get public cert c-api interface abnormal function
 * @tc.type: FUNC CmFreeUkeyCertificate
 * @tc.require: AR000H0MI8 /SR000H09N9
 */
-HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest005, TestSize.Level0)
+HWTEST_F(CmGetUkeyCertTest, CmFreeUkeyCertificateAbnormalTest001, TestSize.Level0)
 {
     struct CredentialDetailList *ukeyList = nullptr;
     CmFreeUkeyCertificate(ukeyList);
+    EXPECT_EQ(ukeyList, nullptr) << "CmFreeUkeyCertificate failed";
 }
 
 /**
-* @tc.name: CmGetPublicCertNDKAbnormalTest006
+* @tc.name: CmGetPublicCertNDKAbnormalTest004
 * @tc.desc: Test CertManager get public cert c-api interface abnormal function
 * @tc.type: FUNC CmFreeCredential
 * @tc.require: AR000H0MI8 /SR000H09N9
 */
-HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest006, TestSize.Level0)
+HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest004, TestSize.Level0)
 {
     uint8_t certAliasBuf[] = "keyA";
     struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
@@ -585,27 +602,29 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest006, TestSize.Level0)
     OH_CertManager_GetPublicCertificate(reinterpret_cast<OH_CM_Blob*>(&authUri),
         reinterpret_cast<OH_CM_Credential*>(cert));
     CmFreeCredential(cert);
+    CM_FREE_PTR(cert);
 }
 
 /**
-* @tc.name: CmGetPublicCertNDKAbnormalTest007
+* @tc.name: CmFreeCredentialAbnormalTest001
 * @tc.desc: Test CertManager get public cert c-api interface abnormal function
 * @tc.type: FUNC CmFreeCredential
 * @tc.require: AR000H0MI8 /SR000H09N9
 */
-HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest007, TestSize.Level0)
+HWTEST_F(CmGetUkeyCertTest, CmFreeCredentialAbnormalTest001, TestSize.Level0)
 {
     struct Credential *cert = nullptr;
     CmFreeCredential(cert);
+    EXPECT_EQ(cert, nullptr) << "CmFreeCredential failed.";
 }
 
 /**
-* @tc.name: CmGetPublicCertNDKAbnormalTest008
+* @tc.name: CmGetPublicCertNDKAbnormalTest005
 * @tc.desc: Test CertManager get public cert c-api interface abnormal function
 * @tc.type: FUNC OH_CertManager_GetPublicCertificate
 * @tc.require: AR000H0MI8 /SR000H09N9
 */
-HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest008, TestSize.Level0)
+HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest005, TestSize.Level0)
 {
     OH_CM_Blob *keyUri = nullptr;
     OH_CM_Credential *certificate = nullptr;
@@ -614,12 +633,12 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest008, TestSize.Level0)
 }
 
 /**
-* @tc.name: CmGetPublicCertNDKAbnormalTest009
+* @tc.name: CmGetPrivateCertNDKAbnormalTest006
 * @tc.desc: Test CertManager get public cert c-api interface abnormal function
 * @tc.type: FUNC OH_CertManager_GetPublicCertificate
 * @tc.require: AR000H0MI8 /SR000H09N9
 */
-HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest009, TestSize.Level0)
+HWTEST_F(CmGetUkeyCertTest, CmGetPrivateCertNDKAbnormalTest006, TestSize.Level0)
 {
     OH_CM_Blob *keyUri = nullptr;
     OH_CM_Credential *certificate = nullptr;
@@ -628,12 +647,12 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest009, TestSize.Level0)
 }
 
 /**
-* @tc.name: CmGetPublicCertNDKAbnormalTest010
+* @tc.name: CmGetUkeyCertNDKAbnormalTest007
 * @tc.desc: Test CertManager get public cert c-api interface abnormal function
 * @tc.type: FUNC OH_CertManager_GetPublicCertificate
 * @tc.require: AR000H0MI8 /SR000H09N9
 */
-HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKAbnormalTest010, TestSize.Level0)
+HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest007, TestSize.Level0)
 {
     OH_CM_Blob *keyUri = nullptr;
     OH_CM_UkeyInfo *ukeyInfo = nullptr;
