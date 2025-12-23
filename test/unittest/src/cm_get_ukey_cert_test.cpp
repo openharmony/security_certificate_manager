@@ -658,6 +658,6 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest007, TestSize.Level0)
     OH_CM_UkeyInfo *ukeyInfo = nullptr;
     OH_CM_CredentialDetailList *certificateList = nullptr;
     int32_t ret = OH_CertManager_GetUkeyCertificate(keyUri, ukeyInfo, certificateList);
-    EXPECT_EQ(ret, OH_CM_INNER_FAILURE);
+    EXPECT_EQ(ret, OH_CM_PARAMETER_VALIDATION_FAILED);
 }
 }
