@@ -159,7 +159,7 @@ int32_t CmStorageGetBuf(const char *path, const char *fileName, struct CmBlob *s
     }
 
     storageBuf->data = data;
-    storageBuf->size = fileSize;
+    storageBuf->size = readSize;
     return CM_SUCCESS;
 }
 
@@ -512,4 +512,3 @@ int32_t CmGetCertBackupFilePath(const X509 *userCertX509, uint32_t userId, char 
     }
     return ret;
 }
- 
