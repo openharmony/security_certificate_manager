@@ -44,7 +44,11 @@ if (os_level == "standard") {
       "-Wall",
       "-Werror",
     ]
-    deps = [ "${cert_manager_root_dir}/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks" ]
+    deps = [
+      "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
+      "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_ipc_client_static",
+      "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_log_mem_static",
+    ]
 
     external_deps = [
       "init:libbegetutil",
