@@ -137,7 +137,6 @@ static void buildCertReference(const string providerName, CmBlob &providerNameBl
  */
 HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertTestBaseTest001, TestSize.Level0)
 {
-    bool isSupport = HasSystemCapability(HUKS_SYSCAP);
     string providerName = "testHap";
     CmBlob providerNameBlob = { 0, nullptr };
     buildCertReference(providerName, providerNameBlob);
@@ -332,7 +331,6 @@ HWTEST_F(CmGetUkeyCertTest, CmCheckAppPermissionAbnormalTest004, TestSize.Level0
  */
 HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKBaseTest001, TestSize.Level0)
 {
-    bool isSupport = HasSystemCapability(HUKS_SYSCAP);
     string providerName = "testHap";
     CmBlob providerNameBlob = { 0, nullptr };
     buildCertReference(providerName, providerNameBlob);
@@ -444,7 +442,6 @@ HWTEST_F(CmGetUkeyCertTest, CmGetPublicCertNDKBaseTest003, TestSize.Level0)
  */
 HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest001, TestSize.Level0)
 {
-    bool isSupport = HasSystemCapability(HUKS_SYSCAP);
     string providerName = "testHap";
     CmBlob providerNameBlob = { 0, nullptr };
     buildCertReference(providerName, providerNameBlob);
