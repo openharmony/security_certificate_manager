@@ -40,9 +40,17 @@ ohos_unittest("cm_common_permission_test") {
   }
 
   deps = [
-    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
     "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
   ]
+
+  if (os_level == "standard") {
+    deps += [
+      "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
+      "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_ipc_client_static",
+      "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_log_mem_static",
+    ]
+  }
+
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",

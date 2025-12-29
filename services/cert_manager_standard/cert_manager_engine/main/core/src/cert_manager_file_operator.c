@@ -583,19 +583,19 @@ static int32_t DirRemove(const char *path)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (IsFileExist(path) != CMR_OK) {
+    if (IsFileExist(filePath) != CMR_OK) {
         return CMR_ERROR_NOT_EXIST;
     }
 
     struct stat tmp;
-    if (stat(path, &tmp) != 0) {
+    if (stat(filePath, &tmp) != 0) {
         return CMR_ERROR_FILE_STAT;
     }
 
     if (S_ISDIR(tmp.st_mode)) {
         uint32_t i = 0;
         struct dirent *dire = NULL;
-        DIR *dirp = opendir(path);
+        DIR *dirp = opendir(filePath);
         if (dirp == NULL) {
             CM_LOG_E("open dir failed");
             return CMR_ERROR_OPEN_FILE_FAIL;
@@ -612,7 +612,7 @@ static int32_t DirRemove(const char *path)
             CM_LOG_E("Dir is not empty");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
-        rmdir(path);
+        rmdir(filePath);
         return CMR_OK;
     }
     return CMR_ERROR_INVALID_ARGUMENT;

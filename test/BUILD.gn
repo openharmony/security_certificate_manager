@@ -58,11 +58,19 @@ ohos_unittest("cm_sdk_test") {
   }
 
   deps = [
-    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main:cert_manager_standard_frameworks",
     "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
     "${cert_manager_root_dir}/interfaces/kits/c:ohcert_manager",
     "${cert_manager_root_dir}/services/cert_manager_standard/cert_manager_engine/main/core:cert_manager_engine_core_standard",
   ]
+
+  if (os_level == "standard") {
+    deps += [
+      "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
+      "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_ipc_client_static",
+      "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_log_mem_static",
+    ]
+  }
+
   external_deps = [
     "init:libbegetutil",
     "access_token:libaccesstoken_sdk",
