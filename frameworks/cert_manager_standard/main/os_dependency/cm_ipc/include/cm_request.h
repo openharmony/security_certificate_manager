@@ -33,6 +33,9 @@ extern "C" {
 int32_t SendRequest(enum CertManagerInterfaceCode type, const struct CmBlob *inBlob,
     struct CmBlob *outBlob);
 
+int32_t SendRequestParcel(enum CertManagerInterfaceCode type, const struct CmBlob *inBlob,
+    void *data);
+
 #ifdef __cplusplus
 }
 #endif

@@ -24,7 +24,7 @@ namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
         CertmanagerTest::MockHapToken mockHap;
-        if (!IpcServiceApiFuzzerTest(data, size, CM_MSG_GET_UKEY_CERTIFICATE_LIST,
+        if (!IpcServiceApiParcelFuzzerTest(data, size, CM_MSG_GET_UKEY_CERTIFICATE_LIST,
             false, CmIpcServiceGetUkeyCertList)) {
             return false;
         }

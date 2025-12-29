@@ -50,10 +50,10 @@ int32_t CmServiceGetAppCertListByUid(const struct CmContext *context, uint32_t s
     const uint32_t fileSize, uint32_t *fileCount);
 
 int32_t CmServiceGetUkeyCertList(const struct CmBlob *ukeyProvider, uint32_t certPurpose, uint32_t paramsCount,
-    struct CmBlob *certificateList);
+    struct CredentialDetailList *credentialDetailList);
 
 int32_t CmServiceGetUkeyCert(const struct CmBlob *keyUri, uint32_t certPurpose, uint32_t paramsCount,
-    struct CmBlob *certificateList);
+    struct CredentialDetailList *credentialDetailList);
 
 int32_t CmServiceGetCallingAppCertList(const struct CmContext *context, uint32_t store, struct CmBlob *fileNames,
     const uint32_t fileSize, uint32_t *fileCount);

@@ -23,6 +23,7 @@
 #include "cm_type.h"
 #include "cm_util.h"
 #include "cm_napi_common.h"
+#include "cm_type_free.h"
 
 namespace CMNapi {
 namespace {
@@ -36,7 +37,7 @@ struct GetUkeyCertListAsyncContextT {
 
     struct CmBlob *ukeyProvider = nullptr;
     struct UkeyInfo *ukeyInfo = nullptr;
-    struct CredentialDetailList *certificateList = nullptr;
+    struct CredentialDetailList *credentialDetailList = nullptr;
     int32_t result = 0;
 };
 using GetUkeyCertListAsyncContext = GetUkeyCertListAsyncContextT *;
@@ -64,8 +65,9 @@ static void DeleteGetUkeyCertListAsyncContext(napi_env env, GetUkeyCertListAsync
         FreeCmBlob(context->ukeyProvider);
     }
 
-    if (context->certificateList != nullptr) {
-        FreeUkeyCertList(context->certificateList);
+    if (context->credentialDetailList != nullptr) {
+        CmFreeUkeyCertList(context->credentialDetailList);
+        CM_FREE_PTR(context->credentialDetailList);
     }
 
     if (context->ukeyInfo != nullptr) {
@@ -81,7 +83,8 @@ static napi_value GetUkeyCertListWriteResult(napi_env env, GetUkeyCertListAsyncC
     napi_value result = nullptr;
     NAPI_CALL(env, napi_create_object(env, &result));
     napi_value certificateListValue = GenerateCredentialArray(env,
-        context->certificateList->credential, context->certificateList->credentialCount);
+        context->credentialDetailList->credential,
+        context->credentialDetailList->credentialCount);
     if (certificateListValue != nullptr) {
         napi_set_named_property(env, result, CM_RESULT_PROPERTY_CREDENTIAL_DETAIL_LIST.c_str(), certificateListValue);
     } else {
@@ -195,13 +198,8 @@ static napi_value GetUkeyCertListParseParams(
 static void GetUkeyCertListExecute(napi_env env, void *data)
 {
     GetUkeyCertListAsyncContext context = static_cast<GetUkeyCertListAsyncContext>(data);
-    context->certificateList = static_cast<struct CredentialDetailList *>(
-        CmMalloc(sizeof(struct CredentialDetailList)));
-    if (context->certificateList != nullptr) {
-        GenerateUkeyCertList(context->certificateList);
-    }
     context->ukeyProvider->size -= 1;
-    context->result = CmGetUkeyCertList(context->ukeyProvider, context->ukeyInfo, context->certificateList);
+    context->result = CmGetUkeyCertList(context->ukeyProvider, context->ukeyInfo, context->credentialDetailList);
 }
 
 static void GetUkeyCertListComplete(napi_env env, napi_status status, void *data)
@@ -223,6 +221,14 @@ static napi_value GetUkeyCertListAsyncWork(napi_env env, GetUkeyCertListAsyncCon
 {
     napi_value promise = nullptr;
     GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
+    asyncContext->credentialDetailList = static_cast<struct CredentialDetailList*>(
+        CmMalloc(sizeof(struct CredentialDetailList)));
+    if (asyncContext->credentialDetailList == nullptr) {
+        CM_LOG_E("malloc credentialDetailList failed");
+        return nullptr;
+    }
+    asyncContext->credentialDetailList->credentialCount = 0;
+    asyncContext->credentialDetailList->credential = nullptr;
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "GetUkeyCertListAsyncWork", NAPI_AUTO_LENGTH, &resourceName));

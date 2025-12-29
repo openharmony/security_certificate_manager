@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,23 +13,16 @@
  * limitations under the License.
  */
 
-#ifndef CM_RESPONSE_H
-#define CM_RESPONSE_H
+#include "cm_type_free.h"
 
-#include "cm_type_inner.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void CmSendResponse(const struct CmContext *context, int32_t result, const struct CmBlob *response);
-
-void CmSendResponseParcel(uint32_t code, const struct CmContext *context, int32_t result, void *data);
-
-int32_t CmGetProcessInfoForIPC(struct CmContext *cmContext);
-
-#ifdef __cplusplus
+void CmFreeUkeyCertList(struct CredentialDetailList *credentialDetailList)
+{
+    if (credentialDetailList == NULL || credentialDetailList->credential == NULL) {
+        return;
+    }
+    for (uint32_t i = 0; i < credentialDetailList->credentialCount; ++i) {
+        CM_FREE_BLOB(credentialDetailList->credential[i].credData);
+    }
+    credentialDetailList->credentialCount = 0;
+    CM_FREE_PTR(credentialDetailList->credential);
 }
-#endif
-
-#endif

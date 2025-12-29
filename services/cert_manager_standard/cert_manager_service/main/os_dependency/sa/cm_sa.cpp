@@ -53,6 +53,18 @@ using CmIpcHandlerFuncProc = void (*)(const struct CmBlob *msg, const CmContext 
 using CmIpcAppHandlerFuncProc = void (*)(const struct CmBlob *msg, struct CmBlob *outData,
     const CmContext *context);
 
+using CmIpcParcelHandlerFuncProc = void (*)(uint32_t code, const struct CmBlob *msg, const CmContext *context);
+
+struct CmParcelIpcPoint {
+    CertManagerInterfaceCode msgId;
+    CmIpcParcelHandlerFuncProc handler;
+};
+
+static struct CmParcelIpcPoint g_cmParcelIpcHandler[] = {
+    { CM_MSG_GET_UKEY_CERTIFICATE_LIST, CmIpcServiceGetUkeyCertList },
+    { CM_MSG_GET_UKEY_CERTIFICATE, CmIpcServiceGetUkeyCert },
+};
+
 struct CmIpcPoint {
     CertManagerInterfaceCode msgId;
     CmIpcAppHandlerFuncProc handler;
@@ -66,8 +78,6 @@ static struct CmIpcPoint g_cmIpcHandler[] = {
     { CM_MSG_GET_CALLING_APP_CERTIFICATE_LIST, CmIpcServiceGetCallingAppCertList },
     { CM_MSG_GET_APP_CERTIFICATE, CmIpcServiceGetAppCert },
     { CM_MSG_GET_APP_CERTIFICATE_LIST_BY_UID, CmIpcServiceGetAppCertListByUid },
-    { CM_MSG_GET_UKEY_CERTIFICATE_LIST, CmIpcServiceGetUkeyCertList },
-    { CM_MSG_GET_UKEY_CERTIFICATE, CmIpcServiceGetUkeyCert },
 
     { CM_MSG_GRANT_APP_CERT, CmIpcServiceGrantAppCertificate },
     { CM_MSG_GET_AUTHED_LIST, CmIpcServiceGetAuthorizedAppList },
@@ -124,6 +134,14 @@ static inline bool IsInvalidLength(uint32_t length)
 
 static int32_t ProcessMessage(uint32_t code, uint32_t outSize, const struct CmBlob &srcData, MessageParcel &reply)
 {
+    uint32_t parcelSize = sizeof(g_cmParcelIpcHandler) / sizeof(g_cmParcelIpcHandler[0]);
+    for (uint32_t i = 0; i < parcelSize; ++i) {
+        if (code != static_cast<uint32_t>(g_cmParcelIpcHandler[i].msgId)) {
+            continue;
+        }
+        g_cmParcelIpcHandler[i].handler(code, static_cast<const struct CmBlob *>(&srcData),
+            reinterpret_cast<const struct CmContext *>(&reply));
+    }
     uint32_t size = sizeof(g_cmIpcHandler) / sizeof(g_cmIpcHandler[0]);
     for (uint32_t i = 0; i < size; ++i) {
         if (code != static_cast<uint32_t>(g_cmIpcHandler[i].msgId)) {
@@ -186,13 +204,38 @@ int32_t CertManagerService::Init()
     return CM_SUCCESS;
 }
 
+static int32_t GetSrcData(MessageParcel &data, struct CmBlob *srcData)
+{
+    srcData->size = static_cast<uint32_t>(data.ReadUint32());
+    if (IsInvalidLength(srcData->size)) {
+        CM_LOG_E("srcData size is invalid, size:%u", srcData->size);
+        return CMR_ERROR_IPC_PARAM_SIZE_INVALID;
+    }
+    srcData->data = static_cast<uint8_t *>(CmMalloc(srcData->size));
+    if (srcData->data == nullptr) {
+        CM_LOG_E("Malloc srcData failed.");
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    const uint8_t *pdata = data.ReadBuffer(static_cast<size_t>(srcData->size));
+    if (pdata == nullptr) {
+        CM_FREE_BLOB(*srcData);
+        CM_LOG_E("CMR_ERROR_NULL_POINTER");
+        return CMR_ERROR_NULL_POINTER;
+    }
+    if (memcpy_s(srcData->data, srcData->size, pdata, srcData->size) != EOK) {
+        CM_LOG_E("copy remote data failed!");
+        CM_FREE_BLOB(*srcData);
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
+    return CM_SUCCESS;
+}
+
 int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     MessageParcel &reply, MessageOption &option)
 {
     struct CmContext context = { 0, 0, {0} };
     (void)CmGetProcessInfoForIPC(&context);
     CM_LOG_I("OnRemoteRequest code: %u, callingUid = %u, userId = %u", code, context.uid, context.userId);
-
     // this is the temporary version which comments the descriptor check
     std::u16string descriptor = CertManagerService::GetDescriptor();
     std::u16string remoteDescriptor = data.ReadInterfaceToken();
@@ -200,40 +243,25 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
         CM_LOG_E("descriptor is diff");
         return CM_SYSTEM_ERROR;
     }
-
     // check the code is valid
     if (code < static_cast<uint32_t>(CM_MSG_BASE) || code >= static_cast<uint32_t>(CM_MSG_MAX)) {
         CM_LOG_E("code[%u] invalid", code);
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
     }
-
     DelayUnload();
-    uint32_t outSize = static_cast<uint32_t>(data.ReadUint32());
+    uint32_t outSize = 0;
+    if (code != static_cast<uint32_t>(CM_MSG_GET_UKEY_CERTIFICATE_LIST) &&
+        code != static_cast<uint32_t>(CM_MSG_GET_UKEY_CERTIFICATE)) {
+        outSize = static_cast<uint32_t>(data.ReadUint32());
+    }
     struct CmBlob srcData = { 0, nullptr };
-    srcData.size = static_cast<uint32_t>(data.ReadUint32());
-    if (IsInvalidLength(srcData.size)) {
-        CM_LOG_E("srcData size is invalid, size:%u", srcData.size);
-        return CMR_ERROR_IPC_PARAM_SIZE_INVALID;
+    int32_t ret = CM_SUCCESS;
+    ret = GetSrcData(data, &srcData);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("GetSrcData failed!");
+        return ret;
     }
-
-    srcData.data = static_cast<uint8_t *>(CmMalloc(srcData.size));
-    if (srcData.data == nullptr) {
-        CM_LOG_E("Malloc srcData failed.");
-        return CMR_ERROR_MALLOC_FAIL;
-    }
-    const uint8_t *pdata = data.ReadBuffer(static_cast<size_t>(srcData.size));
-    if (pdata == nullptr) {
-        CM_FREE_BLOB(srcData);
-        CM_LOG_E("CMR_ERROR_NULL_POINTER");
-        return CMR_ERROR_NULL_POINTER;
-    }
-    if (memcpy_s(srcData.data, srcData.size, pdata, srcData.size) != EOK) {
-        CM_LOG_E("copy remote data failed!");
-        CM_FREE_BLOB(srcData);
-        return CMR_ERROR_MEM_OPERATION_COPY;
-    }
-
-    int32_t ret = ProcessMessage(code, outSize, srcData, reply);
+    ret = ProcessMessage(code, outSize, srcData, reply);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("process message!");
         CM_FREE_BLOB(srcData);

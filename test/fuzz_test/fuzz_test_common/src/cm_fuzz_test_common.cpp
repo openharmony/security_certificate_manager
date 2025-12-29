@@ -372,6 +372,46 @@ bool IpcServiceApiFuzzerTest(const uint8_t *data, const size_t size, CertManager
     return true;
 }
 
+bool IpcServiceApiParcelFuzzerTest(const uint8_t *data, const size_t size, CertManagerInterfaceCode code,
+    bool isParamsetToBlob, void (*ipcServiceApi)(uint32_t, const struct CmBlob *, const struct CmContext *))
+{
+    uint32_t minSize = sizeof(struct CmBlob) + sizeof(struct CmBlob);
+    uint8_t *myData = nullptr;
+    if (!CopyMyData(data, size, minSize, &myData)) {
+        return false;
+    }
+
+    uint32_t remSize = static_cast<uint32_t>(size);
+    uint32_t offset = 0;
+
+    struct CmBlob paramSetBlob = { 0, nullptr };
+    struct CmParamSet *paramSet = nullptr;
+    if (isParamsetToBlob) {
+        if (ConstructParamSet(myData, &remSize, &offset, code, &paramSet) != true) {
+            CmFree(myData);
+            return false;
+        }
+        paramSetBlob = { paramSet->paramSetSize, reinterpret_cast<uint8_t *>(paramSet) };
+    } else {
+        if (GetCmBlobFromBuffer(myData, &remSize, &offset, &paramSetBlob) != true) {
+            CmFree(myData);
+            return false;
+        }
+    }
+
+    uint32_t type;
+    if (!GetUintFromBuffer(myData, &remSize, &offset, &type)) {
+        return false;
+    }
+
+    OHOS::MessageParcel context;
+    (void)ipcServiceApi(type, &paramSetBlob, reinterpret_cast<struct CmContext *>(&context));
+
+    CmFree(myData);
+    CmFreeParamSet(&paramSet);
+    return true;
+}
+
 bool CreateCmContext(struct CmContext &cmContext, uint8_t *myData, uint32_t &remainSize, uint32_t &offset)
 {
     uint32_t userId;

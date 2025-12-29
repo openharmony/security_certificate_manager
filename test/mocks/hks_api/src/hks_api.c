@@ -16,7 +16,7 @@
 #include "hks_api.h"
 
 int32_t HksExportProviderCertificates(const struct HksBlob *providerName,
-                                      const struct HksParamSet *paramSetIn, struct HksExtCertInfoSet *certSet)
+    const struct HksParamSet *paramSetIn, struct HksExtCertInfoSet *certSet)
 {
     (void)providerName;
     (void)paramSetIn;

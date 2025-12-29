@@ -724,19 +724,6 @@ void FreeCredentialList(CredentialList *&credentialList)
     credentialList = nullptr;
 }
 
-void FreeUkeyCertList(CredentialDetailList *&certificateList)
-{
-    if (certificateList == nullptr || certificateList->credential == nullptr) {
-        return;
-    }
-    for (uint32_t i = 0; i < MAX_COUNT_UKEY_CERTIFICATE; ++i) {
-        CM_FREE_BLOB(certificateList->credential[i].credData);
-    }
-    certificateList->credentialCount = 0;
-    CM_FREE_PTR(certificateList->credential);
-    certificateList = nullptr;
-}
-
 void FreeCertInfo(CertInfo *&certInfo)
 {
     if (certInfo == nullptr) {

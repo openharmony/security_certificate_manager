@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,23 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef CERT_MANAGER_UKEY_OPERATION_H
-#define CERT_MANAGER_UKEY_OPERATION_H
+#ifndef CM_TYPE_FREE_H
+#define CM_TYPE_FREE_H
 
 #include "cm_type.h"
+#include "cm_mem.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int32_t CmGetUkeyCertListByHksCertInfoSet(const struct CmBlob *ukeyProvider, uint32_t certPurpose, uint32_t paramsCount,
-    struct CredentialDetailList *credentialDetailList);
-
-int32_t CmGetUkeyCertByHksCertInfoSet(const struct CmBlob *keyUri, uint32_t certPurpose, uint32_t paramsCount,
-    struct CredentialDetailList *credentialDetailList);
+void CmFreeUkeyCertList(struct CredentialDetailList *credentialDetailList);
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* CERT_MANAGER_UKEY_OPERATION_H */
+#endif

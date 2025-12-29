@@ -564,9 +564,10 @@ int32_t CmServiceGetAppCertListByUid(const struct CmContext *context, uint32_t s
 }
 
 int32_t CmServiceGetUkeyCertList(const struct CmBlob *ukeyProvider, uint32_t certPurpose, uint32_t paramsCount,
-    struct CmBlob *certificateList)
+    struct CredentialDetailList *credentialDetailList)
 {
-    int32_t ret = CmGetUkeyCertListByHksCertInfoSet(ukeyProvider, certPurpose, paramsCount, certificateList);
+    int32_t ret = CmGetUkeyCertListByHksCertInfoSet(ukeyProvider, certPurpose, paramsCount,
+        credentialDetailList);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmGetUkeyCertListByHksCertInfoSet failed, ret = %d", ret);
         return ret;
@@ -575,9 +576,10 @@ int32_t CmServiceGetUkeyCertList(const struct CmBlob *ukeyProvider, uint32_t cer
 }
 
 int32_t CmServiceGetUkeyCert(const struct CmBlob *keyUri, uint32_t certPurpose, uint32_t paramsCount,
-    struct CmBlob *certificateList)
+    struct CredentialDetailList *credentialDetailList)
 {
-    int32_t ret = CmGetUkeyCertByHksCertInfoSet(keyUri, certPurpose, paramsCount, certificateList);
+    int32_t ret = CmGetUkeyCertByHksCertInfoSet(keyUri, certPurpose, paramsCount,
+        credentialDetailList);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CmGetUkeyCertByHksCertInfoSet failed, ret = %d", ret);
         return ret;

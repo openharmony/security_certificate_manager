@@ -165,7 +165,6 @@ inline void FreeCredentialAbstract(CredentialAbstract *&credentialAbstract)
 
 void FreeCertList(CertList *&certList);
 void FreeCredentialList(CredentialList *&credentialList);
-void FreeUkeyCertList(CredentialDetailList *&certificateList);
 void FreeCertInfo(CertInfo *&certInfo);
 void FreeCredential(Credential *&credential);
 

@@ -41,13 +41,17 @@ ohos_static_library("libcert_manager_common_standard_static") {
     "src/cm_pfx.c",
     "src/cm_util.c",
     "src/cm_x509.c",
+    "src/cm_type_free.c",
+    "src/cm_ipc_response_type.cpp",
+    "src/cm_ipc_data_parcel_packer.cpp",
   ]
 
   external_deps = [
     "c_utils:utils",
     "init:libbegetutil",
     "openssl:libcrypto_shared",
-    "bounds_checking_function:libsec_shared"
+    "bounds_checking_function:libsec_shared",
+    "ipc:ipc_single",
   ]
   cflags = [
     "-Wall",
