@@ -128,7 +128,6 @@ static int32_t GetCertAliasByCertInfo(const struct HksExtCertInfo *certInfo, str
             CM_LOG_E("failed to copy certAlias->data");
             return CMR_ERROR_MEM_OPERATION_COPY;
         }
-        certAlias.data[aliasLen] = '\0';
     }
     return CM_SUCCESS;
 }

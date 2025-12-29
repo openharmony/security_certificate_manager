@@ -21,13 +21,6 @@
 #include "cm_type_free.h"
 
 namespace OHOS {
-CredentialDetailListParcelInfo::~CredentialDetailListParcelInfo()
-{
-    CM_LOG_D("CredentialDetailListParcelInfo destroy");
-    CmFreeUkeyCertList(this->credentialDetailList);
-    CM_FREE_PTR(credentialDetailList);
-}
-
 static bool ReadCertInfoFromParcel(Parcel &parcel, Credential *credential)
 {
     const uint8_t *typeData = parcel.ReadUnpadBuffer(MAX_LEN_SUBJECT_NAME);
@@ -226,6 +219,7 @@ CredentialDetailListParcelInfo *CredentialDetailListParcelInfo::Unmarshalling(Pa
     }
     if (!info->ReadFromParcel(parcel)) {
         CM_LOG_E("read from parcel failed");
+        CmFreeUkeyCertList(info->credentialDetailList);
         delete info;
         return nullptr;
     }

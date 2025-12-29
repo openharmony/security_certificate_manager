@@ -23,8 +23,6 @@ namespace OHOS {
 
 struct CredentialDetailListParcelInfo final : public Parcelable {
 public:
-    ~CredentialDetailListParcelInfo();
-
     bool Marshalling(Parcel &parcel) const override;
     static CredentialDetailListParcelInfo *Unmarshalling(Parcel &parcel);
     bool ReadFromParcel(Parcel &parcel);

@@ -624,6 +624,7 @@ int32_t CmIpcServiceGetUkeyCertListCommon(uint32_t code, const struct CmBlob *pa
     void *data = &credentialDetailList;
     CmReport(__func__, &cmContext, NULL, ret);
     CmSendResponseParcel(code, context, ret, data);
+    CmFreeUkeyCertList(&credentialDetailList);
     CmFreeParamSet(&paramSet);
     CM_LOG_I("leave: ret = %d", ret);
     return ret;

@@ -18,6 +18,7 @@
 #include "cm_ipc_response_type.h"
 #include "cm_log.h"
 #include "cm_type.h"
+#include "cm_type_free.h"
 #include "cert_manager_service_ipc_interface_code.h"
 
 namespace OHOS {
@@ -107,8 +108,12 @@ int32_t CmIpcDataParcelPacker::ReadCertListFromParcel(MessageParcel &reply, void
     int32_t ret = certificateListParceInfo->TransPortUkeyCertList(credentialDetailList);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("TransPortUkeyCertList failed");
+        CmFreeUkeyCertList(certificateListParceInfo->credentialDetailList);
+        CM_FREE_PTR(certificateListParceInfo->credentialDetailList);
         return CMR_ERROR_MEM_OPERATION_COPY;
     }
+    CmFreeUkeyCertList(certificateListParceInfo->credentialDetailList);
+    CM_FREE_PTR(certificateListParceInfo->credentialDetailList);
     return CM_SUCCESS;
 }
 
