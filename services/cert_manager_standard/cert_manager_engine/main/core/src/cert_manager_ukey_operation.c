@@ -235,7 +235,6 @@ static int32_t BuildCertSetToCmBlob(const struct HksExtCertInfoSet *certSet,
         credentialList->credential[i].credData.data = (uint8_t*)(CmMalloc(credDataSize));
         if (credentialList->credential[i].credData.data == NULL) {
             CM_LOG_E("malloc the credData failed, the idx is %u", i);
-            CM_FREE_PTR(credentialList->credential);
             return CMR_ERROR_MALLOC_FAIL;
         }
         credentialList->credential[i].credData.size = credDataSize;
@@ -243,7 +242,6 @@ static int32_t BuildCertSetToCmBlob(const struct HksExtCertInfoSet *certSet,
         if (ret != CM_SUCCESS) {
             CM_LOG_E("BuildCertInfoToCredential failed");
             CM_FREE_BLOB(credentialList->credential[i].credData);
-            CM_FREE_PTR(credentialList->credential);
             return ret;
         }
     }
