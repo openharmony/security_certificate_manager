@@ -146,6 +146,7 @@ int32_t CmStorageGetBuf(const char *path, const char *fileName, struct CmBlob *s
     }
 
     uint8_t *data = (uint8_t *)CMMalloc(fileSize);
+    (void)memset_s(data, fileSize, 0, fileSize);
     if (data == NULL) {
         CM_LOG_E("malloc file buffer failed");
         return CMR_ERROR_MALLOC_FAIL;
