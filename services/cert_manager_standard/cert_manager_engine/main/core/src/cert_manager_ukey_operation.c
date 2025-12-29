@@ -110,11 +110,12 @@ static int32_t GetCertAliasByCertInfo(const struct HksExtCertInfo *certInfo, str
     uint8_t aliasBuf[MAX_LEN_CERT_ALIAS] = {0};
     struct CmBlob certAlias = { sizeof(aliasBuf), aliasBuf };
     (void)memset_s(credential->alias, MAX_LEN_CERT_ALIAS, 0, MAX_LEN_CERT_ALIAS);
+
+    uint32_t aliasLen = (uint32_t)certInfo->index.size;
     int32_t ret = CmGetAliasFromSubjectName(&certBlob, &certAlias);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("failed to get cert subject name, ret = %d", ret);
-        uint32_t aliasLen = (uint32_t)certInfo->index.size;
-        if (certInfo->index.size > MAX_LEN_CERT_ALIAS) {
+        if (aliasLen > MAX_LEN_CERT_ALIAS) {
             aliasLen = MAX_LEN_CERT_ALIAS - 1; // truncate copy
         }
         if (memcpy_s(credential->alias, MAX_LEN_CERT_ALIAS, certInfo->index.data, aliasLen) != EOK) {
@@ -127,7 +128,7 @@ static int32_t GetCertAliasByCertInfo(const struct HksExtCertInfo *certInfo, str
             CM_LOG_E("failed to copy certAlias->data");
             return CMR_ERROR_MEM_OPERATION_COPY;
         }
-        certAlias->data[aliasLen] = '\0';
+        certAlias.data[aliasLen] = '\0';
     }
     return CM_SUCCESS;
 }

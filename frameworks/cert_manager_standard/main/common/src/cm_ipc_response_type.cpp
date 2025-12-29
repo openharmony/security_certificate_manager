@@ -25,6 +25,7 @@ CredentialDetailListParcelInfo::~CredentialDetailListParcelInfo()
 {
     CM_LOG_D("CredentialDetailListParcelInfo destroy");
     CmFreeUkeyCertList(this->credentialDetailList);
+    CM_FREE_PTR(credentialDetailList);
 }
 
 static bool ReadCertInfoFromParcel(Parcel &parcel, Credential *credential)
@@ -134,15 +135,11 @@ bool CredentialDetailListParcelInfo::ReadFromParcel(Parcel &parcel)
     for (uint32_t i = 0; i < credentialDetailList->credentialCount; ++i) {
         if (!ReadCredentialFromParcel(parcel, &credentialDetailList->credential[i])) {
             CM_LOG_E("read credential failed, the failed index is %u", i);
-            CM_FREE_PTR(credentialDetailList->credential);
-            CM_FREE_PTR(credentialDetailList);
             return false;
         }
         uint32_t certPurpose = 0;
         if (!parcel.ReadUint32(certPurpose)) {
             CM_LOG_E("read certPurpose failed");
-            CM_FREE_PTR(credentialDetailList->credential);
-            CM_FREE_PTR(credentialDetailList);
             return false;
         }
         credentialDetailList->credential[i].certPurpose = static_cast<enum CmCertificatePurpose>(certPurpose);
