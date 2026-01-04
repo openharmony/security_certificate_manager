@@ -23,7 +23,6 @@ namespace OHOS {
 
 struct CredentialDetailListParcelInfo final : public Parcelable {
 public:
-    CredentialDetailListParcelInfo(const CredentialDetailListParcelInfo&) = delete;
     CredentialDetailListParcelInfo& operator=(const CredentialDetailListParcelInfo&) = delete;
 
     bool Marshalling(Parcel &parcel) const override;
