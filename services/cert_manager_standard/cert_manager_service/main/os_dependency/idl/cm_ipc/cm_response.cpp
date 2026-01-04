@@ -22,7 +22,8 @@
 
 #include "ipc_skeleton.h"
 
-#include "cm_ipc_data_parcel_packer.h"
+#include "cm_data_parcel_processor.h"
+#include "cm_ukeylist_data_helper.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "os_account_manager.h"
@@ -97,8 +98,9 @@ void CmSendResponseParcel(uint32_t code, const struct CmContext *context, int32_
     if (data == nullptr) {
         reply->WriteUint32(0);
     } else {
-        if (CmIpcDataParcelPacker::GetInstance().ParcelWriteInvoke(code, reply, data) != CM_SUCCESS) {
-            CM_LOG_E("ParcelWriteInvoke failed");
+        CmDataParcelProcessor::GetInstance().SetParcelStrategy(std::make_unique<CmUkeyListDataHelper>());
+        if (CmDataParcelProcessor::GetInstance().WriteToParcel(reply, data) != CM_SUCCESS) {
+            CM_LOG_E("WriteToParcel failed");
         }
     }
 }

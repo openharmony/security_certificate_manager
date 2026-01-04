@@ -22,7 +22,8 @@
 #include "securec.h"
 
 #include "cm_log.h"
-#include "cm_ipc_data_parcel_packer.h"
+#include "cm_data_parcel_processor.h"
+#include "cm_ukeylist_data_helper.h"
 
 #include "iservice_registry.h"
 
@@ -151,5 +152,6 @@ int32_t SendRequestParcel(enum CertManagerInterfaceCode type, const struct CmBlo
         CM_LOG_E("reply ret is failed");
         return ret;
     }
-    return CmIpcDataParcelPacker::GetInstance().ParcelReadInvoke(type, reply, data);
+    CmDataParcelProcessor::GetInstance().SetParcelStrategy(std::make_unique<CmUkeyListDataHelper>());
+    return CmDataParcelProcessor::GetInstance().WriteToParcel(reply, data);
 }
