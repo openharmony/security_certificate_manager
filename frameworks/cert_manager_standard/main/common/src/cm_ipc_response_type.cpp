@@ -44,7 +44,7 @@ static bool ReadCertInfoFromParcel(Parcel &parcel, Credential *credential)
         return false;
     }
     if (memcpy_s(credential->keyUri, MAX_LEN_URI, keyUriData, MAX_LEN_URI) != EOK) {
-        CM_LOG_E("copy type failed");
+        CM_LOG_E("copy keyUri failed");
         return false;
     }
     return true;
@@ -117,6 +117,10 @@ bool CredentialDetailListParcelInfo::ReadFromParcel(Parcel &parcel)
         CM_FREE_PTR(credentialDetailList);
         return false;
     }
+    if (credentialDetailList->credentialCount > MAX_COUNT_UKEY_CERTIFICATE){
+        CM_LOG_E("credentialCount is too big");
+        return false;
+    }
     uint32_t buffSize = (credentialDetailList->credentialCount * sizeof(struct Credential));
     credentialDetailList->credential = static_cast<struct Credential *>(CmMalloc(buffSize));
     if (credentialDetailList->credential == nullptr) {
@@ -146,7 +150,6 @@ static bool WriteCredentialToParcel(Parcel &parcel, Credential *credential)
         CM_LOG_E("write isExist failed");
         return false;
     }
-    
     if (!parcel.WriteBuffer(credential->type, MAX_LEN_SUBJECT_NAME)) {
         CM_LOG_E("write type failed");
         return false;
@@ -159,7 +162,6 @@ static bool WriteCredentialToParcel(Parcel &parcel, Credential *credential)
         CM_LOG_E("write keyUri failed");
         return false;
     }
-    
     if (!parcel.WriteUint32(credential->certNum)) {
         CM_LOG_E("write certNum failed");
         return false;
@@ -168,7 +170,6 @@ static bool WriteCredentialToParcel(Parcel &parcel, Credential *credential)
         CM_LOG_E("write keyNum failed");
         return false;
     }
-
     if (!parcel.WriteUint32(credential->credData.size)) {
         CM_LOG_E("write credData.size failed");
         return false;
@@ -180,7 +181,7 @@ static bool WriteCredentialToParcel(Parcel &parcel, Credential *credential)
     return true;
 }
 
-static bool WriteCredentialDetailListToParcel(Parcel &parcel, CredentialDetailList *credentialDetailList)
+static bool WriteCredentialDetailListToParcel(Parcel &parcel, const CredentialDetailList *credentialDetailList)
 {
     for (uint32_t i = 0; i < credentialDetailList->credentialCount; ++i) {
         if (!WriteCredentialToParcel(parcel, &credentialDetailList->credential[i])) {

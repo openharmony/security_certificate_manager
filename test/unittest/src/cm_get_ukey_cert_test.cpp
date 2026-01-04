@@ -25,7 +25,11 @@
 #include "cm_native_api.h"
 #include "cm_cert_data_part1_rsa.h"
 
+namespace {
 const char *HUKS_SYSCAP = "SystemCapability.Security.Huks.CryptoExtension";
+const uint32_t INVALID_PURPOSE = 10;
+}
+
 
 using namespace testing::ext;
 using namespace CertmanagerTest;
@@ -485,6 +489,42 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest001, TestSize.Level0)
 }
 
 /**
+ * @tc.name: CmGetUkeyCertNDKAbnormalTest002
+ * @tc.desc: Test CertManager get ukey cert c-api interface abnormal function
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest002, TestSize.Level0)
+{
+    uint8_t buffer[100];
+    struct CmBlob retUri = { sizeof(buffer), buffer };
+    struct CredentialDetailList *certificateList = nullptr;
+    struct UkeyInfo ukeyInfo;
+    ukeyInfo.certPurpose = CM_CERT_PURPOSE_ENCRYPT;
+    int32_t ret = OH_CertManager_GetUkeyCertificate(reinterpret_cast<OH_CM_Blob*>(&retUri),
+        reinterpret_cast<OH_CM_UkeyInfo*>(&ukeyInfo),
+        reinterpret_cast<OH_CM_CredentialDetailList*>(&certificateList));
+    if (g_isSupport) {
+        EXPECT_EQ(ret, OH_CM_INNER_FAILURE) <<
+            "CmGetUkeyCertNDKAbnormalTest001 test failed, retcode:" << ret;
+    } else {
+        EXPECT_EQ(ret, OH_CM_CAPABILITY_NOT_SUPPORTED) <<
+            "CmGetUkeyCertNDKAbnormalTest001 test failed, retcode:" << ret;
+    }
+    ukeyInfo.certPurpose = static_cast<enum CmCertificatePurpose>(INVALID_PURPOSE);
+    ret = OH_CertManager_GetUkeyCertificate(reinterpret_cast<OH_CM_Blob*>(&retUri),
+        reinterpret_cast<OH_CM_UkeyInfo*>(&ukeyInfo),
+        reinterpret_cast<OH_CM_CredentialDetailList*>(&certificateList));
+    if (g_isSupport) {
+        EXPECT_EQ(ret, OH_CM_PARAMETER_VALIDATION_FAILED) <<
+            "CmGetUkeyCertNDKAbnormalTest001 test failed, retcode:" << ret;
+    } else {
+        EXPECT_EQ(ret, OH_CM_CAPABILITY_NOT_SUPPORTED) <<
+            "CmGetUkeyCertNDKAbnormalTest001 test failed, retcode:" << ret;
+    }
+}
+
+/**
  * @tc.name: CmGetPrivateCertNDKAbnormalTest002
  * @tc.desc: Test CertManager get private cert c-api interface abnormal function
  * @tc.type: FUNC
@@ -659,5 +699,21 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest007, TestSize.Level0)
     OH_CM_CredentialDetailList *certificateList = nullptr;
     int32_t ret = OH_CertManager_GetUkeyCertificate(keyUri, ukeyInfo, certificateList);
     EXPECT_EQ(ret, OH_CM_PARAMETER_VALIDATION_FAILED);
+}
+
+/**
+* @tc.name: CmFreeUkeyCertNDKTest001
+* @tc.desc: Test CertManager OH_CertManager_FreeUkeyCertificate interface function
+* @tc.type: FUNC OH_CertManager_GetPublicCertificate
+* @tc.require: AR000H0MI8 /SR000H09N9
+*/
+HWTEST_F(CmGetUkeyCertTest, CmFreeUkeyCertNDKTest001, TestSize.Level0)
+{
+    OH_CM_CredentialDetailList *credList = nullptr;
+    OH_CertManager_FreeUkeyCertificate(credList);
+    EXPECT_EQ(credList, nullptr);
+    OH_CM_Credential *cred = nullptr;
+    OH_CertManager_FreeCredential(cred);
+    EXPECT_EQ(cred, nullptr);
 }
 }

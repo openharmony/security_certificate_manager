@@ -598,15 +598,17 @@ bool CheckUkeyParamsType(napi_env env, napi_value* argv, size_t argc)
         return false;
     }
     ++index;
-    napi_value ukeyInfoObj = argv[index];
-    status = napi_typeof(env, ukeyInfoObj, &valueType);
-    if (status != napi_ok) {
-        CM_LOG_E("Failed to get object type");
-        return false;
-    }
-    if (valueType == napi_null) {
-        CM_LOG_E("the type of param is null");
-        return false;
+    if (index < argc) {
+        napi_value ukeyInfoObj = argv[index];
+        status = napi_typeof(env, ukeyInfoObj, &valueType);
+        if (status != napi_ok) {
+            CM_LOG_E("Failed to get object type");
+            return false;
+        }
+        if (valueType == napi_null) {
+            CM_LOG_E("the type of param is null");
+            return false;
+        }
     }
     return true;
 }
