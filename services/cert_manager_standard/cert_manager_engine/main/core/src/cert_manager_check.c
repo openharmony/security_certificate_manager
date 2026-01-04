@@ -35,17 +35,26 @@ int32_t CheckUri(const struct CmBlob *keyUri)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (strstr((char *)(keyUri->data), "../") != NULL) {
-        CM_LOG_E("invalid keyUri");
+    bool hasNull = false;
+    for (uint32_t i = 1; i < keyUri->size; ++i) { /* from index 1 has '\0' */
+        if (keyUri->data[i] == 0) {
+            hasNull = true;
+            break;
+        }
+    }
+
+    if (!hasNull) {
+        CM_LOG_E("invalid keyUri: missing null terminator");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    for (uint32_t i = 1; i < keyUri->size; ++i) { /* from index 1 has '\0' */
-        if (keyUri->data[i] == 0) {
-            return CM_SUCCESS;
-        }
+    const char *path = (const char *)keyUri->data;
+    if (strstr(path, "../") != NULL) {
+        CM_LOG_E("invalid keyUri: contains ../");
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
-    return CMR_ERROR_INVALID_ARGUMENT;
+
+    return CM_SUCCESS;
 }
 
 int32_t CmServiceGetSystemCertListCheck(const uint32_t store)
