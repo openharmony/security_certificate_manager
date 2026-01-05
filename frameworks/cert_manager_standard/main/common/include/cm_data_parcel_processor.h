@@ -24,7 +24,7 @@ namespace OHOS {
 class CmDataParcelProcessor {
 public:
     static CmDataParcelProcessor &GetInstance();
-    int32_t SetParcelStrategy(std::unique_ptr<CmDataParcelHelper> newDataParcelHelper);
+    void SetParcelStrategy(std::unique_ptr<CmDataParcelHelper> newDataParcelHelper);
     int32_t ReadFromParcel(MessageParcel &reply, void *data);
     int32_t WriteToParcel(MessageParcel *reply, void *data);
 

@@ -21,7 +21,7 @@
 #include "message_parcel.h"
 
 namespace OHOS {
-class CmUkeyListDataHelper : public CmUkeyListDataHelper {
+class CmUkeyListDataHelper : public CmDataParcelHelper {
 public:
     int32_t ParcelReadInvoke(MessageParcel &reply, void *data) override;
     int32_t ParcelWriteInvoke(MessageParcel *reply, void *data) override;

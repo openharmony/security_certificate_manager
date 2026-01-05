@@ -153,5 +153,5 @@ int32_t SendRequestParcel(enum CertManagerInterfaceCode type, const struct CmBlo
         return ret;
     }
     CmDataParcelProcessor::GetInstance().SetParcelStrategy(std::make_unique<CmUkeyListDataHelper>());
-    return CmDataParcelProcessor::GetInstance().WriteToParcel(reply, data);
+    return CmDataParcelProcessor::GetInstance().ReadFromParcel(reply, data);
 }

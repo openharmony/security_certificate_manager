@@ -21,7 +21,7 @@
 #include "cm_type_free.h"
 
 namespace OHOS {
-int32_t CmIpcDataParcelPacker::ParcelReadInvoke(MessageParcel &reply, void *data)
+int32_t CmUkeyListDataHelper::ParcelReadInvoke(MessageParcel &reply, void *data)
 {
     struct CredentialDetailList *credentialDetailList = (struct CredentialDetailList *)data;
     std::unique_ptr<struct CredentialDetailListParcelInfo> certificateListParceInfo(
@@ -42,7 +42,7 @@ int32_t CmIpcDataParcelPacker::ParcelReadInvoke(MessageParcel &reply, void *data
     return CM_SUCCESS;
 }
 
-int32_t CmIpcDataParcelPacker::ParcelWriteInvoke(MessageParcel *reply, void *data)
+int32_t CmUkeyListDataHelper::ParcelWriteInvoke(MessageParcel *reply, void *data)
 {
     struct CredentialDetailList *credentialDetailList = (struct CredentialDetailList *)data;
     std::unique_ptr<struct CredentialDetailListParcelInfo> credentialDetailListParcelInfo(

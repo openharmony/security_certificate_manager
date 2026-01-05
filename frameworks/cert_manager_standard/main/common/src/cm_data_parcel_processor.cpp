@@ -24,16 +24,16 @@ CmDataParcelProcessor &CmDataParcelProcessor::GetInstance()
     return instance;
 }
 
-int32_t CmDataParcelProcessor::SetParcelStrategy(std::unique_ptr<CmDataParcelHelper> newDataParcelHelper)
+void CmDataParcelProcessor::SetParcelStrategy(std::unique_ptr<CmDataParcelHelper> newDataParcelHelper)
 {
     CM_LOG_D("SetParcelStrategy begin");
     dataParcelHelper = std::move(newDataParcelHelper);
 }
 
-int32_t ReadFromParcel(MessageParcel &reply, void *data);
+int32_t CmDataParcelProcessor::ReadFromParcel(MessageParcel &reply, void *data)
 {
     if (dataParcelHelper == nullptr) {
-        CM_LOG_E("ReadFromParcel dataParcelHelper is nullptr")
+        CM_LOG_E("ReadFromParcel dataParcelHelper is nullptr");
         return CMR_ERROR_NULL_POINTER;
     }
     int32_t res = dataParcelHelper->ParcelReadInvoke(reply, data);
@@ -44,10 +44,10 @@ int32_t ReadFromParcel(MessageParcel &reply, void *data);
     return CM_SUCCESS;
 }
 
-int32_t WriteToParcel(MessageParcel *reply, void *data);
+int32_t CmDataParcelProcessor::WriteToParcel(MessageParcel *reply, void *data)
 {
     if (dataParcelHelper == nullptr) {
-        CM_LOG_E("WriteToParcel dataParcelHelper is nullptr")
+        CM_LOG_E("WriteToParcel dataParcelHelper is nullptr");
         return CMR_ERROR_NULL_POINTER;
     }
     int32_t res = dataParcelHelper->ParcelWriteInvoke(reply, data);
