@@ -98,8 +98,8 @@ void CmSendResponseParcel(uint32_t code, const struct CmContext *context, int32_
     if (data == nullptr) {
         reply->WriteUint32(0);
     } else {
-        CmDataParcelProcessor::GetInstance().SetParcelStrategy(std::make_unique<CmUkeyListDataHelper>());
-        if (CmDataParcelProcessor::GetInstance().WriteToParcel(reply, data) != CM_SUCCESS) {
+        CmDataParcelProcessor parcelProcessor(std::make_unique<CmUkeyListDataHelper>());
+        if (parcelProcessor.WriteToParcel(reply, data) != CM_SUCCESS) {
             CM_LOG_E("WriteToParcel failed");
         }
     }

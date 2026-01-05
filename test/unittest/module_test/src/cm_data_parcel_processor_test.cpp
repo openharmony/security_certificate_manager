@@ -19,18 +19,14 @@
 
 #include "cm_type_free.h"
 #include "cm_ipc_response_type.h"
-#include "cm_ipc_data_parcel_packer.h"
+#include "cm_data_parcel_processor.h"
+#include "cm_ukeylist_data_helper.h"
 #include "cm_mem.h"
 #include "cm_type.h"
 
-namespace {
-const uint32_t CM_MSG_GET_UKEY_CERTIFICATE_LIST = 25;
-const uint32_t INVALID_CODE = 100;
-}
-
 using namespace testing::ext;
 namespace OHOS {
-class CmParcelPackerTest : public testing::Test {
+class CmDataParcelProcessorTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
 
@@ -41,37 +37,36 @@ public:
     void TearDown();
 };
 
-void CmParcelPackerTest::SetUpTestCase(void)
+void CmDataParcelProcessorTest::SetUpTestCase(void)
 {
 }
 
-void CmParcelPackerTest::TearDownTestCase(void)
+void CmDataParcelProcessorTest::TearDownTestCase(void)
 {
 }
 
-void CmParcelPackerTest::SetUp()
+void CmDataParcelProcessorTest::SetUp()
 {
 }
 
-void CmParcelPackerTest::TearDown()
+void CmDataParcelProcessorTest::TearDown()
 {
 }
 
 /**
-* @tc.name: ParcelReadInvokeTest001
+* @tc.name: ReadFromParcelTest001
 * @tc.desc: test ParcelReadInvoke abnormal
 * @tc.type: FUNC
 * @tc.require: AR000H0MIA /SR000H09NA
 */
-HWTEST_F(CmParcelPackerTest, ParcelReadInvokeTest001, TestSize.Level0)
+HWTEST_F(CmDataParcelProcessorTest, ReadFromParcelTest001, TestSize.Level0)
 {
     MessageParcel reply;
-    uint32_t code = INVALID_CODE;
     void *data = nullptr;
-    int32_t ret = CmIpcDataParcelPacker::GetInstance().ParcelReadInvoke(code, reply, data);
+    int32_t ret = CmDataParcelProcessor::GetInstance().ReadFromParcel(reply, data);
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
 
-    void *data2 = static_cast<void*>(CmMalloc(1));
+    CmDataParcelProcessor::GetInstance().SetParcelStrategy(std::make_unique<CmUkeyListDataHelper>());
     ret = CmIpcDataParcelPacker::GetInstance().ParcelReadInvoke(code, reply, data2);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
 

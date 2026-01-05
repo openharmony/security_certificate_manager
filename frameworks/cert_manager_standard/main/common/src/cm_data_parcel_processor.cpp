@@ -18,11 +18,8 @@
 #include "cm_log.h"
 
 namespace OHOS {
-CmDataParcelProcessor &CmDataParcelProcessor::GetInstance()
-{
-    static CmDataParcelProcessor instance;
-    return instance;
-}
+CmDataParcelProcessor::CmDataParcelProcessor(std::unique_ptr<CmDataParcelHelper> initParcelHelper)
+    : dataParcelHelper(std::move(initParcelHelper)) {}
 
 void CmDataParcelProcessor::SetParcelStrategy(std::unique_ptr<CmDataParcelHelper> newDataParcelHelper)
 {
