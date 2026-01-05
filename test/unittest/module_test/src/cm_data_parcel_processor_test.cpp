@@ -55,7 +55,7 @@ void CmDataParcelProcessorTest::TearDown()
 
 /**
 * @tc.name: ReadFromParcelTest001
-* @tc.desc: test ParcelReadInvoke abnormal
+* @tc.desc: test ReadFromParcel abnormal
 * @tc.type: FUNC
 * @tc.require: AR000H0MIA /SR000H09NA
 */
@@ -63,29 +63,26 @@ HWTEST_F(CmDataParcelProcessorTest, ReadFromParcelTest001, TestSize.Level0)
 {
     MessageParcel reply;
     void *data = nullptr;
-    int32_t ret = CmDataParcelProcessor::GetInstance().ReadFromParcel(reply, data);
+    CmDataParcelProcessor processor(std::make_unique<CmUkeyListDataHelper>());
+    int32_t ret = processor.ReadFromParcel(reply, data);
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
 
-    CmDataParcelProcessor::GetInstance().SetParcelStrategy(std::make_unique<CmUkeyListDataHelper>());
-    ret = CmIpcDataParcelPacker::GetInstance().ParcelReadInvoke(code, reply, data2);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
-
-    code = CM_MSG_GET_UKEY_CERTIFICATE_LIST;
-    ret = CmIpcDataParcelPacker::GetInstance().ParcelReadInvoke(code, reply, data2);
+    processor.SetParcelStrategy(std::make_unique<CmUkeyListDataHelper>());
+    void *data2 = static_cast<void*>(CmMalloc(1));
+    ret = processor.ReadFromParcel(reply, data2);
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
     CM_FREE_PTR(data2);
 }
 
 /**
-* @tc.name: ParcelReadInvokeTest002
-* @tc.desc: test ParcelReadInvoke
+* @tc.name: ReadFromParcelTest002
+* @tc.desc: test ReadFromParcel
 * @tc.type: FUNC
 * @tc.require: AR000H0MIA /SR000H09NA
 */
-HWTEST_F(CmParcelPackerTest, ParcelReadInvokeTest002, TestSize.Level0)
+HWTEST_F(CmParcelPackerTest, ReadFromParcelTest002, TestSize.Level0)
 {
     MessageParcel reply;
-    uint32_t code = INVALID_CODE;
     struct CredentialDetailList credList;
     void *data = reinterpret_cast<void*>(&credList);
 
@@ -105,32 +102,29 @@ HWTEST_F(CmParcelPackerTest, ParcelReadInvokeTest002, TestSize.Level0)
     curCredList.credential->certPurpose = static_cast<enum CmCertificatePurpose>(1);
     int32_t ret = credentialDetailListParcelInfo.Marshalling(reply);
     EXPECT_EQ(ret, true);
-    ret = CmIpcDataParcelPacker::GetInstance().ParcelReadInvoke(code, reply, data);
+    CmDataParcelProcessor processor;
+    ret = processor.ParcelReadInvoke(reply, data);
     EXPECT_EQ(ret, CM_SUCCESS);
     CmFreeUkeyCertList(&credList);
     CmFreeUkeyCertList(credentialDetailListParcelInfo.credentialDetailList);
 }
 
 /**
-* @tc.name: ParcelWriteInvokeTest001
+* @tc.name: WriteToParcelTest001
 * @tc.desc: test ParcelWriteInvoke abnormal
 * @tc.type: FUNC
 * @tc.require: AR000H0MIA /SR000H09NA
 */
-HWTEST_F(CmParcelPackerTest, ParcelWriteInvokeTest001, TestSize.Level0)
+HWTEST_F(CmParcelPackerTest, WriteToParcelTest001, TestSize.Level0)
 {
-    MessageParcel reply;
-    uint32_t code = INVALID_CODE;
+    MessageParcel reply;;
     void *data = nullptr;
-    int32_t ret = CmIpcDataParcelPacker::GetInstance().ParcelWriteInvoke(code, &reply, data);
+    CmDataParcelProcessor processor;
+    int32_t ret = processor.WriteToParcel(&reply, data);
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
 
     void *data2 = static_cast<void*>(CmMalloc(1));
-    ret = CmIpcDataParcelPacker::GetInstance().ParcelWriteInvoke(code, &reply, data2);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_ARGUMENT);
-
-    code = CM_MSG_GET_UKEY_CERTIFICATE_LIST;
-    ret = CmIpcDataParcelPacker::GetInstance().ParcelWriteInvoke(code, &reply, data2);
+    ret = processor.WriteToParcel(&reply, data2);
     EXPECT_EQ(ret, CM_SUCCESS);
     CM_FREE_PTR(data2);
 }

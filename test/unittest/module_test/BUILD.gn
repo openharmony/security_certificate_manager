@@ -22,7 +22,7 @@ ohos_unittest("cm_module_test") {
     "src/cm_cert_parse_test.cpp",
     "src/cm_log_test.cpp",
     "src/cm_param_test.cpp",
-    "src/cm_ipc_data_parcel_packer_test.cpp",
+    "src/cm_data_parcel_processor_test.cpp",
     "src/cm_ipc_response_type_test.cpp",
   ]
 
