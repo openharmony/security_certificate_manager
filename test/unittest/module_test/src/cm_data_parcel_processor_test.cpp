@@ -63,14 +63,15 @@ HWTEST_F(CmDataParcelProcessorTest, ReadFromParcelTest001, TestSize.Level0)
 {
     MessageParcel reply;
     void *data = nullptr;
-    CmDataParcelProcessor processor(std::make_unique<CmUkeyListDataHelper>());
+    CmDataParcelProcessor processor;
     int32_t ret = processor.ReadFromParcel(reply, data);
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
 
-    processor.SetParcelStrategy(std::make_unique<CmUkeyListDataHelper>());
+    CmDataParcelProcessor processor2(std::make_unique<CmUkeyListDataHelper>());
+    processor2.SetParcelStrategy(std::make_unique<CmUkeyListDataHelper>());
     void *data2 = static_cast<void*>(CmMalloc(1));
-    ret = processor.ReadFromParcel(reply, data2);
-    EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
+    ret = processor2.ReadFromParcel(reply, data2);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_OPERATION);
     CM_FREE_PTR(data2);
 }
 
@@ -80,7 +81,7 @@ HWTEST_F(CmDataParcelProcessorTest, ReadFromParcelTest001, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require: AR000H0MIA /SR000H09NA
 */
-HWTEST_F(CmParcelPackerTest, ReadFromParcelTest002, TestSize.Level0)
+HWTEST_F(CmDataParcelProcessorTest, ReadFromParcelTest002, TestSize.Level0)
 {
     MessageParcel reply;
     struct CredentialDetailList credList;
@@ -102,9 +103,9 @@ HWTEST_F(CmParcelPackerTest, ReadFromParcelTest002, TestSize.Level0)
     curCredList.credential->certPurpose = static_cast<enum CmCertificatePurpose>(1);
     int32_t ret = credentialDetailListParcelInfo.Marshalling(reply);
     EXPECT_EQ(ret, true);
-    CmDataParcelProcessor processor;
-    ret = processor.ParcelReadInvoke(reply, data);
-    EXPECT_EQ(ret, CM_SUCCESS);
+    CmDataParcelProcessor processor(std::make_unique<CmUkeyListDataHelper>());
+    ret = processor.ReadFromParcel(reply, data);
+    EXPECT_EQ(ret, CMR_ERROR_INVALID_OPERATION);
     CmFreeUkeyCertList(&credList);
     CmFreeUkeyCertList(credentialDetailListParcelInfo.credentialDetailList);
 }
@@ -115,14 +116,14 @@ HWTEST_F(CmParcelPackerTest, ReadFromParcelTest002, TestSize.Level0)
 * @tc.type: FUNC
 * @tc.require: AR000H0MIA /SR000H09NA
 */
-HWTEST_F(CmParcelPackerTest, WriteToParcelTest001, TestSize.Level0)
+HWTEST_F(CmDataParcelProcessorTest, WriteToParcelTest001, TestSize.Level0)
 {
     MessageParcel reply;;
     void *data = nullptr;
     CmDataParcelProcessor processor;
     int32_t ret = processor.WriteToParcel(&reply, data);
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
-
+    processor.SetParcelStrategy(std::make_unique<CmUkeyListDataHelper>());
     void *data2 = static_cast<void*>(CmMalloc(1));
     ret = processor.WriteToParcel(&reply, data2);
     EXPECT_EQ(ret, CM_SUCCESS);
