@@ -15,8 +15,6 @@
 
 #include <gtest/gtest.h>
 
-#include "message_parcel.h"
-
 #include "cm_type_free.h"
 #include "cm_ipc_response_type.h"
 #include "cm_data_parcel_processor.h"
