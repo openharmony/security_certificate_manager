@@ -117,7 +117,7 @@ bool CredentialDetailListParcelInfo::ReadFromParcel(Parcel &parcel)
         CM_FREE_PTR(credentialDetailList);
         return false;
     }
-    if (credentialDetailList->credentialCount > MAX_COUNT_UKEY_CERTIFICATE){
+    if (credentialDetailList->credentialCount > MAX_COUNT_UKEY_CERTIFICATE) {
         CM_LOG_E("credentialCount is too big");
         return false;
     }
