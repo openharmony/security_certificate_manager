@@ -62,5 +62,7 @@ ohos_unittest("cm_module_test") {
     "c_utils:utils",
     "googletest:gtest",
     "openssl:libcrypto_shared",
+    "ipc:ipc_core",
+    "ipc:ipc_single",
   ]
 }
