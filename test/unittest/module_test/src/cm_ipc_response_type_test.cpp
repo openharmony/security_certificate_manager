@@ -15,8 +15,6 @@
 
 #include <gtest/gtest.h>
 
-#include "message_parcel.h"
-
 #include "cm_type_free.h"
 #include "cm_ipc_response_type.h"
 #include "cm_type.h"
@@ -77,7 +75,7 @@ HWTEST_F(CmIpcResponseTypeTest, CredentialDetailListMarshallingTest001, TestSize
     credList.credential->credData.data = static_cast<uint8_t*>(CmMalloc(1));
     credList.credential->credData.size = 1;
     credList.credential->certPurpose = static_cast<enum CmCertificatePurpose>(1);
-    MessageParcel reply;
+    Parcel reply;
     int32_t ret = credentialDetailListParcelInfo.Marshalling(reply);
     EXPECT_EQ(ret, true);
 }
@@ -104,7 +102,7 @@ HWTEST_F(CmIpcResponseTypeTest, CredentialDetailListUnMarshallingTest001, TestSi
     credList.credential->credData.data = static_cast<uint8_t*>(CmMalloc(1));
     credList.credential->credData.size = 1;
     credList.credential->certPurpose = static_cast<enum CmCertificatePurpose>(1);
-    MessageParcel reply;
+    Parcel reply;
     int32_t ret = credentialDetailListParcelInfo.Marshalling(reply);
     EXPECT_EQ(ret, true);
     struct CredentialDetailListParcelInfo *credentialDetailListParcelInfo2 =
@@ -139,7 +137,7 @@ HWTEST_F(CmIpcResponseTypeTest, CredentialDetailListUnMarshallingTest002, TestSi
     credList.credential->credData.data = static_cast<uint8_t*>(CmMalloc(INVALID_LEN));
     credList.credential->credData.size = INVALID_LEN;
     credList.credential->certPurpose = static_cast<enum CmCertificatePurpose>(1);
-    MessageParcel reply;
+    Parcel reply;
     int32_t ret = credentialDetailListParcelInfo.Marshalling(reply);
     EXPECT_EQ(ret, true);
     struct CredentialDetailListParcelInfo *credentialDetailListParcelInfo2 =
