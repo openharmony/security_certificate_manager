@@ -245,7 +245,7 @@ static int32_t BuildCertSetToCmBlob(const struct HksExtCertInfoSet *certSet,
         }
     }
     if (ret != CM_SUCCESS) {
-        CmFreeUkeyCertificate(credentialList);
+        CmFreeUkeyCertList(credentialList);
     }
     return ret;
 }
