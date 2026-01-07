@@ -141,6 +141,7 @@ static int32_t ProcessMessage(uint32_t code, uint32_t outSize, const struct CmBl
         }
         g_cmParcelIpcHandler[i].handler(code, static_cast<const struct CmBlob *>(&srcData),
             reinterpret_cast<const struct CmContext *>(&reply));
+        break;
     }
     uint32_t size = sizeof(g_cmIpcHandler) / sizeof(g_cmIpcHandler[0]);
     for (uint32_t i = 0; i < size; ++i) {
