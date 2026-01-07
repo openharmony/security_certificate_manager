@@ -23,7 +23,7 @@
 
 #include "cm_log.h"
 #include "cm_data_parcel_processor.h"
-#include "cm_ukeylist_data_helper.h"
+#include "cm_ukey_data_parcel_strategy.h"
 
 #include "iservice_registry.h"
 
@@ -152,6 +152,6 @@ int32_t SendRequestParcel(enum CertManagerInterfaceCode type, const struct CmBlo
         CM_LOG_E("reply ret is failed");
         return ret;
     }
-    CmDataParcelProcessor parcelProcessor(std::make_unique<CmUkeyListDataHelper>());
+    CmDataParcelProcessor parcelProcessor(std::make_unique<CmUkeyDataParcelStrategy>());
     return parcelProcessor.ReadFromParcel(reply, data);
 }

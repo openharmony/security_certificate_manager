@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "cm_ukeylist_data_helper.h"
+#include "cm_ukey_data_parcel_strategy.h"
 
 #include "cm_ipc_response_type.h"
 #include "cm_log.h"
@@ -21,7 +21,7 @@
 #include "cm_type_free.h"
 
 namespace OHOS {
-int32_t CmUkeyListDataHelper::ParcelReadInvoke(MessageParcel &reply, void *data)
+int32_t CmUkeyDataParcelStrategy::ParcelReadInvoke(MessageParcel &reply, void *data)
 {
     struct CredentialDetailList *credentialDetailList = (struct CredentialDetailList *)data;
     std::unique_ptr<struct CredentialDetailListParcelInfo> certificateListParceInfo(
@@ -42,7 +42,7 @@ int32_t CmUkeyListDataHelper::ParcelReadInvoke(MessageParcel &reply, void *data)
     return CM_SUCCESS;
 }
 
-int32_t CmUkeyListDataHelper::ParcelWriteInvoke(MessageParcel *reply, void *data)
+int32_t CmUkeyDataParcelStrategy::ParcelWriteInvoke(MessageParcel *reply, void *data)
 {
     struct CredentialDetailList *credentialDetailList = (struct CredentialDetailList *)data;
     std::unique_ptr<struct CredentialDetailListParcelInfo> credentialDetailListParcelInfo(

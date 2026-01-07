@@ -13,19 +13,17 @@
  * limitations under the License.
  */
 
-#ifndef CM_UKEYLIST_DATA_HELPER_H
-#define CM_UKEYLIST_DATA_HELPER_H
-
-#include "cm_data_parcel_helper.h"
+#ifndef CM_DATA_PARCEL_STRATEGY_H
+#define CM_DATA_PARCEL_STRATEGY_H
 
 #include "message_parcel.h"
 
 namespace OHOS {
-class CmUkeyListDataHelper : public CmDataParcelHelper {
+class CmDataParcelStrategy {
 public:
-    int32_t ParcelReadInvoke(MessageParcel &reply, void *data) override;
-    int32_t ParcelWriteInvoke(MessageParcel *reply, void *data) override;
+    virtual ~CmDataParcelStrategy() = default;
+    virtual int32_t ParcelReadInvoke(MessageParcel &reply, void *data) = 0;
+    virtual int32_t ParcelWriteInvoke(MessageParcel *reply, void *data) = 0;
 };
 }
-
 #endif

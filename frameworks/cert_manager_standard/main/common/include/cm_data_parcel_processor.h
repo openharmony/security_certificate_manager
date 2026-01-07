@@ -16,7 +16,7 @@
 #ifndef CM_DATA_PARCEL_PROCESSOR_H
 #define CM_DATA_PARCEL_PROCESSOR_H
 
-#include "cm_data_parcel_helper.h"
+#include "cm_data_parcel_strategy.h"
 
 #include "message_parcel.h"
 
@@ -24,14 +24,14 @@ namespace OHOS {
 class CmDataParcelProcessor {
 public:
     CmDataParcelProcessor() = default;
-    explicit CmDataParcelProcessor(std::unique_ptr<CmDataParcelHelper> initParcelHelper);
+    explicit CmDataParcelProcessor(std::unique_ptr<CmDataParcelStrategy> initParcelHelper);
 
-    void SetParcelStrategy(std::unique_ptr<CmDataParcelHelper> newDataParcelHelper);
+    void SetParcelStrategy(std::unique_ptr<CmDataParcelStrategy> newDataParcelHelper);
     int32_t ReadFromParcel(MessageParcel &reply, void *data);
     int32_t WriteToParcel(MessageParcel *reply, void *data);
 
 private:
-    std::unique_ptr<CmDataParcelHelper> dataParcelHelper;
+    std::unique_ptr<CmDataParcelStrategy> dataParcelStrategy;
 };
 }
 

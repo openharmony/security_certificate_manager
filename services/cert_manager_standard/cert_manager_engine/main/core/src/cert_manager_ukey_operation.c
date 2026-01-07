@@ -234,15 +234,18 @@ static int32_t BuildCertSetToCmBlob(const struct HksExtCertInfoSet *certSet,
         credentialList->credential[i].credData.data = (uint8_t*)(CmMalloc(credDataSize));
         if (credentialList->credential[i].credData.data == NULL) {
             CM_LOG_E("malloc the credData failed, the idx is %u", i);
-            return CMR_ERROR_MALLOC_FAIL;
+            ret =  CMR_ERROR_MALLOC_FAIL;
+            break;
         }
         credentialList->credential[i].credData.size = credDataSize;
         ret = BuildCertInfoToCredential(&certSet->certs[i], &credentialList->credential[i]);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("BuildCertInfoToCredential failed");
-            CM_FREE_BLOB(credentialList->credential[i].credData);
-            return ret;
+            break;
         }
+    }
+    if (ret != CM_SUCCESS) {
+        CmFreeUkeyCertificate(credentialList);
     }
     return ret;
 }
@@ -272,7 +275,6 @@ int32_t CmGetUkeyCertListByHksCertInfoSet(const struct CmBlob *ukeyProvider, uin
         }
         ret = BuildCertSetToCmBlob(&certSet, credentialDetailList);
         if (ret != CM_SUCCESS) {
-            CmFreeUkeyCertList(credentialDetailList);
             CM_LOG_E("BuildCertSetToCmBlob failed, ret = %d", ret);
             break;
         }
@@ -308,7 +310,6 @@ int32_t CmGetUkeyCertByHksCertInfoSet(const struct CmBlob *keyUri, uint32_t cert
         }
         ret = BuildCertSetToCmBlob(&certSet, credentialDetailList);
         if (ret != CM_SUCCESS) {
-            CmFreeUkeyCertList(credentialDetailList);
             CM_LOG_E("BuildCertSetToCmBlob failed, ret = %d", ret);
             break;
         }

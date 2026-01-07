@@ -18,22 +18,22 @@
 #include "cm_log.h"
 
 namespace OHOS {
-CmDataParcelProcessor::CmDataParcelProcessor(std::unique_ptr<CmDataParcelHelper> initParcelHelper)
-    : dataParcelHelper(std::move(initParcelHelper)) {}
+CmDataParcelProcessor::CmDataParcelProcessor(std::unique_ptr<CmDataParcelStrategy> initParcelStrategy)
+    : dataParcelStrategy(std::move(initParcelStrategy)) {}
 
-void CmDataParcelProcessor::SetParcelStrategy(std::unique_ptr<CmDataParcelHelper> newDataParcelHelper)
+void CmDataParcelProcessor::SetParcelStrategy(std::unique_ptr<CmDataParcelStrategy> newDataParcelStrategy)
 {
     CM_LOG_D("SetParcelStrategy begin");
-    dataParcelHelper = std::move(newDataParcelHelper);
+    dataParcelStrategy = std::move(newDataParcelStrategy);
 }
 
 int32_t CmDataParcelProcessor::ReadFromParcel(MessageParcel &reply, void *data)
 {
-    if (dataParcelHelper == nullptr) {
-        CM_LOG_E("ReadFromParcel dataParcelHelper is nullptr");
+    if (dataParcelStrategy == nullptr) {
+        CM_LOG_E("ReadFromParcel dataParcelStrategy is nullptr");
         return CMR_ERROR_NULL_POINTER;
     }
-    int32_t res = dataParcelHelper->ParcelReadInvoke(reply, data);
+    int32_t res = dataParcelStrategy->ParcelReadInvoke(reply, data);
     if (res != CM_SUCCESS) {
         CM_LOG_E("ParcelReadInvoke failed");
         return CMR_ERROR_INVALID_OPERATION;
@@ -43,11 +43,11 @@ int32_t CmDataParcelProcessor::ReadFromParcel(MessageParcel &reply, void *data)
 
 int32_t CmDataParcelProcessor::WriteToParcel(MessageParcel *reply, void *data)
 {
-    if (dataParcelHelper == nullptr) {
-        CM_LOG_E("WriteToParcel dataParcelHelper is nullptr");
+    if (dataParcelStrategy == nullptr) {
+        CM_LOG_E("WriteToParcel dataParcelStrategy is nullptr");
         return CMR_ERROR_NULL_POINTER;
     }
-    int32_t res = dataParcelHelper->ParcelWriteInvoke(reply, data);
+    int32_t res = dataParcelStrategy->ParcelWriteInvoke(reply, data);
     if (res != CM_SUCCESS) {
         CM_LOG_E("ParcelWriteInvoke failed");
         return CMR_ERROR_INVALID_OPERATION;

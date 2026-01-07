@@ -584,7 +584,7 @@ void CmIpcServiceGetAppCertListByUid(const struct CmBlob *paramSetBlob, struct C
     CM_LOG_I("leave: ret = %d", ret);
 }
 
-int32_t CmIpcServiceGetUkeyCertListCommon(uint32_t code, const struct CmBlob *paramSetBlob,
+static int32_t CmIpcServiceGetUkeyCertListCommon(uint32_t code, const struct CmBlob *paramSetBlob,
     const struct CmContext *context, uint32_t mode)
 {
     int32_t ret;
