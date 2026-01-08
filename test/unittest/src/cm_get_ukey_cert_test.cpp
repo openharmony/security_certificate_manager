@@ -515,13 +515,8 @@ HWTEST_F(CmGetUkeyCertTest, CmGetUkeyCertNDKAbnormalTest002, TestSize.Level0)
     ret = OH_CertManager_GetUkeyCertificate(reinterpret_cast<OH_CM_Blob*>(&retUri),
         reinterpret_cast<OH_CM_UkeyInfo*>(&ukeyInfo),
         reinterpret_cast<OH_CM_CredentialDetailList*>(&certificateList));
-    if (g_isSupport) {
-        EXPECT_EQ(ret, OH_CM_PARAMETER_VALIDATION_FAILED) <<
-            "CmGetUkeyCertNDKAbnormalTest001 test failed, retcode:" << ret;
-    } else {
-        EXPECT_EQ(ret, OH_CM_CAPABILITY_NOT_SUPPORTED) <<
-            "CmGetUkeyCertNDKAbnormalTest001 test failed, retcode:" << ret;
-    }
+    EXPECT_EQ(ret, OH_CM_PARAMETER_VALIDATION_FAILED) <<
+        "CmGetUkeyCertNDKAbnormalTest001 test failed, retcode:" << ret;
 }
 
 /**
