@@ -561,10 +561,10 @@ CM_API_EXPORT int32_t CmGetCertStorePath(const enum CmCertType type, const uint3
 }
 
 CM_API_EXPORT int32_t CmGetUkeyCertList(const struct CmBlob *ukeyProvider, const struct UkeyInfo *ukeyInfo,
-    struct CredentialDetailList *certificateList)
+    struct CredentialDetailList *credentialDetailList)
 {
     CM_LOG_D("enter get ukey cert list");
-    if (ukeyProvider == NULL || ukeyInfo == NULL || certificateList == NULL) {
+    if (ukeyProvider == NULL || ukeyInfo == NULL || credentialDetailList == NULL) {
         CM_LOG_E("CmGetUkeyCertList params is invalid");
         return CMR_ERROR_NULL_POINTER;
     }
@@ -573,16 +573,16 @@ CM_API_EXPORT int32_t CmGetUkeyCertList(const struct CmBlob *ukeyProvider, const
         CM_LOG_E("the device is not support");
         return CMR_ERROR_UKEY_DEVICE_SUPPORT;
     }
-    int32_t ret = CmClientGetUkeyCertList(ukeyProvider, ukeyInfo, certificateList);
+    int32_t ret = CmClientGetUkeyCertList(ukeyProvider, ukeyInfo, credentialDetailList);
     CM_LOG_I("leave get ukey cert list, result = %d", ret);
     return ret;
 }
 
 CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *keyUri, const struct UkeyInfo *ukeyInfo,
-    struct CredentialDetailList *certificateList)
+    struct CredentialDetailList *credentialDetailList)
 {
     CM_LOG_D("enter get ukey cert");
-    if (keyUri == NULL || ukeyInfo == NULL || certificateList == NULL) {
+    if (keyUri == NULL || ukeyInfo == NULL || credentialDetailList == NULL) {
         CM_LOG_E("CmGetUkeyCert params is invalid");
         return CMR_ERROR_NULL_POINTER;
     }
@@ -591,7 +591,7 @@ CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *keyUri, const struct Uk
         CM_LOG_E("the device is not support");
         return CMR_ERROR_UKEY_DEVICE_SUPPORT;
     }
-    int32_t ret = CmClientGetUkeyCert(keyUri, ukeyInfo, certificateList);
+    int32_t ret = CmClientGetUkeyCert(keyUri, ukeyInfo, credentialDetailList);
     CM_LOG_I("leave get ukey cert, result = %d", ret);
     return ret;
 }
@@ -615,7 +615,7 @@ CM_API_EXPORT void CmFreeUkeyCertificate(struct CredentialDetailList *certificat
     if (certificateList == NULL || certificateList->credential == NULL) {
         return;
     }
-    for (uint32_t i = 0; i < MAX_COUNT_UKEY_CERTIFICATE; ++i) {
+    for (uint32_t i = 0; i < certificateList->credentialCount; ++i) {
         CM_FREE_BLOB(certificateList->credential[i].credData);
     }
     certificateList->credentialCount = 0;
@@ -629,6 +629,6 @@ CM_API_EXPORT void CmFreeCredential(struct Credential *certificate)
     }
 
     if (certificate->credData.data != NULL) {
-        CmFree(certificate->credData.data);
+        CM_FREE_BLOB(certificate->credData);
     }
 }

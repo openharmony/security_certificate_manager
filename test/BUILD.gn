@@ -41,7 +41,9 @@ ohos_unittest("cm_sdk_test") {
     "unittest/src/cm_pfx_test.cpp",
   ]
 
-  include_dirs = [ "unittest/include" ]
+  include_dirs = [
+    "unittest/include",
+  ]
   cflags_cc = [
     "-Wall",
     "-Werror",
@@ -113,3 +115,4 @@ group("multi_thread_test") {
   testonly = true
   deps = [ "./unittest/multi_thread_test:cm_multi_thread_test" ]
 }
+

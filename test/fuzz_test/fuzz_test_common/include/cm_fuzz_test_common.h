@@ -48,6 +48,9 @@ bool ConstructParamSet(uint8_t *srcData, uint32_t *remainSize, uint32_t *offset,
 bool IpcServiceApiFuzzerTest(const uint8_t *data, const size_t size, CertManagerInterfaceCode code,
     bool isParamsetToBlob, void (*ipcServiceApi)(const struct CmBlob *, struct CmBlob *, const struct CmContext *));
 
+bool IpcServiceApiParcelFuzzerTest(const uint8_t *data, const size_t size, CertManagerInterfaceCode code,
+    bool isParamsetToBlob, void (*ipcServiceApi)(uint32_t, const struct CmBlob *, const struct CmContext *));
+
 bool CreateCmContext(struct CmContext &cmContext, uint8_t *myData, uint32_t &remainSize, uint32_t &offset);
 
 bool GetDynamicStringFromBuffer(uint8_t *srcData, uint32_t *remainSize, uint32_t *offset, char **outStr);

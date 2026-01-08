@@ -22,6 +22,8 @@
 
 #include "ipc_skeleton.h"
 
+#include "cm_data_parcel_processor.h"
+#include "cm_ukey_data_parcel_strategy.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "os_account_manager.h"
@@ -75,6 +77,31 @@ void CmSendResponse(const struct CmContext *context, int32_t result, const struc
         reply->SetMaxCapacity(MAX_SIZE_CAPACITY);
         reply->WriteUint32(response->size);
         reply->WriteBuffer(response->data, static_cast<size_t>(response->size));
+    }
+}
+
+void CmSendResponseParcel(uint32_t code, const struct CmContext *context, int32_t result, void *data)
+{
+    if (context == nullptr) {
+        CM_LOG_E("SendResponse NULL Pointer");
+        return;
+    }
+
+    int32_t ret = ConvertErrorCode(result);
+    MessageParcel *reply = reinterpret_cast<MessageParcel *>(const_cast<CmContext *>(context));
+    reply->WriteInt32(ret);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("SendResponse result is %d.", ret);
+        return;
+    }
+
+    if (data == nullptr) {
+        reply->WriteUint32(0);
+    } else {
+        CmDataParcelProcessor parcelProcessor(std::make_unique<CmUkeyDataParcelStrategy>());
+        if (parcelProcessor.WriteToParcel(reply, data) != CM_SUCCESS) {
+            CM_LOG_E("WriteToParcel failed");
+        }
     }
 }
 

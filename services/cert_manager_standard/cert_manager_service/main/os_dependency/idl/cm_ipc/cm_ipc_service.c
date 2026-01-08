@@ -18,6 +18,7 @@
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_ipc_service_cert_pack.h"
+#include "cm_type_free.h"
 
 #include "cm_param.h"
 #include "cm_pfx.h"
@@ -26,6 +27,7 @@
 #include "cm_security_guard_info.h"
 #include "cm_type.h"
 #include "cm_ipc_service_serialization.h"
+#include "cert_manager_service_ipc_interface_code.h"
 
 #include "cert_manager.h"
 #include "cert_manager_check.h"
@@ -582,13 +584,14 @@ void CmIpcServiceGetAppCertListByUid(const struct CmBlob *paramSetBlob, struct C
     CM_LOG_I("leave: ret = %d", ret);
 }
 
-int32_t CmIpcServiceGetUkeyCertListCommon(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
+static int32_t CmIpcServiceGetUkeyCertListCommon(uint32_t code, const struct CmBlob *paramSetBlob,
     const struct CmContext *context, uint32_t mode)
 {
     int32_t ret;
     struct CmContext cmContext = {0};
     uint32_t certPurpose;
     struct CmBlob ukeyParam = { 0, NULL };
+    struct CredentialDetailList credentialDetailList = { 0, NULL };
     struct CmParamSet *paramSet = NULL;
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = &ukeyParam },
@@ -605,35 +608,37 @@ int32_t CmIpcServiceGetUkeyCertListCommon(const struct CmBlob *paramSetBlob, str
             ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
+        
         if (mode == LIST_UKEY) {
-            ret = CmServiceGetUkeyCertList(&ukeyParam, certPurpose, CM_ARRAY_SIZE(params), outData);
+            ret = CmServiceGetUkeyCertList(&ukeyParam, certPurpose, CM_ARRAY_SIZE(params),
+                &credentialDetailList);
         } else {
-            ret = CmServiceGetUkeyCert(&ukeyParam, certPurpose, CM_ARRAY_SIZE(params), outData);
+            ret = CmServiceGetUkeyCert(&ukeyParam, certPurpose, CM_ARRAY_SIZE(params),
+                &credentialDetailList);
         }
         if (ret != CM_SUCCESS) {
             CM_LOG_E("get ukey cert fail, ret = %d", ret);
             break;
         }
     } while (0);
-
+    void *data = &credentialDetailList;
     CmReport(__func__, &cmContext, NULL, ret);
-    CmSendResponse(context, ret, outData);
+    CmSendResponseParcel(code, context, ret, data);
+    CmFreeUkeyCertList(&credentialDetailList);
     CmFreeParamSet(&paramSet);
     CM_LOG_I("leave: ret = %d", ret);
     return ret;
 }
 
-void CmIpcServiceGetUkeyCertList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
-    const struct CmContext *context)
+void CmIpcServiceGetUkeyCertList(uint32_t code, const struct CmBlob *paramSetBlob, const struct CmContext *context)
 {
-    int32_t ret = CmIpcServiceGetUkeyCertListCommon(paramSetBlob, outData, context, LIST_UKEY);
+    int32_t ret = CmIpcServiceGetUkeyCertListCommon(code, paramSetBlob, context, LIST_UKEY);
     CM_LOG_I("leave CmIpcServiceGetUkeyCertList: ret = %d", ret);
 }
 
-void CmIpcServiceGetUkeyCert(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
-    const struct CmContext *context)
+void CmIpcServiceGetUkeyCert(uint32_t code, const struct CmBlob *paramSetBlob, const struct CmContext *context)
 {
-    int32_t ret = CmIpcServiceGetUkeyCertListCommon(paramSetBlob, outData, context, SINGLE_UKEY);
+    int32_t ret = CmIpcServiceGetUkeyCertListCommon(code, paramSetBlob, context, SINGLE_UKEY);
     CM_LOG_I("leave CmIpcServiceGetUkeyCert: ret = %d", ret);
 }
 

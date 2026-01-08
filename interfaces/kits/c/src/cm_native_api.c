@@ -62,33 +62,6 @@ static int32_t TranformErrorCode(int32_t errorCode)
     return OH_CM_INNER_FAILURE;
 }
 
-static int32_t InitUkeyCertList(OH_CM_CredentialDetailList *certificateList)
-{
-    if (certificateList == NULL) {
-        CM_LOG_E("certificateList is NULL");
-        return CMR_ERROR_NULL_POINTER;
-    }
-    uint32_t buffSize = (MAX_COUNT_UKEY_CERTIFICATE * sizeof(OH_CM_Credential));
-    certificateList->credential = (OH_CM_Credential *)CmMalloc(buffSize);
-    if (certificateList->credential == NULL) {
-        CM_LOG_E("malloc credential buffer failed");
-        return CMR_ERROR_MALLOC_FAIL;
-    }
-    (void)memset_s(certificateList->credential, buffSize, 0, buffSize);
-    certificateList->credentialCount = MAX_COUNT_UKEY_CERTIFICATE;
-    for (uint32_t i = 0; i < MAX_COUNT_UKEY_CERTIFICATE; ++i) {
-        certificateList->credential[i].credData.data = (uint8_t *)CmMalloc(MAX_LEN_CERTIFICATE_CHAIN);
-        if (certificateList->credential[i].credData.data == NULL) {
-            CM_LOG_E("malloc credData buffer failed");
-            return CMR_ERROR_MALLOC_FAIL;
-        }
-        (void)memset_s(certificateList->credential[i].credData.data, MAX_LEN_CERTIFICATE_CHAIN,
-            0, MAX_LEN_CERTIFICATE_CHAIN);
-        certificateList->credential[i].credData.size = MAX_LEN_CERTIFICATE_CHAIN;
-    }
-    return CM_SUCCESS;
-}
-
 static int32_t InitAppCert(OH_CM_Credential *credential)
 {
     if (credential == NULL) {
@@ -125,12 +98,12 @@ int32_t OH_CertManager_GetUkeyCertificate(const OH_CM_Blob *keyUri,
         CM_LOG_E("cert purpose is invalid");
         return OH_CM_PARAMETER_VALIDATION_FAILED;
     }
-    int32_t result = InitUkeyCertList(certificateList);
-    if (result != CM_SUCCESS) {
-        return TranformErrorCode(result);
+    if (certificateList == NULL) {
+        CM_LOG_E("certificateList is NULL");
+        return TranformErrorCode(CMR_ERROR_NULL_POINTER);
     }
-    result = CmGetUkeyCert((const struct CmBlob *) keyUri, (const struct UkeyInfo *) ukeyInfo,
-        (struct CredentialDetailList *) certificateList);
+    int32_t result = CmGetUkeyCert((const struct CmBlob *) keyUri, (const struct UkeyInfo *) ukeyInfo,
+        (struct CredentialDetailList *)certificateList);
     if (result == CM_SUCCESS && certificateList->credentialCount == 0) {
         CM_LOG_E("no available cert");
         result = CMR_ERROR_NOT_FOUND;

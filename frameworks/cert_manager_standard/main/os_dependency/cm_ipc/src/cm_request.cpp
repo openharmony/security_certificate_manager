@@ -22,6 +22,8 @@
 #include "securec.h"
 
 #include "cm_log.h"
+#include "cm_data_parcel_processor.h"
+#include "cm_ukey_data_parcel_strategy.h"
 
 #include "iservice_registry.h"
 
@@ -117,4 +119,39 @@ int32_t SendRequest(enum CertManagerInterfaceCode type, const struct CmBlob *inB
         return error;
     }
     return CmReadRequestReply(reply, outBlob);
+}
+
+int32_t SendRequestParcel(enum CertManagerInterfaceCode type, const struct CmBlob *inBlob,
+    void *data)
+{
+    sptr<IRemoteObject> cmProxy = CmLoadSystemAbility();
+    if (cmProxy == nullptr) {
+        cmProxy = CmLoadSystemAbility();
+    }
+
+    if (cmProxy == nullptr) {
+        CM_LOG_E("Certificate manager Proxy is null.");
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    MessageParcel inputData;
+    MessageParcel reply;
+    MessageOption option = MessageOption::TF_SYNC;
+
+    inputData.WriteInterfaceToken(SA_KEYSTORE_SERVICE_DESCRIPTOR);
+    inputData.WriteUint32(inBlob->size);
+    inputData.WriteBuffer(inBlob->data, static_cast<size_t>(inBlob->size));
+
+    int32_t ret = cmProxy->SendRequest(static_cast<uint32_t>(type), inputData, reply, option);
+    if (ret != 0) {
+        CM_LOG_E("SendRequest error:%d", ret);
+        return ret;
+    }
+    ret = reply.ReadInt32();
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("reply ret is failed");
+        return ret;
+    }
+    CmDataParcelProcessor parcelProcessor(std::make_unique<CmUkeyDataParcelStrategy>());
+    return parcelProcessor.ReadFromParcel(reply, data);
 }

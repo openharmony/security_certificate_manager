@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,23 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef CM_RESPONSE_H
-#define CM_RESPONSE_H
+#ifndef CM_UKEYLIST_DATA_HELPER_H
+#define CM_UKEYLIST_DATA_HELPER_H
 
-#include "cm_type_inner.h"
+#include "cm_data_parcel_strategy.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "message_parcel.h"
 
-void CmSendResponse(const struct CmContext *context, int32_t result, const struct CmBlob *response);
-
-void CmSendResponseParcel(uint32_t code, const struct CmContext *context, int32_t result, void *data);
-
-int32_t CmGetProcessInfoForIPC(struct CmContext *cmContext);
-
-#ifdef __cplusplus
+namespace OHOS {
+class CmUkeyDataParcelStrategy : public CmDataParcelStrategy {
+public:
+    int32_t ParcelReadInvoke(MessageParcel &reply, void *data) override;
+    int32_t ParcelWriteInvoke(MessageParcel *reply, void *data) override;
+};
 }
-#endif
 
 #endif

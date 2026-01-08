@@ -22,6 +22,8 @@ ohos_unittest("cm_module_test") {
     "src/cm_cert_parse_test.cpp",
     "src/cm_log_test.cpp",
     "src/cm_param_test.cpp",
+    "src/cm_data_parcel_processor_test.cpp",
+    "src/cm_ipc_response_type_test.cpp",
   ]
 
   include_dirs = [
@@ -60,5 +62,7 @@ ohos_unittest("cm_module_test") {
     "c_utils:utils",
     "googletest:gtest",
     "openssl:libcrypto_shared",
+    "ipc:ipc_core",
+    "ipc:ipc_single",
   ]
 }
