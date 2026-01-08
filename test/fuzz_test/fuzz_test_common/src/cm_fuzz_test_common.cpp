@@ -375,7 +375,7 @@ bool IpcServiceApiFuzzerTest(const uint8_t *data, const size_t size, CertManager
 bool IpcServiceApiParcelFuzzerTest(const uint8_t *data, const size_t size, CertManagerInterfaceCode code,
     bool isParamsetToBlob, void (*ipcServiceApi)(uint32_t, const struct CmBlob *, const struct CmContext *))
 {
-    uint32_t minSize = sizeof(struct CmBlob) + sizeof(struct CmBlob);
+    uint32_t minSize = sizeof(uint32_t) + sizeof(struct CmBlob);
     uint8_t *myData = nullptr;
     if (!CopyMyData(data, size, minSize, &myData)) {
         return false;
@@ -401,6 +401,7 @@ bool IpcServiceApiParcelFuzzerTest(const uint8_t *data, const size_t size, CertM
 
     uint32_t type;
     if (!GetUintFromBuffer(myData, &remSize, &offset, &type)) {
+        CmFree(myData);
         return false;
     }
 
