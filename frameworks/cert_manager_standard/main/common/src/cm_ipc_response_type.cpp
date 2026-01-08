@@ -119,6 +119,7 @@ bool CredentialDetailListParcelInfo::ReadFromParcel(Parcel &parcel)
     }
     if (credentialDetailList->credentialCount > MAX_COUNT_UKEY_CERTIFICATE) {
         CM_LOG_E("credentialCount is too big");
+        CM_FREE_PTR(credentialDetailList);
         return false;
     }
     uint32_t buffSize = (credentialDetailList->credentialCount * sizeof(struct Credential));
