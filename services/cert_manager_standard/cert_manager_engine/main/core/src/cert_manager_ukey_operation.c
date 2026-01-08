@@ -116,6 +116,7 @@ static int32_t GetCertAliasByCertInfo(const struct HksExtCertInfo *certInfo, str
     if (ret != CM_SUCCESS) {
         CM_LOG_E("failed to get cert subject name, ret = %d", ret);
         if (aliasLen > MAX_LEN_CERT_ALIAS) {
+            CM_LOG_W("aliasLen is longer than MAX_LEN_CERT_ALIAS");
             aliasLen = MAX_LEN_CERT_ALIAS - 1; // truncate copy
         }
         if (memcpy_s(credential->alias, MAX_LEN_CERT_ALIAS, certInfo->index.data, aliasLen) != EOK) {
