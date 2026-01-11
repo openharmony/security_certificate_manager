@@ -44,6 +44,7 @@ ohos_static_library("libcert_manager_common_standard_static") {
     "src/cm_type_free.c",
     "src/cm_ipc_response_type.cpp",
     "src/cm_data_parcel_processor.cpp",
+    "src/cm_data_parcel_strategy.cpp",
     "src/cm_ukey_data_parcel_strategy.cpp",
   ]
 

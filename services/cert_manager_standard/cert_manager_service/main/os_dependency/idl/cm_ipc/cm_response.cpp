@@ -23,7 +23,6 @@
 #include "ipc_skeleton.h"
 
 #include "cm_data_parcel_processor.h"
-#include "cm_ukey_data_parcel_strategy.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "os_account_manager.h"
@@ -98,7 +97,8 @@ void CmSendResponseParcel(uint32_t code, const struct CmContext *context, int32_
     if (data == nullptr) {
         reply->WriteUint32(0);
     } else {
-        CmDataParcelProcessor parcelProcessor(std::make_unique<CmUkeyDataParcelStrategy>());
+        auto parcelStrategy = CmDataParcelProcessor::CreateParcelStrategy(code);
+        CmDataParcelProcessor parcelProcessor(std::move(parcelStrategy));
         if (parcelProcessor.WriteToParcel(reply, data) != CM_SUCCESS) {
             CM_LOG_E("WriteToParcel failed");
         }

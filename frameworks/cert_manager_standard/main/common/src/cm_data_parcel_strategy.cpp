@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,22 +13,18 @@
  * limitations under the License.
  */
 
-#ifndef CM_DATA_PARCEL_STRATEGY_H
-#define CM_DATA_PARCEL_STRATEGY_H
+#include "cm_data_parcel_strategy.h"
 
-#include "message_parcel.h"
-
-#include "cert_manager_service_ipc_interface_code.h"
+#include "cm_ukey_data_parcel_strategy.h"
 
 namespace OHOS {
-class CmDataParcelStrategy {
-public:
-    virtual ~CmDataParcelStrategy() = default;
-    virtual int32_t ParcelReadInvoke(MessageParcel &reply, void *data) = 0;
-    virtual int32_t ParcelWriteInvoke(MessageParcel *reply, void *data) = 0;
-    
-    static std::unique_ptr<CmDataParcelStrategy> CreateParcelStrategy(
-        enum CertManagerInterfaceCode type);
-};
+std::unique_ptr<CmDataParcelStrategy> CmDataParcelStrategy::CreateParcelStrategy(
+    enum CertManagerInterfaceCode type);
+{
+    case CM_MSG_GET_UKEY_CERTIFICATE_LIST:
+    case CM_MSG_GET_UKEY_CERTIFICATE:
+        return std::make_unique<CmUkeyDataParcelStrategy>();
+    default:
+        return nullptr;
 }
-#endif
+}
