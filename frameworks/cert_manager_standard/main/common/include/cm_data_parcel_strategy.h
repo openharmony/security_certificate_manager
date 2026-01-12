@@ -26,9 +26,6 @@ public:
     virtual ~CmDataParcelStrategy() = default;
     virtual int32_t ParcelReadInvoke(MessageParcel &reply, void *data) = 0;
     virtual int32_t ParcelWriteInvoke(MessageParcel *reply, void *data) = 0;
-    
-    static std::unique_ptr<CmDataParcelStrategy> CreateParcelStrategy(
-        enum CertManagerInterfaceCode type);
 };
 }
 #endif
