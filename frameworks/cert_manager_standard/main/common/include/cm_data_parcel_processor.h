@@ -34,7 +34,6 @@ public:
     int32_t ReadFromParcel(MessageParcel &reply, void *data);
     int32_t WriteToParcel(MessageParcel *reply, void *data);
 
-
 private:
     std::unique_ptr<CmDataParcelStrategy> dataParcelStrategy;
 };
