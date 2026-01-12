@@ -22,6 +22,7 @@
 #include "securec.h"
 
 #include "cm_log.h"
+#include "cm_data_parcel_strategy.h"
 #include "cm_data_parcel_processor.h"
 
 #include "iservice_registry.h"
@@ -151,7 +152,7 @@ int32_t SendRequestParcel(enum CertManagerInterfaceCode type, const struct CmBlo
         CM_LOG_E("reply ret is failed");
         return ret;
     }
-    auto parcelStrategy = CmDataParcelProcessor::CreateParcelStrategy(type);
+    auto parcelStrategy = CmDataParcelStrategy::CreateParcelStrategy(type);
     CmDataParcelProcessor parcelProcessor(std::move(parcelStrategy));
     return parcelProcessor.ReadFromParcel(reply, data);
 }

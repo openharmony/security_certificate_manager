@@ -19,12 +19,14 @@
 
 namespace OHOS {
 std::unique_ptr<CmDataParcelStrategy> CmDataParcelStrategy::CreateParcelStrategy(
-    enum CertManagerInterfaceCode type);
+    enum CertManagerInterfaceCode type)
 {
-    case CM_MSG_GET_UKEY_CERTIFICATE_LIST:
-    case CM_MSG_GET_UKEY_CERTIFICATE:
-        return std::make_unique<CmUkeyDataParcelStrategy>();
-    default:
-        return nullptr;
+    switch (type) {
+        case CM_MSG_GET_UKEY_CERTIFICATE_LIST:
+        case CM_MSG_GET_UKEY_CERTIFICATE:
+            return std::make_unique<CmUkeyDataParcelStrategy>();
+        default:
+            return nullptr;
+    }
 }
 }
