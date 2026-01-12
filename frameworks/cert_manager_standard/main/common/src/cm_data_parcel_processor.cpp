@@ -34,6 +34,9 @@ std::unique_ptr<CmDataParcelStrategy> CmDataParcelProcessor::CreateParcelStrateg
     }
 }
 
+CmDataParcelProcessor::CmDataParcelProcessor(enum CertManagerInterfaceCode type)
+    : dataParcelStrategy(CreateParcelStrategy(type)) {}
+
 void CmDataParcelProcessor::SetParcelStrategy(std::unique_ptr<CmDataParcelStrategy> newDataParcelStrategy)
 {
     CM_LOG_D("SetParcelStrategy begin");

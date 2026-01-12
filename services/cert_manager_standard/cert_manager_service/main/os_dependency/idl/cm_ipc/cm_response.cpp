@@ -98,9 +98,7 @@ void CmSendResponseParcel(uint32_t code, const struct CmContext *context, int32_
     if (data == nullptr) {
         reply->WriteUint32(0);
     } else {
-        auto parcelStrategy = CmDataParcelProcessor::CreateParcelStrategy(
-            static_cast<enum CertManagerInterfaceCode>(code));
-        CmDataParcelProcessor parcelProcessor(std::move(parcelStrategy));
+        CmDataParcelProcessor parcelProcessor(static_cast<enum CertManagerInterfaceCode>(code));
         if (parcelProcessor.WriteToParcel(reply, data) != CM_SUCCESS) {
             CM_LOG_E("WriteToParcel failed");
         }

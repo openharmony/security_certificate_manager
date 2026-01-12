@@ -26,6 +26,7 @@ class CmDataParcelProcessor {
 public:
     CmDataParcelProcessor() = default;
     explicit CmDataParcelProcessor(std::unique_ptr<CmDataParcelStrategy> initParcelHelper);
+    explicit CmDataParcelProcessor(enum CertManagerInterfaceCode type);
 
     static std::unique_ptr<CmDataParcelStrategy> CreateParcelStrategy(enum CertManagerInterfaceCode type);
 
