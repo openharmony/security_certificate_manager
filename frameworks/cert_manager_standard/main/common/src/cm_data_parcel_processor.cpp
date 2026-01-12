@@ -15,11 +15,25 @@
 
 #include "cm_data_parcel_processor.h"
 
+#include "cm_ukey_data_parcel_strategy.h"
+#include "cert_manager_service_ipc_interface_code.h"
 #include "cm_log.h"
 
 namespace OHOS {
 CmDataParcelProcessor::CmDataParcelProcessor(std::unique_ptr<CmDataParcelStrategy> initParcelStrategy)
     : dataParcelStrategy(std::move(initParcelStrategy)) {}
+
+std::unique_ptr<CmDataParcelStrategy> CmDataParcelStrategy::CreateParcelStrategy(
+    enum CertManagerInterfaceCode type)
+{
+    switch (type) {
+        case CM_MSG_GET_UKEY_CERTIFICATE_LIST:
+        case CM_MSG_GET_UKEY_CERTIFICATE:
+            return std::make_unique<CmUkeyDataParcelStrategy>();
+        default:
+            return nullptr;
+    }
+}
 
 void CmDataParcelProcessor::SetParcelStrategy(std::unique_ptr<CmDataParcelStrategy> newDataParcelStrategy)
 {

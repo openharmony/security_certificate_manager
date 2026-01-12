@@ -21,7 +21,6 @@
 #include "cm_ipc_response_type.h"
 #include "cm_data_parcel_processor.h"
 #include "cert_manager_service_ipc_interface_code.h"
-#include "cm_data_parcel_strategy.h"
 #include "cm_mem.h"
 #include "cm_type.h"
 
@@ -73,7 +72,7 @@ HWTEST_F(CmDataParcelProcessorTest, ReadFromParcelTest001, TestSize.Level0)
     int32_t ret = processor.ReadFromParcel(reply, data);
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
 
-    auto parcelStrategy = CmDataParcelStrategy::CreateParcelStrategy(
+    auto parcelStrategy = CmDataParcelProcessor::CreateParcelStrategy(
         static_cast<enum CertManagerInterfaceCode>(UkEY_CODE));
     CmDataParcelProcessor processor2(std::move(parcelStrategy));
     processor2.SetParcelStrategy(std::move(parcelStrategy));
@@ -111,7 +110,7 @@ HWTEST_F(CmDataParcelProcessorTest, ReadFromParcelTest002, TestSize.Level0)
     curCredList.credential->certPurpose = static_cast<enum CmCertificatePurpose>(1);
     int32_t ret = credentialDetailListParcelInfo.Marshalling(reply);
     EXPECT_EQ(ret, true);
-    auto parcelStrategy = CmDataParcelStrategy::CreateParcelStrategy(
+    auto parcelStrategy = CmDataParcelProcessor::CreateParcelStrategy(
         static_cast<enum CertManagerInterfaceCode>(UkEY_CODE));
     CmDataParcelProcessor processor(std::move(parcelStrategy));
     ret = processor.ReadFromParcel(reply, data);
@@ -133,10 +132,10 @@ HWTEST_F(CmDataParcelProcessorTest, WriteToParcelTest001, TestSize.Level0)
     CmDataParcelProcessor processor;
     int32_t ret = processor.WriteToParcel(&reply, data);
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
-    auto parcelStrategy = CmDataParcelStrategy::CreateParcelStrategy(
+    auto parcelStrategy = CmDataParcelProcessor::CreateParcelStrategy(
         static_cast<enum CertManagerInterfaceCode>(INVALID_CODE));
     EXPECT_EQ(parcelStrategy, nullptr);
-    auto parcelStrategy2 = CmDataParcelStrategy::CreateParcelStrategy(
+    auto parcelStrategy2 = CmDataParcelProcessor::CreateParcelStrategy(
         static_cast<enum CertManagerInterfaceCode>(UkEY_CODE));
     processor.SetParcelStrategy(std::move(parcelStrategy2));
     void *data2 = static_cast<void*>(CmMalloc(1));
