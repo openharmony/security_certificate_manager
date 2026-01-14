@@ -37,6 +37,7 @@ int32_t CmOpenCertDetailDialog::GetParamsFromEnv()
         return CMR_DIALOG_ERROR_NOT_SUPPORTED;
     }
     int32_t ret = CertManagerAsyncImpl::GetParamsFromEnv();
+    if (ret != CM_SUCCESS) {
         CM_LOG_E("parse params failed. ret = %d", ret);
         return ret;
     }
