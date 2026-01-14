@@ -117,7 +117,7 @@ ani_env *GetCurrentThreadEnv(ani_vm *vm)
         CM_LOG_I("try AttachCurrentThread to get aniEnv.");
         ani_option interopEnabled {"--interop=enable", nullptr};
         ani_options aniArgs {1, &interopEnabled};
-        ani_status status = vm->AttachCurrentThread(&aniArgs, ANI_VERSION_1, &env);
+        status = vm->AttachCurrentThread(&aniArgs, ANI_VERSION_1, &env);
     }
     if (status != ANI_OK) {
         CM_LOG_E("get aniEnv failed, status = %d", static_cast<int32_t>(status));
@@ -129,7 +129,7 @@ ani_status DetachCurrentThreadEnv(ani_vm *vm)
 {
     if (vm == nullptr) {
         CM_LOG_E("aniVm is nullptr.");
-        return ANI_Error;
+        return ANI_ERROR;
     }
     if (IsAppMainThread()) {
         return ANI_OK;
