@@ -97,22 +97,43 @@ ani_object GetDialogAniErrorResult(ani_env *env, int32_t resultCode)
     return retObj;
 }
 
-ani_env *GetEnv(ani_vm *vm)
+static bool IsAppMainThread()
+{
+    return getpid() == gettid();
+}
+
+ani_env *GetCurrentThreadEnv(ani_vm *vm)
 {
     if (vm == nullptr) {
         CM_LOG_E("aniVm is nullptr.");
         return nullptr;
     }
+
     ani_env *env = nullptr;
-    ani_option interopEnabled {"--interop=enable", nullptr};
-    ani_options aniArgs {1, &interopEnabled};
-    ani_status status = vm->AttachCurrentThread(&aniArgs, ANI_VERSION_1, &env);
-    if (status != ANI_OK) {
+    ani_status status;
+    if (IsAppMainThread()) {
         status = vm->GetEnv(ANI_VERSION_1, &env);
-        if (status != ANI_OK) {
-            CM_LOG_E("get aniEnv failed, status = %d", static_cast<int32_t>(status));
-        }
+    } else {
+        CM_LOG_I("try AttachCurrentThread to get aniEnv.");
+        ani_option interopEnabled {"--interop=enable", nullptr};
+        ani_options aniArgs {1, &interopEnabled};
+        status = vm->AttachCurrentThread(&aniArgs, ANI_VERSION_1, &env);
+    }
+    if (status != ANI_OK) {
+        CM_LOG_E("get aniEnv failed, status = %d", static_cast<int32_t>(status));
     }
     return env;
+}
+
+ani_status DetachCurrentThreadEnv(ani_vm *vm)
+{
+    if (vm == nullptr) {
+        CM_LOG_E("aniVm is nullptr.");
+        return ANI_ERROR;
+    }
+    if (IsAppMainThread()) {
+        return ANI_OK;
+    }
+    return vm->DetachCurrentThread();
 }
 }

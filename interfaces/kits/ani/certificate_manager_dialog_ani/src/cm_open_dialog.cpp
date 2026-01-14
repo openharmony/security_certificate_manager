@@ -91,14 +91,18 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
         return;
     }
     env->GlobalReference_Delete(this->aniCallback);
-    this->vm->DetachCurrentThread();
+    status = DetachCurrentThreadEnv(this->vm);
+    if (status != ANI_OK) {
+        CM_LOG_E("DetachCurrentThreadEnv failed. status = %d", static_cast<int32_t>(status));
+        return;
+    }
     return;
 }
 
 void CmAniUIExtensionCallback::OnRelease(const int32_t releaseCode)
 {
     CM_LOG_D("UIExtensionComponent OnRelease, releaseCode: %d", releaseCode);
-    ani_env *env = GetEnv(this->vm);
+    ani_env *env = GetCurrentThreadEnv(this->vm);
     if (env == nullptr) {
         CM_LOG_E("get env failed.");
         return;
@@ -109,7 +113,7 @@ void CmAniUIExtensionCallback::OnRelease(const int32_t releaseCode)
 void CmAniUIExtensionCallback::OnResult(const int32_t resultCode, const OHOS::AAFwk::Want &result)
 {
     CM_LOG_D("UIExtensionComponent OnResult, resultCode: %d", resultCode);
-    ani_env *env = GetEnv(this->vm);
+    ani_env *env = GetCurrentThreadEnv(this->vm);
     if (env == nullptr) {
         CM_LOG_E("get env failed.");
         return;
@@ -120,7 +124,7 @@ void CmAniUIExtensionCallback::OnResult(const int32_t resultCode, const OHOS::AA
 void CmAniUIExtensionCallback::OnReceive(const OHOS::AAFwk::WantParams &request)
 {
     CM_LOG_D("UIExtensionComponent OnReceive");
-    ani_env *env = GetEnv(this->vm);
+    ani_env *env = GetCurrentThreadEnv(this->vm);
     if (env == nullptr) {
         CM_LOG_E("get env failed.");
         return;
@@ -131,7 +135,7 @@ void CmAniUIExtensionCallback::OnReceive(const OHOS::AAFwk::WantParams &request)
 void CmAniUIExtensionCallback::OnError(const int32_t code, const std::string &name, const std::string &message)
 {
     CM_LOG_D("UIExtensionComponent OnError, code: %d, name: %s, message: %s", code, name.c_str(), message.c_str());
-    ani_env *env = GetEnv(this->vm);
+    ani_env *env = GetCurrentThreadEnv(this->vm);
     if (env == nullptr) {
         CM_LOG_E("get env failed.");
         return;
@@ -147,7 +151,7 @@ void CmAniUIExtensionCallback::OnRemoteReady(const std::shared_ptr<OHOS::Ace::Mo
 void CmAniUIExtensionCallback::OnDestroy()
 {
     CM_LOG_D("UIExtensionComponent OnDestroy");
-    ani_env *env = GetEnv(this->vm);
+    ani_env *env = GetCurrentThreadEnv(this->vm);
     if (env == nullptr) {
         CM_LOG_E("get env failed.");
         return;
@@ -170,7 +174,7 @@ ani_object CmAniUIExtensionCallbackString::GetDefaultResult(ani_env *env)
 void CmAniUIExtensionCallbackString::OnReceive(const OHOS::AAFwk::WantParams &request)
 {
     CM_LOG_D("UIExtensionComponent OnReceive");
-    ani_env *env = GetEnv(this->vm);
+    ani_env *env = GetCurrentThreadEnv(this->vm);
     if (env == nullptr) {
         CM_LOG_E("get env failed.");
         return;
@@ -204,7 +208,7 @@ ani_object CmAniUIExtensionCallbackCertReference::GetDefaultResult(ani_env *env)
 void CmAniUIExtensionCallbackCertReference::OnReceive(const OHOS::AAFwk::WantParams &request)
 {
     CM_LOG_D("UIExtensionComponent OnReceive");
-    ani_env *env = GetEnv(this->vm);
+    ani_env *env = GetCurrentThreadEnv(this->vm);
     if (env == nullptr) {
         CM_LOG_E("get env failed.");
         return;

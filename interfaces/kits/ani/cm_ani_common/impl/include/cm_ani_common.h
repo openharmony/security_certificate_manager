@@ -35,7 +35,9 @@ ani_object GetDialogAniErrorResult(ani_env *env, int32_t resultCode);
 
 ani_object GetAniDialogNativeResult(ani_env *env, int32_t resultCode);
 
-ani_env *GetEnv(ani_vm *vm);
+ani_env *GetCurrentThreadEnv(ani_vm *vm);
+
+ani_status DetachCurrentThreadEnv(ani_vm *vm);
 }
 
 #endif

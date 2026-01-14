@@ -32,13 +32,9 @@ int32_t CmOpenCertManagerDialog::GetParamsFromEnv()
         CM_LOG_E("parse params failed. ret = %d", ret);
         return ret;
     }
-    ani_env *vmEnv = GetEnv(this->vm);
-    if (vmEnv == nullptr) {
-        CM_LOG_E("get env failed.");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
+
     int32_t pageTypeValue = 0;
-    if (vmEnv->EnumItem_GetValue_Int(this->aniPageType, (ani_int *)&pageTypeValue) != ANI_OK) {
+    if (env->EnumItem_GetValue_Int(this->aniPageType, (ani_int *)&pageTypeValue) != ANI_OK) {
         CM_LOG_E("get pageType value failed.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }

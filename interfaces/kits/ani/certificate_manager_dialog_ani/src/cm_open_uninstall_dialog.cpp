@@ -41,14 +41,9 @@ int32_t CmOpenUninstallDialog::GetParamsFromEnv()
         CM_LOG_E("parse params failed. ret = %d", ret);
         return ret;
     }
-    ani_env *vmEnv = GetEnv(this->vm);
-    if (vmEnv == nullptr) {
-        CM_LOG_E("get env failed.");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
 
     int32_t aniCertType = 0;
-    if (vmEnv->EnumItem_GetValue_Int(this->aniCertType, (ani_int *)&aniCertType) != ANI_OK) {
+    if (env->EnumItem_GetValue_Int(this->aniCertType, (ani_int *)&aniCertType) != ANI_OK) {
         CM_LOG_E("get certType value failed.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -60,7 +55,7 @@ int32_t CmOpenUninstallDialog::GetParamsFromEnv()
             return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    ret = AniUtils::ParseString(vmEnv, this->aniCertUri, this->certUri);
+    ret = AniUtils::ParseString(env, this->aniCertUri, this->certUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("parse aniCertUri failed, ret = %d", ret);
         return ret;
