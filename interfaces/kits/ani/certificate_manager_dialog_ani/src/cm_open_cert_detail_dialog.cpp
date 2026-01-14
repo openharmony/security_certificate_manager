@@ -37,17 +37,11 @@ int32_t CmOpenCertDetailDialog::GetParamsFromEnv()
         return CMR_DIALOG_ERROR_NOT_SUPPORTED;
     }
     int32_t ret = CertManagerAsyncImpl::GetParamsFromEnv();
-    if (ret != CM_SUCCESS) {
         CM_LOG_E("parse params failed. ret = %d", ret);
         return ret;
     }
-    ani_env *vmEnv = GetEnv(this->vm);
-    if (vmEnv == nullptr) {
-        CM_LOG_E("get env failed.");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
 
-    ret = AniUtils::ParseString(vmEnv, this->aniCert, this->cert);
+    ret = AniUtils::ParseString(env, this->aniCert, this->cert);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("parse cert failed, ret = %d", ret);
         return ret;

@@ -37,19 +37,14 @@ int32_t CmOpenAuthDialogWithReq::GetParamsFromEnv()
         CM_LOG_E("parse params failed. ret = %d", ret);
         return ret;
     }
-    ani_env *vmEnv = GetEnv(this->vm);
-    if (vmEnv == nullptr) {
-        CM_LOG_E("get env failed.");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
 
-    ret = AniUtils::ParseIntArray(vmEnv, this->aniCertTypes, this->certTypes);
+    ret = AniUtils::ParseIntArray(env, this->aniCertTypes, this->certTypes);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("parse cert types failed, ret = %d", ret);
         return ret;
     }
 
-    if (vmEnv->EnumItem_GetValue_Int(this->aniCertPurpose, static_cast<ani_int*>(&this->certPurpose)) != ANI_OK) {
+    if (env->EnumItem_GetValue_Int(this->aniCertPurpose, static_cast<ani_int*>(&this->certPurpose)) != ANI_OK) {
         CM_LOG_E("get certPurpose value failed");
         return CMR_ERROR_INVALID_ARGUMENT;
     }

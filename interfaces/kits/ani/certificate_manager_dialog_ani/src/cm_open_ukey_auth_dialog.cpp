@@ -36,12 +36,8 @@ int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
         CM_LOG_E("parse params failed. ret = %d", ret);
         return ret;
     }
-    ani_env *vmEnv = GetEnv(this->vm);
-    if (vmEnv == nullptr) {
-        CM_LOG_E("get env failed.");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    ret = AniUtils::ParseString(vmEnv, this->aniKeyUri, this->keyUri);
+
+    ret = AniUtils::ParseString(env, this->aniKeyUri, this->keyUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("parse keyUri failed, ret = %d", ret);
         return ret;
