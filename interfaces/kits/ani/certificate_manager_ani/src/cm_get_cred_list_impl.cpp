@@ -32,14 +32,6 @@ int32_t CmGetCredListImpl::Init()
         CM_LOG_E("malloc credentialList failed");
         return CMR_ERROR_MALLOC_FAIL;
     }
-    uint32_t buffSize = (MAX_COUNT_CERTIFICATE * sizeof(struct CredentialAbstract));
-    credentialList->credentialAbstract = static_cast<struct CredentialAbstract *>(CmMalloc(buffSize));
-    if (this->credentialList->credentialAbstract == nullptr) {
-        CM_LOG_E("malloc credentialAbstract buffer failed");
-        return CMR_ERROR_MALLOC_FAIL;
-    }
-    (void)memset_s(this->credentialList->credentialAbstract, buffSize, 0, buffSize);
-    this->credentialList->credentialCount = MAX_COUNT_CERTIFICATE;
     return CM_SUCCESS;
 }
 

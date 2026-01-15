@@ -219,6 +219,10 @@ static int32_t BuildCertSetToCmBlob(const struct HksExtCertInfoSet *certSet,
     struct CredentialDetailList *credentialList)
 {
     CM_LOG_I("enter BuildCertSetToCmBlob");
+    if (certSet->count > MAX_COUNT_UKEY_CERTIFICATE) {
+        CM_LOG_E("huks certset count is too big");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     // build certCount
     credentialList->credentialCount = certSet->count;
     CM_LOG_D("get ukey cert count: %u", certSet->count);
