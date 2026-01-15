@@ -22,8 +22,8 @@
 
 #include "ipc_skeleton.h"
 
+#include "cert_manager_service_ipc_interface_code.h"
 #include "cm_data_parcel_processor.h"
-#include "cm_ukey_data_parcel_strategy.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "os_account_manager.h"
@@ -98,7 +98,7 @@ void CmSendResponseParcel(uint32_t code, const struct CmContext *context, int32_
     if (data == nullptr) {
         reply->WriteUint32(0);
     } else {
-        CmDataParcelProcessor parcelProcessor(std::make_unique<CmUkeyDataParcelStrategy>());
+        CmDataParcelProcessor parcelProcessor(static_cast<enum CertManagerInterfaceCode>(code));
         if (parcelProcessor.WriteToParcel(reply, data) != CM_SUCCESS) {
             CM_LOG_E("WriteToParcel failed");
         }

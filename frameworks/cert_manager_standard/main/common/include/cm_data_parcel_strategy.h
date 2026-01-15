@@ -18,6 +18,8 @@
 
 #include "message_parcel.h"
 
+#include "cert_manager_service_ipc_interface_code.h"
+
 namespace OHOS {
 class CmDataParcelStrategy {
 public:
