@@ -82,28 +82,45 @@ static int32_t IsFileExist(const char *fileName)
     return CMR_OK;
 }
 
-int32_t CmIsDirExist(const char *path)
+ static int32_t ValidatePath(const char *verifyPath, char *realPath)
 {
-    if (path == NULL) {
+    if (verifyPath == NULL) {
+        CM_LOG_E("verify path is null");
         return CMR_ERROR_NULL_POINTER;
     }
-    return IsFileExist(path);
+
+    if (strstr(verifyPath, "../") != NULL) {
+        CM_LOG_E("The verify path is relative path: %s", verifyPath);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (realpath(verifyPath, realPath) == NULL) {
+        CM_LOG_E("The verify path is invalid: %s", verifyPath);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    return CMR_OK;
+}
+
+int32_t CmIsDirExist(const char *path)
+{
+    char realPath[PATH_MAX + 1] = {0};
+    if (ValidatePath(path, realPath) != CMR_OK) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    return IsFileExist(realPath);
 }
 
 static uint32_t FileRead(const char *fileName, uint32_t offset, uint8_t *buf, uint32_t len)
 {
     (void)offset;
-    if (IsFileExist(fileName) != CMR_OK) {
-        return 0;
-    }
-    if (strstr(fileName, "../") != NULL) {
-        CM_LOG_E("invalid filePath");
+    char filePath[PATH_MAX + 1] = {0};
+    if (ValidatePath(fileName, filePath) != CMR_OK) {
         return 0;
     }
 
-    char filePath[PATH_MAX + 1] = {0};
-    if (realpath(fileName, filePath) == NULL) {
-        CM_LOG_E("invalid filepath: %s", fileName);
+    if (IsFileExist(filePath) != CMR_OK) {
         return 0;
     }
 
@@ -124,14 +141,19 @@ static uint32_t FileRead(const char *fileName, uint32_t offset, uint8_t *buf, ui
 
 static uint32_t FileSize(const char *fileName)
 {
-    if (IsFileExist(fileName) != CMR_OK) {
+    char filePath[PATH_MAX + 1] = {0};
+    if (ValidatePath(fileName, filePath) != CMR_OK) {
+        return 0;
+    }
+
+    if (IsFileExist(filePath) != CMR_OK) {
         return 0;
     }
 
     struct stat fileStat;
     (void)memset_s(&fileStat, sizeof(fileStat), 0, sizeof(fileStat));
 
-    if (stat(fileName, &fileStat) != 0) {
+    if (stat(filePath, &fileStat) != 0) {
         CM_LOG_E("file stat fail.");
         return 0;
     }
@@ -191,13 +213,18 @@ static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *b
 
 static int32_t FileRemove(const char *fileName)
 {
-    int32_t ret = IsFileExist(fileName);
+    char filePath[PATH_MAX + 1] = {0};
+    if (ValidatePath(fileName, filePath) != CMR_OK) {
+        return CMR_ERROR_NOT_EXIST;
+    }
+
+    int32_t ret = IsFileExist(filePath);
     if (ret != CMR_OK) {
         return CMR_OK; /* if file not exist, return ok */
     }
 
     struct stat tmp;
-    if (stat(fileName, &tmp) != 0) {
+    if (stat(filePath, &tmp) != 0) {
         return CMR_ERROR_INVALID_OPERATION;
     }
 
@@ -205,7 +232,7 @@ static int32_t FileRemove(const char *fileName)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((unlink(fileName) != 0) && (errno != ENOENT)) {
+    if ((unlink(filePath) != 0) && (errno != ENOENT)) {
         CM_LOG_E("failed to remove file: errno = 0x%x", errno);
         return CMR_ERROR_REMOVE_FILE_FAIL;
     }
@@ -219,14 +246,8 @@ int32_t CmFileRemove(const char *path, const char *fileName)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    int32_t ret = CmIsFileExist(path, fileName);
-    if (ret != CMR_OK) {
-        CM_LOG_E("target file not exist");
-        return ret;
-    }
-
     char *fullFileName = NULL;
-    ret = GetFullFileName(path, fileName, &fullFileName);
+    int32_t ret = GetFullFileName(path, fileName, &fullFileName);
     if (ret != CMR_OK) {
         return ret;
     }
@@ -238,8 +259,16 @@ int32_t CmFileRemove(const char *path, const char *fileName)
 
 int32_t CmMakeDir(const char *path)
 {
-    if ((access(path, F_OK)) != -1) {
+    if (path == NULL) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (IsFileExist(path) == CMR_OK) {
         return CMR_OK;
+    }
+
+    if (strstr(path, "../") != NULL) {
+        return CMR_ERROR_MAKE_DIR_FAIL;
     }
 
     if (mkdir(path, S_IRWXU) == 0) {
@@ -257,8 +286,12 @@ int32_t CmUserBakupMakeDir(const char *path, const mode_t *mode)
 {
     mode_t modeTmp = S_IRWXU | S_IROTH | S_IXOTH; /* The default directory permission is 0705 */
 
-    if ((access(path, F_OK)) != -1) {
+    if (IsFileExist(path) == CMR_OK) {
         return CMR_OK;
+    }
+
+    if (strstr(path, "../") != NULL) {
+        return CMR_ERROR_MAKE_DIR_FAIL;
     }
 
     if (mode != NULL) {
@@ -545,7 +578,12 @@ int32_t CmGetSubDir(void *dirp, struct CmFileDirentInfo *direntInfo)
 
 static int32_t DirRemove(const char *path)
 {
-    if (access(path, F_OK) != 0) {
+    char filePath[PATH_MAX + 1] = {0};
+    if (ValidatePath(path, filePath) != CMR_OK) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if (IsFileExist(path) != CMR_OK) {
         return CMR_ERROR_NOT_EXIST;
     }
 
