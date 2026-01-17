@@ -162,6 +162,6 @@ int32_t SendRequestParcel(enum CertManagerInterfaceCode type, const struct CmBlo
         CM_LOG_E("reply ret is failed");
         return ret;
     }
-    CmDataParcelProcessor parcelProcessor(std::make_unique<CmUkeyDataParcelStrategy>());
+    CmDataParcelProcessor parcelProcessor(type);
     return parcelProcessor.ReadFromParcel(reply, data);
 }

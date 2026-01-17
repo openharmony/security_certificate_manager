@@ -20,9 +20,14 @@
 #include "cm_type_free.h"
 #include "cm_ipc_response_type.h"
 #include "cm_data_parcel_processor.h"
-#include "cm_ukey_data_parcel_strategy.h"
+#include "cert_manager_service_ipc_interface_code.h"
 #include "cm_mem.h"
 #include "cm_type.h"
+
+namespace {
+const uint32_t INVALID_CODE = 100;
+const uint32_t UkEY_CODE = 25;
+}
 
 using namespace testing::ext;
 namespace OHOS {
@@ -67,11 +72,13 @@ HWTEST_F(CmDataParcelProcessorTest, ReadFromParcelTest001, TestSize.Level0)
     int32_t ret = processor.ReadFromParcel(reply, data);
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
 
-    CmDataParcelProcessor processor2(std::make_unique<CmUkeyDataParcelStrategy>());
-    processor2.SetParcelStrategy(std::make_unique<CmUkeyDataParcelStrategy>());
+    auto parcelStrategy = CmDataParcelProcessor::CreateParcelStrategy(
+        static_cast<enum CertManagerInterfaceCode>(UkEY_CODE));
+    CmDataParcelProcessor processor2(std::move(parcelStrategy));
+    processor2.SetParcelStrategy(std::move(parcelStrategy));
     void *data2 = static_cast<void*>(CmMalloc(1));
     ret = processor2.ReadFromParcel(reply, data2);
-    EXPECT_EQ(ret, CMR_ERROR_INVALID_OPERATION);
+    EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
     CM_FREE_PTR(data2);
 }
 
@@ -103,7 +110,9 @@ HWTEST_F(CmDataParcelProcessorTest, ReadFromParcelTest002, TestSize.Level0)
     curCredList.credential->certPurpose = static_cast<enum CmCertificatePurpose>(1);
     int32_t ret = credentialDetailListParcelInfo.Marshalling(reply);
     EXPECT_EQ(ret, true);
-    CmDataParcelProcessor processor(std::make_unique<CmUkeyDataParcelStrategy>());
+    auto parcelStrategy = CmDataParcelProcessor::CreateParcelStrategy(
+        static_cast<enum CertManagerInterfaceCode>(UkEY_CODE));
+    CmDataParcelProcessor processor(std::move(parcelStrategy));
     ret = processor.ReadFromParcel(reply, data);
     EXPECT_EQ(ret, CMR_ERROR_INVALID_OPERATION);
     CmFreeUkeyCertList(&credList);
@@ -123,10 +132,11 @@ HWTEST_F(CmDataParcelProcessorTest, WriteToParcelTest001, TestSize.Level0)
     CmDataParcelProcessor processor;
     int32_t ret = processor.WriteToParcel(&reply, data);
     EXPECT_EQ(ret, CMR_ERROR_NULL_POINTER);
-    processor.SetParcelStrategy(std::make_unique<CmUkeyDataParcelStrategy>());
-    void *data2 = static_cast<void*>(CmMalloc(1));
-    ret = processor.WriteToParcel(&reply, data2);
-    EXPECT_EQ(ret, CM_SUCCESS);
-    CM_FREE_PTR(data2);
+    auto parcelStrategy = CmDataParcelProcessor::CreateParcelStrategy(
+        static_cast<enum CertManagerInterfaceCode>(INVALID_CODE));
+    EXPECT_EQ(parcelStrategy, nullptr);
+    auto parcelStrategy2 = CmDataParcelProcessor::CreateParcelStrategy(
+        static_cast<enum CertManagerInterfaceCode>(UkEY_CODE));
+    processor.SetParcelStrategy(std::move(parcelStrategy2));
 }
 } // end of namespace

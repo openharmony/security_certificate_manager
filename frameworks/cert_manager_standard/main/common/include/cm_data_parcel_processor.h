@@ -18,6 +18,7 @@
 
 #include "cm_data_parcel_strategy.h"
 
+#include "cert_manager_service_ipc_interface_code.h"
 #include "message_parcel.h"
 
 namespace OHOS {
@@ -25,6 +26,9 @@ class CmDataParcelProcessor {
 public:
     CmDataParcelProcessor() = default;
     explicit CmDataParcelProcessor(std::unique_ptr<CmDataParcelStrategy> initParcelHelper);
+    explicit CmDataParcelProcessor(enum CertManagerInterfaceCode type);
+
+    static std::unique_ptr<CmDataParcelStrategy> CreateParcelStrategy(enum CertManagerInterfaceCode type);
 
     void SetParcelStrategy(std::unique_ptr<CmDataParcelStrategy> newDataParcelHelper);
     int32_t ReadFromParcel(MessageParcel &reply, void *data);
