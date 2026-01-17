@@ -23,7 +23,7 @@
 namespace OHOS::Security::CertManager::Ani {
 class CmGetCredListImpl : public CertManagerAniImpl {
 protected:
-    CredentialList *credentialList = nullptr;
+    CredentialList credentialList = { 0 };
     uint32_t store = 0;
 public:
     CmGetCredListImpl(ani_env *env, uint32_t store);
@@ -42,7 +42,7 @@ public:
 
     int32_t InvokeInnerApi() override
     {
-        return CmCallingGetAppCertList(this->store, this->credentialList);
+        return CmCallingGetAppCertList(this->store, &this->credentialList);
     }
 };
 }
