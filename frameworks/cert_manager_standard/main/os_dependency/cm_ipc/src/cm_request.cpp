@@ -23,6 +23,7 @@
 
 #include "cm_log.h"
 #include "cm_data_parcel_processor.h"
+#include "cm_mem.h"
 
 #include "iservice_registry.h"
 
@@ -66,8 +67,16 @@ static int32_t CmReadRequestReply(MessageParcel &reply, struct CmBlob *outBlob)
         }
         return ret;
     }
+
     if (CmCheckBlob(outBlob) != CM_SUCCESS) {
-        return CMR_ERROR_INVALID_ARGUMENT;
+        if (outBlob == nullptr) {
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        outBlob->data = static_cast<uint8_t *>(CmMalloc(outLen));
+        if (outBlob->data == NULL) {
+            return CMR_ERROR_MALLOC_FAIL;
+        }
+        outBlob->size = outLen;
     }
 
     const uint8_t *outData = reply.ReadBuffer(outLen);
@@ -75,10 +84,12 @@ static int32_t CmReadRequestReply(MessageParcel &reply, struct CmBlob *outBlob)
         CM_LOG_E("outData is nullptr");
         return CMR_ERROR_NULL_POINTER;
     }
+
     if (outBlob->size < outLen) {
         CM_LOG_E("outBlob size[%u] smaller than outLen[%u]", outBlob->size, outLen);
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
+
     if (memcpy_s(outBlob->data, outBlob->size, outData, outLen) != EOK) {
         return CMR_ERROR_MEM_OPERATION_COPY;
     }

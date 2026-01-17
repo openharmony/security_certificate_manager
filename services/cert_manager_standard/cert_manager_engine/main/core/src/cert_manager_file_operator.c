@@ -410,7 +410,7 @@ uint32_t CmFileSize(const char *path, const char *fileName)
     return size;
 }
 
-static int32_t CmUidLayerGetFileNames(const char *filePath, struct CmBlob *fileNames,
+static int32_t CmUidLayerGetFileNames(const char *filePath, struct CmBlob *credFilePaths,
     const uint32_t arraySize, uint32_t count)
 {
     if (count >= arraySize) {
@@ -422,20 +422,20 @@ static int32_t CmUidLayerGetFileNames(const char *filePath, struct CmBlob *fileN
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
 
-    fileNames[count].data = (uint8_t *)CMMalloc(filePathLen + 1);
-    if (fileNames[count].data == NULL) {
+    credFilePaths[count].data = (uint8_t *)CMMalloc(filePathLen + 1);
+    if (credFilePaths[count].data == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
     }
-    (void)memset_s(fileNames[count].data, filePathLen + 1, 0, filePathLen + 1);
-    if (memcpy_s(fileNames[count].data, CM_MAX_FILE_NAME_LEN, filePath, filePathLen) != EOK) {
-        /* fileNames memory free in top layer function */
+    (void)memset_s(credFilePaths[count].data, filePathLen + 1, 0, filePathLen + 1);
+    if (memcpy_s(credFilePaths[count].data, CM_MAX_FILE_NAME_LEN, filePath, filePathLen) != EOK) {
+        /* credFilePaths memory free in top layer function */
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
-    fileNames[count].size = filePathLen + 1; /* include '\0' at end */
+    credFilePaths[count].size = filePathLen + 1; /* include '\0' at end */
     return CM_SUCCESS;
 }
 
-int32_t CmUidLayerGetFileCountAndNames(const char *path, struct CmBlob *fileNames,
+int32_t CmUidLayerGetFileCountAndNames(const char *path, struct CmBlob *credFilePaths,
     const uint32_t arraySize, uint32_t *fileCount)
 {
     /* do nothing when dir is not exist */
@@ -472,7 +472,7 @@ int32_t CmUidLayerGetFileCountAndNames(const char *path, struct CmBlob *fileName
         }
 
         if ((dire->d_type == DT_REG) && (strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0)) {
-            ret = CmUidLayerGetFileNames(uidPath, fileNames, arraySize, count);
+            ret = CmUidLayerGetFileNames(uidPath, credFilePaths, arraySize, count);
             if (ret != CM_SUCCESS) {
                 break;
             }
@@ -485,7 +485,7 @@ int32_t CmUidLayerGetFileCountAndNames(const char *path, struct CmBlob *fileName
     return ret;
 }
 
-int32_t CmUserIdLayerGetFileCountAndNames(const char *path, struct CmBlob *fileNames,
+int32_t CmUserIdLayerGetFileCountAndNames(const char *path, struct CmBlob *credFilePaths,
     const uint32_t arraySize, uint32_t *fileCount)
 {
     char userIdPath[CM_MAX_FILE_NAME_LEN] = { 0 };
@@ -520,7 +520,7 @@ int32_t CmUserIdLayerGetFileCountAndNames(const char *path, struct CmBlob *fileN
         }
 
         if ((dire->d_type == DT_DIR) && (strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0)) {
-            if (CmUidLayerGetFileCountAndNames(userIdPath, fileNames, arraySize, fileCount) != CM_SUCCESS) {
+            if (CmUidLayerGetFileCountAndNames(userIdPath, credFilePaths, arraySize, fileCount) != CM_SUCCESS) {
                 CM_LOG_E("CmUidLayerGetFileCountAndNames faild");
                 closedir(dir);
                 return CM_FAILURE;

@@ -387,13 +387,13 @@ static int32_t GetAppCertInfo(const struct CmBlob *keyUri, struct CmBlob *certTy
     return ret;
 }
 
-static int32_t CmCertListGetAppCertInfo(const struct CmBlob *fileName, struct CmBlob *certType,
+static int32_t CmCertListGetAppCertInfo(const struct CmBlob *filePath, struct CmBlob *certType,
     struct CmBlob *certUri,  struct CmBlob *certAlias)
 {
     char uriBuf[MAX_LEN_URI] = {0};
     struct CmBlob keyUri = { sizeof(uriBuf), (uint8_t *)uriBuf };
 
-    int32_t ret = CmGetUri((char *)fileName->data, &keyUri);
+    int32_t ret = CmGetUri((char *)filePath->data, &keyUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get uri failed");
         return ret;
@@ -408,20 +408,20 @@ static int32_t CmCertListGetAppCertInfo(const struct CmBlob *fileName, struct Cm
     return ret;
 }
 
-static int32_t CmServiceGetAppCertListPack(struct CmBlob *certificateList, const struct CmBlob *fileNames,
+static int32_t CmServiceGetAppCertListPack(struct CmBlob *credentialList, const struct CmBlob *credFilePaths,
     const uint32_t fileCount)
 {
-    /* buff struct: cert count + (cert type +  cert uri +  cert alias) * MAX_CERT_COUNT */
+    /* buff struct: cert count + (cert type +  cert uri +  cert alias) * fileCount */
     uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
-        MAX_LEN_URI + sizeof(uint32_t) + MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE;
-    certificateList->data = (uint8_t *)CmMalloc(buffSize);
-    if (certificateList->data == NULL) {
+        MAX_LEN_URI + sizeof(uint32_t) + MAX_LEN_CERT_ALIAS) * fileCount;
+    credentialList->data = (uint8_t *)CmMalloc(buffSize);
+    if (credentialList->data == NULL) {
         return CMR_ERROR_MALLOC_FAIL;
     }
-    certificateList->size = buffSize;
+    credentialList->size = buffSize;
 
     uint32_t offset = 0;
-    int32_t ret = CopyUint32ToBuffer(fileCount, certificateList, &offset);
+    int32_t ret = CopyUint32ToBuffer(fileCount, credentialList, &offset);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Copy certificate count failed");
         return ret;
@@ -435,25 +435,25 @@ static int32_t CmServiceGetAppCertListPack(struct CmBlob *certificateList, const
         uint8_t aliasBuf[MAX_LEN_CERT_ALIAS] = {0};
         struct CmBlob certAlias = { sizeof(aliasBuf), aliasBuf };
 
-        ret = CmCertListGetAppCertInfo(&fileNames[i], &certType, &certUri, &certAlias);
+        ret = CmCertListGetAppCertInfo(&credFilePaths[i], &certType, &certUri, &certAlias);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmCertListGetAppCertInfo failed");
             return ret;
         }
 
-        ret = CopyBlobToBuffer(&certType, certificateList, &offset);
+        ret = CopyBlobToBuffer(&certType, credentialList, &offset);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Copy certType failed");
             return ret;
         }
 
-        ret = CopyBlobToBuffer(&certUri, certificateList, &offset);
+        ret = CopyBlobToBuffer(&certUri, credentialList, &offset);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Copy certUri failed");
             return ret;
         }
 
-        ret = CopyBlobToBuffer(&certAlias, certificateList, &offset);
+        ret = CopyBlobToBuffer(&certAlias, credentialList, &offset);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Copy certAlies failed");
             return ret;
@@ -488,10 +488,11 @@ void CmIpcServiceGetAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob
     uint32_t store;
     uint32_t fileCount = 0;
     struct CmContext cmContext = {0};
-    struct CmBlob certificateList = { 0, NULL };
-    struct CmBlob fileNames[MAX_COUNT_CERTIFICATE];
+    struct CmBlob credentialList = { 0, NULL };
+    struct CmBlob credFilePaths[MAX_COUNT_CERTIFICATE];
     uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
-    (void)memset_s(fileNames, len, 0, len);
+    (void)memset_s(credFilePaths, len, 0, len);
+
     struct CmParamSet *paramSet = NULL;
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store },
@@ -510,23 +511,25 @@ void CmIpcServiceGetAppCertList(const struct CmBlob *paramSetBlob, struct CmBlob
             break;
         }
 
-        ret = CmServiceGetAppCertList(&cmContext, store, fileNames, MAX_COUNT_CERTIFICATE, &fileCount);
+        // Get the certificate file path
+        ret = CmServiceGetAppCertList(&cmContext, store, credFilePaths, MAX_COUNT_CERTIFICATE, &fileCount);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Get App cert list fail, ret = %d", ret);
             break;
         }
 
-        ret = CmServiceGetAppCertListPack(&certificateList, fileNames, fileCount);
+        // Get certificate file details based on the path
+        ret = CmServiceGetAppCertListPack(&credentialList, credFilePaths, fileCount);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmServiceGetAppCertListPack pack fail, ret = %d", ret);
         }
     } while (0);
 
     CmReport(__func__, &cmContext, NULL, ret);
-    CmSendResponse(context, ret, &certificateList);
+    CmSendResponse(context, ret, &credentialList);
     CmFreeParamSet(&paramSet);
-    CmFreeFileNames(fileNames, fileCount);
-    CM_FREE_BLOB(certificateList);
+    CmFreeFileNames(credFilePaths, fileCount);
+    CM_FREE_BLOB(credentialList);
 
     CM_LOG_I("leave: ret = %d", ret);
 }
@@ -541,9 +544,9 @@ void CmIpcServiceGetAppCertListByUid(const struct CmBlob *paramSetBlob, struct C
     uint32_t fileCount = 0;
     struct CmContext cmContext = {0};
     struct CmBlob certificateList = { 0, NULL };
-    struct CmBlob fileNames[MAX_COUNT_CERTIFICATE];
+    struct CmBlob filePaths[MAX_COUNT_CERTIFICATE];
     uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
-    (void)memset_s(fileNames, len, 0, len);
+    (void)memset_s(filePaths, len, 0, len);
     struct CmParamSet *paramSet = NULL;
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store },
@@ -563,13 +566,13 @@ void CmIpcServiceGetAppCertListByUid(const struct CmBlob *paramSetBlob, struct C
             break;
         }
 
-        ret = CmServiceGetAppCertListByUid(&cmContext, store, fileNames, MAX_COUNT_CERTIFICATE, &fileCount);
+        ret = CmServiceGetAppCertListByUid(&cmContext, store, filePaths, MAX_COUNT_CERTIFICATE, &fileCount);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Get App cert list fail, ret = %d", ret);
             break;
         }
 
-        ret = CmServiceGetAppCertListPack(&certificateList, fileNames, fileCount);
+        ret = CmServiceGetAppCertListPack(&certificateList, filePaths, fileCount);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmServiceGetAppCertListPack pack fail, ret = %d", ret);
         }
@@ -578,7 +581,7 @@ void CmIpcServiceGetAppCertListByUid(const struct CmBlob *paramSetBlob, struct C
     CmReport(__func__, &cmContext, NULL, ret);
     CmSendResponse(context, ret, &certificateList);
     CmFreeParamSet(&paramSet);
-    CmFreeFileNames(fileNames, fileCount);
+    CmFreeFileNames(filePaths, fileCount);
     CM_FREE_BLOB(certificateList);
 
     CM_LOG_I("leave: ret = %d", ret);
@@ -651,9 +654,9 @@ void CmIpcServiceGetCallingAppCertList(const struct CmBlob *paramSetBlob, struct
     uint32_t fileCount = 0;
     struct CmContext cmContext = {0};
     struct CmBlob certificateList = { 0, NULL };
-    struct CmBlob fileNamesBlob[MAX_COUNT_CERTIFICATE];
+    struct CmBlob filePaths[MAX_COUNT_CERTIFICATE];
     uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
-    (void)memset_s(fileNamesBlob, len, 0, len);
+    (void)memset_s(filePaths, len, 0, len);
     struct CmParamSet *paramSets = NULL;
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store },
@@ -672,13 +675,13 @@ void CmIpcServiceGetCallingAppCertList(const struct CmBlob *paramSetBlob, struct
             break;
         }
 
-        ret = CmServiceGetCallingAppCertList(&cmContext, store, fileNamesBlob, MAX_COUNT_CERTIFICATE, &fileCount);
+        ret = CmServiceGetCallingAppCertList(&cmContext, store, filePaths, MAX_COUNT_CERTIFICATE, &fileCount);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Get calling App cert list fail, ret = %d", ret);
             break;
         }
 
-        ret = CmServiceGetAppCertListPack(&certificateList, fileNamesBlob, fileCount);
+        ret = CmServiceGetAppCertListPack(&certificateList, filePaths, fileCount);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("CmServiceGetAppCertListPack pack fail, ret = %d", ret);
         }
@@ -687,7 +690,7 @@ void CmIpcServiceGetCallingAppCertList(const struct CmBlob *paramSetBlob, struct
     CmReport(__func__, &cmContext, NULL, ret);
     CmSendResponse(context, ret, &certificateList);
     CmFreeParamSet(&paramSets);
-    CmFreeFileNames(fileNamesBlob, fileCount);
+    CmFreeFileNames(filePaths, fileCount);
     CM_FREE_BLOB(certificateList);
 
     CM_LOG_I("leave: ret = %d", ret);

@@ -517,7 +517,7 @@ int32_t CmRemoveAllAppCert(const struct CmContext *context)
     return ret;
 }
 
-int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store, struct CmBlob *fileNames,
+int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store, struct CmBlob *credFilePaths,
     const uint32_t fileSize, uint32_t *fileCount)
 {
     char pathBuf[CERT_MAX_PATH_LEN] = {0};
@@ -529,10 +529,11 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
         return CM_FAILURE;
     }
 
+    // Get the file paths and number of certificate files under the specified userId or UID directory
     if (store == CM_CREDENTIAL_STORE) {
-        ret = CmUidLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
+        ret = CmUidLayerGetFileCountAndNames(pathBuf, credFilePaths, fileSize, fileCount);
     } else {
-        ret = CmUserIdLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
+        ret = CmUserIdLayerGetFileCountAndNames(pathBuf, credFilePaths, fileSize, fileCount);
     }
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get file count and names from path failed ret:%d", ret);
@@ -542,7 +543,7 @@ int32_t CmServiceGetAppCertList(const struct CmContext *context, uint32_t store,
     return CM_SUCCESS;
 }
 
-int32_t CmServiceGetAppCertListByUid(const struct CmContext *context, uint32_t store, struct CmBlob *fileNames,
+int32_t CmServiceGetAppCertListByUid(const struct CmContext *context, uint32_t store, struct CmBlob *filePaths,
     const uint32_t fileSize, uint32_t *fileCount)
 {
     char pathBuf[CERT_MAX_PATH_LEN] = {0};
@@ -554,7 +555,7 @@ int32_t CmServiceGetAppCertListByUid(const struct CmContext *context, uint32_t s
         return CM_FAILURE;
     }
 
-    ret = CmUidLayerGetFileCountAndNames(pathBuf, fileNames, fileSize, fileCount);
+    ret = CmUidLayerGetFileCountAndNames(pathBuf, filePaths, fileSize, fileCount);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("Get file count and names from path failed ret:%d", ret);
         return ret;

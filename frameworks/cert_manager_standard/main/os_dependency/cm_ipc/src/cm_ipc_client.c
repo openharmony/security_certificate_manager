@@ -299,19 +299,6 @@ int32_t CmClientUninstallAllAppCert(enum CertManagerInterfaceCode type)
     return ret;
 }
 
-static int32_t GetAppCertListInitBlob(struct CmBlob *outBlob)
-{
-    uint32_t buffSize = sizeof(uint32_t) + (sizeof(uint32_t) + MAX_LEN_SUBJECT_NAME + sizeof(uint32_t) +
-        MAX_LEN_URI + sizeof(uint32_t) + MAX_LEN_CERT_ALIAS) * MAX_COUNT_CERTIFICATE;
-    outBlob->data = (uint8_t *)CmMalloc(buffSize);
-    if (outBlob->data == NULL) {
-        return CMR_ERROR_MALLOC_FAIL;
-    }
-    outBlob->size = buffSize;
-
-    return CM_SUCCESS;
-}
-
 static int32_t CmAppCertListGetCertCount(const struct CmBlob *outData,
     struct CredentialList *certificateList, uint32_t *offset)
 {
@@ -326,14 +313,20 @@ static int32_t CmAppCertListGetCertCount(const struct CmBlob *outData,
         CM_LOG_D("App cert list is null");
     }
 
-    if (credCount > certificateList->credentialCount) {
-        CM_LOG_E("Caller buff too small count:%u, count:%u", credCount,
-            certificateList->credentialCount);
-        return CMR_ERROR_BUFFER_TOO_SMALL;
-    }
-
     certificateList->credentialCount = credCount;
 
+    return CM_SUCCESS;
+}
+
+static int32_t InitAppCertList(const uint32_t credCount, struct CredentialList *credentialList)
+{
+    uint32_t buffSize = credCount * sizeof(struct CredentialAbstract);
+    credentialList->credentialAbstract = (struct CredentialAbstract *)(CmMalloc(buffSize));
+    if (credentialList->credentialAbstract == NULL) {
+        CM_LOG_E("malloc file buffer failed");
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    (void)memset_s(credentialList->credentialAbstract, buffSize, 0, buffSize);
     return CM_SUCCESS;
 }
 
@@ -342,12 +335,16 @@ static int32_t CmAppCertListUnpackFromService(const struct CmBlob *outData,
 {
     uint32_t offset = 0;
     struct CmBlob blob = { 0, NULL };
-    if ((outData == NULL) || (certificateList == NULL) ||
-        (outData->data == NULL) || (certificateList->credentialAbstract == NULL)) {
+    if ((outData == NULL) || (outData->data == NULL) || (certificateList == NULL)) {
         return CMR_ERROR_NULL_POINTER;
     }
 
     int32_t ret = CmAppCertListGetCertCount(outData, certificateList, &offset);
+    if (ret != CM_SUCCESS) {
+        return ret;
+    }
+
+    ret = InitAppCertList(certificateList->credentialCount, certificateList);
     if (ret != CM_SUCCESS) {
         return ret;
     }
@@ -526,12 +523,6 @@ static int32_t GetAppCertListCommon(enum CertManagerInterfaceCode type, struct C
             .size = sendParamSet->paramSetSize,
             .data = (uint8_t *)sendParamSet
         };
-
-        ret = GetAppCertListInitBlob(&outBlob);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("request fail");
-            break;
-        }
 
         ret = SendRequest(type, &parcelBlob, &outBlob);
         if (ret != CM_SUCCESS) {

@@ -33,7 +33,7 @@ CM_API_EXPORT int32_t CmGetCertList(uint32_t store, struct CertList *certificate
         return CMR_ERROR_NULL_POINTER;
     }
 
-    if ((certificateList->certAbstract == NULL) || (store != CM_SYSTEM_TRUSTED_STORE)) {
+    if (certificateList->certAbstract == NULL || store != CM_SYSTEM_TRUSTED_STORE) {
         CM_LOG_E("invalid input arguments store:%u", store);
         return CMR_ERROR_INVALID_ARGUMENT;
     }

@@ -94,25 +94,17 @@ napi_value GetAppCertListByUidWriteResult(napi_env env, GetAppCertListByUidAsync
     return result;
 }
 
-static void InitAppCertList(struct CredentialList *credentialList)
-{
-    uint32_t buffSize = (MAX_COUNT_CERTIFICATE * sizeof(struct CredentialAbstract));
-    credentialList->credentialAbstract = static_cast<struct CredentialAbstract *>(CmMalloc(buffSize));
-    if (credentialList->credentialAbstract == nullptr) {
-        CM_LOG_E("malloc file buffer failed");
-        return;
-    }
-    (void)memset_s(credentialList->credentialAbstract, buffSize, 0, buffSize);
-    credentialList->credentialCount = MAX_COUNT_CERTIFICATE;
-}
-
 static void GetAppCertListByUidExecute(napi_env env, void *data)
 {
     GetAppCertListByUidAsyncContext context = static_cast<GetAppCertListByUidAsyncContext>(data);
     context->credentialList = static_cast<struct CredentialList *>(CmMalloc(sizeof(struct CredentialList)));
-    if (context->credentialList != nullptr) {
-        InitAppCertList(context->credentialList);
+    if (context->credentialList == nullptr) {
+        CM_LOG_E("malloc credentialList fail");
+        context->result = CMR_ERROR_MALLOC_FAIL;
+        return;
     }
+    context->credentialList->credentialAbstract = nullptr;
+    context->credentialList->credentialCount = 0;
     context->result = CmGetAppCertListByUid(context->store, context->appUid, context->credentialList);
 }
 
