@@ -35,6 +35,6 @@ int32_t CmGetCredListByUidImpl::GetParamsFromEnv()
 
 int32_t CmGetCredListByUidImpl::InvokeInnerApi()
 {
-    return CmGetAppCertListByUid(this->store, this->appUid, this->credentialList);
+    return CmGetAppCertListByUid(this->store, this->appUid, &this->credentialList);
 }
 }

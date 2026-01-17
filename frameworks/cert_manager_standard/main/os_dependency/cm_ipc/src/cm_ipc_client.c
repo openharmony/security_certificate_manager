@@ -796,8 +796,7 @@ int32_t CmClientIsAuthorizedApp(const struct CmBlob *authUri)
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = *authUri },
     };
 
-    struct CmBlob outBlob = { 0, NULL };
-    int32_t ret = ClientSerializationAndSend(CM_MSG_CHECK_IS_AUTHED_APP, params, CM_ARRAY_SIZE(params), &outBlob);
+    int32_t ret = ClientSerializationAndSend(CM_MSG_CHECK_IS_AUTHED_APP, params, CM_ARRAY_SIZE(params), NULL);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("check is authed serialization and send failed, ret = %d", ret);
     }
@@ -816,8 +815,7 @@ int32_t CmClientRemoveGrantedApp(const struct CmBlob *keyUri, uint32_t appUid)
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = appUid },
     };
 
-    struct CmBlob outBlob = { 0, NULL };
-    int32_t ret = ClientSerializationAndSend(CM_MSG_REMOVE_GRANT_APP, params, CM_ARRAY_SIZE(params), &outBlob);
+    int32_t ret = ClientSerializationAndSend(CM_MSG_REMOVE_GRANT_APP, params, CM_ARRAY_SIZE(params), NULL);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("remove granted app serialization and send failed, ret = %d", ret);
     }
@@ -856,8 +854,7 @@ int32_t CmClientUpdate(const struct CmBlob *handle, const struct CmBlob *inData)
         { .tag = CM_TAG_PARAM1_BUFFER, .blob = *inData },
     };
 
-    struct CmBlob outBlob = { 0, NULL };
-    int32_t ret = ClientSerializationAndSend(CM_MSG_UPDATE, params, CM_ARRAY_SIZE(params), &outBlob);
+    int32_t ret = ClientSerializationAndSend(CM_MSG_UPDATE, params, CM_ARRAY_SIZE(params), NULL);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("update serialization and send failed, ret = %d", ret);
     }
@@ -894,8 +891,7 @@ int32_t CmClientAbort(const struct CmBlob *handle)
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = *handle },
     };
 
-    struct CmBlob outBlob = { 0, NULL };
-    int32_t ret = ClientSerializationAndSend(CM_MSG_ABORT, params, CM_ARRAY_SIZE(params), &outBlob);
+    int32_t ret = ClientSerializationAndSend(CM_MSG_ABORT, params, CM_ARRAY_SIZE(params), NULL);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("abort serialization and send failed, ret = %d", ret);
     }

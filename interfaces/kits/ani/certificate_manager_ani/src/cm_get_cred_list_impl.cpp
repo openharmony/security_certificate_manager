@@ -27,11 +27,6 @@ CmGetCredListImpl::CmGetCredListImpl(ani_env *env, uint32_t store) : CertManager
 }
 int32_t CmGetCredListImpl::Init()
 {
-    credentialList = static_cast<struct CredentialList *>(CmMalloc(sizeof(struct CredentialList)));
-    if (this->credentialList == nullptr) {
-        CM_LOG_E("malloc credentialList failed");
-        return CMR_ERROR_MALLOC_FAIL;
-    }
     return CM_SUCCESS;
 }
 
@@ -42,7 +37,7 @@ int32_t CmGetCredListImpl::GetParamsFromEnv()
 
 int32_t CmGetCredListImpl::InvokeInnerApi()
 {
-    return CmGetAppCertList(this->store, this->credentialList);
+    return CmGetAppCertList(this->store, &this->credentialList);
 }
 
 int32_t CmGetCredListImpl::UnpackResult()
@@ -50,7 +45,7 @@ int32_t CmGetCredListImpl::UnpackResult()
     // credentialList
     CMResultBuilder resultBuilder(this->env);
     int32_t ret = resultBuilder
-        .setCredentialList(this->credentialList)
+        .setCredentialList(&this->credentialList)
         ->build();
     if (ret != CM_SUCCESS) {
         CM_LOG_E("unpack result failed.");
@@ -62,15 +57,10 @@ int32_t CmGetCredListImpl::UnpackResult()
 
 void CmGetCredListImpl::OnFinish()
 {
-    if (credentialList == nullptr) {
-        return;
+    if (credentialList.credentialAbstract != nullptr) {
+        CmFree(credentialList.credentialAbstract);
+        credentialList.credentialAbstract = nullptr;
     }
-    if (credentialList->credentialAbstract != nullptr) {
-        CmFree(credentialList->credentialAbstract);
-        credentialList->credentialAbstract = nullptr;
-    }
-    CmFree(credentialList);
-    credentialList = nullptr;
     return;
 }
 }
