@@ -69,6 +69,12 @@ static int32_t GetInputParams(const struct CmBlob *paramSetBlob, struct CmParamS
     return ret;
 }
 
+static inline void CleanAppCert(struct CmBlob *appCertPwd, struct CmBlob *appCertPrivKey)
+{
+    (void)memset_s(appCertPwd->data, appCertPwd->size, 0, appCertPwd->size);
+    (void)memset_s(appCertPrivKey->data, appCertPrivKey->size, 0, appCertPrivKey->size);
+}
+
 void CmIpcServiceGetCertificateList(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context)
 {
@@ -225,21 +231,18 @@ void CmIpcServiceInstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob
     enum CredFormat credFormat;
     enum AliasTransFormat aliasFormat;
     struct CmBlob appCertPrivKey = { 0, NULL };
-    struct CmParamOut params[] = {
-        { .tag = CM_TAG_PARAM0_BUFFER, .blob = &appCert },
-        { .tag = CM_TAG_PARAM1_BUFFER, .blob = &appCertPwd },
-        { .tag = CM_TAG_PARAM2_BUFFER, .blob = &certAlias },
+    struct CmParamOut params[] = { { .tag = CM_TAG_PARAM0_BUFFER, .blob = &appCert },
+        { .tag = CM_TAG_PARAM1_BUFFER, .blob = &appCertPwd }, { .tag = CM_TAG_PARAM2_BUFFER, .blob = &certAlias },
         { .tag = CM_TAG_PARAM3_BUFFER, .blob = &appCertPrivKey },
         { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &store },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &userId },
         { .tag = CM_TAG_PARAM2_UINT32, .uint32Param = &level },
         { .tag = CM_TAG_PARAM3_UINT32, .uint32Param = &credFormat },
-        { .tag = CM_TAG_PARAM4_UINT32, .uint32Param = &aliasFormat },
-    };
+        { .tag = CM_TAG_PARAM4_UINT32, .uint32Param = &aliasFormat } };
 
     int32_t ret;
     struct CmContext cmContext = { 0 };
-    struct CmContext oriContext = {0};
+    struct CmContext oriContext = { 0 };
     struct CmParamSet *paramSet = NULL;
     do {
         ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
@@ -264,6 +267,7 @@ void CmIpcServiceInstallAppCert(const struct CmBlob *paramSetBlob, struct CmBlob
 
     CmSendResponse(context, ret, outData);
     CmReportSGInstallAppCert(&certAlias, store, ret);
+    CleanAppCert(&appCertPwd, &appCertPrivKey);
     CmFreeParamSet(&paramSet);
 
     CM_LOG_I("leave: ret = %d", ret);

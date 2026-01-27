@@ -856,7 +856,7 @@ HWTEST_F(CmUserCertTest, InstallUserCertTest029, TestSize.Level0)
     struct CmInstallCertInfo installCertInfo = {
         .userCert = &g_p7bUserCertTooLongSubj,
         .certAlias = &alias029,
-        .userId = TEST_USERID
+        .userId = 0
     };
 
     ret = CmInstallUserTrustedP7BCert(&installCertInfo, true, &certUriList);
