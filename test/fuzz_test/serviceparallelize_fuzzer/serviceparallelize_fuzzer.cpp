@@ -130,6 +130,7 @@ static void FuzzCmServiceGetAppCert(FuzzedDataProvider &fdp)
     uint32_t store = fdp.ConsumeIntegral<uint32_t>();
     struct CmBlob keyUri;
     ConstructCmBlob(fdp, keyUri);
+    keyUri.data[keyUri.size - 1] = '\0';
     struct CmBlob certBlob;
     ConstructCmBlob(fdp, certBlob);
     CmServiceGetAppCert(&context, store, &keyUri, &certBlob);
