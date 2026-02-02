@@ -144,6 +144,11 @@ static int32_t GetPrivateAppCert(const struct CmContext *context, uint32_t store
 int32_t CmServiceGetAppCert(const struct CmContext *context, uint32_t store,
     struct CmBlob *keyUri, struct CmBlob *certBlob)
 {
+    if (CheckUri(keyUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT_URI;
+    }
+
     if (store == CM_CREDENTIAL_STORE) {
         return GetPublicAppCert(context, store, keyUri, certBlob);
     } else if (store == CM_PRI_CREDENTIAL_STORE) {
