@@ -244,7 +244,7 @@ ani_object GenerateCertReference(ani_env *env, ani_int intValue, ani_string strV
         return nullptr;
     }
 
-    if ((status = env->Object_SetPropertyByName_Int(resultObjOut, "certType", intValue)) != ANI_OK) {
+    if ((status = env->Object_SetPropertyByName_Ref(resultObjOut, "certType", certTypeEnumItem)) != ANI_OK) {
         CM_LOG_E("set certType property type failed, status: %d", static_cast<int32_t>(status));
         return nullptr;
     }
