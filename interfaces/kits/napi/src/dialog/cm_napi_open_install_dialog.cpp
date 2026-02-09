@@ -125,11 +125,9 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
     asyncContext->env = env;
     asyncContext->certificateType = GetCertificateType(env, argv, argc);
 
-    if (asyncContext->certificateType == CA_CERT &&
-        OHOS::system::GetParameter("const.product.devicetype", "") != "2in1") {
-        CM_LOG_E("deviceType is not 2in1");
-        std::string errMsg = "DeviceType Error. deviceType is not 2in1";
-        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, errMsg);
+    if (asyncContext->certificateType == CA_CERT && !IsEnableCACertDialog()) {
+        CM_LOG_E("check not support ca cert dialog");
+        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, "DeviceType Error. deviceType is not support.");
         return result;
     }
 
