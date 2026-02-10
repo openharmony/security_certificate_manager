@@ -32,8 +32,8 @@ CmOpenUninstallDialog::CmOpenUninstallDialog(ani_env *env, ani_object aniContext
 
 int32_t CmOpenUninstallDialog::GetParamsFromEnv()
 {
-    if (OHOS::system::GetParameter("const.product.devicetype", "") != "2in1") {
-        CM_LOG_E("deviceType is not 2in1");
+    if (!IsEnableCACertDialog()) {
+        CM_LOG_E("check not enable ca cert dialog");
         return CMR_DIALOG_ERROR_NOT_SUPPORTED;
     }
     int32_t ret = CertManagerAsyncImpl::GetParamsFromEnv();

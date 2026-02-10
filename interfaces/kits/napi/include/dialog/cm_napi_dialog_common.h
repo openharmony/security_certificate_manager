@@ -25,8 +25,10 @@
 #include "cm_napi_open_dialog.h"
 #include "cm_mem.h"
 #include "cm_type.h"
+#include "cm_dialog_api_common.h"
 
 namespace CMNapi {
+using namespace OHOS::Security::CertManager::Dialog;
 
 static const std::string BUSINESS_ERROR_PROPERTY_CODE = "code";
 static const std::string BUSINESS_ERROR_PROPERTY_MESSAGE = "message";

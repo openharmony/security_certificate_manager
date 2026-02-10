@@ -85,10 +85,9 @@ napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
     CM_LOG_I("enter uninstall cert dialog");
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
-    if (OHOS::system::GetParameter("const.product.devicetype", "") != "2in1") {
-        CM_LOG_E("device type is not 2in1");
-        std::string errMsg = "Device type error, device type is not 2in1";
-        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, errMsg);
+    if (!IsEnableCACertDialog()) {
+        CM_LOG_E("check not support ca cert dialog");
+        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, "DeviceType Error. deviceType is not support.");
         return result;
     }
 

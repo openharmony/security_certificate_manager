@@ -17,7 +17,6 @@
 #include "cm_mem.h"
 #include "cm_ani_utils.h"
 #include "cm_ani_common.h"
-#include "syspara/parameters.h"
 #include "cm_log.h"
 #include "cm_dialog_api_common.h"
 
@@ -42,8 +41,8 @@ int32_t CmOpenInstallDialog::GetParamsFromEnv()
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     certType = static_cast<CmCertificateType>(aniCertType);
-    if (certType == CA_CERT && OHOS::system::GetParameter("const.product.devicetype", "") != "2in1") {
-        CM_LOG_E("deviceType is not 2in1");
+    if (certType == CA_CERT && !IsEnableCACertDialog()) {
+        CM_LOG_E("check not enable ca cert dialog");
         return CMR_DIALOG_ERROR_NOT_SUPPORTED;
     }
 

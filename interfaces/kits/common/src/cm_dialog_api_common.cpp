@@ -16,6 +16,8 @@
 #include "cm_dialog_api_common.h"
 #include "bundle_mgr_proxy.h"
 #include "cm_log.h"
+#include "syspara/parameters.h"
+#include "systemcapability.h"
 
 namespace OHOS::Security::CertManager::Dialog {
 static OHOS::sptr<OHOS::AppExecFwk::IBundleMgr> GetBundleMgrProxy()
@@ -65,6 +67,14 @@ int32_t GetCallerLabelName(std::shared_ptr<OHOS::AbilityRuntime::AbilityContext>
         return CM_FAILURE;
     }
     return CM_SUCCESS;
+}
+
+bool IsEnableCACertDialog()
+{
+    bool isSupportSyscap = HasSystemCapability(CERT_MGR_DIALOG_SYSCAP.c_str());
+    bool isPc = OHOS::system::GetParameter(CONST_NAME_DEVICETYPE, "") == DEVICETYPE_PC;
+    bool isEnableCACertDialog = OHOS::system::GetBoolParameter(CONST_NAME_ENABLE_CA_DIALOG, false);
+    return isSupportSyscap && (isPc || isEnableCACertDialog);
 }
 
 }

@@ -85,9 +85,9 @@ static OHOS::AAFwk::Want CMGetCertDetailWant(std::shared_ptr<CmUIExtensionReques
 napi_value CMNapiOpenDetailDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert open detail dialog enter");
-    if (OHOS::system::GetParameter("const.product.devicetype", "") != "2in1") {
-        CM_LOG_E("deviceType is not 2in1");
-        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, "DeviceType Error. deviceType is not 2in1");
+    if (!IsEnableCACertDialog()) {
+        CM_LOG_E("check not support ca cert dialog");
+        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, "DeviceType Error. deviceType is not support.");
         return nullptr;
     }
 
