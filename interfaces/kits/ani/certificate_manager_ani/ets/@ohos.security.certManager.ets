@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -83,7 +83,7 @@ native function getUkeyCertificateNative(
   certPurpose: certificateManager.CertificatePurpose
 ): NativeResult<certificateManager.CMResult>;
 
-class NativeResult<T> {
+export class NativeResult<T> {
   code: int;
   message: string = "";
   result?: T;
