@@ -59,6 +59,12 @@ native function getCertificateStorePathNative(
   certAlg: certificateManager.CertAlgorithm
 ): NativeResult<string>;
 
+native function installUserCANative(
+  cert: ArrayBuffer,
+  certScope: certificateManager.CertScope,
+  certFormat: certificateManager.CertFileFormat
+): NativeResult<certificateManager.CMResult>;
+
 native function installUserCASyncNative(
   cert: ArrayBuffer,
   certScope: certificateManager.CertScope
@@ -208,6 +214,7 @@ export namespace certificateManager {
     credential?: Credential;
     appUidList?: Array<string>;
     uri?: string;
+    uriList?: Array<string>;
     outData?: Uint8Array;
     credentialDetailList?: Array<Credential>;
   }
@@ -252,6 +259,17 @@ export namespace certificateManager {
   export enum CertScope {
     CURRENT_USER = 1,
     GLOBAL_USER = 2
+  }
+
+  export enum CertFileFormat {
+    PEM_DER = 0,
+    P7B = 1
+  }
+
+  export interface CertBlob {
+    certData: Uint8Array;
+    certFormat?: CertFileFormat;
+    certScope?: CertScope;
   }
 
   export enum CertAlgorithm {
@@ -499,6 +517,16 @@ export namespace certificateManager {
       error.message = nativeResult.message;
       throw error;
     }
+  }
+
+  export function installUserTrustedCertificate(certificate: CertBlob): Promise<CMResult> {
+    checkBufferLen(certificate.certData, MIN_DATA_LEN, MAX_DATA_LEN);
+    let certScope: CertScope = certificate.certScope?? CertScope.CURRENT_USER;
+    let certFormat: CertFileFormat = certificate.certFormat?? CertFileFormat.PEM_DER;
+    return createPromise<CMResult>(
+      () => installUserCANative(certificate.certData.buffer as ArrayBuffer, certScope, certFormat),
+      {}
+    );
   }
 
   export function installUserTrustedCertificateSync(cert: Uint8Array, certScope: CertScope) : CMResult {

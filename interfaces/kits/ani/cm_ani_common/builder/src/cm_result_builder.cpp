@@ -32,6 +32,12 @@ CMResultBuilder *CMResultBuilder::setUri(CmBlob *uri)
     return this;
 }
 
+CMResultBuilder *CMResultBuilder::setUriList(CertUriList *uriList)
+{
+    this->uriList = uriList;
+    return this;
+}
+
 int32_t CMResultBuilder::buildUri()
 {
     if (uri == nullptr) {
@@ -47,6 +53,46 @@ int32_t CMResultBuilder::buildUri()
     ani_status status = env->Object_SetPropertyByName_Ref(cmResult, "uri", uriString);
     if (status != ANI_OK) {
         CM_LOG_E("cmResult set property uri failed. ret = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    return CM_SUCCESS;
+}
+
+int32_t CMResultBuilder::buildUriList()
+{
+    if (uriList == nullptr) {
+        CM_LOG_D("cmResult uriList is nullptr");
+        return CM_SUCCESS;
+    }
+    uint32_t certCount = uriList->certCount;
+    CmBlob *uriListArray = uriList->uriList;
+    if (certCount == 0 || uriListArray == nullptr) {
+        return CM_SUCCESS;
+    }
+
+    ani_array aniUriArray;
+    ani_status status = env->Array_Create(certCount, &aniUriArray);
+    if (status != ANI_OK) {
+        CM_LOG_E("create uri array failed. ret = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    for (uint32_t i = 0; i < certCount; ++i) {
+        ani_string uriString = AniUtils::GenerateString(env, uriListArray[i]);
+        if (uriString == nullptr) {
+            CM_LOG_E("generate uri string failed");
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        status = env->Array_SetElement_Ref(aniUriArray, i, uriString);
+        if (status != ANI_OK) {
+            CM_LOG_E("set uri array element failed. ret = %d", static_cast<int32_t>(status));
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+    }
+
+    status = env->Object_SetPropertyByName_Ref(cmResult, "uriList", aniUriArray);
+    if (status != ANI_OK) {
+        CM_LOG_E("cmResult set property uriList failed. ret = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     return CM_SUCCESS;
@@ -323,6 +369,11 @@ int32_t CMResultBuilder::build()
     ret = buildUri();
     if (ret != CM_SUCCESS) {
         CM_LOG_E("cmResult build uri failed.");
+        return ret;
+    }
+    ret = buildUriList();
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("cmResult build uriList failed.");
         return ret;
     }
     ret = buildCredentialList();
