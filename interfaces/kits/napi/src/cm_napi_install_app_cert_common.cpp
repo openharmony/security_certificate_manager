@@ -36,7 +36,7 @@ InstallAppCertAsyncContext CreateInstallAppCertAsyncContext()
     InstallAppCertAsyncContext context =
         static_cast<InstallAppCertAsyncContext>(CmMalloc(sizeof(InstallAppCertAsyncContextT)));
     if (context != nullptr) {
-        (void)memset_s(context, sizeof(InstallAppCertAsyncContextT), (0, sizeof(InstallAppCertAsyncContextT));
+        (void)memset_s(context, sizeof(InstallAppCertAsyncContextT), 0, sizeof(InstallAppCertAsyncContextT));
     }
     return context;
 }
@@ -238,7 +238,7 @@ napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext asyn
 {
     napi_value promise = nullptr;
     if (asyncContext->store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
-        promise = GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred);
+        GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
     } else {
         NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &promise));
     }

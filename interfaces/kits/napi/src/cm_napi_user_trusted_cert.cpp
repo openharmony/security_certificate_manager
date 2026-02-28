@@ -93,17 +93,6 @@ static int32_t GetUserCertData(napi_env env, napi_value object, CmBlob **outCert
     return CM_SUCCESS;
 }
 
-static int32_t GetCertAliasData(napi_env env, napi_value object, UserCertAsyncContext context)
-{
-    napi_value result = ParseCertAlias(env, object, context->certAlias);
-    if (result == nullptr) {
-        CM_LOG_E("could not get certAlias data");
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-
-    return CM_SUCCESS;
-}
-
 static napi_value ParseCertFormat(napi_env env, napi_value object, UserCertAsyncContext context)
 {
     napi_value certFormatValue = nullptr;

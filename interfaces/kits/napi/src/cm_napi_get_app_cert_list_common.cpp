@@ -171,7 +171,7 @@ static void GetCallingAppCertListComplete(napi_env env, napi_status status, void
     CM_LOG_D("get calling app cert list end");
 }
 
-napi_value GetCallingAppCertListAsyncWork(napi_env env, GetAppCertListListAsyncContext asyncContext)
+napi_value GetCallingAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &promise));

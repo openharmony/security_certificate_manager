@@ -19,6 +19,7 @@
 #include "cert_manager_api.h"
 #include "cm_ani_common.h"
 #include "cm_result_builder.h"
+#include "securec.h"
 
 namespace OHOS::Security::CertManager::Ani {
 CmInstallUserCaImpl::CmInstallUserCaImpl(ani_env *env, ani_arraybuffer aniCertData,

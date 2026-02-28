@@ -87,7 +87,7 @@ static napi_value GetCertInfoParseParams(napi_env env, napi_callback_info info,
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
-        if (store === CM_USER_TRUSTED_STORE) {
+        if (store == CM_USER_TRUSTED_STORE) {
             ThrowError(env, PARAM_ERROR, "certUri type error");
             CM_LOG_E("get cert uri failed when getting user trusted certificate info");
         } else {

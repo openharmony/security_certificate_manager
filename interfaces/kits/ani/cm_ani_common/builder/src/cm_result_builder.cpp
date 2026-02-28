@@ -70,8 +70,10 @@ int32_t CMResultBuilder::buildUriList()
         return CM_SUCCESS;
     }
 
+    ani_ref undefinedRef;
+    env->GetUndefined(&undefinedRef);
     ani_array aniUriArray;
-    ani_status status = env->Array_Create(certCount, &aniUriArray);
+    ani_status status = env->Array_New(certCount, undefinedRef, &aniUriArray);
     if (status != ANI_OK) {
         CM_LOG_E("create uri array failed. ret = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
@@ -83,7 +85,7 @@ int32_t CMResultBuilder::buildUriList()
             CM_LOG_E("generate uri string failed");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
-        status = env->Array_SetElement_Ref(aniUriArray, i, uriString);
+        status = env->Array_Set(aniUriArray, i, uriString);
         if (status != ANI_OK) {
             CM_LOG_E("set uri array element failed. ret = %d", static_cast<int32_t>(status));
             return CMR_ERROR_INVALID_ARGUMENT;
