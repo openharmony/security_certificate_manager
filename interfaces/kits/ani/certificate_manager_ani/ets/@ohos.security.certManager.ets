@@ -108,6 +108,7 @@ class CMResultClass implements certificateManager.CMResult{
   credential?: certificateManager.Credential;
   appUidList?: Array<string>;
   uri?: string;
+  uriList?: Array<string>;
   outData?: Uint8Array;
   credentialDetailList?: Array<certificateManager.Credential>;
 }

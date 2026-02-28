@@ -68,6 +68,8 @@ int32_t CmInstallUserCaImpl::InvokeInnerApi()
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
+    char certAliasValue[] = "";
+    CmBlob certAlias = { sizeof(certAliasValue), reinterpret_cast<uint8_t *>(certAliasValue) };
     if (certFormat == P7B) {
         certUriList = static_cast<CertUriList *>(CmMalloc(sizeof(CertUriList)));
         if (certUriList == nullptr) {
@@ -79,7 +81,7 @@ int32_t CmInstallUserCaImpl::InvokeInnerApi()
 
         CmInstallCertInfo installCertInfo = {
             .userCert = &certData,
-            .certAlias = nullptr,
+            .certAlias = &certAlias,
             .userId = userId
         };
         return CmInstallUserTrustedP7BCert(&installCertInfo, true, certUriList);
@@ -92,7 +94,7 @@ int32_t CmInstallUserCaImpl::InvokeInnerApi()
     }
     this->certUri.size = OUT_AUTH_URI_SIZE;
 
-    return CmInstallUserCACert(&certData, nullptr, userId, true, &certUri);
+    return CmInstallUserCACert(&certData, &certAlias, userId, true, &certUri);
 }
 
 int32_t CmInstallUserCaImpl::UnpackResult()

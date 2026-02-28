@@ -178,12 +178,6 @@ static napi_value ParseCertInfo(napi_env env, napi_value object, UserCertAsyncCo
         return nullptr;
     }
 
-    ret = GetEmptyString(context->certAlias);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("get certAlias failed, ret = %d", ret);
-        return nullptr;
-    }
-
     return GetInt32(env, 0);
 }
 
@@ -313,6 +307,9 @@ static void InstallUserCertExecute(napi_env env, void *data)
         return;
     }
 
+    char certAliasValue[] = "";
+    CmBlob certAlias = { sizeof(certAliasValue), reinterpret_cast<uint8_t *>(certAliasValue) };
+
     if (context->certFormat == P7B) {
         ret = InitCertUriList(context);
         if (ret != CM_SUCCESS) {
@@ -322,7 +319,7 @@ static void InstallUserCertExecute(napi_env env, void *data)
         }
         CmInstallCertInfo installCertInfo = {
             .userCert = context->userCert,
-            .certAlias = context->certAlias,
+            .certAlias = &certAlias,
             .userId = userId
         };
         context->errCode = CmInstallUserTrustedP7BCert(&installCertInfo, true, context->certUriList);
@@ -335,7 +332,7 @@ static void InstallUserCertExecute(napi_env env, void *data)
         context->errCode = ret;
         return;
     }
-    context->errCode = CmInstallUserCACert(context->userCert, context->certAlias, userId, true, context->certUri);
+    context->errCode = CmInstallUserCACert(context->userCert, &certAlias, userId, true, context->certUri);
     return;
 }
 

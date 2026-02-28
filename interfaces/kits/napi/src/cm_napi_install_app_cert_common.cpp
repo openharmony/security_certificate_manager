@@ -208,8 +208,10 @@ static void InstallAppCertExecute(napi_env env, void *data)
         };
         context->result = CmInstallAppCertEx(&certParam, context->keyUri);
     } else {
+        char keyAliasValue[] = "";
+        CmBlob keyAlias = { sizeof(keyAliasValue), reinterpret_cast<uint8_t *>(keyAliasValue) };
         context->result = CmInstallAppCert(context->keystore,
-            context->keystorePwd, context->keyAlias, context->store, context->keyUri);
+            context->keystorePwd, &keyAlias, context->store, context->keyUri);
     }
 }
 
@@ -273,13 +275,6 @@ napi_value CMNapiInstallAppCertCommon(napi_env env, napi_callback_info info, uin
 
     context->store = store;
 
-    if (store != APPLICATION_PRIVATE_CERTIFICATE_STORE) {
-        int32_t ret = GetEmptyString(context->keyAlias);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("get certAlias failed, ret = %d", ret);
-            return nullptr;
-        }
-    }
     napi_value result = InstallAppCertParseParams(env, info, context, store);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
