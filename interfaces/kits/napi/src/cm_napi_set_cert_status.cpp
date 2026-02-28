@@ -131,7 +131,7 @@ static void SetCertStatusComplete(napi_env env, napi_status status, void *data)
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
-        NAPI_CALL_RETURN_VOID(env, napi_get_boolean(env, true, &result[1]));
+        napi_get_undefined(env, &result[1]);
     } else {
         result[0] = GenerateBusinessError(env, context->result);
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));

@@ -77,6 +77,8 @@ napi_value ParsePasswd(napi_env env, napi_value object, CmBlob *&stringBlob);
 napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob);
 napi_value ParseStringOrEmpty(napi_env env, napi_value object, CmBlob *&stringBlob);
 
+int32_t GetEmptyString(CmBlob *&outBlob);
+
 napi_ref GetCallback(napi_env env, napi_value object);
 int32_t GetCallback(napi_env env, napi_value object, napi_ref &callback);
 

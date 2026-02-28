@@ -216,6 +216,26 @@ static napi_value ParseStringCommon(napi_env env, napi_value object, CmBlob *&st
     return GetInt32(env, 0);
 }
 
+int32_t GetEmptyString(CmBlob *&outBlob)
+{
+    uint8_t *aliasValue = (uint8_t *)CmMalloc(sizeof(uint8_t));
+    if (aliasValue == nullptr) {
+        CM_LOG_E("could not alloc memory");
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    (void)memset_s(aliasValue, sizeof(uint8_t), 0, sizeof(uint8_t));
+
+    outBlob = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
+    if (outBlob == nullptr) {
+        CmFree(aliasValue);
+        CM_LOG_E("could not alloc memory");
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    outBlob->data = aliasValue;
+    outBlob->size = sizeof(uint8_t);
+    return CM_SUCCESS;
+}
+
 napi_value ParseString(napi_env env, napi_value object, CmBlob *&stringBlob)
 {
     return ParseStringCommon(env, object, stringBlob, false);

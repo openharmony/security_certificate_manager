@@ -104,8 +104,8 @@ napi_value InstallAppCertParseParams(
     size_t argc = CM_NAPI_INSTALL_APP_CERT_CALLBACK_ARGS;
     napi_value argv[CM_NAPI_INSTALL_APP_CERT_CALLBACK_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-    if (store == APPLICATION_PRIVATE_CERTIFICATE_STORE && (argc != CM_NAPI_INSTALL_APP_CERT_CALLBACK_ARGS ||
-        argc != CM_NAPI_INSTALL_APP_CERT_ARGS_PRIVATE)) {
+    if (store == APPLICATION_PRIVATE_CERTIFICATE_STORE && argc != CM_NAPI_INSTALL_APP_CERT_CALLBACK_ARGS &&
+        argc != CM_NAPI_INSTALL_APP_CERT_ARGS_PRIVATE) {
         ThrowError(env, PARAM_ERROR, "arguments count invalid.");
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
@@ -144,8 +144,6 @@ napi_value InstallAppCertParseParams(
         if (ret == nullptr) {
             return nullptr;
         }
-    } else {
-        context->keyAlias = nullptr;
     }
     context->level = CM_AUTH_STORAGE_LEVEL_EL1;
     return GetInt32(env, 0);
@@ -275,6 +273,13 @@ napi_value CMNapiInstallAppCertCommon(napi_env env, napi_callback_info info, uin
 
     context->store = store;
 
+    if (store != APPLICATION_PRIVATE_CERTIFICATE_STORE) {
+        int32_t ret = GetEmptyString(context->keyAlias);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get certAlias failed, ret = %d", ret);
+            return nullptr;
+        }
+    }
     napi_value result = InstallAppCertParseParams(env, info, context, store);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
