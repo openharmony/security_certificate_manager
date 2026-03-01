@@ -26,9 +26,8 @@
 
 namespace CMNapi {
 namespace {
-constexpr int CM_NAPI_GRANT_ARGS_CNT = 3;
-constexpr int CM_NAPI_IS_AUTHED_ARGS_CNT = 2;
-constexpr int CM_NAPI_CALLBACK_ARG_CNT = 1;
+constexpr int CM_NAPI_GRANT_ARGS_CNT = 2;
+constexpr int CM_NAPI_IS_AUTHED_ARGS_CNT = 1;
 
 constexpr uint32_t OUT_AUTH_URI_SIZE = 1000;
 constexpr uint32_t OUT_AUTH_LIST_SIZE = 512;
@@ -73,32 +72,13 @@ static void FreeGrantAsyncContext(napi_env env, GrantAsyncContext &context)
     CM_FREE_PTR(context);
 }
 
-static napi_value ParseString2Uint32(napi_env env, napi_value object, uint32_t &value)
-{
-    struct CmBlob *blob = nullptr;
-    napi_value result = ParseString(env, object, blob);
-    if (result == nullptr ||
-        CmIsNumeric(reinterpret_cast<char *>(blob->data), static_cast<size_t>(blob->size), &value) != CM_SUCCESS) {
-        CM_LOG_E("parse string to uint32 failed");
-        if (blob != nullptr) {
-            CM_FREE_PTR(blob->data);
-            CmFree(blob);
-        }
-        return nullptr;
-    }
-
-    CM_FREE_PTR(blob->data);
-    CM_FREE_PTR(blob);
-    return GetInt32(env, 0);
-}
-
 static napi_value ParseGrantUidParams(napi_env env, napi_callback_info info, GrantAsyncContext context)
 {
     size_t argc = CM_NAPI_GRANT_ARGS_CNT;
     napi_value argv[CM_NAPI_GRANT_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
-    if ((argc != CM_NAPI_GRANT_ARGS_CNT) && (argc != (CM_NAPI_GRANT_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
+    if (argc != CM_NAPI_GRANT_ARGS_CNT) {
         ThrowError(env, PARAM_ERROR, "arguments count invalid when grant or remove uid");
         CM_LOG_E("arguments count is not expected when grant or remove uid");
         return nullptr;
@@ -113,21 +93,11 @@ static napi_value ParseGrantUidParams(napi_env env, napi_callback_info info, Gra
     }
 
     index++;
-    result = ParseString2Uint32(env, argv[index], context->appUid);
+    result = ParseUint32(env, argv[index], context->appUid);
     if (result == nullptr) {
         ThrowError(env, PARAM_ERROR, "appUid type error");
         CM_LOG_E("get app uid failed when grant or remove uid ");
         return nullptr;
-    }
-
-    index++;
-    if (index < argc) {
-        int32_t ret = GetCallback(env, argv[index], context->callback);
-        if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
-            CM_LOG_E("get callback function failed when grant or remove uid");
-            return nullptr;
-        }
     }
 
     return GetInt32(env, 0);
@@ -144,8 +114,8 @@ static napi_value ParseIsAuthedParams(napi_env env, napi_callback_info info, Gra
     napi_value argv[CM_NAPI_IS_AUTHED_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
-    if ((argc != CM_NAPI_IS_AUTHED_ARGS_CNT) && (argc != (CM_NAPI_IS_AUTHED_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need between 1 and 2.");
+    if (argc != CM_NAPI_IS_AUTHED_ARGS_CNT) {
+        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 1.");
         CM_LOG_E("arguments count is not expected when using isAuthed");
         return nullptr;
     }
@@ -153,24 +123,13 @@ static napi_value ParseIsAuthedParams(napi_env env, napi_callback_info info, Gra
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keyUri is not a string or the length is 0 or too long.");
+        ThrowError(env, PARAM_ERROR, "keyUri is not a string or length is 0 or too long.");
         CM_LOG_E("get uri failed when using isAuthed");
         return nullptr;
     }
 
-    index++;
-    if (index < argc) {
-        int32_t ret = GetCallback(env, argv[index], context->callback);
-        if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
-            CM_LOG_E("get callback function failed when using isAuthed");
-            return nullptr;
-        }
-    }
-
     return GetInt32(env, 0);
 }
-
 
 static napi_value ParseGetUidListParams(napi_env env, napi_callback_info info, GrantAsyncContext context)
 {
@@ -225,11 +184,7 @@ static void GrantUidComplete(napi_env env, napi_status status, void *data)
         napi_get_undefined(env, &result[1]);
     }
 
-    if (context->deferred != nullptr) {
-        GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
-    } else {
-        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
-    }
+    GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     FreeGrantAsyncContext(env, context);
 }
 
@@ -255,11 +210,7 @@ static void RemoveOrIsAuthedComplete(napi_env env, napi_status status, void *dat
         napi_get_undefined(env, &result[1]);
     }
 
-    if (context->deferred != nullptr) {
-        GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
-    } else {
-        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
-    }
+    GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     FreeGrantAsyncContext(env, context);
 }
 
@@ -329,18 +280,14 @@ static void GetUidListComplete(napi_env env, napi_status status, void *data)
         napi_get_undefined(env, &result[1]);
     }
 
-    if (context->deferred != nullptr) {
-        GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
-    } else {
-        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
-    }
+    GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     FreeGrantAsyncContext(env, context);
 }
 
 static napi_value GrantUidAsyncWork(napi_env env, GrantAsyncContext context)
 {
     napi_value promise = nullptr;
-    GenerateNapiPromise(env, context->callback, &context->deferred, &promise);
+    NAPI_CALL(env, napi_create_promise(env, &context->deferred, &promise));
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "grantAppCertificate", NAPI_AUTO_LENGTH, &resourceName));
@@ -364,7 +311,7 @@ static napi_value GrantUidAsyncWork(napi_env env, GrantAsyncContext context)
 static napi_value RemoveUidAsyncWork(napi_env env, GrantAsyncContext context)
 {
     napi_value promise = nullptr;
-    GenerateNapiPromise(env, context->callback, &context->deferred, &promise);
+    NAPI_CALL(env, napi_create_promise(env, &context->deferred, &promise));
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "removeGrantedAppCertificate", NAPI_AUTO_LENGTH, &resourceName));
@@ -388,7 +335,7 @@ static napi_value RemoveUidAsyncWork(napi_env env, GrantAsyncContext context)
 static napi_value IsAuthedAsyncWork(napi_env env, GrantAsyncContext context)
 {
     napi_value promise = nullptr;
-    GenerateNapiPromise(env, context->callback, &context->deferred, &promise);
+    NAPI_CALL(env, napi_create_promise(env, &context->deferred, &promise));
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "isAuthorizedApp", NAPI_AUTO_LENGTH, &resourceName));
@@ -412,7 +359,7 @@ static napi_value IsAuthedAsyncWork(napi_env env, GrantAsyncContext context)
 static napi_value GetUidListAsyncWork(napi_env env, GrantAsyncContext context)
 {
     napi_value promise = nullptr;
-    GenerateNapiPromise(env, context->callback, &context->deferred, &promise);
+    NAPI_CALL(env, napi_create_promise(env, &context->deferred, &promise));
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "getAuthorizedAppList", NAPI_AUTO_LENGTH, &resourceName));

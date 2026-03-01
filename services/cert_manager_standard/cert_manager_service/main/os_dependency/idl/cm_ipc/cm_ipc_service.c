@@ -1190,7 +1190,7 @@ void CmIpcServiceGetUserCertList(const struct CmBlob *paramSetBlob, struct CmBlo
             break;
         }
 
-        if (!CmHasCommonPermission()) {
+        if (!CmPermissionCheck(store)) {
             CM_LOG_E("caller no permission");
             ret = CMR_ERROR_PERMISSION_DENIED;
             break;

@@ -25,8 +25,7 @@
 
 namespace CMNapi {
 namespace {
-constexpr int CM_NAPI_SET_CERT_STATUS_MIN_ARGS = 3;
-constexpr int CM_NAPI_SET_CERT_STATUS_MAX_ARGS = 4;
+constexpr int CM_NAPI_SET_CERT_STATUS_ARGS = 3;
 }  // namespace
 
 struct SetCertStatusAsyncContextT {
@@ -37,6 +36,7 @@ struct SetCertStatusAsyncContextT {
     int32_t result = 0;
     struct CmBlob *certUri = nullptr;
     uint32_t store = 0;
+    uint32_t certType = 0;
     bool status = false;
 };
 using SetCertStatusAsyncContext = SetCertStatusAsyncContextT *;
@@ -71,11 +71,11 @@ static void DeleteSetCertStatusAsyncContext(napi_env env, SetCertStatusAsyncCont
 static napi_value SetCertStatusParseParams(
     napi_env env, napi_callback_info info, SetCertStatusAsyncContext context)
 {
-    size_t argc = CM_NAPI_SET_CERT_STATUS_MAX_ARGS;
-    napi_value argv[CM_NAPI_SET_CERT_STATUS_MAX_ARGS] = { nullptr };
+    size_t argc = CM_NAPI_SET_CERT_STATUS_ARGS;
+    napi_value argv[CM_NAPI_SET_CERT_STATUS_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
-    if ((argc != CM_NAPI_SET_CERT_STATUS_MIN_ARGS) && (argc != CM_NAPI_SET_CERT_STATUS_MAX_ARGS)) {
+    if (argc != CM_NAPI_SET_CERT_STATUS_ARGS) {
         ThrowError(env, PARAM_ERROR, "arguments count invalid.");
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
@@ -84,16 +84,23 @@ static napi_value SetCertStatusParseParams(
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "get certUri type error");
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "get certUri type error");
         CM_LOG_E("could not get cert uri when set cert status");
         return nullptr;
     }
 
     index++;
-    result = ParseUint32(env, argv[index], context->store);
+    result = ParseUint32(env, argv[index], context->certType);
     if (result == nullptr) {
         ThrowError(env, PARAM_ERROR, "get store type error");
         CM_LOG_E("could not get store");
+        return nullptr;
+    }
+    if (context->certType == CM_CA_CERT_USER) {
+        context->store = CM_USER_TRUSTED_STORE;
+    } else {
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "certType invalid.");
+        CM_LOG_E("check certType invalid");
         return nullptr;
     }
 
@@ -105,15 +112,6 @@ static napi_value SetCertStatusParseParams(
         return nullptr;
     }
 
-    index++;
-    if (index < argc) {
-        int32_t ret = GetCallback(env, argv[index], context->callback);
-        if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
-            CM_LOG_E("get callback function failed when set cert status function");
-            return nullptr;
-        }
-    }
     return GetInt32(env, 0);
 }
 
@@ -133,7 +131,7 @@ static void SetCertStatusComplete(napi_env env, napi_status status, void *data)
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
-        NAPI_CALL_RETURN_VOID(env, napi_get_boolean(env, true, &result[1]));
+        napi_get_undefined(env, &result[1]);
     } else {
         result[0] = GenerateBusinessError(env, context->result);
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));

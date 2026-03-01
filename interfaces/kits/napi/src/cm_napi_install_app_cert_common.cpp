@@ -26,8 +26,9 @@
 
 namespace CMNapi {
 namespace {
-constexpr int CM_NAPI_INSTALL_APP_CERT_MIN_ARGS = 3;
-constexpr int CM_NAPI_INSTALL_APP_CERT_MAX_ARGS = 4;
+constexpr int CM_NAPI_INSTALL_APP_CERT_ARGS_PRIVATE = 3;
+constexpr int CM_NAPI_INSTALL_APP_CERT_CALLBACK_ARGS = 4;
+constexpr int CM_NAPI_INSTALL_APP_CERT_ARGS = 2;
 }  // namespace
 
 InstallAppCertAsyncContext CreateInstallAppCertAsyncContext()
@@ -76,24 +77,21 @@ static napi_value GetCredAlias(napi_env env, napi_value napiObject, CmBlob *&cer
     return ParseCertAlias(env, napiObject, certAlias);
 }
 
-static napi_value GetLevelOrCallback(napi_env env, InstallAppCertAsyncContext context, napi_value napiObject)
+static napi_value ParsePrivateCertParams(napi_env env, napi_value *argv, size_t argc, size_t &index,
+    InstallAppCertAsyncContext context)
 {
-    napi_valuetype type = napi_undefined;
-    NAPI_CALL(env, napi_typeof(env, napiObject, &type));
-    if (type == napi_number) {
-        uint32_t level = CM_AUTH_STORAGE_LEVEL_EL1;
-        napi_value result = ParseUint32(env, napiObject, level);
-        if (result == nullptr || CM_LEVEL_CHECK(level)) {
-            ThrowError(env, PARAM_ERROR, "level is not a uint32 or level is invalid.");
-            CM_LOG_E("could not get level");
-            return nullptr;
-        }
-        context->level = (enum CmAuthStorageLevel)level;
-    } else {
-        int32_t ret = GetCallback(env, napiObject, context->callback);
-        if (ret != CM_SUCCESS) {
+    index++;
+    if (GetCredAlias(env, argv[index], context->keyAlias, APPLICATION_PRIVATE_CERTIFICATE_STORE) == nullptr) {
+        ThrowError(env, PARAM_ERROR, "keyAlias is not a string or length is 0 or too long.");
+        CM_LOG_E("could not get keyAlias");
+        return nullptr;
+    }
+
+    index++;
+    if (index < argc) {
+        if (GetCallback(env, argv[index], context->callback) != CM_SUCCESS) {
             ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
-            CM_LOG_E("get callback function faild when install application cert");
+            CM_LOG_E("get callback function failed when install application cert");
             return nullptr;
         }
     }
@@ -103,24 +101,32 @@ static napi_value GetLevelOrCallback(napi_env env, InstallAppCertAsyncContext co
 napi_value InstallAppCertParseParams(
     napi_env env, napi_callback_info info, InstallAppCertAsyncContext context, uint32_t store)
 {
-    size_t argc = CM_NAPI_INSTALL_APP_CERT_MAX_ARGS;
-    napi_value argv[CM_NAPI_INSTALL_APP_CERT_MAX_ARGS] = { nullptr };
+    size_t argc = CM_NAPI_INSTALL_APP_CERT_CALLBACK_ARGS;
+    napi_value argv[CM_NAPI_INSTALL_APP_CERT_CALLBACK_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-    if ((argc != CM_NAPI_INSTALL_APP_CERT_MIN_ARGS) && (argc != CM_NAPI_INSTALL_APP_CERT_MAX_ARGS)) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need between 3 and 4.");
+    if (store == APPLICATION_PRIVATE_CERTIFICATE_STORE && argc != CM_NAPI_INSTALL_APP_CERT_CALLBACK_ARGS &&
+        argc != CM_NAPI_INSTALL_APP_CERT_ARGS_PRIVATE) {
+        ThrowError(env, PARAM_ERROR, "arguments count invalid.");
+        CM_LOG_E("arguments count invalid. argc = %d", argc);
+        return nullptr;
+    }
+
+    if (store != APPLICATION_PRIVATE_CERTIFICATE_STORE && argc != CM_NAPI_INSTALL_APP_CERT_ARGS) {
+        ThrowError(env, PARAM_ERROR, "arguments count invalid.");
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
     }
     size_t index = 0;
     context->keystore = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
     if (context->keystore == nullptr) {
+        ThrowError(env, INNER_FAILURE, "could not alloc memory");
         CM_LOG_E("could not alloc memory");
         return nullptr;
     }
     (void)memset_s(context->keystore, sizeof(CmBlob), 0, sizeof(CmBlob));
     napi_value result = GetUint8Array(env, argv[index], *context->keystore);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keystore is not a uint8Array or the length is 0 or too long.");
+        ThrowError(env, PARAM_ERROR, "keystore is not a uint8Array or length is 0 or too long.");
         CM_LOG_E("could not get keystore");
         return nullptr;
     }
@@ -128,26 +134,18 @@ napi_value InstallAppCertParseParams(
     index++;
     result = ParsePasswd(env, argv[index], context->keystorePwd);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keystore Pwd is not a string or the length is 0 or too long.");
+        ThrowError(env, PARAM_ERROR, "keystore Pwd is not a string or length is 0 or too long.");
         CM_LOG_E("could not get keystore Pwd");
         return nullptr;
     }
 
-    index++;
-    result = GetCredAlias(env, argv[index], context->keyAlias, store);
-    if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keyAlias is not a string or the length is 0 or too long.");
-        CM_LOG_E("could not get uri");
-        return nullptr;
-    }
-
-    index++;
-    context->level = CM_AUTH_STORAGE_LEVEL_EL1;
-    if (index < argc) {
-        if (GetLevelOrCallback(env, context, argv[index]) == nullptr) {
+    if (store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
+        napi_value ret = ParsePrivateCertParams(env, argv, argc, index, context);
+        if (ret == nullptr) {
             return nullptr;
         }
     }
+    context->level = CM_AUTH_STORAGE_LEVEL_EL1;
     return GetInt32(env, 0);
 }
 
@@ -210,8 +208,10 @@ static void InstallAppCertExecute(napi_env env, void *data)
         };
         context->result = CmInstallAppCertEx(&certParam, context->keyUri);
     } else {
+        char keyAliasValue[] = "";
+        CmBlob keyAlias = { sizeof(keyAliasValue), reinterpret_cast<uint8_t *>(keyAliasValue) };
         context->result = CmInstallAppCert(context->keystore,
-            context->keystorePwd, context->keyAlias, context->store, context->keyUri);
+            context->keystorePwd, &keyAlias, context->store, context->keyUri);
     }
 }
 
@@ -237,7 +237,11 @@ static void InstallAppCertComplete(napi_env env, napi_status status, void *data)
 napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
-    GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
+    if (asyncContext->store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
+        GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
+    } else {
+        NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &promise));
+    }
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "InstallAppCertAsyncWork", NAPI_AUTO_LENGTH, &resourceName));

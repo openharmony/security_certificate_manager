@@ -24,15 +24,10 @@
 #include "cm_napi_common.h"
 
 namespace CMNapi {
-namespace {
-constexpr int CM_NAPI_UNINSTALL_ALL_APP_CERT_MIN_ARGS = 0;
-constexpr int CM_NAPI_UNINSTALL_ALL_APP_CERT_MAX_ARGS = 1;
-}  // namespace
 
 struct UninstallAllAppCertAsyncContextT {
     napi_async_work asyncWork = nullptr;
     napi_deferred deferred = nullptr;
-    napi_ref callback = nullptr;
 
     int32_t result = 0;
 };
@@ -55,7 +50,9 @@ static void DeleteUninstallAllAppCertAsyncContext(napi_env env, UninstallAllAppC
         return;
     }
 
-    DeleteNapiContext(env, context->asyncWork, context->callback);
+    if (context->asyncWork != nullptr) {
+        napi_delete_async_work(env, context->asyncWork);
+    }
 
     CmFree(context);
     context = nullptr;
@@ -64,25 +61,13 @@ static void DeleteUninstallAllAppCertAsyncContext(napi_env env, UninstallAllAppC
 static napi_value UninstallAllAppCertParseParams(
     napi_env env, napi_callback_info info, UninstallAllAppCertAsyncContext context)
 {
-    size_t argc = CM_NAPI_UNINSTALL_ALL_APP_CERT_MAX_ARGS;
-    napi_value argv[CM_NAPI_UNINSTALL_ALL_APP_CERT_MAX_ARGS] = { nullptr };
-    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+    size_t argc = 0;
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr));
 
-    if ((argc != CM_NAPI_UNINSTALL_ALL_APP_CERT_MIN_ARGS) && (argc != CM_NAPI_UNINSTALL_ALL_APP_CERT_MAX_ARGS)) {
+    if (argc != 0) {
         ThrowError(env, PARAM_ERROR, "Missing parameter");
         CM_LOG_E("Missing parameter");
         return nullptr;
-    }
-
-    size_t index = 0;
-
-    if (index < argc) {
-        int32_t ret = GetCallback(env, argv[index], context->callback);
-        if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
-            CM_LOG_E("get callback function failed when uninstall all app cert function");
-            return nullptr;
-        }
     }
 
     return GetInt32(env, 0);
@@ -91,10 +76,10 @@ static napi_value UninstallAllAppCertParseParams(
 static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCertAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
-    GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
-
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "UninstallAllAppCertAsyncWork", NAPI_AUTO_LENGTH, &resourceName));
+
+    NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &promise));
 
     NAPI_CALL(env, napi_create_async_work(
         env,
@@ -114,11 +99,7 @@ static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCert
                 result[0] = GenerateBusinessError(env, context->result);
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
-            if (context->deferred != nullptr) {
-                GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
-            } else {
-                GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
-            }
+            GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
             DeleteUninstallAllAppCertAsyncContext(env, context);
         },
         static_cast<void *>(asyncContext),

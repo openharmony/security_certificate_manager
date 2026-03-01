@@ -25,12 +25,9 @@
 
 namespace CMNapi {
 namespace {
-constexpr int CM_NAPI_USER_INSTALL_ARGS_CNT = 2;
+constexpr int CM_NAPI_USER_INSTALL_ARGS_CNT = 1;
 constexpr int CM_NAPI_USER_INSTALL_SYNC_ARGS_CNT = 2;
-constexpr int CM_NAPI_USER_UNINSTALL_ARGS_CNT = 2;
-constexpr int CM_NAPI_USER_UNINSTALL_ALL_ARGS_CNT = 1;
 constexpr int CM_NAPI_USER_UNINSTALL_SYNC_ARGS_CNT = 1;
-constexpr int CM_NAPI_CALLBACK_ARG_CNT = 1;
 constexpr uint32_t OUT_AUTH_URI_SIZE = 1000;
 } // namespace
 
@@ -96,17 +93,6 @@ static int32_t GetUserCertData(napi_env env, napi_value object, CmBlob **outCert
     return CM_SUCCESS;
 }
 
-static int32_t GetCertAliasData(napi_env env, napi_value object, UserCertAsyncContext context)
-{
-    napi_value result = ParseCertAlias(env, object, context->certAlias);
-    if (result == nullptr) {
-        CM_LOG_E("could not get certAlias data");
-        return CMR_ERROR_INVALID_OPERATION;
-    }
-
-    return CM_SUCCESS;
-}
-
 static napi_value ParseCertFormat(napi_env env, napi_value object, UserCertAsyncContext context)
 {
     napi_value certFormatValue = nullptr;
@@ -168,16 +154,9 @@ static napi_value ParseCertInfo(napi_env env, napi_value object, UserCertAsyncCo
     }
 
     napi_value userCertValue = nullptr;
-    napi_status status = napi_get_named_property(env, object, "inData", &userCertValue);
+    napi_status status = napi_get_named_property(env, object, "certData", &userCertValue);
     if (status != napi_ok || userCertValue == nullptr) {
-        CM_LOG_E("get inData failed");
-        return nullptr;
-    }
-
-    napi_value certAliasValue = nullptr;
-    status = napi_get_named_property(env, object, "alias", &certAliasValue);
-    if (status != napi_ok || certAliasValue == nullptr) {
-        CM_LOG_E("get cert alias failed");
+        CM_LOG_E("get certData failed");
         return nullptr;
     }
 
@@ -199,12 +178,6 @@ static napi_value ParseCertInfo(napi_env env, napi_value object, UserCertAsyncCo
         return nullptr;
     }
 
-    ret = GetCertAliasData(env, certAliasValue, context);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("get cert aliasData failed, ret = %d", ret);
-        return nullptr;
-    }
-
     return GetInt32(env, 0);
 }
 
@@ -214,63 +187,17 @@ static napi_value ParseInstallUserCertParams(napi_env env, napi_callback_info in
     napi_value argv[CM_NAPI_USER_INSTALL_ARGS_CNT] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
-    if ((argc != CM_NAPI_USER_INSTALL_ARGS_CNT) &&
-        (argc != (CM_NAPI_USER_INSTALL_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
+    if (argc != CM_NAPI_USER_INSTALL_ARGS_CNT) {
         ThrowError(env, PARAM_ERROR, "arguments count invalid when installing user cert");
         CM_LOG_E("arguments count is not expected when installing user cert");
         return nullptr;
     }
 
-    size_t index = 0;
-    napi_value result = ParseCertInfo(env, argv[index], context);
+    napi_value result = ParseCertInfo(env, argv[0], context);
     if (result == nullptr) {
         ThrowError(env, PARAM_ERROR, "get context type error");
         CM_LOG_E("get CertBlob failed when installing user cert");
         return nullptr;
-    }
-
-    index++;
-    if (index < argc) {
-        int32_t ret = GetCallback(env, argv[index], context->callback);
-        if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
-            CM_LOG_E("get callback function failed when install user cert");
-            return nullptr;
-        }
-    }
-
-    return GetInt32(env, 0);
-}
-
-static napi_value ParseUninstallUserCertParams(napi_env env, napi_callback_info info, UserCertAsyncContext context)
-{
-    size_t argc = CM_NAPI_USER_UNINSTALL_ARGS_CNT;
-    napi_value argv[CM_NAPI_USER_UNINSTALL_ARGS_CNT] = { nullptr };
-    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-
-    if ((argc != CM_NAPI_USER_UNINSTALL_ARGS_CNT) &&
-        (argc != (CM_NAPI_USER_UNINSTALL_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid when uninstalling user cert");
-        CM_LOG_E("arguments count is not expected when uninstalling user cert");
-        return nullptr;
-    }
-
-    size_t index = 0;
-    napi_value result = ParseString(env, argv[index], context->certUri);
-    if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "get certUri type error");
-        CM_LOG_E("get CertBlob failed when uninstalling user cert");
-        return nullptr;
-    }
-
-    index++;
-    if (index < argc) {
-        int32_t ret = GetCallback(env, argv[index], context->callback);
-        if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
-            CM_LOG_E("get callback function failed when uninstalling user cert");
-            return nullptr;
-        }
     }
 
     return GetInt32(env, 0);
@@ -324,32 +251,6 @@ static int32_t ParseInstallUserCertSyncParams(napi_env env, napi_callback_info i
     }
     installScope = static_cast<CmCertScope>(scope);
     return CM_SUCCESS;
-}
-
-static napi_value ParseUninstallAllUserCertParams(napi_env env, napi_callback_info info, UserCertAsyncContext context)
-{
-    size_t argc = CM_NAPI_USER_UNINSTALL_ALL_ARGS_CNT;
-    napi_value argv[CM_NAPI_USER_UNINSTALL_ALL_ARGS_CNT] = { nullptr };
-    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-
-    if ((argc != CM_NAPI_USER_UNINSTALL_ALL_ARGS_CNT) &&
-        (argc != (CM_NAPI_USER_UNINSTALL_ALL_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid when uninstalling all user cert");
-        CM_LOG_E("arguments count is not expected when uninstalling all user cert");
-        return nullptr;
-    }
-
-    size_t index = 0;
-    if (index < argc) {
-        int32_t ret = GetCallback(env, argv[index], context->callback);
-        if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
-            CM_LOG_E("get callback function failed when uninstalling all user cert");
-            return nullptr;
-        }
-    }
-
-    return GetInt32(env, 0);
 }
 
 static int32_t InitCertUri(UserCertAsyncContext context)
@@ -406,6 +307,9 @@ static void InstallUserCertExecute(napi_env env, void *data)
         return;
     }
 
+    char certAliasValue[] = "";
+    CmBlob certAlias = { sizeof(certAliasValue), reinterpret_cast<uint8_t *>(certAliasValue) };
+
     if (context->certFormat == P7B) {
         ret = InitCertUriList(context);
         if (ret != CM_SUCCESS) {
@@ -415,7 +319,7 @@ static void InstallUserCertExecute(napi_env env, void *data)
         }
         CmInstallCertInfo installCertInfo = {
             .userCert = context->userCert,
-            .certAlias = context->certAlias,
+            .certAlias = &certAlias,
             .userId = userId
         };
         context->errCode = CmInstallUserTrustedP7BCert(&installCertInfo, true, context->certUriList);
@@ -428,7 +332,7 @@ static void InstallUserCertExecute(napi_env env, void *data)
         context->errCode = ret;
         return;
     }
-    context->errCode = CmInstallUserCACert(context->userCert, context->certAlias, userId, true, context->certUri);
+    context->errCode = CmInstallUserCACert(context->userCert, &certAlias, userId, true, context->certUri);
     return;
 }
 
@@ -488,18 +392,14 @@ static void InstallUserCertComplete(napi_env env, napi_status status, void *data
         napi_get_undefined(env, &result[1]);
     }
 
-    if (context->deferred != nullptr) {
-        GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
-    } else {
-        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
-    }
+    GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     FreeUserCertAsyncContext(env, context);
 }
 
 static napi_value InstallUserCertAsyncWork(napi_env env, UserCertAsyncContext context)
 {
     napi_value promise = nullptr;
-    GenerateNapiPromise(env, context->callback, &context->deferred, &promise);
+    NAPI_CALL(env, napi_create_promise(env, &context->deferred, &promise));
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "installUserCertAsyncWork", NAPI_AUTO_LENGTH, &resourceName));
@@ -520,13 +420,7 @@ static napi_value InstallUserCertAsyncWork(napi_env env, UserCertAsyncContext co
     return promise;
 }
 
-static void UninstallUserCertExecute(napi_env env, void *data)
-{
-    UserCertAsyncContext context = static_cast<UserCertAsyncContext>(data);
-    context->errCode = CmUninstallUserTrustedCert(context->certUri);
-}
-
-static void UninstallComplete(napi_env env, napi_status status, void *data)
+static void UninstallAllUserCertComplete(napi_env env, napi_status status, void *data)
 {
     UserCertAsyncContext context = static_cast<UserCertAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
@@ -538,36 +432,8 @@ static void UninstallComplete(napi_env env, napi_status status, void *data)
         napi_get_undefined(env, &result[1]);
     }
 
-    if (context->deferred != nullptr) {
-        GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
-    } else {
-        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
-    }
+    GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     FreeUserCertAsyncContext(env, context);
-}
-
-static napi_value UninstallUserCertAsyncWork(napi_env env, UserCertAsyncContext context)
-{
-    napi_value promise = nullptr;
-    GenerateNapiPromise(env, context->callback, &context->deferred, &promise);
-
-    napi_value resourceName = nullptr;
-    NAPI_CALL(env, napi_create_string_latin1(env, "uninstallUserCertAsyncWork", NAPI_AUTO_LENGTH, &resourceName));
-
-    NAPI_CALL(env, napi_create_async_work(
-        env, nullptr, resourceName,
-        UninstallUserCertExecute,
-        UninstallComplete,
-        static_cast<void *>(context),
-        &context->asyncWork));
-
-    napi_status status = napi_queue_async_work(env, context->asyncWork);
-    if (status != napi_ok) {
-        ThrowError(env, PARAM_ERROR, "queue async work error");
-        CM_LOG_E("queue async work failed when uninstalling user cert");
-        return nullptr;
-    }
-    return promise;
 }
 
 static void UninstallAllUserCertExecute(napi_env env, void *data)
@@ -579,7 +445,7 @@ static void UninstallAllUserCertExecute(napi_env env, void *data)
 static napi_value UninstallAllUserCertAsyncWork(napi_env env, UserCertAsyncContext context)
 {
     napi_value promise = nullptr;
-    GenerateNapiPromise(env, context->callback, &context->deferred, &promise);
+    NAPI_CALL(env, napi_create_promise(env, &context->deferred, &promise));
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "uninstallAllUserCertAsyncWork", NAPI_AUTO_LENGTH, &resourceName));
@@ -587,7 +453,7 @@ static napi_value UninstallAllUserCertAsyncWork(napi_env env, UserCertAsyncConte
     NAPI_CALL(env, napi_create_async_work(
         env, nullptr, resourceName,
         UninstallAllUserCertExecute,
-        UninstallComplete,
+        UninstallAllUserCertComplete,
         static_cast<void *>(context),
         &context->asyncWork));
 
@@ -689,34 +555,6 @@ napi_value CMNapiInstallUserTrustedCertSync(napi_env env, napi_callback_info inf
     return result;
 }
 
-napi_value CMNapiUninstallUserTrustedCert(napi_env env, napi_callback_info info)
-{
-    CM_LOG_I("uninstall user trusted cert enter");
-
-    UserCertAsyncContext context = InitUserCertAsyncContext();
-    if (context == nullptr) {
-        CM_LOG_E("init uninstall user cert context failed");
-        return nullptr;
-    }
-
-    napi_value result = ParseUninstallUserCertParams(env, info, context);
-    if (result == nullptr) {
-        CM_LOG_E("parse uninstall user cert params failed");
-        FreeUserCertAsyncContext(env, context);
-        return nullptr;
-    }
-
-    result = UninstallUserCertAsyncWork(env, context);
-    if (result == nullptr) {
-        CM_LOG_E("start uninstall user cert async work failed");
-        FreeUserCertAsyncContext(env, context);
-        return nullptr;
-    }
-
-    CM_LOG_I("uninstall user trusted cert end");
-    return result;
-}
-
 napi_value CMNapiUninstallAllUserTrustedCert(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("uninstall all user trusted cert enter");
@@ -727,14 +565,7 @@ napi_value CMNapiUninstallAllUserTrustedCert(napi_env env, napi_callback_info in
         return nullptr;
     }
 
-    napi_value result = ParseUninstallAllUserCertParams(env, info, context);
-    if (result == nullptr) {
-        CM_LOG_E("parse uninstall all user cert params failed");
-        FreeUserCertAsyncContext(env, context);
-        return nullptr;
-    }
-
-    result = UninstallAllUserCertAsyncWork(env, context);
+    napi_value result = UninstallAllUserCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("start uninstall all user cert async work failed");
         FreeUserCertAsyncContext(env, context);

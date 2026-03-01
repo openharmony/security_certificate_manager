@@ -86,7 +86,7 @@ static int32_t GetAndCheckScope(napi_env env, napi_value arg, enum CmCertScope &
     return CM_SUCCESS;
 }
 
-static napi_value GetCertListParseParams(    napi_env env, napi_callback_info info,
+static napi_value GetCertListParseParams(napi_env env, napi_callback_info info,
     GetCertListAsyncContext context, uint32_t store)
 {
     size_t argc = CM_NAPI_GET_CERT_LIST_MAX_ARGS;

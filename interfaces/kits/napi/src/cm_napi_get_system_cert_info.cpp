@@ -25,8 +25,7 @@
 
 namespace CMNapi {
 namespace {
-constexpr int CM_NAPI_GET_CERT_INFO_MIN_ARGS = 1;
-constexpr int CM_NAPI_GET_CERT_INFO_MAX_ARGS = 2;
+constexpr int CM_NAPI_GET_CERT_INFO_ARGS = 1;
 }  // namespace
 
 struct GetCertInfoAsyncContextT {
@@ -75,11 +74,11 @@ static void DeleteGetCertInfoAsyncContext(napi_env env, GetCertInfoAsyncContext 
 static napi_value GetCertInfoParseParams(napi_env env, napi_callback_info info,
     GetCertInfoAsyncContext context, uint32_t store)
 {
-    size_t argc = CM_NAPI_GET_CERT_INFO_MAX_ARGS;
-    napi_value argv[CM_NAPI_GET_CERT_INFO_MAX_ARGS] = { nullptr };
+    size_t argc = CM_NAPI_GET_CERT_INFO_ARGS;
+    napi_value argv[CM_NAPI_GET_CERT_INFO_ARGS] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
-    if ((argc != CM_NAPI_GET_CERT_INFO_MAX_ARGS) && (argc != CM_NAPI_GET_CERT_INFO_MIN_ARGS)) {
+    if (argc != CM_NAPI_GET_CERT_INFO_ARGS) {
         ThrowError(env, PARAM_ERROR, "arguments count invalid when getting trusted certificate info");
         CM_LOG_E("arguments count invalid when getting trusted certificate info");
         return nullptr;
@@ -88,19 +87,14 @@ static napi_value GetCertInfoParseParams(napi_env env, napi_callback_info info,
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "certUri type error");
-        CM_LOG_E("get cert uri failed when getting trusted certificate info");
-        return nullptr;
-    }
-
-    index++;
-    if (index < argc) {
-        int32_t ret = GetCallback(env, argv[index], context->callback);
-        if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback type failed.");
-            CM_LOG_E("get callback function failed when get cert info function");
-            return nullptr;
+        if (store == CM_USER_TRUSTED_STORE) {
+            ThrowError(env, PARAM_ERROR, "certUri type error");
+            CM_LOG_E("get cert uri failed when getting user trusted certificate info");
+        } else {
+            ThrowError(env, PARAMETER_VALIDATION_FAILED, "certUri type error");
+            CM_LOG_E("get cert uri failed when getting system trusted certificate info");
         }
+        return nullptr;
     }
 
     context->store = store;

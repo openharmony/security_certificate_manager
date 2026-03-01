@@ -26,8 +26,6 @@
 
 namespace CMNapi {
 namespace {
-constexpr int CM_NAPI_GET_APP_CERT_LIST_MIN_ARGS = 0;
-constexpr int CM_NAPI_GET_APP_CERT_LIST_MAX_ARGS = 1;
 }  // namespace
 
 GetAppCertListAsyncContext CreateGetAppCertListAsyncContext()
@@ -59,24 +57,13 @@ void DeleteGetAppCertListAsyncContext(napi_env env, GetAppCertListAsyncContext &
 napi_value GetAppCertListParseParams(
     napi_env env, napi_callback_info info, GetAppCertListAsyncContext context)
 {
-    size_t argc = CM_NAPI_GET_APP_CERT_LIST_MAX_ARGS;
-    napi_value argv[CM_NAPI_GET_APP_CERT_LIST_MAX_ARGS] = { nullptr };
-    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+    size_t argc = 0;
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr));
 
-    if ((argc != CM_NAPI_GET_APP_CERT_LIST_MIN_ARGS) && (argc != CM_NAPI_GET_APP_CERT_LIST_MAX_ARGS)) {
-        ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need between 0 and 1.");
+    if (argc != 0) {
+        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 0.");
         CM_LOG_E("Missing parameter");
         return nullptr;
-    }
-
-    size_t index = 0;
-    if (index < argc) {
-        int32_t ret = GetCallback(env, argv[index], context->callback);
-        if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
-            CM_LOG_E("get callback function faild when getting application certificate list");
-            return nullptr;
-        }
     }
 
     return GetInt32(env, 0);
@@ -121,11 +108,7 @@ static void GetAppCertListComplete(napi_env env, napi_status status, void *data)
         result[0] = GenerateBusinessError(env, context->result);
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
-    if (context->deferred != nullptr) {
-        GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
-    } else {
-        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
-    }
+    GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
     DeleteGetAppCertListAsyncContext(env, context);
     CM_LOG_D("get app cert list end");
 }
@@ -133,7 +116,7 @@ static void GetAppCertListComplete(napi_env env, napi_status status, void *data)
 napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
-    GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
+    NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &promise));
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "GetAppCertListAsyncWork", NAPI_AUTO_LENGTH, &resourceName));
@@ -183,11 +166,7 @@ static void GetCallingAppCertListComplete(napi_env env, napi_status status, void
         res[0] = GenerateBusinessError(env, mcontext->result);
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &res[1]));
     }
-    if (mcontext->deferred != nullptr) {
-        GeneratePromise(env, mcontext->deferred, mcontext->result, res, CM_ARRAY_SIZE(res));
-    } else {
-        GenerateCallback(env, mcontext->callback, res, CM_ARRAY_SIZE(res), mcontext->result);
-    }
+    GeneratePromise(env, mcontext->deferred, mcontext->result, res, CM_ARRAY_SIZE(res));
     DeleteGetAppCertListAsyncContext(env, mcontext);
     CM_LOG_D("get calling app cert list end");
 }
@@ -195,7 +174,7 @@ static void GetCallingAppCertListComplete(napi_env env, napi_status status, void
 napi_value GetCallingAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
-    GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
+    NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &promise));
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "GetCallingAppCertListAsyncWork", NAPI_AUTO_LENGTH, &resourceName));

@@ -45,6 +45,7 @@ ohos_shared_library("certmanager_ani") {
     "./src/cm_get_ca_list_impl.cpp",
     "./src/cm_get_cert_info_impl.cpp",
     "./src/cm_get_cert_store_path.cpp",
+    "./src/cm_install_user_ca_impl.cpp",
     "./src/cm_install_user_ca_sync_impl.cpp",
     "./src/cm_uninstall_user_ca_sync_impl.cpp",
   ]

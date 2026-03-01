@@ -23,7 +23,6 @@ namespace CMNapi {
     napi_value CMNapiInstallUserTrustedCert(napi_env env, napi_callback_info info);
     napi_value CMNapiInstallUserTrustedCertSync(napi_env env, napi_callback_info info);
     napi_value CMNapiUninstallAllUserTrustedCert(napi_env env, napi_callback_info info);
-    napi_value CMNapiUninstallUserTrustedCert(napi_env env, napi_callback_info info);
     napi_value CMNapiUninstallUserCertSync(napi_env env, napi_callback_info info);
 }  // namespace CMNapi
 

@@ -94,6 +94,10 @@ bool CmPermissionCheck(const uint32_t store)
             return CmHasCommonPermission();
         case CM_SYS_CREDENTIAL_STORE:
             return CmHasCommonPermission() && CmHasSystemAppPermission();
+        case CM_SYSTEM_TRUSTED_STORE:
+            return CmHasPrivilegedPermission() && CmHasCommonPermission() && CmIsSystemApp();
+        case CM_USER_TRUSTED_STORE:
+            return CmHasCommonPermission();
         default:
             return false;
     }

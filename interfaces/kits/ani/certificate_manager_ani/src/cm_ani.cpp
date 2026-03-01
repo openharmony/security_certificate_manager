@@ -31,6 +31,7 @@
 #include "cm_get_ca_list_impl.h"
 #include "cm_get_cert_info_impl.h"
 #include "cm_install_user_ca_sync_impl.h"
+#include "cm_install_user_ca_impl.h"
 #include "cm_get_cert_store_path.h"
 #include "cm_uninstall_user_ca_sync_impl.h"
 
@@ -146,6 +147,13 @@ static ani_object getUserCANative(ani_env *env, ani_string aniCertUri)
     return getCertInfoImpl->Invoke();
 }
 
+static ani_object installUserCANative(ani_env *env, ani_arraybuffer aniCertData, ani_enum_item aniCertScope,
+    ani_enum_item aniCertFormat)
+{
+    auto installUserCaImpl = std::make_shared<CmInstallUserCaImpl>(env, aniCertData, aniCertScope, aniCertFormat);
+    return installUserCaImpl->Invoke();
+}
+
 static ani_object installUserCASyncNative(ani_env *env, ani_arraybuffer aniCertData, ani_enum_item aniCertScope)
 {
     auto installUserCaSyncImpl = std::make_shared<CmInstallUserCaSyncImpl>(env, aniCertData, aniCertScope);
@@ -208,6 +216,8 @@ static const std::array NATIVE_METHODS {
         reinterpret_cast<void *>(getAllUserCAByScopeNative)},
     ani_native_function {"getUserCANative", nullptr,
         reinterpret_cast<void *>(getUserCANative)},
+    ani_native_function {"installUserCANative", nullptr,
+        reinterpret_cast<void *>(installUserCANative)},
     ani_native_function {"getAllSystemCredNative", nullptr,
         reinterpret_cast<void *>(getAllSystemCredNative)},
     ani_native_function {"getPrivateCertificatesNative", nullptr,
