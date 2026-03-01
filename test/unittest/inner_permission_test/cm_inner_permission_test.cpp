@@ -54,10 +54,7 @@ void CmInnerPermissionTest::TearDownTestCase(void)
 
 void CmInnerPermissionTest::SetUp()
 {
-    g_MockHap = new (std::nothrow) MockHapToken({
-        "ohos.permission.ACCESS_CERT_MANAGER",
-        "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL"
-    });
+    g_MockHap = new (std::nothrow) MockHapToken({"ohos.permission.ACCESS_CERT_MANAGER"});
 }
 
 void CmInnerPermissionTest::TearDown()
@@ -102,7 +99,7 @@ HWTEST_F(CmInnerPermissionTest, CmInnerPermissionTest002, TestSize.Level0)
     uint8_t uriData[] = "b7a5b843.0";
     struct CmBlob uri = { sizeof(uriData), uriData };
     ret = CmGetCertInfo(&uri, CM_SYSTEM_TRUSTED_STORE, &info);
-    EXPECT_EQ(ret, CM_SUCCESS);
+    EXPECT_EQ(ret, CMR_ERROR_PERMISSION_DENIED);
 
     FreeCMBlobData(&info.certInfo);
 }
