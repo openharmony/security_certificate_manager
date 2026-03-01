@@ -310,6 +310,17 @@ ohos_prebuilt_etc("trusted_system_certificate26") {
   ]
 }
 
+ohos_prebuilt_etc("trusted_system_certificate27") {
+  source = "systemCertificates/0f5dc4f3.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
+
 ohos_prebuilt_etc("trusted_system_certificate28") {
   source = "systemCertificates/68dd7389.0"
   part_name = "certificate_manager"
@@ -1311,5 +1322,68 @@ ohos_prebuilt_etc("trusted_system_certificate118") {
   ]
 }
 
+ohos_prebuilt_etc("trusted_system_certificate119") {
+  source = "systemCertificates/2ccbdda3.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
 
+ohos_prebuilt_etc("trusted_system_certificate120") {
+  source = "systemCertificates/3e359ba6.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
 
+ohos_prebuilt_etc("trusted_system_certificate121") {
+  source = "systemCertificates/7a3adc42.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
+
+ohos_prebuilt_etc("trusted_system_certificate122") {
+  source = "systemCertificates/0179095f.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
+
+ohos_prebuilt_etc("trusted_system_certificate123") {
+  source = "systemCertificates/b0d5255e.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
+
+ohos_prebuilt_etc("trusted_system_certificate124") {
+  source = "systemCertificates/ed858448.0"
+  part_name = "certificate_manager"
+  subsystem_name = "security"
+  relative_install_dir = "security/certificates"
+  install_images = [
+    "system",
+    "updater",
+  ]
+}
