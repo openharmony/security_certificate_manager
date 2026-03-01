@@ -54,7 +54,10 @@ void CmInnerPermissionTest::TearDownTestCase(void)
 
 void CmInnerPermissionTest::SetUp()
 {
-    g_MockHap = new (std::nothrow) MockHapToken({"ohos.permission.ACCESS_CERT_MANAGER"});
+    g_MockHap = new (std::nothrow) MockHapToken({
+        "ohos.permission.ACCESS_CERT_MANAGER",
+        "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL"
+    });
 }
 
 void CmInnerPermissionTest::TearDown()

@@ -77,6 +77,30 @@ static napi_value GetCredAlias(napi_env env, napi_value napiObject, CmBlob *&cer
     return ParseCertAlias(env, napiObject, certAlias);
 }
 
+static napi_value GetLevelOrCallback(napi_env env, InstallAppCertAsyncContext context, napi_value napiObject)
+{
+    napi_valuetype type = napi_undefined;
+    NAPI_CALL(env, napi_typeof(env, napiObject, &type));
+    if (type == napi_number) {
+        uint32_t level = CM_AUTH_STORAGE_LEVEL_EL1;
+        napi_value result = ParseUint32(env, napiObject, level);
+        if (result == nullptr || CM_LEVEL_CHECK(level)) {
+            ThrowError(env, PARAM_ERROR, "level is not a uint32 or level is invalid.");
+            CM_LOG_E("could not get level");
+            return nullptr;
+        }
+        context->level = (enum CmAuthStorageLevel)level;
+    } else {
+        int32_t ret = GetCallback(env, napiObject, context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
+            CM_LOG_E("get callback function faild when install application cert");
+            return nullptr;
+        }
+    }
+    return GetInt32(env, 0);
+}
+
 static napi_value ParsePrivateCertParams(napi_env env, napi_value *argv, size_t argc, size_t &index,
     InstallAppCertAsyncContext context)
 {
@@ -88,10 +112,9 @@ static napi_value ParsePrivateCertParams(napi_env env, napi_value *argv, size_t 
     }
 
     index++;
+    context->level = CM_AUTH_STORAGE_LEVEL_EL1;
     if (index < argc) {
-        if (GetCallback(env, argv[index], context->callback) != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
-            CM_LOG_E("get callback function failed when install application cert");
+        if (GetLevelOrCallback(env, context, argv[index]) == nullptr) {
             return nullptr;
         }
     }
