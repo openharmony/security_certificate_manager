@@ -132,7 +132,7 @@ static void GetAppCertListComplete(napi_env env, napi_status status, void *data)
 napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
-    NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &promise));
+    GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "GetAppCertListAsyncWork", NAPI_AUTO_LENGTH, &resourceName));
