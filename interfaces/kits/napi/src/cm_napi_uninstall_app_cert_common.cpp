@@ -27,6 +27,7 @@
 namespace CMNapi {
 namespace {
 constexpr int CM_NAPI_UNINSTALL_APP_CERT_ARGS = 1;
+constexpr int CM_NAPI_UNINSTALL_APP_CERT_ARGS_CALLBACK = 2;
 }  // namespace
 
 UninstallAppCertAsyncContext CreateUninstallAppCertAsyncContext()
@@ -59,14 +60,22 @@ void DeleteUninstallAppCertAsyncContext(napi_env env, UninstallAppCertAsyncConte
 napi_value UninstallAppCertParseParams(
     napi_env env, napi_callback_info info, UninstallAppCertAsyncContext context)
 {
-    size_t argc = CM_NAPI_UNINSTALL_APP_CERT_ARGS;
-    napi_value argv[CM_NAPI_UNINSTALL_APP_CERT_ARGS] = { nullptr };
+    size_t argc = CM_NAPI_UNINSTALL_APP_CERT_ARGS_CALLBACK;
+    napi_value argv[CM_NAPI_UNINSTALL_APP_CERT_ARGS_CALLBACK] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
-    if (argc != CM_NAPI_UNINSTALL_APP_CERT_ARGS) {
+    if (context->store != APPLICATION_PRIVATE_CERTIFICATE_STORE && argc != CM_NAPI_UNINSTALL_APP_CERT_ARGS) {
         ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 1.");
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
+    }
+
+    if (context->store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
+        if (argc != CM_NAPI_UNINSTALL_APP_CERT_ARGS && argc != CM_NAPI_UNINSTALL_APP_CERT_ARGS_CALLBACK) {
+            ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need between 1 and 2");
+            CM_LOG_E("arguments count invalid. argc = %d", argc);
+            return nullptr;
+        }
     }
 
     size_t index = 0;
@@ -77,13 +86,23 @@ napi_value UninstallAppCertParseParams(
         return nullptr;
     }
 
+    index++;
+    if (index < argc) {
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
+            CM_LOG_E("get callback function faild when uninstall applicaiton cert");
+            return nullptr;
+        }
+    }
+
     return GetInt32(env, 0);
 }
 
 napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
-    NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &promise));
+    GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "UninstallAppCertAsyncWork", NAPI_AUTO_LENGTH, &resourceName));
@@ -109,7 +128,11 @@ napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext 
                 result[0] = GenerateBusinessError(env, context->result);
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
-            GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+            if (context->deferred != nullptr) {
+                GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+            } else {
+                GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
+            }
             DeleteUninstallAppCertAsyncContext(env, context);
         },
         static_cast<void *>(asyncContext),

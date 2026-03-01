@@ -426,11 +426,10 @@ static void UninstallAllUserCertComplete(napi_env env, napi_status status, void 
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
-        napi_get_boolean(env, true, &result[1]);
     } else {
         result[0] = GenerateBusinessError(env, context->errCode);
-        napi_get_undefined(env, &result[1]);
     }
+    napi_get_undefined(env, &result[1]);
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     FreeUserCertAsyncContext(env, context);

@@ -57,13 +57,25 @@ void DeleteGetAppCertListAsyncContext(napi_env env, GetAppCertListAsyncContext &
 napi_value GetAppCertListParseParams(
     napi_env env, napi_callback_info info, GetAppCertListAsyncContext context)
 {
-    size_t argc = 0;
-    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr));
+    size_t argc = 1;
+    napi_value argv[1] = { nullptr };
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
-    if (argc != 0) {
+    if ((context->store != APPLICATION_PRIVATE_CERTIFICATE_STORE && argc != 0) ||
+        (context->store == APPLICATION_PRIVATE_CERTIFICATE_STORE && argc > 1)) {
         ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 0.");
         CM_LOG_E("Missing parameter");
         return nullptr;
+    }
+
+    size_t index = 0;
+    if (index < argc) {
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
+            CM_LOG_E("get callback function faild when getting application certificate list");
+            return nullptr;
+        }
     }
 
     return GetInt32(env, 0);
@@ -108,7 +120,11 @@ static void GetAppCertListComplete(napi_env env, napi_status status, void *data)
         result[0] = GenerateBusinessError(env, context->result);
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
-    GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+    if (context->deferred != nullptr) {
+        GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+    } else {
+        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
+    }
     DeleteGetAppCertListAsyncContext(env, context);
     CM_LOG_D("get app cert list end");
 }
@@ -116,7 +132,7 @@ static void GetAppCertListComplete(napi_env env, napi_status status, void *data)
 napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
-    NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &promise));
+    GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "GetAppCertListAsyncWork", NAPI_AUTO_LENGTH, &resourceName));

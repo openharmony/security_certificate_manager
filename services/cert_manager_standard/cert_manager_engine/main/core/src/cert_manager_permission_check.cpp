@@ -94,12 +94,21 @@ bool CmPermissionCheck(const uint32_t store)
             return CmHasCommonPermission();
         case CM_SYS_CREDENTIAL_STORE:
             return CmHasCommonPermission() && CmHasSystemAppPermission();
-        case CM_SYSTEM_TRUSTED_STORE:
-            return CmHasPrivilegedPermission() && CmHasCommonPermission() && CmIsSystemApp();
-        case CM_USER_TRUSTED_STORE:
-            return CmHasCommonPermission();
         default:
             return false;
+    }
+}
+
+int32_t CmHasGetCAPermission(const uint32_t store)
+{
+    switch (store) {
+        case CM_SYSTEM_TRUSTED_STORE:
+            return (CmHasPrivilegedPermission() && CmHasCommonPermission() && CmIsSystemApp()) ?
+                CM_SUCCESS : CMR_ERROR_PERMISSION_DENIED;
+        case CM_USER_TRUSTED_STORE:
+            return CmHasCommonPermission() ? CM_SUCCESS : CMR_ERROR_PERMISSION_DENIED;
+        default:
+            return CMR_ERROR_INVALID_ARGUMENT;
     }
 }
 

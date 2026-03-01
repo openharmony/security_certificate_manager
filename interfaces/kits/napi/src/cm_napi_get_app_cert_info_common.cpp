@@ -27,6 +27,7 @@
 namespace CMNapi {
 namespace {
 constexpr int CM_NAPI_GET_APP_CERT_INFO_ARGS = 1;
+constexpr int CM_NAPI_GET_APP_CERT_INFO_ARGS_CALLBACK = 2;
 }  // namespace
 
 GetAppCertInfoAsyncContext CreateGetAppCertInfoAsyncContext()
@@ -62,14 +63,22 @@ void DeleteGetAppCertInfoAsyncContext(napi_env env, GetAppCertInfoAsyncContext &
 napi_value GetAppCertInfoParseParams(
     napi_env env, napi_callback_info info, GetAppCertInfoAsyncContext context)
 {
-    size_t argc = CM_NAPI_GET_APP_CERT_INFO_ARGS;
-    napi_value argv[CM_NAPI_GET_APP_CERT_INFO_ARGS] = { nullptr };
+    size_t argc = CM_NAPI_GET_APP_CERT_INFO_ARGS_CALLBACK;
+    napi_value argv[CM_NAPI_GET_APP_CERT_INFO_ARGS_CALLBACK] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
-    if (argc != CM_NAPI_GET_APP_CERT_INFO_ARGS) {
+    if (context->store != APPLICATION_PRIVATE_CERTIFICATE_STORE && argc != CM_NAPI_GET_APP_CERT_INFO_ARGS) {
         ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 1.");
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
+    }
+
+    if (context->store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
+        if (argc != CM_NAPI_GET_APP_CERT_INFO_ARGS && argc != CM_NAPI_GET_APP_CERT_INFO_ARGS_CALLBACK) {
+            ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need between 1 and 2");
+            CM_LOG_E("arguments count invalid. argc = %d", argc);
+            return nullptr;
+        }
     }
 
     size_t index = 0;
@@ -78,6 +87,16 @@ napi_value GetAppCertInfoParseParams(
         ThrowError(env, PARAM_ERROR, "keyUri is not a string or the length is 0 or too long.");
         CM_LOG_E("could not get key uri");
         return nullptr;
+    }
+
+    index++;
+    if (index < argc) {
+        int32_t ret = GetCallback(env, argv[index], context->callback);
+        if (ret != CM_SUCCESS) {
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
+            CM_LOG_E("get callback function faild when getting application cert info");
+            return nullptr;
+        }
     }
 
     return GetInt32(env, 0);
@@ -110,7 +129,7 @@ static void InitAppCert(struct Credential *credential)
 napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext asyncContext)
 {
     napi_value promise = nullptr;
-    NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &promise));
+    GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
 
     napi_value resourceName = nullptr;
     NAPI_CALL(env, napi_create_string_latin1(env, "GetAppCertInfoAsyncWork", NAPI_AUTO_LENGTH, &resourceName));
@@ -139,7 +158,11 @@ napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext asyn
                 result[0] = GenerateBusinessError(env, context->result);
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
-            GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+            if (context->deferred != nullptr) {
+                GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+            } else {
+                GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
+            }
             DeleteGetAppCertInfoAsyncContext(env, context);
         },
         static_cast<void *>(asyncContext),

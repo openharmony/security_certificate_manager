@@ -84,7 +84,7 @@ int32_t CmServiceGetSystemCertCheck(const uint32_t store, const struct CmBlob *c
         return CMR_ERROR_INVALID_ARGUMENT_URI;
     }
 
-    if (!CmPermissionCheck(store)) {
+    if (CmHasGetCAPermission(store) != CM_SUCCESS) {
         CM_LOG_E("permission check failed");
         return CMR_ERROR_PERMISSION_DENIED;
     }

@@ -200,15 +200,13 @@ static void RemoveOrIsAuthedComplete(napi_env env, napi_status status, void *dat
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
-        napi_get_boolean(env, true, &result[1]);
     } else if (context->errCode == CMR_ERROR_AUTH_CHECK_FAILED) {
         napi_create_uint32(env, 0, &result[0]);
-        napi_get_boolean(env, false, &result[1]);
         context->errCode = CM_SUCCESS;
     } else {
         result[0] = GenerateBusinessError(env, context->errCode);
-        napi_get_undefined(env, &result[1]);
     }
+    napi_get_undefined(env, &result[1]);
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     FreeGrantAsyncContext(env, context);
