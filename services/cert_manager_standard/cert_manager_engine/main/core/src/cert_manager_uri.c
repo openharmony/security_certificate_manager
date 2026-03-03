@@ -436,6 +436,7 @@ static int32_t DecodePath(struct CMUri *uri, const char *path, uint32_t start, u
             // Security note: Preserve old pointer for memory safety during multi-field parsing.
             if (oldPtr != NULL) {
                 free(oldPtr);
+                oldPtr = NULL;
             }
         } else if (e != NULL) {
             *e = DecodeEnum(path, valueOff, valueLen, values, valueCount);
