@@ -102,6 +102,7 @@ ohos_shared_library("certmanagerdialog") {
     "src/dialog/cm_napi_open_uninstall_dialog.cpp",
     "src/dialog/cm_napi_open_authorize_dialog.cpp",
     "src/dialog/cm_napi_open_ukey_auth_dialog.cpp",
+    "src/dialog/cm_napi_supports_ca_cert_dialog.cpp",
     "src/dialog/dialog_callback/cm_napi_dialog_callback.cpp",
     "src/dialog/dialog_callback/cm_napi_dialog_callback_void.cpp",
     "src/dialog/dialog_callback/cm_napi_dialog_callback_string.cpp",

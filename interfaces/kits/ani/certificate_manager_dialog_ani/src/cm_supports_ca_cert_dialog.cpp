@@ -16,16 +16,17 @@
 #include "cm_supports_ca_cert_dialog.h"
 #include "cm_log.h"
 #include "cm_dialog_api_common.h"
+#include "cm_ani_utils.h"
 
 namespace OHOS::Security::CertManager::Ani {
 ani_object supportsCACertDialogNative(ani_env *env)
 {
     CM_LOG_I("supportsCACertDialog enter");
     bool isSupport = IsEnableCACertDialog();
-    ani_boolean result;
-    auto ret = env->CreateBooleanANI(isSupport, &result);
-    if (ret != ANI_OK) {
-        CM_LOG_E("CreateBooleanANI failed, ret = %d", static_cast<int32_t>(ret));
+    ani_object result;
+    auto ret = AniUtils::CreateBooleanObject(env, isSupport, result);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("CreateBooleanObject failed, ret = %d", ret);
         return nullptr;
     }
     CM_LOG_I("supportsCACertDialog end, isSupport = %d", isSupport);
