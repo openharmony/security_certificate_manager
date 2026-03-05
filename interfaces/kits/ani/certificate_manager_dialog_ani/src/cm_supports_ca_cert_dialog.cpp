@@ -19,7 +19,9 @@
 #include "cm_ani_utils.h"
 
 namespace OHOS::Security::CertManager::Ani {
-ani_object supportsCACertDialogNative(ani_env *env)
+using namespace OHOS::Security::CertManager::Dialog;
+
+ani_object SupportsCACertDialog(ani_env *env)
 {
     CM_LOG_I("supportsCACertDialog enter");
     bool isSupport = IsEnableCACertDialog();

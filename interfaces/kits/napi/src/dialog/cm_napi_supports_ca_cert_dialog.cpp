@@ -19,6 +19,8 @@
 #include "cm_dialog_api_common.h"
 
 namespace CMNapi {
+using namespace OHOS::Security::CertManager::Dialog;
+
 napi_value CMNapiSupportsCACertDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("supportsCACertDialog enter");

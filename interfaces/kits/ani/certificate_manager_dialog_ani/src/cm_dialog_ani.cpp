@@ -77,7 +77,7 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
 
 ani_object supportsCACertDialogNative(ani_env *env)
 {
-    return OHOS::Security::CertManager::Ani::supportsCACertDialogNative(env);
+    return OHOS::Security::CertManager::Ani::SupportsCACertDialog(env);
 }
 }
 

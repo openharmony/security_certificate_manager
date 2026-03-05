@@ -19,7 +19,7 @@
 #include "ani.h"
 
 namespace OHOS::Security::CertManager::Ani {
-ani_object supportsCACertDialogNative(ani_env *env);
+ani_object SupportsCACertDialog(ani_env *env);
 }  // namespace OHOS::Security::CertManager::Ani
 
 #endif
