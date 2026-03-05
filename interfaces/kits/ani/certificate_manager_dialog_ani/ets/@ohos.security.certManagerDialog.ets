@@ -66,6 +66,8 @@ native function openUkeyAuthDialogNative(
   callback: AsyncCallbackWrapper<void>
 ): NativeResult<void>;
 
+native function supportsCACertDialogNative(): NativeResult<boolean>;
+
 class NativeResult<T> {
   code: int;
   message: string = "";
@@ -330,5 +332,13 @@ export namespace certificateManagerDialog {
           reject(err);
         }
     });
+  }
+
+  export function supportsCACertDialog(): boolean {
+    let result: NativeResult<boolean> = supportsCACertDialogNative();
+    if (result.code !== 0) {
+      return false;
+    }
+    return result.result?? false;
   }
 }

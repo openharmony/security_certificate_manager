@@ -24,6 +24,7 @@
 #include "cm_open_cert_detail_dialog.h"
 #include "cm_open_auth_dialog.h"
 #include "cm_open_ukey_auth_dialog.h"
+#include "cm_supports_ca_cert_dialog.h"
 
 namespace OHOS::Security::CertManager::Ani {
 ani_object openCertificateManagerDialogNative(ani_env *env, ani_object context, ani_enum_item pageType,
@@ -73,6 +74,11 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
     auto openUkeyAuthDialogImpl = std::make_shared<CmOpenUkeyAuthDialog>(env, context, keyUri, callback);
     return openUkeyAuthDialogImpl->Invoke();
 }
+
+ani_object supportsCACertDialogNative(ani_env *env)
+{
+    return OHOS::Security::CertManager::Ani::supportsCACertDialogNative(env);
+}
 }
 
 ANI_EXPORT ani_status ANI_Constructor(ani_vm *vm, uint32_t *result)
@@ -107,6 +113,8 @@ ANI_EXPORT ani_status ANI_Constructor(ani_vm *vm, uint32_t *result)
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openAuthorizeDialogWithReqNative)},
         ani_native_function {"openUkeyAuthDialogNative", nullptr,
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openUkeyAuthDialogNative)},
+        ani_native_function {"supportsCACertDialogNative", nullptr,
+            reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::supportsCACertDialogNative)},
     };
     ret = env->Module_BindNativeFunctions(module, methods.data(), methods.size());
     if (ret != ANI_OK) {
