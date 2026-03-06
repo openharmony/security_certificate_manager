@@ -24,6 +24,7 @@
 #include "cm_napi_open_uninstall_dialog.h"
 #include "cm_napi_open_authorize_dialog.h"
 #include "cm_napi_open_ukey_auth_dialog.h"
+#include "cm_napi_supports_ca_cert_dialog.h"
 
 namespace CMNapi {
 inline void AddInt32Property(napi_env env, napi_value object, const char *name, int32_t value)
@@ -111,6 +112,7 @@ static napi_value CMDialogNapiRegister(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("openCertificateDetailDialog", CMNapiOpenDetailDialog),
         DECLARE_NAPI_FUNCTION("openAuthorizeDialog", CMNapiOpenAuthorizeDialog),
         DECLARE_NAPI_FUNCTION("openUkeyAuthDialog", CMNapiOpenUkeyAuthorizeDialog),
+        DECLARE_NAPI_FUNCTION("supportsCACertDialog", CMNapiSupportsCACertDialog),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
     return exports;
