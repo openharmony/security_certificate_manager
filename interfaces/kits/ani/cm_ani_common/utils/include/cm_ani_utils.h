@@ -60,8 +60,6 @@ ani_object GenerateCertReference(ani_env *env, ani_int intValue, ani_string strV
 
 int32_t CreateBooleanObject(ani_env *env, bool value, ani_object &resultObjOut);
 
-int32_t CreateBooleanObject(ani_env *env, bool value, ani_object &resultObjOut);
-
 int32_t GenerateCmResult(ani_env *env, ani_object &resultObjOut);
 
 int32_t GenerateCredObj(ani_env *env, ani_string type, ani_string alias, ani_string keyUri, ani_object &resultObjOut);

@@ -258,7 +258,6 @@ ani_object GenerateCertReference(ani_env *env, ani_int intValue, ani_string strV
 
 int32_t CreateBooleanObject(ani_env *env, bool value, ani_object &resultObjOut)
 {
-    (void)value;
     if (env == nullptr) {
         CM_LOG_E("env is nullptr.");
         return CMR_ERROR_NULL_POINTER;
@@ -275,7 +274,7 @@ int32_t CreateBooleanObject(ani_env *env, bool value, ani_object &resultObjOut)
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if (env->Object_New(cls, ctor, &resultObjOut) != ANI_OK) {
+    if (env->Object_New(cls, ctor, &resultObjOut, value) != ANI_OK) {
         CM_LOG_E("create %s object failed.", BOOLEAN_CLASS);
         return CMR_ERROR_INVALID_ARGUMENT;
     }

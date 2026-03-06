@@ -25,13 +25,21 @@ ani_object SupportsCACertDialog(ani_env *env)
 {
     CM_LOG_I("supportsCACertDialog enter");
     bool isSupport = IsEnableCACertDialog();
+    ani_object nativeResult{};
     ani_object result;
     auto ret = AniUtils::CreateBooleanObject(env, isSupport, result);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CreateBooleanObject failed, ret = %d", ret);
+        ret = AniUtils::GenerateNativeResult(env, CMR_DIALOG_ERROR_INTERNAL, DIALOG_GENERIC_MSG.c_str(), result,
+            nativeResult);
+    } else {
+        ret = AniUtils::GenerateNativeResult(env, CM_SUCCESS, nullptr, result, nativeResult);
+    }
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("generate native result failed, ret = %d", ret);
         return nullptr;
     }
     CM_LOG_I("supportsCACertDialog end, isSupport = %d", isSupport);
-    return result;
+    return nativeResult;
 }
 }  // namespace OHOS::Security::CertManager::Ani

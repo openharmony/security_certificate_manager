@@ -337,8 +337,11 @@ export namespace certificateManagerDialog {
   export function supportsCACertDialog(): boolean {
     let result: NativeResult<boolean> = supportsCACertDialogNative();
     if (result.code !== 0) {
-      return false;
+      let err = new BusinessError();
+      err.code = result.code;
+      err.message = result.message;
+      throw err;
     }
-    return result.result?? false;
+    return result.result ?? false;
   }
 }
