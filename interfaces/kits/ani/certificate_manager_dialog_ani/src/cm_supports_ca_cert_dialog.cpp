@@ -26,7 +26,7 @@ ani_object SupportsCACertDialog(ani_env *env)
     CM_LOG_I("supportsCACertDialog enter");
     bool isSupport = IsEnableCACertDialog();
     ani_object nativeResult{};
-    ani_object result;
+    ani_object result{};
     auto ret = AniUtils::CreateBooleanObject(env, isSupport, result);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CreateBooleanObject failed, ret = %d", ret);

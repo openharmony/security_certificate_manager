@@ -28,9 +28,19 @@ CmOpenInstallDialog::CmOpenInstallDialog(ani_env *env, ani_object aniContext, an
     if (env == nullptr) {
         return;
     }
-    env->Object_GetPropertyByName_Ref(params, "certType", reinterpret_cast<ani_ref *>(&this->aniCertType));
-    env->Object_GetPropertyByName_Ref(params, "certScope", reinterpret_cast<ani_ref *>(&this->aniCertScope));
-    env->Object_GetPropertyByName_Ref(params, "certStr", reinterpret_cast<ani_ref *>(&this->aniCert));
+    ani_status status =
+        env->Object_GetPropertyByName_Ref(params, "certType", reinterpret_cast<ani_ref *>(&this->aniCertType));
+    if (status != ANI_OK) {
+        CM_LOG_E("get param certType error. status = %d", static_cast<int32_t>(status));
+    }
+    status = env->Object_GetPropertyByName_Ref(params, "certScope", reinterpret_cast<ani_ref *>(&this->aniCertScope));
+    if (status != ANI_OK) {
+        CM_LOG_E("get param certScope error. status = %d", static_cast<int32_t>(status));
+    }
+    status = env->Object_GetPropertyByName_Ref(params, "certStr", reinterpret_cast<ani_ref *>(&this->aniCert));
+    if (status != ANI_OK) {
+        CM_LOG_E("get param certStr error. status = %d", static_cast<int32_t>(status));
+    }
 }
 
 int32_t CmOpenInstallDialog::GetParamsFromEnv()
