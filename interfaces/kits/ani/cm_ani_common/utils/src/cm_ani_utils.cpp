@@ -546,7 +546,7 @@ static int32_t GetPaddingEnumValue(ani_env *env, ani_object aniSpec, uint32_t *v
 {
     ani_enum paddingEnum;
     if (env->FindEnum(KEY_PADDING_ENUM, &paddingEnum) != ANI_OK) {
-        CM_LOG_E("find KEY_PADDING_ENUM error. status = %d");
+        CM_LOG_E("find KEY_PADDING_ENUM error. status.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     ani_enum_item padding;
