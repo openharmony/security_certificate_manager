@@ -331,29 +331,38 @@ int32_t GenerateCmResult(ani_env *env, ani_object &resultObjOut)
     return CM_SUCCESS;
 }
 
-int32_t GenerateCredObj(ani_env *env, ani_string type, ani_string alias, ani_string keyUri, ani_object &resultObjOut)
+int32_t GenerateCredObj(ani_env *env, char *typeStr, char *aliasStr, char *keyUriStr, ani_object &resultObjOut)
 {
     if (env == nullptr) {
         CM_LOG_E("env is nullptr.");
         return CMR_ERROR_NULL_POINTER;
     }
-    if (CreateResultObject(env, resultObjOut, CRED_ABSTRACT_CLASS) != CM_SUCCESS) {
-        CM_LOG_E("create credAbstract object object failed.");
+    ani_string type{};
+    ani_string alias{};
+    ani_string keyUri{};
+    ani_status status = env->String_NewUTF8(typeStr, strlen(typeStr), &type);
+    if (status != ANI_OK) {
+        CM_LOG_E("cred type String_NewUTF8 failed. ret = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if ((status = env->String_NewUTF8(aliasStr, strlen(aliasStr), &alias)) != ANI_OK) {
+        CM_LOG_E("cred alias String_NewUTF8 failed. ret = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if ((status = env->String_NewUTF8(keyUriStr, strlen(keyUriStr), &keyUri)) != ANI_OK) {
+        CM_LOG_E("cred keyUri String_NewUTF8 failed. ret = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    ani_status status = env->Object_SetPropertyByName_Ref(resultObjOut, "type", type);
-    if (status != ANI_OK) {
+    if ((status = env->Object_SetPropertyByName_Ref(resultObjOut, "type", type)) != ANI_OK) {
         CM_LOG_E("cmRcredAbstractesult set field type failed. ret = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    status = env->Object_SetPropertyByName_Ref(resultObjOut, "alias", alias);
-    if (status != ANI_OK) {
+    if ((status = env->Object_SetPropertyByName_Ref(resultObjOut, "alias", alias)) != ANI_OK) {
         CM_LOG_E("cmRcredAbstractesult set field alias failed. ret = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    status = env->Object_SetPropertyByName_Ref(resultObjOut, "keyUri", keyUri);
-    if (status != ANI_OK) {
+    if ((status = env->Object_SetPropertyByName_Ref(resultObjOut, "keyUri", keyUri)) != ANI_OK) {
         CM_LOG_E("cmRcredAbstractesult set field keyUri failed. ret = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -371,13 +380,7 @@ int32_t GenerateCredDetailObj(ani_env *env, Credential *credential, ani_object &
         CM_LOG_I("generate credentialObj failed. ret = %d", ret);
         return ret;
     }
-    ani_string aniCredType{};
-    ani_string aniCredAlias{};
-    ani_string aniCredKeyUri{};
-    env->String_NewUTF8(credential->type, strlen(credential->type), &aniCredType);
-    env->String_NewUTF8(credential->alias, strlen(credential->alias), &aniCredAlias);
-    env->String_NewUTF8(credential->keyUri, strlen(credential->keyUri), &aniCredKeyUri);
-    ret = GenerateCredObj(env, aniCredType, aniCredAlias, aniCredKeyUri, resultObjOut);
+    ret = GenerateCredObj(env, credential->type, credential->alias, credential->keyUri, resultObjOut);
     if (ret != CM_SUCCESS) {
         CM_LOG_I("credentialObj set string property failed. ret = %d", ret);
         return ret;
@@ -423,14 +426,13 @@ int32_t GenerateCredArray(ani_env *env, CredentialAbstract *credentialAbstract, 
     ani_array resultArray;
     env->Array_New(credCount, undefinedRef, &resultArray);
     for (uint32_t i = 0; i < credCount; i++) {
-        ani_string aniCredType{};
-        ani_string aniCredAlias{};
-        ani_string aniCredKeyUri{};
-        env->String_NewUTF8(credentialAbstract[i].type, strlen(credentialAbstract[i].type), &aniCredType);
-        env->String_NewUTF8(credentialAbstract[i].alias, strlen(credentialAbstract[i].alias), &aniCredAlias);
-        env->String_NewUTF8(credentialAbstract[i].keyUri, strlen(credentialAbstract[i].keyUri), &aniCredKeyUri);
         ani_object credAbstractObj{};
-        int32_t ret = GenerateCredObj(env, aniCredType, aniCredAlias, aniCredKeyUri, credAbstractObj);
+        if (CreateResultObject(env, credAbstractObj, CRED_ABSTRACT_CLASS) != CM_SUCCESS) {
+            CM_LOG_E("create credAbstract object object failed.");
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        int32_t ret = GenerateCredObj(env, credentialAbstract[i].type, credentialAbstract[i].alias,
+            credentialAbstract[i].keyUri, credAbstractObj);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("generate cred object failed. ret = %d", ret);
             return CMR_ERROR_INVALID_ARGUMENT;
@@ -524,7 +526,10 @@ int32_t GenerateUint8Array(ani_env *env, const CmBlob *data, ani_object &resultO
 static int32_t GetPurposeEnumValue(ani_env *env, ani_object aniSpec, uint32_t *value)
 {
     ani_enum purposeEnum;
-    env->FindEnum(KEY_PURPOSE_ENUM, &purposeEnum);
+    if (env->FindEnum(KEY_PURPOSE_ENUM, &purposeEnum) != ANI_OK) {
+        CM_LOG_E("find KEY_PURPOSE_ENUM failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     ani_enum_item purpose;
     if (env->Object_GetPropertyByName_Ref(aniSpec, "purpose", (ani_ref *)&purpose) != ANI_OK) {
         CM_LOG_E("get purpose enumItem failed.");
@@ -540,7 +545,10 @@ static int32_t GetPurposeEnumValue(ani_env *env, ani_object aniSpec, uint32_t *v
 static int32_t GetPaddingEnumValue(ani_env *env, ani_object aniSpec, uint32_t *value)
 {
     ani_enum paddingEnum;
-    env->FindEnum(KEY_PADDING_ENUM, &paddingEnum);
+    if (env->FindEnum(KEY_PADDING_ENUM, &paddingEnum) != ANI_OK) {
+        CM_LOG_E("find KEY_PADDING_ENUM error. status.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     ani_enum_item padding;
     if (env->Object_GetPropertyByName_Ref(aniSpec, "padding", (ani_ref *)&padding) != ANI_OK) {
         CM_LOG_E("get padding prop failed.");
@@ -568,7 +576,10 @@ static int32_t GetPaddingEnumValue(ani_env *env, ani_object aniSpec, uint32_t *v
 static int32_t GetDigestEnumValue(ani_env *env, ani_object aniSpec, uint32_t *value)
 {
     ani_enum digestEnum;
-    env->FindEnum(KEY_DIGEST_ENUM, &digestEnum);
+    if (env->FindEnum(KEY_DIGEST_ENUM, &digestEnum) != ANI_OK) {
+        CM_LOG_E("find KEY_DIGEST_ENUM error.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     ani_enum_item digest;
     if (env->Object_GetPropertyByName_Ref(aniSpec, "digest", (ani_ref *)&digest) != ANI_OK) {
         CM_LOG_E("get digest prop failed.");
@@ -654,28 +665,29 @@ int32_t GenerateCertObj(ani_env *env, CertAbstract *certAbstract, ani_object &re
     ani_string uri{};
     ani_string certAlias{};
     ani_string subjectName{};
-    env->String_NewUTF8(certAbstract->uri, strlen(certAbstract->uri), &uri);
+    ani_status status = env->String_NewUTF8(certAbstract->uri, strlen(certAbstract->uri), &uri);
+    if (status != ANI_OK) {
+        CM_LOG_E("cert uri String_NewUTF8 error. ret = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    
     env->String_NewUTF8(certAbstract->certAlias, strlen(certAbstract->certAlias), &certAlias);
     env->String_NewUTF8(certAbstract->subjectName, strlen(certAbstract->subjectName), &subjectName);
 
-    ani_status status = env->Object_SetPropertyByName_Ref(resultObjOut, "uri", uri);
-    if (status != ANI_OK) {
+    if ((status = env->Object_SetPropertyByName_Ref(resultObjOut, "uri", uri)) != ANI_OK) {
         CM_LOG_E("cmCertAbstractesult set field uri failed. ret = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    status = env->Object_SetPropertyByName_Ref(resultObjOut, "certAlias", certAlias);
-    if (status != ANI_OK) {
+    if ((status = env->Object_SetPropertyByName_Ref(resultObjOut, "certAlias", certAlias)) != ANI_OK) {
         CM_LOG_E("cmCertAbstractesult set field certAlias failed. ret = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    status = env->Object_SetPropertyByName_Ref(resultObjOut, "subjectName", subjectName);
-    if (status != ANI_OK) {
+    if ((status = env->Object_SetPropertyByName_Ref(resultObjOut, "subjectName", subjectName)) != ANI_OK) {
         CM_LOG_E("cmCertAbstractesult set field subjectName failed. ret = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    status = env->Object_SetPropertyByName_Boolean(resultObjOut, "state",
-        static_cast<ani_boolean>(certAbstract->status));
-    if (status != ANI_OK) {
+    if ((status = env->Object_SetPropertyByName_Boolean(resultObjOut, "state",
+        static_cast<ani_boolean>(certAbstract->status))) != ANI_OK) {
         CM_LOG_E("cmCertAbstractesult set field state failed. ret = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }

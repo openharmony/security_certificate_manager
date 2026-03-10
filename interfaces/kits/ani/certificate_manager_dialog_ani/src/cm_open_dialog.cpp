@@ -43,8 +43,12 @@ void CmAniUIExtensionCallback::SetSessionId(const int32_t sessionId)
 
 ani_object CmAniUIExtensionCallback::GetDefaultResult(ani_env *env)
 {
-    ani_ref nullRef;
-    env->GetNull(&nullRef);
+    ani_ref nullRef{};
+    ani_status status = env->GetNull(&nullRef);
+    if (status != ANI_OK) {
+        CM_LOG_E("get nullRef failed. status = %d", static_cast<int32_t>(status));
+        return nullptr;
+    }
     return reinterpret_cast<ani_object>(nullRef);
 }
 
@@ -90,7 +94,7 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
         CM_LOG_E("invoke callback failed. status = %d", static_cast<int32_t>(status));
         return;
     }
-    env->GlobalReference_Delete(this->aniCallback);
+    (void)env->GlobalReference_Delete(this->aniCallback);
     status = DetachCurrentThreadEnv(this->vm);
     if (status != ANI_OK) {
         CM_LOG_E("DetachCurrentThreadEnv failed. status = %d", static_cast<int32_t>(status));
