@@ -94,9 +94,10 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
         CM_LOG_E("invoke callback failed. status = %d", static_cast<int32_t>(status));
         return;
     }
-    (void)env->GlobalReference_Delete(this->aniCallback);
-    status = DetachCurrentThreadEnv(this->vm);
-    if (status != ANI_OK) {
+    if ((status = env->GlobalReference_Delete(this->aniCallback)) != ANI_OK) {
+        CM_LOG_E("delete global reference failed. status = %d", static_cast<int32_t>(status));
+    }
+    if ((status = status = DetachCurrentThreadEnv(this->vm)) != ANI_OK) {
         CM_LOG_E("DetachCurrentThreadEnv failed. status = %d", static_cast<int32_t>(status));
         return;
     }

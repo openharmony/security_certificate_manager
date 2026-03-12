@@ -300,10 +300,13 @@ int32_t GenerateNativeResult(ani_env *env, const int32_t code, const char *messa
 
     if (message != nullptr) {
         ani_string resultMessage;
-        env->String_NewUTF8(message, strlen(message), &resultMessage);
-        ani_status status = env->Object_SetFieldByName_Ref(resultObjOut, "message", resultMessage);
+        ani_status status = env->String_NewUTF8(message, strlen(message), &resultMessage);
         if (status != ANI_OK) {
-            CM_LOG_E("Object_SetFieldByName_Ref Failed message");
+            CM_LOG_E("ani new string error, status = %d", static_cast<int32_t>(status));
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        if ((status = env->Object_SetFieldByName_Ref(resultObjOut, "message", resultMessage)) != ANI_OK) {
+            CM_LOG_E("Object_SetFieldByName_Ref Failed message, status = %d", static_cast<int32_t>(status));
             return CMR_ERROR_INVALID_ARGUMENT;
         }
     }
@@ -333,8 +336,8 @@ int32_t GenerateCmResult(ani_env *env, ani_object &resultObjOut)
 
 int32_t GenerateCredObj(ani_env *env, char *typeStr, char *aliasStr, char *keyUriStr, ani_object &resultObjOut)
 {
-    if (env == nullptr) {
-        CM_LOG_E("env is nullptr.");
+    if (env == nullptr || typeStr == nullptr || aliasStr == nullptr || keyUriStr == nullptr) {
+        CM_LOG_E("check params failed.");
         return CMR_ERROR_NULL_POINTER;
     }
     ani_string type{};
@@ -413,18 +416,40 @@ int32_t GenerateCredDetailObj(ani_env *env, Credential *credential, ani_object &
     return CM_SUCCESS;
 }
 
+static int32_t CreateArray(ani_env *env, uint32_t count, ani_array *resultArray)
+{
+    if (resultArray == nullptr) {
+        CM_LOG_E("check params failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    
+    ani_ref undefinedRef{};
+    ani_status status = env->GetUndefined(&undefinedRef);
+    if (status != ANI_OK) {
+        CM_LOG_E("ani get undefined error. status = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if ((status = env->Array_New(count, undefinedRef, resultArray)) != ANI_OK) {
+        CM_LOG_E("ani new array error. status = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    return CM_SUCCESS;
+}
+
 int32_t GenerateCredArray(ani_env *env, CredentialAbstract *credentialAbstract, uint32_t credCount,
     ani_array &outArrayRef)
 {
-    if (env == nullptr) {
-        CM_LOG_E("env is nullptr.");
+    if (env == nullptr || credentialAbstract == nullptr) {
+        CM_LOG_E("check params invalid.");
         return CMR_ERROR_NULL_POINTER;
     }
 
-    ani_ref undefinedRef;
-    env->GetUndefined(&undefinedRef);
-    ani_array resultArray;
-    env->Array_New(credCount, undefinedRef, &resultArray);
+    ani_array resultArray{};
+    int32_t ret = CreateArray(env, credCount, &resultArray);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("create credAbstract array failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     for (uint32_t i = 0; i < credCount; i++) {
         ani_object credAbstractObj{};
         if (CreateResultObject(env, credAbstractObj, CRED_ABSTRACT_CLASS) != CM_SUCCESS) {
@@ -453,10 +478,12 @@ int32_t GenerateCredDetailArrayObj(ani_env *env, Credential *credential, uint32_
         return CMR_ERROR_NULL_POINTER;
     }
 
-    ani_ref undefinedRef;
-    env->GetUndefined(&undefinedRef);
-    ani_array resultArray;
-    env->Array_New(credCount, undefinedRef, &resultArray);
+    ani_array resultArray{};
+    int32_t ret = CreateArray(env, credCount, &resultArray);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("create credential array failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     for (uint32_t i = 0; i < credCount; i++) {
         ani_object credentialObj{};
         int32_t ret = GenerateCredDetailObj(env, &credential[i], credentialObj);
@@ -509,7 +536,10 @@ int32_t GenerateUint8Array(ani_env *env, const CmBlob *data, ani_object &resultO
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     ani_ref buffer;
-    env->Object_GetFieldByName_Ref(resultObjOut, "buffer", &buffer);
+    if (env->Object_GetFieldByName_Ref(resultObjOut, "buffer", &buffer) != ANI_OK) {
+        CM_LOG_E("get field buffer error.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     void *bufferPtr = nullptr;
     size_t bufferLength;
     if (env->ArrayBuffer_GetInfo(static_cast<ani_arraybuffer>(buffer), &bufferPtr, &bufferLength) != ANI_OK) {
@@ -667,12 +697,19 @@ int32_t GenerateCertObj(ani_env *env, CertAbstract *certAbstract, ani_object &re
     ani_string subjectName{};
     ani_status status = env->String_NewUTF8(certAbstract->uri, strlen(certAbstract->uri), &uri);
     if (status != ANI_OK) {
-        CM_LOG_E("cert uri String_NewUTF8 error. ret = %d", static_cast<int32_t>(status));
+        CM_LOG_E("new string uri error. ret = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    
-    env->String_NewUTF8(certAbstract->certAlias, strlen(certAbstract->certAlias), &certAlias);
-    env->String_NewUTF8(certAbstract->subjectName, strlen(certAbstract->subjectName), &subjectName);
+    if ((status = env->String_NewUTF8(certAbstract->certAlias, strlen(certAbstract->certAlias),
+        &certAlias)) != ANI_OK) {
+        CM_LOG_E("new string alias error. ret = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if ((status = env->String_NewUTF8(certAbstract->subjectName, strlen(certAbstract->subjectName),
+        &subjectName)) != ANI_OK) {
+        CM_LOG_E("new string alias error. ret = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
 
     if ((status = env->Object_SetPropertyByName_Ref(resultObjOut, "uri", uri)) != ANI_OK) {
         CM_LOG_E("cmCertAbstractesult set field uri failed. ret = %d", static_cast<int32_t>(status));
@@ -701,10 +738,12 @@ int32_t GenerateCertArray(ani_env *env, CertAbstract *certAbstract, uint32_t cer
         return CMR_ERROR_NULL_POINTER;
     }
 
-    ani_ref undefinedRef;
-    env->GetUndefined(&undefinedRef);
-    ani_array resultArray;
-    env->Array_New(certCount, undefinedRef, &resultArray);
+    ani_array resultArray{};
+    int32_t ret = CreateArray(env, certCount, &resultArray);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("create certAbstract array failed.");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     for (uint32_t i = 0; i < certCount; i++) {
         ani_object certAbstractObj{};
         int32_t ret = GenerateCertObj(env, &certAbstract[i], certAbstractObj);
