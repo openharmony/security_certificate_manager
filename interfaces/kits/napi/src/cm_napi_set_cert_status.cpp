@@ -84,7 +84,7 @@ static napi_value SetCertStatusParseParams(
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "get certUri type error");
+        ThrowError(env, PARAM_ERROR, "get certUri type error");
         CM_LOG_E("could not get cert uri when set cert status");
         return nullptr;
     }
@@ -99,7 +99,7 @@ static napi_value SetCertStatusParseParams(
     if (context->certType == CM_CA_CERT_USER) {
         context->store = CM_USER_TRUSTED_STORE;
     } else {
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "certType invalid.");
+        ThrowError(env, PARAM_ERROR, "certType invalid.");
         CM_LOG_E("check certType invalid");
         return nullptr;
     }
