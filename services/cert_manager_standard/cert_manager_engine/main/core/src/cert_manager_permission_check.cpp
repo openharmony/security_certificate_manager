@@ -107,7 +107,7 @@ int32_t CmHasGetCAPermission(const uint32_t store)
                 return CMR_ERROR_PERMISSION_DENIED;
             }
             if (!CmIsSystemApp()) {
-                return CMR_ERROR_NOT_SYSTEMP_HAP;
+                return CMR_ERROR_NOT_SYSTEMP_APP;
             }
             return CM_SUCCESS;
         case CM_USER_TRUSTED_STORE:
