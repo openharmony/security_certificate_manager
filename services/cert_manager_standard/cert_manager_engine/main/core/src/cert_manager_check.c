@@ -64,7 +64,7 @@ int32_t CmServiceGetSystemCertListCheck(const uint32_t store)
         return CMR_ERROR_INVALID_ARGUMENT_STORE_TYPE;
     }
 
-    if (!CmHasCommonPermission()) {
+    if (CmHasGetCAPermission(store) != CM_SUCCESS) {
         CM_LOG_E("permission check failed");
         return CMR_ERROR_PERMISSION_DENIED;
     }
