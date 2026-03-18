@@ -103,8 +103,13 @@ int32_t CmHasGetCAPermission(const uint32_t store)
 {
     switch (store) {
         case CM_SYSTEM_TRUSTED_STORE:
-            return (CmHasPrivilegedPermission() && CmHasCommonPermission() && CmIsSystemApp()) ?
-                CM_SUCCESS : CMR_ERROR_PERMISSION_DENIED;
+            if (!CmHasPrivilegedPermission() || !CmHasCommonPermission()) {
+                return CMR_ERROR_PERMISSION_DENIED;
+            }
+            if (!CmIsSystemApp()) {
+                return CMR_ERROR_NOT_SYSTEMP_APP;
+            }
+            return CM_SUCCESS;
         case CM_USER_TRUSTED_STORE:
             return CmHasCommonPermission() ? CM_SUCCESS : CMR_ERROR_PERMISSION_DENIED;
         default:

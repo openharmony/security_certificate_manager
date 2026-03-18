@@ -77,7 +77,9 @@ int32_t CertManagerAsyncImpl::InvokeInnerApi()
     int32_t ret = this->InvokeAsyncWork();
     if (ret != CM_SUCCESS) {
         CM_LOG_E("failed to InvokeAsyncWork. ret = %d", ret);
-        env->GlobalReference_Delete(this->globalCallback);
+        if (env->GlobalReference_Delete(this->globalCallback) != ANI_OK) {
+            CM_LOG_E("delete global reference failed.");
+        }
         return ret;
     }
     return CM_SUCCESS;

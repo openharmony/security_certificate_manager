@@ -78,7 +78,7 @@ HWTEST_F(CmInnerPermissionTest, CmInnerPermissionTest001, TestSize.Level0)
     ASSERT_EQ(ret, CM_SUCCESS);
 
     ret = CmGetCertList(CM_SYSTEM_TRUSTED_STORE, certList);
-    EXPECT_EQ(ret, CM_SUCCESS);
+    EXPECT_EQ(ret, CMR_ERROR_PERMISSION_DENIED);
 
     FreeCertList(certList);
 }

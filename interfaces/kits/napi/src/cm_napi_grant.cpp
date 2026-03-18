@@ -194,7 +194,7 @@ static void RemoveUidExecute(napi_env env, void *data)
     context->errCode = CmRemoveGrantedApp(context->keyUri, context->appUid);
 }
 
-static void RemoveOrIsAuthedComplete(napi_env env, napi_status status, void *data)
+static void RemoveUidComplete(napi_env env, napi_status status, void *data)
 {
     GrantAsyncContext context = static_cast<GrantAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
@@ -207,6 +207,26 @@ static void RemoveOrIsAuthedComplete(napi_env env, napi_status status, void *dat
         result[0] = GenerateBusinessError(env, context->errCode);
     }
     napi_get_undefined(env, &result[1]);
+
+    GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
+    FreeGrantAsyncContext(env, context);
+}
+
+static void IsAuthedComplete(napi_env env, napi_status status, void *data)
+{
+    GrantAsyncContext context = static_cast<GrantAsyncContext>(data);
+    napi_value result[RESULT_NUMBER] = { nullptr };
+    if (context->errCode == CM_SUCCESS) {
+        napi_create_uint32(env, 0, &result[0]);
+        napi_get_boolean(env, true, &result[1]);
+    } else if (context->errCode == CMR_ERROR_AUTH_CHECK_FAILED) {
+        napi_create_uint32(env, 0, &result[0]);
+        napi_get_boolean(env, false, &result[1]);
+        context->errCode = CM_SUCCESS;
+    } else {
+        result[0] = GenerateBusinessError(env, context->errCode);
+        napi_get_undefined(env, &result[1]);
+    }
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     FreeGrantAsyncContext(env, context);
@@ -317,7 +337,7 @@ static napi_value RemoveUidAsyncWork(napi_env env, GrantAsyncContext context)
     NAPI_CALL(env, napi_create_async_work(
         env, nullptr, resourceName,
         RemoveUidExecute,
-        RemoveOrIsAuthedComplete,
+        RemoveUidComplete,
         static_cast<void *>(context),
         &context->asyncWork));
 
@@ -341,7 +361,7 @@ static napi_value IsAuthedAsyncWork(napi_env env, GrantAsyncContext context)
     NAPI_CALL(env, napi_create_async_work(
         env, nullptr, resourceName,
         IsAuthedExecute,
-        RemoveOrIsAuthedComplete,
+        IsAuthedComplete,
         static_cast<void *>(context),
         &context->asyncWork));
 
