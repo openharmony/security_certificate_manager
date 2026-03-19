@@ -73,7 +73,7 @@ int32_t CMResultBuilder::buildUriList()
     ani_array aniUriArray{};
     int32_t ret = AniUtils::CreateArray(env, certCount, &aniUriArray);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("create credAbstract array failed.");
+        CM_LOG_E("create uri array failed.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
