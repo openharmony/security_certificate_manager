@@ -70,15 +70,14 @@ int32_t CMResultBuilder::buildUriList()
         return CM_SUCCESS;
     }
 
-    ani_ref undefinedRef;
-    env->GetUndefined(&undefinedRef);
-    ani_array aniUriArray;
-    ani_status status = env->Array_New(certCount, undefinedRef, &aniUriArray);
-    if (status != ANI_OK) {
-        CM_LOG_E("create uri array failed. ret = %d", static_cast<int32_t>(status));
+    ani_array aniUriArray{};
+    int32_t ret = AniUtils::CreateArray(env, certCount, &aniUriArray);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("create credAbstract array failed.");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
+    ani_status status;
     for (uint32_t i = 0; i < certCount; ++i) {
         ani_string uriString = AniUtils::GenerateString(env, uriListArray[i]);
         if (uriString == nullptr) {
