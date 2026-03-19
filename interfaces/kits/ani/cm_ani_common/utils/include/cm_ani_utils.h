@@ -91,6 +91,8 @@ int32_t GenerateCertInfo(ani_env *env, ani_object &resultObjectOut);
 int32_t SetObjStringProperty(ani_env *env, ani_object obj, const std::map<std::string, std::string> &valueMap);
 
 int32_t GenerateBusinessError(ani_env *env, const int32_t errorCode, const char *message, ani_object &objectOut);
+
+int32_t CreateArray(ani_env *env, uint32_t count, ani_array *resultArray);
 } // namespace AniUtils
 } // namespace OHOS::Security::CertManager::Ani
 #endif // CM_ANI_UTILS_H
