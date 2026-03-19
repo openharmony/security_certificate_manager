@@ -416,7 +416,7 @@ int32_t GenerateCredDetailObj(ani_env *env, Credential *credential, ani_object &
     return CM_SUCCESS;
 }
 
-static int32_t CreateArray(ani_env *env, uint32_t count, ani_array *resultArray)
+int32_t CreateArray(ani_env *env, uint32_t count, ani_array *resultArray)
 {
     if (resultArray == nullptr) {
         CM_LOG_E("check params failed.");
