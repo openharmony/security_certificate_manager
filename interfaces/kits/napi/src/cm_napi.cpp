@@ -52,7 +52,6 @@ namespace CMNapi {
         AddInt32Property(env, errorCode, "CM_ERROR_INCORRECT_FORMAT", INVALID_CERT_FORMAT);
         AddInt32Property(env, errorCode, "CM_ERROR_MAX_CERT_COUNT_REACHED", MAX_CERT_COUNT_REACHED);
         AddInt32Property(env, errorCode, "CM_ERROR_NO_AUTHORIZATION", NO_AUTHORIZATION);
-        AddInt32Property(env, errorCode, "CM_ERROR_ALIAS_LENGTH_REACHED_LIMIT", ALIAS_LENGTH_REACHED_LIMIT);
         AddInt32Property(env, errorCode, "CM_ERROR_DEVICE_ENTER_ADVSECMODE", DEVICE_ENTER_ADVSECMODE);
         AddInt32Property(env, errorCode, "CM_ERROR_PASSWORD_IS_ERR", PASSWORD_IS_ERROR);
         AddInt32Property(env, errorCode, "CM_ERROR_STORE_PATH_NOT_SUPPORTED", STORE_PATH_NOT_SUPPORTED);
