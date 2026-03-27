@@ -36,6 +36,15 @@ static OHOS::AAFwk::Want CMGetAuthCertWant(std::shared_ptr<CmUIExtensionRequestC
     if (asyncContext->certPurpose != 0 && asyncContext->certPurpose != CREDENTIAL_INVALID_TYPE) {
         want.SetParam(CERT_MANAGER_CERT_PURPOSE, static_cast<int32_t>(asyncContext->certPurpose));
     }
+    if (!asyncContext->keyAlgIds.empty()) {
+        want.SetParam(CERT_MANAGER_KEY_ALG_IDS, asyncContext->keyAlgIds);
+    }
+    if (!asyncContext->issuers.empty()) {
+        want.SetParam(CERT_MANAGER_ISSUERS, asyncContext->issuers);
+    }
+    if (!asyncContext->serverUrl.empty()) {
+        want.SetParam(CERT_MANAGER_SERVER_URL, asyncContext->serverUrl);
+    }
     return want;
 }
 
@@ -94,6 +103,92 @@ static int32_t GetCertPurpose(napi_env env, napi_value arg, uint32_t &certPurpos
     return CM_SUCCESS;
 }
 
+static int32_t GetKeyAlgIds(napi_env env, napi_value arg, std::vector<std::string> &keyAlgIds)
+{
+    bool hasProperty = false;
+    napi_value value = nullptr;
+
+    napi_status status = napi_has_named_property(env, arg, CERT_MANAGER_KEY_ALG_IDS.c_str(), &hasProperty);
+    if (status != napi_ok) {
+        CM_LOG_E("Failed to check keyAlgIds");
+        return CM_FAILURE;
+    }
+    if (!hasProperty) {
+        return CM_SUCCESS;
+    }
+
+    status = napi_get_named_property(env, arg, CERT_MANAGER_KEY_ALG_IDS.c_str(), &value);
+    if (status != napi_ok) {
+        CM_LOG_E("Failed to get keyAlgIds");
+        return CM_FAILURE;
+    }
+
+    if (ParseStringArray(env, value, keyAlgIds) != CM_SUCCESS) {
+        CM_LOG_E("Failed to get keyAlgIds value");
+        return CM_FAILURE;
+    }
+    return CM_SUCCESS;
+}
+
+static int32_t GetIssuers(napi_env env, napi_value arg, std::vector<std::string> &issuers)
+{
+    bool hasProperty = false;
+    napi_value value = nullptr;
+
+    napi_status status = napi_has_named_property(env, arg, CERT_MANAGER_ISSUERS.c_str(), &hasProperty);
+    if (status != napi_ok) {
+        CM_LOG_E("Failed to check issuers");
+        return CM_FAILURE;
+    }
+    if (!hasProperty) {
+        return CM_SUCCESS;
+    }
+
+    status = napi_get_named_property(env, arg, CERT_MANAGER_ISSUERS.c_str(), &value);
+    if (status != napi_ok) {
+        CM_LOG_E("Failed to get issuers");
+        return CM_FAILURE;
+    }
+
+    if (ParseListUint8Array(env, value, issuers) != CM_SUCCESS) {
+        CM_LOG_E("Failed to get issuers value");
+        return CM_FAILURE;
+    }
+    return CM_SUCCESS;
+}
+
+static int32_t GetServerUrl(napi_env env, napi_value arg, std::string &serverUrl)
+{
+    bool hasProperty = false;
+    napi_value value = nullptr;
+
+    napi_status status = napi_has_named_property(env, arg, CERT_MANAGER_SERVER_URL.c_str(), &hasProperty);
+    if (status != napi_ok) {
+        CM_LOG_E("Failed to check serverUrl");
+        return CM_FAILURE;
+    }
+    if (!hasProperty) {
+        return CM_SUCCESS;
+    }
+
+    status = napi_get_named_property(env, arg, CERT_MANAGER_SERVER_URL.c_str(), &value);
+    if (status != napi_ok) {
+        CM_LOG_E("Failed to get serverUrl");
+        return CM_FAILURE;
+    }
+
+    CmBlob *urlBlob = nullptr;
+    if (ParseString(env, value, urlBlob) == nullptr || urlBlob == nullptr || urlBlob->size == 0) {
+        CM_LOG_E("Failed to get serverUrl value");
+        return CM_FAILURE;
+    }
+
+    serverUrl.assign(reinterpret_cast<const char*>(urlBlob->data), urlBlob->size - 1);
+    CM_FREE_PTR(urlBlob->data);
+    CM_FREE_PTR(urlBlob);
+    return CM_SUCCESS;
+}
+
 static int32_t GetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
 {
     int32_t ret = GetCertTypes(asyncContext->env, arg, asyncContext->certTypes);
@@ -105,6 +200,24 @@ static int32_t GetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestContext> 
     ret = GetCertPurpose(asyncContext->env, arg, asyncContext->certPurpose);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get property certPurpose failed");
+        return CM_FAILURE;
+    }
+
+    ret = GetKeyAlgIds(asyncContext->env, arg, asyncContext->keyAlgIds);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get property keyAlgIds failed");
+        return CM_FAILURE;
+    }
+
+    ret = GetIssuers(asyncContext->env, arg, asyncContext->issuers);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get property issuers failed");
+        return CM_FAILURE;
+    }
+
+    ret = GetServerUrl(asyncContext->env, arg, asyncContext->serverUrl);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get property serverUrl failed");
         return CM_FAILURE;
     }
     return CM_SUCCESS;

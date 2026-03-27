@@ -41,7 +41,9 @@ bool ParseCmUIAbilityContextReq(
 napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store);
 napi_value ParseBoolean(napi_env env, napi_value object, bool &status);
 napi_value ParseString(napi_env env, napi_value object, CmBlob *&blob);
+int32_t ParseStringArray(napi_env env, napi_value object, std::vector<std::string> &stringVector);
 napi_value GetUint8ArrayToBase64Str(napi_env env, napi_value object, std::string &certArray);
+int32_t ParseListUint8Array(napi_env env, napi_value object, std::vector<std::string> &base64Vector);
 napi_value GetCertTypeArray(napi_env env, napi_value object, std::vector<int32_t> &certTypes);
 
 void ThrowError(napi_env env, int32_t errorCode, const std::string errMsg);

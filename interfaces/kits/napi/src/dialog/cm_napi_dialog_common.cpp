@@ -474,4 +474,76 @@ int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncCon
     }
     return CM_SUCCESS;
 }
+
+int32_t ParseStringArray(napi_env env, napi_value object, std::vector<std::string> &stringVector)
+{
+    bool isArray = false;
+    napi_status status = napi_is_array(env, object, &isArray);
+    if ((status != napi_ok) || (!isArray)) {
+        CM_LOG_E("object is not array");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    uint32_t length = 0;
+    status = napi_get_array_length(env, object, &length);
+    if (status != napi_ok) {
+        CM_LOG_E("failed to get length");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if (length == 0) {
+        CM_LOG_I("get length is 0");
+        return CM_SUCCESS;
+    }
+
+    for (uint32_t i = 0; i < length; ++i) {
+        napi_value element = nullptr;
+        if (napi_get_element(env, object, i, &element) != napi_ok) {
+            CM_LOG_E("failed to get %u-th element", i);
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        CmBlob *stringBlob = nullptr;
+        if (ParseString(env, element, stringBlob) == nullptr || stringBlob == nullptr || stringBlob->size == 0) {
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        std::string stringValue(reinterpret_cast<const char*>(stringBlob->data), stringBlob->size - 1);
+        stringVector.push_back(stringValue);
+        CM_FREE_PTR(stringBlob->data);
+        CM_FREE_PTR(stringBlob);
+    }
+    return CM_SUCCESS;
+}
+
+int32_t ParseListUint8Array(napi_env env, napi_value object, std::vector<std::string> &base64Vector)
+{
+    bool isArray = false;
+    napi_status status = napi_is_array(env, object, &isArray);
+    if ((status != napi_ok) || (!isArray)) {
+        CM_LOG_E("object is not array");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    uint32_t length = 0;
+    status = napi_get_array_length(env, object, &length);
+    if (status != napi_ok) {
+        CM_LOG_E("failed to get length");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if (length == 0) {
+        CM_LOG_I("get length is 0");
+        return CM_SUCCESS;
+    }
+
+    for (uint32_t i = 0; i < length; ++i) {
+        napi_value element = nullptr;
+        if (napi_get_element(env, object, i, &element) != napi_ok) {
+            CM_LOG_E("failed to get %u-th element", i);
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        std::string stringValue;
+        if (GetUint8ArrayToBase64Str(env, element, stringValue) == nullptr) {
+            CM_LOG_E("failed to parse %u-th element", i);
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        base64Vector.push_back(stringValue);
+    }
+    return CM_SUCCESS;
+}
 }  // namespace CertManagerNapi

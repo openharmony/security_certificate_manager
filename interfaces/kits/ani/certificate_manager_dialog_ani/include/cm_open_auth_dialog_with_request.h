@@ -24,15 +24,23 @@ namespace OHOS::Security::CertManager::Ani {
 class CmOpenAuthDialogWithReq : public CertManagerAsyncImpl {
 private:
     /* ani params */
+    ani_object params = nullptr;
     ani_object aniCertTypes = nullptr;
     ani_enum_item aniCertPurpose = nullptr;
+    ani_object aniKeyAlgIds = nullptr;
+    ani_object aniIssuers = nullptr;
+    ani_string aniServerUrl = nullptr;
     /* parsed params */
     std::vector<int32_t> certTypes;
     int32_t certPurpose = 0;
+    std::vector<std::string> keyAlgIds;
+    std::vector<std::string> issuers;
+    std::string serverUrl = "";
+
+    int32_t GetAniParams();
     
 public:
-    CmOpenAuthDialogWithReq(ani_env *env, ani_object aniContext, ani_object aniCertTypes,
-        ani_enum_item aniCertPurpose, ani_object callback);
+    CmOpenAuthDialogWithReq(ani_env *env, ani_object aniContext, ani_object params, ani_object callback);
     ~CmOpenAuthDialogWithReq() {};
 
     int32_t GetParamsFromEnv() override;

@@ -42,6 +42,9 @@ const std::string CERT_MANAGER_SHOW_INSTALL_BUTTON = "showInstallButton";
 const std::string CERT_MANAGER_CERT_TYPE = "certType";
 const std::string CERT_MANAGER_CERT_TYPES = "certTypes";
 const std::string CERT_MANAGER_CERT_PURPOSE = "certPurpose";
+const std::string CERT_MANAGER_KEY_ALG_IDS = "keyAlgIDs";
+const std::string CERT_MANAGER_ISSUERS = "issuers";
+const std::string CERT_MANAGER_SERVER_URL = "uri";
 const std::string CERT_MANAGER_CERT_KEY_URI = "keyUri";
 
 constexpr int32_t PARAM0 = 0;
