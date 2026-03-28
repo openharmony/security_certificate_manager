@@ -516,7 +516,7 @@ int32_t ParseStringArray(napi_env env, napi_value object, std::vector<std::strin
         }
         std::string stringValue = "";
         if (stringBlob->size > 1) {
-            stringValue.asign(reinterpret_cast<const char*>(stringBlob->data), stringBlob->size - 1);
+            stringValue.assign(reinterpret_cast<const char*>(stringBlob->data), stringBlob->size - 1);
         }
         
         stringVector.push_back(stringValue);
