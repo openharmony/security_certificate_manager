@@ -60,8 +60,8 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
         return nullptr;
     }
 
-    napi_value result = ParseString(asyncContext->env, value, asyncContext->certUri);
-    if (result == nullptr) {
+    int32_t result = ParseString(asyncContext->env, value, asyncContext->certUri);
+    if (result == CM_SUCCESS) {
         CM_LOG_E("Failed to get certPurpose value");
         return nullptr;
     }

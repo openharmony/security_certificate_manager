@@ -31,9 +31,9 @@ native function openInstallCertificateDialogNative(
 ): NativeResult<void>;
 
 interface InstallDialogParams {
-  certType: certificateManagerDialog.CertificateType,
-  certScope: certificateManagerDialog.CertificateScope,
-  certStr: string,
+  certType: certificateManagerDialog.CertificateType;
+  certScope: certificateManagerDialog.CertificateScope;
+  certStr: string;
 }
 
 native function openUninstallCertificateDialogNative(
@@ -55,10 +55,17 @@ native function openAuthorizeDialogNative(context: common.Context,
 
 native function openAuthorizeDialogWithReqNative(
   context: common.Context,
-  certTypes: Array<certificateManagerDialog.CertificateType>,
-  certPurpose: certificateManager.CertificatePurpose,
+  params: ReqestAuthDialogParams,
   callback: AsyncCallbackWrapper<certificateManagerDialog.CertReference>
 ): NativeResult<void>;
+
+interface ReqestAuthDialogParams {
+  certTypes: Array<certificateManagerDialog.CertificateType>;
+  certPurpose: certificateManager.CertificatePurpose;
+  keyAlgIDs: Array<string>;
+  issuers: Array<string>;
+  uri: string;
+}
 
 native function openUkeyAuthDialogNative(
   context: common.Context,
@@ -100,6 +107,9 @@ export namespace certificateManagerDialog {
   export interface AuthorizeRequest {
     certTypes: Array<CertificateType>;
     certPurpose?: certificateManager.CertificatePurpose;
+    keyAlgIDs?: Array<string>;
+    issuers?: Array<Uint8Array>;
+    uri?: string;
   }
 
   export interface CertReference {
@@ -275,6 +285,35 @@ export namespace certificateManagerDialog {
     });
   }
 
+  function getReqestAuthDialogParams(authorizeRequest: AuthorizeRequest): ReqestAuthDialogParams {
+    let certTypes: Array<CertificateType> = authorizeRequest.certTypes;
+    if (certTypes === undefined) {
+      let error = new BusinessError();
+      error.code = 401;
+      error.message = 'the input parameters is invalid.';
+      throw error;
+    }
+    let certPurpose: certificateManager.CertificatePurpose = authorizeRequest.certPurpose ??
+      certificateManager.CertificatePurpose.PURPOSE_DEFAULT;
+    let keyAlgIds: Array<string> = authorizeRequest?.keyAlgIDs ?? [];
+    let issuers: Array<string> = [];
+    let uint8Issuers: Array<Uint8Array> = authorizeRequest?.issuers ?? [];
+    for (let issuer of uint8Issuers) {
+      let base64Helper = new util.Base64Helper();
+      let issuersBase64 = base64Helper.encodeToStringSync(issuer, util.Type.BASIC);
+      issuers.push(issuersBase64);
+    }
+    let uri = authorizeRequest.uri ?? '';
+
+    return {
+      certTypes: certTypes,
+      certPurpose: certPurpose,
+      keyAlgIDs: keyAlgIds,
+      issuers: issuers,
+      uri: uri
+    };
+  }
+
   export function openAuthorizeDialog(context: common.Context, authorizeRequest: AuthorizeRequest): Promise<CertReference> {
     return new Promise<CertReference>((resolve, reject: (error: BusinessError) => void) => {
         let certReference: CertReference = {
@@ -288,16 +327,8 @@ export namespace certificateManagerDialog {
                 resolve(data?? certReference);
             }
         });
-        let certTypes: Array<CertificateType> = authorizeRequest.certTypes;
-        if (certTypes === undefined) {
-          let error = new BusinessError();
-          error.code = 401;
-          error.message = 'the input parameters is invalid.';
-          throw error;
-        }
-        let certPurpose: certificateManager.CertificatePurpose = authorizeRequest.certPurpose??
-          certificateManager.CertificatePurpose.PURPOSE_DEFAULT;
-        let result: NativeResult<void> = openAuthorizeDialogWithReqNative(context, certTypes, certPurpose, callback);
+        let params = getReqestAuthDialogParams(authorizeRequest);
+        let result: NativeResult<void> = openAuthorizeDialogWithReqNative(context, params, callback);
         if (result.code !== 0) {
           let err = new BusinessError();
           err.code = result.code;

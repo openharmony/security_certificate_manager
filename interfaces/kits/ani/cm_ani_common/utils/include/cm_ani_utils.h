@@ -47,6 +47,10 @@ int32_t ParseUint8Array(ani_env *env, ani_arraybuffer uint8Array, CmBlob &outBlo
 
 int32_t ParseString(ani_env *env, ani_string ani_str, CmBlob &strBlob);
 
+int32_t ParseString(ani_env *env, ani_string ani_str, std::string &strBlob);
+
+int32_t ParseStringArray(ani_env *env, ani_object aniArray, std::vector<std::string> &strVector);
+
 int32_t ParseIntArray(ani_env *env, ani_object ani_array, std::vector<int32_t> &outParam);
 
 ani_string GenerateCharStr(ani_env *env, const char *strData, uint32_t length);

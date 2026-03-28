@@ -204,32 +204,37 @@ napi_value ParseBoolean(napi_env env, napi_value object, bool &status)
     return GetInt32(env, 0);
 }
 
-napi_value ParseString(napi_env env, napi_value obj, CmBlob *&blob)
+int32_t ParseString(napi_env env, napi_value obj, CmBlob *&blob)
 {
     napi_valuetype type = napi_undefined;
-    NAPI_CALL(env, napi_typeof(env, obj, &type));
-    if (type != napi_string) {
+    napi_status status = napi_typeof(env, obj, &type);
+    if (status != napi_ok || type != napi_string) {
         CM_LOG_E("the type of param is not string");
-        return nullptr;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
     size_t length = 0;
-    napi_status status = napi_get_value_string_utf8(env, obj, nullptr, 0, &length);
+    status = napi_get_value_string_utf8(env, obj, nullptr, 0, &length);
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("could not get string length");
-        return nullptr;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((length == 0) || (length > CM_MAX_DATA_LEN)) {
-        CM_LOG_E("input string length is 0 or too large, length: %d", length);
-        return nullptr;
+    if (length == 0) {
+        CM_LOG_E("input string length is 0", length);
+        return CMR_ERROR_INVALID_ARGUMENT_LENGTH_ZERO;
+    }
+
+    if (length > CM_MAX_DATA_LEN) {
+        CM_LOG_E("input string length too large, length: %d", length);
+        return CMR_ERROR_INVALID_ARGUMENT_LENGTH_TOO_LARGE;
     }
 
     char *data = static_cast<char *>(CmMalloc(length + 1));
     if (data == nullptr) {
         napi_throw_error(env, nullptr, "could not alloc memory");
         CM_LOG_E("could not alloc memory");
-        return nullptr;
+        return CMR_ERROR_MALLOC_FAIL;
     }
     (void)memset_s(data, length + 1, 0, length + 1);
 
@@ -239,7 +244,7 @@ napi_value ParseString(napi_env env, napi_value obj, CmBlob *&blob)
         CmFree(data);
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("could not get string");
-        return nullptr;
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     blob = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
@@ -247,12 +252,12 @@ napi_value ParseString(napi_env env, napi_value obj, CmBlob *&blob)
         CmFree(data);
         napi_throw_error(env, nullptr, "could not alloc memory");
         CM_LOG_E("could not alloc memory");
-        return nullptr;
+        return CMR_ERROR_MALLOC_FAIL;
     }
     blob->data = reinterpret_cast<uint8_t *>(data);
     blob->size = static_cast<uint32_t>((length + 1) & UINT32_MAX);
 
-    return GetInt32(env, 0);
+    return CM_SUCCESS;
 }
 
 napi_value GetUint8ArrayToBase64Str(napi_env env, napi_value object, std::string &certArray)
@@ -471,6 +476,87 @@ int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncCon
     if (resCode != CM_SUCCESS) {
         CM_LOG_E("getStringById is faild, resCode is %d", resCode);
         return CM_FAILURE;
+    }
+    return CM_SUCCESS;
+}
+
+int32_t ParseStringArray(napi_env env, napi_value object, std::vector<std::string> &stringVector)
+{
+    bool isArray = false;
+    napi_status status = napi_is_array(env, object, &isArray);
+    if ((status != napi_ok) || (!isArray)) {
+        CM_LOG_E("object is not array");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    uint32_t length = 0;
+    status = napi_get_array_length(env, object, &length);
+    if (status != napi_ok) {
+        CM_LOG_E("failed to get length");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if (length == 0) {
+        CM_LOG_I("get length is 0");
+        return CM_SUCCESS;
+    }
+
+    for (uint32_t i = 0; i < length; ++i) {
+        napi_value element = nullptr;
+        if (napi_get_element(env, object, i, &element) != napi_ok) {
+            CM_LOG_E("failed to get %u-th element", i);
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        CmBlob *stringBlob = nullptr;
+        int32_t ret = ParseString(env, element, stringBlob);
+        if (ret == CMR_ERROR_INVALID_ARGUMENT_LENGTH_ZERO) {
+            stringVector.push_back("");
+            continue;
+        }
+        if (ret != CM_SUCCESS) {
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        std::string stringValue = "";
+        if (stringBlob->size > 1) {
+            stringValue.assign(reinterpret_cast<const char*>(stringBlob->data), stringBlob->size - 1);
+        }
+        
+        stringVector.push_back(stringValue);
+        CM_FREE_PTR(stringBlob->data);
+        CM_FREE_PTR(stringBlob);
+    }
+    return CM_SUCCESS;
+}
+
+int32_t ParseListUint8Array(napi_env env, napi_value object, std::vector<std::string> &base64Vector)
+{
+    bool isArray = false;
+    napi_status status = napi_is_array(env, object, &isArray);
+    if ((status != napi_ok) || (!isArray)) {
+        CM_LOG_E("object is not array");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    uint32_t length = 0;
+    status = napi_get_array_length(env, object, &length);
+    if (status != napi_ok) {
+        CM_LOG_E("failed to get length");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if (length == 0) {
+        CM_LOG_I("get length is 0");
+        return CM_SUCCESS;
+    }
+
+    for (uint32_t i = 0; i < length; ++i) {
+        napi_value element = nullptr;
+        if (napi_get_element(env, object, i, &element) != napi_ok) {
+            CM_LOG_E("failed to get %u-th element", i);
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        std::string stringValue;
+        if (GetUint8ArrayToBase64Str(env, element, stringValue) == nullptr) {
+            CM_LOG_E("failed to parse %u-th element", i);
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        base64Vector.push_back(stringValue);
     }
     return CM_SUCCESS;
 }

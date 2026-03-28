@@ -22,24 +22,69 @@
 
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
-CmOpenAuthDialogWithReq::CmOpenAuthDialogWithReq(ani_env *env, ani_object aniContext, ani_object aniCertTypes,
-    ani_enum_item aniCertPurpose, ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback)
+CmOpenAuthDialogWithReq::CmOpenAuthDialogWithReq(ani_env *env, ani_object aniContext, ani_object params,
+    ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback)
 {
-    this->aniCertTypes = aniCertTypes;
-    this->aniCertPurpose = aniCertPurpose;
+    this->params = params;
 }
 
+int32_t CmOpenAuthDialogWithReq::GetAniParams()
+{
+    if (env == nullptr) {
+        return CMR_ERROR_NULL_POINTER;
+    }
+    ani_status status = env->Object_GetPropertyByName_Ref(params, CERT_MANAGER_CERT_TYPES.c_str(),
+        reinterpret_cast<ani_ref *>(&this->aniCertTypes));
+    if (status != ANI_OK) {
+        CM_LOG_E("get param certTypes error. status = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if ((status = env->Object_GetPropertyByName_Ref(params, CERT_MANAGER_CERT_PURPOSE.c_str(),
+        reinterpret_cast<ani_ref *>(&this->aniCertPurpose))) != ANI_OK) {
+        CM_LOG_E("get param certPurpose error. status = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if ((status = env->Object_GetPropertyByName_Ref(params, CERT_MANAGER_KEY_ALG_IDS.c_str(),
+        reinterpret_cast<ani_ref *>(&this->aniKeyAlgIds))) != ANI_OK) {
+        CM_LOG_E("get param keyAlgIds error. status = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if ((status = env->Object_GetPropertyByName_Ref(params, CERT_MANAGER_ISSUERS.c_str(),
+        reinterpret_cast<ani_ref *>(&this->aniIssuers))) != ANI_OK) {
+        CM_LOG_E("get param issuers error. status = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if ((status = env->Object_GetPropertyByName_Ref(params, CERT_MANAGER_SERVER_URL.c_str(),
+        reinterpret_cast<ani_ref *>(&this->aniServerUrl))) != ANI_OK) {
+        CM_LOG_E("get param serverUrl error. status = %d", static_cast<int32_t>(status));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    return CM_SUCCESS;
+}
 
 int32_t CmOpenAuthDialogWithReq::GetParamsFromEnv()
 {
-    int32_t ret = CertManagerAsyncImpl::GetParamsFromEnv();
+    if (env == nullptr) {
+        return CMR_ERROR_NULL_POINTER;
+    }
+
+    int32_t ret = this->GetAniParams();
     if (ret != CM_SUCCESS) {
+        CM_LOG_E("get ani parmas failed. ret = %d", ret);
+        return ret;
+    }
+
+    if ((ret = CertManagerAsyncImpl::GetParamsFromEnv()) != CM_SUCCESS) {
         CM_LOG_E("parse params failed. ret = %d", ret);
         return ret;
     }
 
-    ret = AniUtils::ParseIntArray(env, this->aniCertTypes, this->certTypes);
-    if (ret != CM_SUCCESS) {
+    if ((ret = AniUtils::ParseIntArray(env, this->aniCertTypes, this->certTypes)) != CM_SUCCESS) {
         CM_LOG_E("parse cert types failed, ret = %d", ret);
         return ret;
     }
@@ -47,6 +92,21 @@ int32_t CmOpenAuthDialogWithReq::GetParamsFromEnv()
     if (env->EnumItem_GetValue_Int(this->aniCertPurpose, static_cast<ani_int*>(&this->certPurpose)) != ANI_OK) {
         CM_LOG_E("get certPurpose value failed");
         return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    if ((ret = AniUtils::ParseStringArray(env, this->aniKeyAlgIds, this->keyAlgIds)) != CM_SUCCESS) {
+        CM_LOG_E("get keyAlgIds value failed, ret = %d", ret);
+        return ret;
+    }
+
+    if ((ret = AniUtils::ParseStringArray(env, this->aniIssuers, this->issuers)) != CM_SUCCESS) {
+        CM_LOG_E("get issuers value failed, ret = %d", ret);
+        return ret;
+    }
+
+    if ((ret = AniUtils::ParseString(env, this->aniServerUrl, this->serverUrl)) != CM_SUCCESS) {
+        CM_LOG_E("get serverUrl value failed, ret = %d", ret);
+        return ret;
     }
     return CM_SUCCESS;
 }
@@ -69,6 +129,15 @@ int32_t CmOpenAuthDialogWithReq::InvokeAsyncWork()
     want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(PAGE_REQUEST_AUTHORIZE));
     want.SetParam(CERT_MANAGER_CERT_TYPES, this->certTypes);
     want.SetParam(CERT_MANAGER_CERT_PURPOSE, this->certPurpose);
+    if (!this->keyAlgIds.empty()) {
+        want.SetParam(CERT_MANAGER_KEY_ALG_IDS, this->keyAlgIds);
+    }
+    if (!this->issuers.empty()) {
+        want.SetParam(CERT_MANAGER_ISSUERS, this->issuers);
+    }
+    if (!this->serverUrl.empty()) {
+        want.SetParam(CERT_MANAGER_SERVER_URL, this->serverUrl);
+    }
 
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallbackCertReference>(this->vm, this->abilityContext,
         this->globalCallback);

@@ -39,6 +39,9 @@ const std::string CERT_MANAGER_OPERATION_TYPE = "operationType";
 const std::string CERT_MANAGER_SHOW_INSTALL_BUTTON = "showInstallButton";
 const std::string CERT_MANAGER_CERT_TYPES = "certTypes";
 const std::string CERT_MANAGER_CERT_PURPOSE = "certPurpose";
+const std::string CERT_MANAGER_KEY_ALG_IDS = "keyAlgIDs";
+const std::string CERT_MANAGER_ISSUERS = "issuers";
+const std::string CERT_MANAGER_SERVER_URL = "uri";
 const std::string CERT_MANAGER_CERT_TYPE = "certType";
 const std::string CERT_MANAGER_CERT_KEY_URI = "keyUri";
 
@@ -78,6 +81,9 @@ struct CmUIExtensionRequestContext : public CommonAsyncContext {
     bool showInstallButton = false;
     std::vector<int32_t> certTypes;
     uint32_t certPurpose = 0;
+    std::vector<std::string> keyAlgIds;
+    std::vector<std::string> issuers;
+    std::string serverUrl = "";
 };
 }  // namespace CertManagerNapi
 #endif  // CM_NAPI_OPEN_DIALOG_H

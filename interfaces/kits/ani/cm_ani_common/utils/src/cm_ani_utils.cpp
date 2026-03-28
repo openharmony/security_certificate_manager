@@ -121,6 +121,7 @@ int32_t ParseString(ani_env *env, ani_string ani_str, CmBlob &outBlob)
         CM_LOG_E("memory operation failed.");
         return CMR_ERROR_MALLOC_FAIL;
     }
+    (void)memset_s(strData, strSize + 1, 0, strSize + 1);
 
     ani_size bytes_written = 0;
     ret = env->String_GetUTF8(ani_str, strData, strSize + 1, &bytes_written);
@@ -135,8 +136,69 @@ int32_t ParseString(ani_env *env, ani_string ani_str, CmBlob &outBlob)
     return CM_SUCCESS;
 }
 
+int32_t ParseString(ani_env *env, ani_string aniStr, std::string &str)
+{
+    if (env == nullptr) {
+        return CMR_ERROR_NULL_POINTER;
+    }
+    CmBlob stringBlob = { 0 };
+    int32_t ret = ParseString(env, aniStr, stringBlob);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("parse string failed, ret: %d", ret);
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if (stringBlob.size > 1) {
+        str.assign(reinterpret_cast<const char*>(stringBlob.data), stringBlob.size - 1);
+    }
+    CM_FREE_PTR(stringBlob.data);
+    return CM_SUCCESS;
+}
+
+int32_t ParseStringArray(ani_env *env, ani_object aniArray, std::vector<std::string> &strVector)
+{
+    if (env == nullptr) {
+        return CMR_ERROR_NULL_POINTER;
+    }
+    ani_int aniLength;
+    auto ret = env->Object_GetPropertyByName_Int(aniArray, "length", &aniLength);
+    if (ret != ANI_OK) {
+        CM_LOG_E("get array length failed, ret = %d", static_cast<int32_t>(ret));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    int32_t arrayCount = static_cast<int32_t>(aniLength);
+    if (arrayCount == 0) {
+        CM_LOG_I("get array length is 0");
+        return CM_SUCCESS;
+    }
+    for (int i = 0; i < arrayCount; ++i) {
+        ani_ref elemRef;
+        ret = env->Object_CallMethodByName_Ref(aniArray, ETS_GET, "i:Y", &elemRef, i);
+        if (ret != ANI_OK) {
+            CM_LOG_E("get elem from arkTs array failed, index = %d, ret: %d", i, static_cast<int32_t>(ret));
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        ani_boolean isUndefined;
+        env->Reference_IsUndefined(elemRef, &isUndefined);
+        if (isUndefined) {
+            CM_LOG_E("element is undefine");
+            continue;
+        }
+        std::string stringValue = "";
+        int32_t retsult = ParseString(env, reinterpret_cast<ani_string>(elemRef), stringValue);
+        if (retsult != CM_SUCCESS) {
+            CM_LOG_E("parse string array failed, index = %d, ret: %d", i, retsult);
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+        strVector.push_back(stringValue);
+    }
+    return CM_SUCCESS;
+}
+
 int32_t ParseIntArray(ani_env *env, ani_object ani_array, std::vector<int32_t> &outParam)
 {
+    if (env == nullptr) {
+        return CMR_ERROR_NULL_POINTER;
+    }
     ani_int aniLength;
     auto ret = env->Object_GetPropertyByName_Int(ani_array, "length", &aniLength);
     if (ret != ANI_OK) {
