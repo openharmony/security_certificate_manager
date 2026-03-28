@@ -34,32 +34,32 @@ int32_t CmOpenAuthDialogWithReq::GetAniParams()
         return CMR_ERROR_NULL_POINTER;
     }
     ani_status status = env->Object_GetPropertyByName_Ref(params, CERT_MANAGER_CERT_TYPES.c_str(),
-        reinterpret_cast<ani_ref *>(&this->certTypes));
+        reinterpret_cast<ani_ref *>(&this->aniCertTypes));
     if (status != ANI_OK) {
         CM_LOG_E("get param certTypes error. status = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     if ((status = env->Object_GetPropertyByName_Ref(params, CERT_MANAGER_CERT_PURPOSE.c_str(),
-        reinterpret_cast<ani_ref *>(&this->certPurpose))) != ANI_OK) {
+        reinterpret_cast<ani_ref *>(&this->aniCertPurpose))) != ANI_OK) {
         CM_LOG_E("get param certPurpose error. status = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     if ((status = env->Object_GetPropertyByName_Ref(params, CERT_MANAGER_KEY_ALG_IDS.c_str(),
-        reinterpret_cast<ani_ref *>(&this->keyAlgIds))) != ANI_OK) {
+        reinterpret_cast<ani_ref *>(&this->aniKeyAlgIds))) != ANI_OK) {
         CM_LOG_E("get param keyAlgIds error. status = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     if ((status = env->Object_GetPropertyByName_Ref(params, CERT_MANAGER_ISSUERS.c_str(),
-        reinterpret_cast<ani_ref *>(&this->issuers))) != ANI_OK) {
+        reinterpret_cast<ani_ref *>(&this->aniIssuers))) != ANI_OK) {
         CM_LOG_E("get param issuers error. status = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
     if ((status = env->Object_GetPropertyByName_Ref(params, CERT_MANAGER_SERVER_URL.c_str(),
-        reinterpret_cast<ani_ref *>(&this->serverUrl))) != ANI_OK) {
+        reinterpret_cast<ani_ref *>(&this->aniServerUrl))) != ANI_OK) {
         CM_LOG_E("get param serverUrl error. status = %d", static_cast<int32_t>(status));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
