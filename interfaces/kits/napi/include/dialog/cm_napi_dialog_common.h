@@ -40,7 +40,7 @@ bool ParseCmUIAbilityContextReq(
     napi_env env, const napi_value& obj, std::shared_ptr<OHOS::AbilityRuntime::AbilityContext>& abilityContext);
 napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store);
 napi_value ParseBoolean(napi_env env, napi_value object, bool &status);
-napi_value ParseString(napi_env env, napi_value object, CmBlob *&blob);
+int32_t ParseString(napi_env env, napi_value object, CmBlob *&blob);
 int32_t ParseStringArray(napi_env env, napi_value object, std::vector<std::string> &stringVector);
 napi_value GetUint8ArrayToBase64Str(napi_env env, napi_value object, std::string &certArray);
 int32_t ParseListUint8Array(napi_env env, napi_value object, std::vector<std::string> &base64Vector);

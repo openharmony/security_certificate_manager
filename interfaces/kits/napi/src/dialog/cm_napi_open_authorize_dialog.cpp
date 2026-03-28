@@ -178,7 +178,13 @@ static int32_t GetServerUrl(napi_env env, napi_value arg, std::string &serverUrl
     }
 
     CmBlob *urlBlob = nullptr;
-    if (ParseString(env, value, urlBlob) == nullptr || urlBlob == nullptr || urlBlob->size == 0) {
+    int32_t result = ParseString(env, value, urlBlob);
+    if (result == CMR_ERROR_INVALID_ARGUMENT_LENGTH_ZERO) {
+        CM_LOG_E("serverUrl string length is 0.");
+        return CM_SUCCESS;
+    }
+    
+    if (ParseString(env, value, urlBlob) != CM_SUCCESS || urlBlob == nullptr || urlBlob->size == 0) {
         CM_LOG_E("Failed to get serverUrl value");
         return CM_FAILURE;
     }

@@ -121,6 +121,7 @@ int32_t ParseString(ani_env *env, ani_string ani_str, CmBlob &outBlob)
         CM_LOG_E("memory operation failed.");
         return CMR_ERROR_MALLOC_FAIL;
     }
+    (void)memset_s(strData, strSize + 1, 0, strSize + 1);
 
     ani_size bytes_written = 0;
     ret = env->String_GetUTF8(ani_str, strData, strSize + 1, &bytes_written);
@@ -146,7 +147,9 @@ int32_t ParseString(ani_env *env, ani_string aniStr, std::string &str)
         CM_LOG_E("parse string failed, ret: %d", ret);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    str.assign(reinterpret_cast<const char*>(stringBlob.data), stringBlob.size);
+    if (stringBlob.size > 1) {
+        str.assign(reinterpret_cast<const char*>(stringBlob.data), stringBlob.size - 1);
+    }
     CM_FREE_PTR(stringBlob.data);
     return CM_SUCCESS;
 }
@@ -180,15 +183,13 @@ int32_t ParseStringArray(ani_env *env, ani_object aniArray, std::vector<std::str
             CM_LOG_E("element is undefine");
             continue;
         }
-        CmBlob stringBlob = { 0 };
-        int32_t retsult = ParseString(env, reinterpret_cast<ani_string>(elemRef), stringBlob);
+        std::string stringValue = "";
+        int32_t retsult = ParseString(env, reinterpret_cast<ani_string>(elemRef), stringValue);
         if (retsult != CM_SUCCESS) {
             CM_LOG_E("parse string array failed, index = %d, ret: %d", i, retsult);
             return CMR_ERROR_INVALID_ARGUMENT;
         }
-        std::string stringValue(reinterpret_cast<const char*>(stringBlob.data), stringBlob.size);
         strVector.push_back(stringValue);
-        CM_FREE_PTR(stringBlob.data);
     }
     return CM_SUCCESS;
 }
