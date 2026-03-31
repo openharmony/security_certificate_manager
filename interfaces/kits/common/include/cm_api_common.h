@@ -31,7 +31,6 @@ enum ErrorCode {
     INVALID_CERT_FORMAT = 17500003,
     MAX_CERT_COUNT_REACHED = 17500004,
     NO_AUTHORIZATION = 17500005,
-    ALIAS_LENGTH_REACHED_LIMIT = 17500006,
     DEVICE_ENTER_ADVSECMODE = 17500007,
     PASSWORD_IS_ERROR = 17500008,
     STORE_PATH_NOT_SUPPORTED = 17500009,
@@ -49,7 +48,6 @@ static const std::string NO_FOUND_MSG = "the certificate do not exist";
 static const std::string INCORRECT_FORMAT_MSG = "the input cert data is invalid";
 static const std::string MAX_CERT_COUNT_REACHED_MSG = "the count of certificates or credentials reach the max";
 static const std::string NO_AUTHORIZATION_MSG = "the application is not authorized by user";
-static const std::string ALIAS_LENGTH_REACHED_LIMIT_MSG = "the input alias length reaches the max";
 static const std::string DEVICE_ENTER_ADVSECMODE_MSG = "the device enters advanced security mode";
 static const std::string PASSWORD_IS_ERROR_MSG = "the input password is error";
 static const std::string STORE_PATH_NOT_SUPPORTED_MSG = "the device does not support specified certificate store path";
@@ -71,7 +69,6 @@ static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
     { CMR_ERROR_NOT_EXIST, NOT_FOUND },
     { CMR_ERROR_MAX_CERT_COUNT_REACHED, MAX_CERT_COUNT_REACHED },
     { CMR_ERROR_AUTH_CHECK_FAILED, NO_AUTHORIZATION },
-    { CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT, ALIAS_LENGTH_REACHED_LIMIT },
     { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE },
     { CMR_ERROR_PASSWORD_IS_ERR, PASSWORD_IS_ERROR },
     { CMR_ERROR_STORE_PATH_NOT_SUPPORTED, STORE_PATH_NOT_SUPPORTED },
@@ -92,7 +89,6 @@ static const std::unordered_map<int32_t, std::string> NATIVE_CODE_TO_MSG_MAP = {
     { CMR_ERROR_INSUFFICIENT_DATA, INCORRECT_FORMAT_MSG },
     { CMR_ERROR_MAX_CERT_COUNT_REACHED, MAX_CERT_COUNT_REACHED_MSG },
     { CMR_ERROR_AUTH_CHECK_FAILED, NO_AUTHORIZATION_MSG },
-    { CMR_ERROR_ALIAS_LENGTH_REACHED_LIMIT, ALIAS_LENGTH_REACHED_LIMIT_MSG },
     { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE_MSG },
     { CMR_ERROR_PASSWORD_IS_ERR, PASSWORD_IS_ERROR_MSG },
     { CMR_ERROR_STORE_PATH_NOT_SUPPORTED, STORE_PATH_NOT_SUPPORTED_MSG },
