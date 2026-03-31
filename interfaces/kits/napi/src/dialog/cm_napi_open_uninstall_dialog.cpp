@@ -57,7 +57,7 @@ static napi_value CMInitAsyncContext(std::shared_ptr<CmUIExtensionRequestContext
     }
 
     // Parse the third param: certUri
-    if (ParseString(asyncContext->env, argv[PARAM2], asyncContext->certUri) == CM_SUCCESS) {
+    if (ParseString(asyncContext->env, argv[PARAM2], asyncContext->certUri) != CM_SUCCESS) {
         CM_LOG_E("certUri is invalid");
         return nullptr;
     }
