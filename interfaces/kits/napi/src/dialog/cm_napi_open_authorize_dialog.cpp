@@ -22,6 +22,8 @@
  
 namespace CMNapi {
 
+static const uint32_t CRITERIA_MAX_SIZE = 20;
+
 static OHOS::AAFwk::Want CMGetAuthCertWant(std::shared_ptr<CmUIExtensionRequestContext> asyncContext)
 {
     OHOS::AAFwk::Want want;
@@ -210,13 +212,13 @@ static int32_t GetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestContext> 
     }
 
     ret = GetKeyAlgIds(asyncContext->env, arg, asyncContext->keyAlgIds);
-    if (ret != CM_SUCCESS) {
+    if (ret != CM_SUCCESS || asyncContext->keyAlgIds.size() > CRITERIA_MAX_SIZE) {
         CM_LOG_E("get property keyAlgIds failed");
         return CM_FAILURE;
     }
 
     ret = GetIssuers(asyncContext->env, arg, asyncContext->issuers);
-    if (ret != CM_SUCCESS) {
+    if (ret != CM_SUCCESS || asyncContext->issuers.size() > CRITERIA_MAX_SIZE) {
         CM_LOG_E("get property issuers failed");
         return CM_FAILURE;
     }

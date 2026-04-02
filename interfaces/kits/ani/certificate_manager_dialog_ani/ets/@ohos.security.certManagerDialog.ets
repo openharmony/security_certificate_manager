@@ -287,8 +287,8 @@ export namespace certificateManagerDialog {
 
   function getReqestAuthDialogParams(authorizeRequest: AuthorizeRequest): ReqestAuthDialogParams {
     let certTypes: Array<CertificateType> = authorizeRequest.certTypes;
+    let error = new BusinessError();
     if (certTypes === undefined) {
-      let error = new BusinessError();
       error.code = 401;
       error.message = 'the input parameters is invalid.';
       throw error;
@@ -303,6 +303,11 @@ export namespace certificateManagerDialog {
       let issuersBase64 = base64Helper.encodeToStringSync(issuer, util.Type.BASIC);
       issuers.push(issuersBase64);
     }
+    if (keyAlgIds.length > 20 || issuers.length > 20) {
+      error.code = CertificateDialogErrorCode.ERROR_PARAMETER_VALIDATION_FAILED;
+      error.message = 'the input parameters is invalid.';
+      throw error;
+    }
     let uri = authorizeRequest.uri ?? '';
 
     return {
@@ -315,6 +320,7 @@ export namespace certificateManagerDialog {
   }
 
   export function openAuthorizeDialog(context: common.Context, authorizeRequest: AuthorizeRequest): Promise<CertReference> {
+    let params = getReqestAuthDialogParams(authorizeRequest);
     return new Promise<CertReference>((resolve, reject: (error: BusinessError) => void) => {
         let certReference: CertReference = {
            certType: CertificateType.CA_CERT,
@@ -327,7 +333,6 @@ export namespace certificateManagerDialog {
                 resolve(data?? certReference);
             }
         });
-        let params = getReqestAuthDialogParams(authorizeRequest);
         let result: NativeResult<void> = openAuthorizeDialogWithReqNative(context, params, callback);
         if (result.code !== 0) {
           let err = new BusinessError();
