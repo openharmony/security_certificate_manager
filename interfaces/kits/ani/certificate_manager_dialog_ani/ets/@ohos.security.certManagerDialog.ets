@@ -98,6 +98,8 @@ class CertReferenceClass implements certificateManagerDialog.CertReference {
     keyUri: string = '';
 }
 
+const CRITERIA_MAX_SIZE: int = 20;
+
 export namespace certificateManagerDialog {
 
   static {
@@ -303,7 +305,7 @@ export namespace certificateManagerDialog {
       let issuersBase64 = base64Helper.encodeToStringSync(issuer, util.Type.BASIC);
       issuers.push(issuersBase64);
     }
-    if (keyAlgIds.length > 20 || issuers.length > 20) {
+    if (keyAlgIds.length > CRITERIA_MAX_SIZE || issuers.length > CRITERIA_MAX_SIZE) {
       error.code = CertificateDialogErrorCode.ERROR_PARAMETER_VALIDATION_FAILED;
       error.message = 'the input parameters is invalid.';
       throw error;
