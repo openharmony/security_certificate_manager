@@ -126,6 +126,7 @@ ohos_shared_library("certmanagerdialog") {
     "ipc:ipc_single",
     "napi:ace_napi",
     "samgr:samgr_proxy",
+    "huks:libhukssdk",
   ]
   cflags_cc = [
     "-Wall",

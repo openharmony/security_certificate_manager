@@ -18,8 +18,12 @@
 #include "cm_log.h"
 #include "syspara/parameters.h"
 #include "systemcapability.h"
+#include "hks_api.h"
+#include "cm_mem.h"
 
 namespace OHOS::Security::CertManager::Dialog {
+constexpr static uint32_t HAP_INFO_MAX_LENGTH = 128;
+
 static OHOS::sptr<OHOS::AppExecFwk::IBundleMgr> GetBundleMgrProxy()
 {
     auto systemAbilityManager = OHOS::SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -75,6 +79,70 @@ bool IsEnableCACertDialog()
     bool isPc = OHOS::system::GetParameter(CONST_NAME_DEVICETYPE, "") == DEVICETYPE_PC;
     bool isEnableCACertDialog = OHOS::system::GetBoolParameter(CONST_NAME_ENABLE_CA_DIALOG, false);
     return isSupportSyscap && (isPc || isEnableCACertDialog);
+}
+
+static void GetDefaultAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
+{
+    want.SetElementName(CERT_MANAGER_BUNDLENAME, CERT_MANAGER_ABILITYNAME);
+    want.SetParam(CERT_MANAGER_CALLER_UID, static_cast<int32_t>(getuid()));
+    want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
+    want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(CmDialogPageType::PAGE_UKEY_PIN_AUTHORIZE));
+    std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
+    want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
+}
+
+static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName, std::string &bundleName)
+{
+    struct HksAbilityInfo abilityInfo{};
+    abilityInfo.abilityName.data = (uint8_t*)CmMalloc(HAP_INFO_MAX_LENGTH);
+    abilityInfo.bundleName.data = (uint8_t*)CmMalloc(HAP_INFO_MAX_LENGTH);
+    if (abilityInfo.abilityName.data == nullptr || abilityInfo.bundleName.data == nullptr) {
+        CM_LOG_E("app info malloc failed");
+        CM_FREE_PTR(abilityInfo.abilityName.data);
+        CM_FREE_PTR(abilityInfo.bundleName.data);
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+    abilityInfo.abilityName.size = HAP_INFO_MAX_LENGTH;
+    abilityInfo.bundleName.size = HAP_INFO_MAX_LENGTH;
+    struct HksBlob resourceId = {
+        .size = keyUri->size,
+        .data = keyUri->data
+    };
+    int32_t ret = HksQueryAbilityInfo(&resourceId, &abilityInfo);
+    if (ret != HKS_SUCCESS) {
+        CM_LOG_E("query ability info failed");
+        CM_FREE_PTR(abilityInfo.abilityName.data);
+        CM_FREE_PTR(abilityInfo.bundleName.data);
+        return ret;
+    }
+    abilityName.assign(reinterpret_cast<char *>(abilityInfo.abilityName.data), abilityInfo.abilityName.size);
+    bundleName.assign(reinterpret_cast<char *>(abilityInfo.bundleName.data), abilityInfo.bundleName.size);
+    CM_FREE_PTR(abilityInfo.abilityName.data);
+    CM_FREE_PTR(abilityInfo.bundleName.data);
+    return CM_SUCCESS;
+}
+
+int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
+{
+    std::string abilityName = "";
+    std::string bundleName = "";
+    int32_t ret = QueryAbilityInfo(keyUri, abilityName, bundleName);
+    if (ret == HKS_ERROR_NOT_EXIST) {
+        CM_LOG_E("query ability info not exist.");
+        GetDefaultAuthCertWant(keyUri, want);
+        return CM_SUCCESS;
+    } else if (ret != HKS_SUCCESS) {
+        CM_LOG_E("query ability info failed.");
+        return CMR_ERROR_UKEY_GENERAL_ERROR;
+    }
+
+    want.SetElementName(bundleName, abilityName);
+    want.SetAction(ACTION_UKEY_PIN_AUTH);
+    want.SetParam(CERT_MANAGER_CALLER_UID, static_cast<int32_t>(getuid()));
+    want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
+    std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
+    want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
+    return CM_SUCCESS;
 }
 
 }

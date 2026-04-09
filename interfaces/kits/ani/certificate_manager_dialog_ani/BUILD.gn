@@ -58,6 +58,7 @@ ohos_shared_library("certmanager_dialog_ani") {
     "ipc:ipc_single",
     "samgr:samgr_proxy",
     "runtime_core:libarkruntime",
+    "huks:libhukssdk",
   ]
   cflags_cc = [
     "-Wall",

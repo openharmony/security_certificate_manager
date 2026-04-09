@@ -61,54 +61,6 @@ inline napi_value GetInt32(napi_env env, int32_t value)
     NAPI_CALL(env, napi_create_int32(env, value, &result));
     return result;
 }
-
-enum CmDialogPageType {
-    PAGE_MAIN = 1,
-    PAGE_CA_CERTIFICATE = 2,
-    PAGE_CREDENTIAL = 3,
-    PAGE_INSTALL_CERTIFICATE = 4,
-    PAGE_INSTALL_CA_GUIDE = 5,
-    PAGE_REQUEST_AUTHORIZE = 6,
-    PAGE_UKEY_PIN_AUTHORIZE = 7,
-};
-
-enum CmCertificateType {
-    CREDENTIAL_INVALID_TYPE = 0, // invalid type
-    CA_CERT = 1,
-    CREDENTIAL_USER = 2, // private type
-    CREDENTIAL_APP = 3, // app type
-    CREDENTIAL_UKEY = 4, // ukey type
-    CREDENTIAL_SYSTEM = 5, // system cred type
-};
-
-enum CertificateScope {
-    NOT_SPECIFIED = 0,
-    CURRENT_USER = 1,
-    GLOBAL_USER = 2
-};
-
-enum ErrorCode {
-    SUCCESS = 0,
-    HAS_NO_PERMISSION = 201,
-    NOT_SYSTEM_APP = 202,
-    PARAM_ERROR = 401,
-    DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED = 801,
-    DIALOG_ERROR_GENERIC = 29700001,
-    DIALOG_ERROR_OPERATION_CANCELED = 29700002,
-    DIALOG_ERROR_INSTALL_FAILED = 29700003,
-    DIALOG_ERROR_NOT_SUPPORTED = 29700004,
-    DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY = 29700005,
-    DIALOG_ERROR_PARAMETER_VALIDATION_FAILED = 29700006,
-    DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE = 29700007,
-};
-
-enum OperationType {
-    DIALOG_OPERATION_INSTALL = 1,
-    DIALOG_OPERATION_UNINSTALL = 2,
-    DIALOG_OPERATION_DETAIL = 3,
-    DIALOG_OPERATION_AUTHORIZE = 4,
-    DIALOG_OPERATION_AUTHORIZE_UKEY = 5,
-};
 }  // namespace CertManagerNapi
 
 #endif

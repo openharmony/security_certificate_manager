@@ -25,36 +25,6 @@
 #include "cm_type.h"
 
 namespace CMNapi {
-const std::string PARAM_UI_EXTENSION_TYPE = "ability.want.params.uiExtensionType";
-const std::string SYS_COMMON_UI = "sys/commonUI";
-const std::string CERT_MANAGER_BUNDLENAME = "com.ohos.certmanager";
-const std::string CERT_MANAGER_ABILITYNAME = "CertPickerUIExtAbility";
-const std::string CERT_MANAGER_PAGE_TYPE = "pageType";
-const std::string CERT_MANAGER_CERTSCOPE_TYPE = "certScope";
-const std::string CERT_MANAGER_CERTIFICATE_DATA = "cert";
-const std::string CERT_MANAGER_CALLER_BUNDLENAME = "bundleName";
-const std::string CERT_MANAGER_CALLER_UID = "appUid";
-const std::string CERT_MANAGER_CERT_URI = "certUri";
-const std::string CERT_MANAGER_OPERATION_TYPE = "operationType";
-const std::string CERT_MANAGER_SHOW_INSTALL_BUTTON = "showInstallButton";
-const std::string CERT_MANAGER_CERT_TYPES = "certTypes";
-const std::string CERT_MANAGER_CERT_PURPOSE = "certPurpose";
-const std::string CERT_MANAGER_KEY_ALG_IDS = "keyAlgIDs";
-const std::string CERT_MANAGER_ISSUERS = "issuers";
-const std::string CERT_MANAGER_SERVER_URL = "uri";
-const std::string CERT_MANAGER_CERT_TYPE = "certType";
-const std::string CERT_MANAGER_CERT_KEY_URI = "keyUri";
-
-
-constexpr int32_t PARAM0 = 0;
-constexpr int32_t PARAM1 = 1;
-constexpr int32_t PARAM2 = 2;
-constexpr int32_t PARAM3 = 3;
-constexpr int32_t PARAM_SIZE_ONE = 1;
-constexpr int32_t PARAM_SIZE_TWO = 2;
-constexpr int32_t PARAM_SIZE_THREE = 3;
-constexpr int32_t PARAM_SIZE_FOUR = 4;
-
 napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info);
 
 struct CommonAsyncContext {
