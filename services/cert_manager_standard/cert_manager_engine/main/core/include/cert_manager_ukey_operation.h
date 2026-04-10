@@ -28,6 +28,8 @@ int32_t CmGetUkeyCertListByHksCertInfoSet(const struct CmBlob *ukeyProvider, uin
 int32_t CmGetUkeyCertByHksCertInfoSet(const struct CmBlob *keyUri, uint32_t certPurpose, uint32_t paramsCount,
     struct CredentialDetailList *credentialDetailList);
 
+int32_t CmServiceImportUkeyCert(struct CmBlob *keyUri, struct CmBlob *cert, uint32_t certPurpose);
+
 #ifdef __cplusplus
 }
 #endif

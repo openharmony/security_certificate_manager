@@ -39,6 +39,7 @@ ohos_shared_library("certmanager") {
     "src/cm_napi_get_system_cert_list.cpp",
     "src/cm_napi_get_ukey_cert_list.cpp",
     "src/cm_napi_get_ukey_cert.cpp",
+    "src/cm_napi_import_ukey_cert.cpp",
     "src/cm_napi_grant.cpp",
     "src/cm_napi_install_app_cert.cpp",
     "src/cm_napi_install_app_cert_common.cpp",

@@ -632,3 +632,21 @@ CM_API_EXPORT void CmFreeCredential(struct Credential *certificate)
         CM_FREE_BLOB(certificate->credData);
     }
 }
+
+CM_API_EXPORT int32_t CmImportUkeyCert(const struct CmBlob *keyUri, const struct CmBlob *cert,
+    const struct UkeyInfo *ukeyInfo)
+{
+    CM_LOG_D("enter import ukey cert");
+    if (keyUri == NULL || cert == NULL) {
+        CM_LOG_E("CmImportUkeyCert params is invalid");
+        return CMR_ERROR_NULL_POINTER;
+    }
+    bool isSupport = HasSystemCapability(HUKS_SYSCAP);
+    if (!isSupport) {
+        CM_LOG_E("the device is not support");
+        return CMR_ERROR_UKEY_DEVICE_SUPPORT;
+    }
+    int32_t ret = CmClientImportUkeyCert(keyUri, cert, ukeyInfo);
+    CM_LOG_I("leave import ukey cert, result = %d", ret);
+    return ret;
+}

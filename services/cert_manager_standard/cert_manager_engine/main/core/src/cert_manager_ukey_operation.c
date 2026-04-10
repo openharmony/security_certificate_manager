@@ -27,7 +27,6 @@
 #include "cm_ipc_service_serialization.h"
 
 #include "hks_api.h"
-#include "hks_type.h"
 #include "hks_param.h"
 
 #define UKEY_TYPE_INDEX    5
@@ -323,4 +322,44 @@ int32_t CmGetUkeyCertByHksCertInfoSet(const struct CmBlob *keyUri, uint32_t cert
     HksFreeParamSet(&paramSetIn);
     CM_FREE_BLOB(index);
     return ret;
+}
+
+int32_t CmServiceImportUkeyCert(struct CmBlob *keyUri, struct CmBlob *cert, uint32_t certPurpose)
+{
+    CM_LOG_I("CmServiceImportUkeyCert enter");
+
+    if (keyUri == NULL || cert == NULL) {
+        CM_LOG_E("CmServiceImportUkeyCert params invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    struct HksBlob resourceId = { keyUri->size, keyUri->data };
+    struct HksBlob index = { keyUri->size, keyUri->data };
+    struct HksBlob certData = { cert->size, cert->data };
+    struct HksExtCertInfo certInfo = { (int32_t)certPurpose, index, certData };
+
+    struct HksParamSet *paramSet = NULL;
+    int32_t ret = HksInitParamSet(&paramSet);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("HksInitParamSet failed");
+        return ret;
+    }
+    ret = HksBuildParamSet(&paramSet);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("HksBuildParamSet failed");
+        return ret;
+    }
+
+    ret = HksImportCertificate(&resourceId, &certInfo, paramSet);
+    if (ret == HUKS_ERR_CODE_ITEM_NOT_EXIST) {
+        CM_LOG_E("import ukey cert not found, ret = %d", ret);
+        return CMR_ERROR_NOT_FOUND;
+    }
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("import ukey cert failed, ret = %d", ret);
+        return CMR_ERROR_UKEY_GENERAL_ERROR;
+    }
+
+    CM_LOG_I("CmServiceImportUkeyCert success");
+    return CM_SUCCESS;
 }

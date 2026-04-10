@@ -98,6 +98,9 @@ CM_API_EXPORT int32_t CmGetUkeyCertList(const struct CmBlob *ukeyProvider, const
 CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *keyUri, const struct UkeyInfo *ukeyInfo,
     struct CredentialDetailList *credentialDetailList);
 
+CM_API_EXPORT int32_t CmImportUkeyCert(const struct CmBlob *keyUri, const struct CmBlob *cert,
+    const struct UkeyInfo *ukeyInfo);
+
 CM_API_EXPORT int32_t CmCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,
     enum CmPermissionState *hasPermission, struct CmBlob *huksAlias);
 

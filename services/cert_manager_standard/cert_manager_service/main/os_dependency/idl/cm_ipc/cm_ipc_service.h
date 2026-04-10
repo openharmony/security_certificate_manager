@@ -101,6 +101,8 @@ void CmIpcServiceUninstallAllUserCert(const struct CmBlob *paramSetBlob, struct 
 void CmIpcServiceCheckAppPermission(const struct CmBlob *paramSetBlob, struct CmBlob *outData,
     const struct CmContext *context);
 
+void CmIpcServiceImportUkeyCert(uint32_t code, const struct CmBlob *paramSetBlob, const struct CmContext *context);
+
 #ifdef __cplusplus
 }
 #endif

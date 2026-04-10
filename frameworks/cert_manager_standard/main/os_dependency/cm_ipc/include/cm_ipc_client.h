@@ -89,6 +89,9 @@ int32_t CmClientInstallSystemAppCert(const struct CmAppCertParam *certParam, str
 int32_t CmClientCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,
     enum CmPermissionState *hasPermission, struct CmBlob *huksAlias);
 
+int32_t CmClientImportUkeyCert(const struct CmBlob *keyUri, const struct CmBlob *cert,
+    const struct UkeyInfo *ukeyInfo);
+
 #ifdef __cplusplus
 }
 #endif
