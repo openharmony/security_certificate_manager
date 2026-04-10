@@ -551,10 +551,9 @@ int32_t ParseListUint8Array(napi_env env, napi_value object, std::vector<std::st
             CM_LOG_E("failed to get %u-th element", i);
             return CMR_ERROR_INVALID_ARGUMENT;
         }
-        std::string stringValue;
+        std::string stringValue = "";
         if (GetUint8ArrayToBase64Str(env, element, stringValue) == nullptr) {
             CM_LOG_E("failed to parse %u-th element", i);
-            return CMR_ERROR_INVALID_ARGUMENT;
         }
         base64Vector.push_back(stringValue);
     }
