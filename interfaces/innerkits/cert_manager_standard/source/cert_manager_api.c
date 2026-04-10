@@ -637,7 +637,7 @@ CM_API_EXPORT int32_t CmImportUkeyCert(const struct CmBlob *keyUri, const struct
     const struct UkeyInfo *ukeyInfo)
 {
     CM_LOG_D("enter import ukey cert");
-    if (keyUri == NULL || cert == NULL) {
+    if (keyUri == NULL || cert == NULL || ukeyInfo == NULL) {
         CM_LOG_E("CmImportUkeyCert params is invalid");
         return CMR_ERROR_NULL_POINTER;
     }

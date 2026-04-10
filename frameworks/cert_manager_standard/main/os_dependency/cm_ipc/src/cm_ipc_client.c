@@ -696,6 +696,10 @@ static int32_t ClientSerializationAndSend(enum CertManagerInterfaceCode message,
 int32_t CmClientImportUkeyCert(const struct CmBlob *keyUri, const struct CmBlob *cert,
     const struct UkeyInfo *ukeyInfo)
 {
+    if (keyUri == NULL || cert == NULL || ukeyInfo == NULL) {
+        CM_LOG_E("check params failed");
+        return CMR_ERROR_NULL_POINTER;
+    }
     int32_t ret;
     struct CmBlob outBlob = { 0, NULL };
     struct CmParamSet *sendParamSet = NULL;

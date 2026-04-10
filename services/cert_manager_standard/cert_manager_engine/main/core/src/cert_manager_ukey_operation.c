@@ -351,6 +351,7 @@ int32_t CmServiceImportUkeyCert(struct CmBlob *keyUri, struct CmBlob *cert, uint
     }
 
     ret = HksImportCertificate(&resourceId, &certInfo, paramSet);
+    HksFreeParamSet(&paramSet);
     if (ret == HUKS_ERR_CODE_ITEM_NOT_EXIST) {
         CM_LOG_E("import ukey cert not found, ret = %d", ret);
         return CMR_ERROR_NOT_FOUND;
