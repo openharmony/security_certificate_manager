@@ -63,6 +63,7 @@ struct CmParcelIpcPoint {
 static struct CmParcelIpcPoint g_cmParcelIpcHandler[] = {
     { CM_MSG_GET_UKEY_CERTIFICATE_LIST, CmIpcServiceGetUkeyCertList },
     { CM_MSG_GET_UKEY_CERTIFICATE, CmIpcServiceGetUkeyCert },
+    { CM_MSG_IMPORT_UKEY_CERTIFICATE, CmIpcServiceImportUkeyCert },
 };
 
 struct CmIpcPoint {

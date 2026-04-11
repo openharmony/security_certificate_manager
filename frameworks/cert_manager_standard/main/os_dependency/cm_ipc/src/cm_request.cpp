@@ -79,15 +79,15 @@ static int32_t CmReadRequestReply(MessageParcel &reply, struct CmBlob *outBlob)
         outBlob->size = outLen;
     }
 
+    if (outBlob->size < outLen) {
+        CM_LOG_E("outBlob size[%u] smaller than outLen[%u]", outBlob->size, outLen);
+        return CMR_ERROR_BUFFER_TOO_SMALL;
+    }
+
     const uint8_t *outData = reply.ReadBuffer(outLen);
     if (outData == nullptr) {
         CM_LOG_E("outData is nullptr");
         return CMR_ERROR_NULL_POINTER;
-    }
-
-    if (outBlob->size < outLen) {
-        CM_LOG_E("outBlob size[%u] smaller than outLen[%u]", outBlob->size, outLen);
-        return CMR_ERROR_BUFFER_TOO_SMALL;
     }
 
     if (memcpy_s(outBlob->data, outBlob->size, outData, outLen) != EOK) {

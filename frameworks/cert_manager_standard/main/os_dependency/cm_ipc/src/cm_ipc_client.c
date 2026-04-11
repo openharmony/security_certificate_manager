@@ -690,7 +690,47 @@ static int32_t ClientSerializationAndSend(enum CertManagerInterfaceCode message,
         CM_LOG_E("send request failed, ret = %d", ret);
     }
     CmFreeParamSet(&sendParamSet);
+    return ret;
+}
 
+int32_t CmClientImportUkeyCert(const struct CmBlob *keyUri, const struct CmBlob *cert,
+    const struct UkeyInfo *ukeyInfo)
+{
+    if (keyUri == NULL || cert == NULL || ukeyInfo == NULL) {
+        CM_LOG_E("check params failed");
+        return CMR_ERROR_NULL_POINTER;
+    }
+    int32_t ret;
+    struct CmBlob outBlob = { 0, NULL };
+    struct CmParamSet *sendParamSet = NULL;
+    uint32_t certPurpose = ukeyInfo->certPurpose;
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *keyUri },
+        { .tag = CM_TAG_PARAM1_BUFFER, .blob = *cert },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = certPurpose },
+    };
+
+    do {
+        ret = CmParamsToParamSet(params, CM_ARRAY_SIZE(params), &sendParamSet);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmImportUkeyCert CmParamSetPack fail");
+            break;
+        }
+
+        struct CmBlob parcelBlob = {
+            .size = sendParamSet->paramSetSize,
+            .data = (uint8_t *)sendParamSet
+        };
+
+        ret = SendRequest(CM_MSG_IMPORT_UKEY_CERTIFICATE, &parcelBlob, &outBlob);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("CmClientImportUkeyCert request fail");
+            break;
+        }
+    } while (0);
+
+    CmFreeParamSet(&sendParamSet);
+    CM_FREE_BLOB(outBlob);
     return ret;
 }
 

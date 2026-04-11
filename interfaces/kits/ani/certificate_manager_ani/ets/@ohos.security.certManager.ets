@@ -89,7 +89,13 @@ native function getUkeyCertificateNative(
   certPurpose: certificateManager.CertificatePurpose
 ): NativeResult<certificateManager.CMResult>;
 
-export class NativeResult<T> {
+native function importUkeyCertificateNative(
+  keyUri: string,
+  cert: Uint8Array,
+  ukeyInfo: certificateManager.UkeyInfo
+): NativeResult<void>;
+
+class NativeResult<T> {
   code: int;
   message: string = "";
   result?: T;
@@ -304,7 +310,7 @@ export namespace certificateManager {
   function checkBufferLen(buffer: Uint8Array, minLen: double, maxLen: double) {
     if (buffer.length < minLen || buffer.length > maxLen) {
       let error = new BusinessError();
-      error.code = 401;
+      error.code = CMErrorCode.CM_ERROR_INVALID_PARAMS;
       error.message = 'the input parameters is invalid.';
       throw error;
     }
@@ -313,7 +319,7 @@ export namespace certificateManager {
   function checkStrLen(str: string, minLen: double, maxLen: double) {
     if (str.length < minLen || str.length > maxLen) {
       let error = new BusinessError();
-      error.code = 401;
+      error.code = CMErrorCode.CM_ERROR_INVALID_PARAMS;
       error.message = 'the input parameters is invalid.';
       throw error;
     }
@@ -504,7 +510,7 @@ export namespace certificateManager {
     let certType: CertType = property.certType;
     if (certType === CertType.CA_CERT_USER && property.certScope === undefined) {
       let error = new BusinessError();
-      error.code = 401;
+      error.code = CMErrorCode.CM_ERROR_INVALID_PARAMS;
       error.message = 'the input parameters is invalid.';
       throw error;
     }
@@ -582,6 +588,39 @@ export namespace certificateManager {
     return createPromise<CMResult>(
       () => getUkeyCertificateNative(keyUri, certPurpose),
       {}
+    );
+  }
+
+  export function importUkeyCertificate(
+    keyUri: string,
+    cert: Uint8Array,
+    ukeyInfo: UkeyInfo
+  ): Promise<void> {
+    let error = new BusinessError();
+    if (keyUri === undefined || cert === undefined || ukeyInfo === undefined) {
+      error.code = CMErrorCode.CM_ERROR_INVALID_PARAMS;
+      error.message = 'the input parameters is invalid.';
+      throw error;
+    }
+    if (keyUri.length === 0 || cert.length === 0) {
+      error.code = CMErrorCode.CM_ERROR_PARAMETER_VALIDATION_FAILED;
+      error.message = 'the input parameters is invalid.';
+      throw error;
+    }
+    let certPurpose = ukeyInfo.certPurpose?? CertificatePurpose.PURPOSE_DEFAULT;
+    switch (certPurpose) {
+      case CertificatePurpose.PURPOSE_DEFAULT:
+      case CertificatePurpose.PURPOSE_SIGN:
+      case CertificatePurpose.PURPOSE_ENCRYPT:
+        break;
+      default:
+        error.code = CMErrorCode.CM_ERROR_PARAMETER_VALIDATION_FAILED;
+        error.message = 'the input parameters is invalid.';
+        throw error;
+    }
+    return createPromise<void>(
+      () => importUkeyCertificateNative(keyUri, cert, ukeyInfo),
+      undefined
     );
   }
 }

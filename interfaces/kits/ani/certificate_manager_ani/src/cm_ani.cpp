@@ -23,6 +23,7 @@
 #include "cm_get_cred_list_by_uid_impl.h"
 #include "cm_get_cred_list_impl.h"
 #include "cm_get_ukey_cert_list_impl.h"
+#include "cm_import_ukey_cert_impl.h"
 #include "cm_init_impl.h"
 #include "cm_update_impl.h"
 #include "cm_finish_impl.h"
@@ -185,6 +186,12 @@ static ani_object getUkeyCertificateNative(ani_env *env, ani_string strParam, an
     return getUkeyCertListImpl->Invoke();
 }
 
+static ani_object importUkeyCertificateNative(ani_env *env, ani_string keyUri, ani_object cert, ani_object ukeyInfo)
+{
+    auto importUkeyCertImpl = std::make_shared<CmImportUkeyCertImpl>(env, keyUri, cert, ukeyInfo);
+    return importUkeyCertImpl->Invoke();
+}
+
 static const std::array NATIVE_METHODS {
     ani_native_function {"installPrivateCertificateNative", nullptr,
         reinterpret_cast<void *>(installPrivateCertificateNative)},
@@ -232,6 +239,8 @@ static const std::array NATIVE_METHODS {
         reinterpret_cast<void *>(getUkeyCertificateListNative)},
     ani_native_function {"getUkeyCertificateNative", nullptr,
         reinterpret_cast<void *>(getUkeyCertificateNative)},
+    ani_native_function {"importUkeyCertificateNative", nullptr,
+        reinterpret_cast<void *>(importUkeyCertificateNative)},
 };
 }
 

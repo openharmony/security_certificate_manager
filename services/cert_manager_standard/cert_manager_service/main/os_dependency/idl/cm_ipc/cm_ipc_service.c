@@ -28,6 +28,7 @@
 #include "cm_type.h"
 #include "cm_ipc_service_serialization.h"
 #include "cert_manager_service_ipc_interface_code.h"
+#include "cert_manager_ukey_operation.h"
 
 #include "cert_manager.h"
 #include "cert_manager_check.h"
@@ -615,7 +616,7 @@ static int32_t CmIpcServiceGetUkeyCertListCommon(uint32_t code, const struct CmB
             ret = CMR_ERROR_PERMISSION_DENIED;
             break;
         }
-        
+
         if (mode == LIST_UKEY) {
             ret = CmServiceGetUkeyCertList(&ukeyParam, certPurpose, CM_ARRAY_SIZE(params),
                 &credentialDetailList);
@@ -1535,4 +1536,42 @@ void CmIpcServiceCheckAppPermission(const struct CmBlob *paramSetBlob, struct Cm
     CM_FREE_BLOB(huksAlias);
 
     CM_LOG_I("leave: ret = %d", ret);
+}
+
+void CmIpcServiceImportUkeyCert(uint32_t code, const struct CmBlob *paramSetBlob, const struct CmContext *context)
+{
+    int32_t ret;
+    struct CmContext cmContext = {0};
+    uint32_t certPurpose = 0;
+    struct CmBlob keyUri = { 0, NULL };
+    struct CmBlob cert = { 0, NULL };
+    struct CmParamSet *paramSet = NULL;
+    struct CmParamOut params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = &keyUri },
+        { .tag = CM_TAG_PARAM1_BUFFER, .blob = &cert },
+        { .tag = CM_TAG_PARAM0_UINT32, .uint32Param = &certPurpose },
+    };
+    do {
+        ret = GetInputParams(paramSetBlob, &paramSet, &cmContext, params, CM_ARRAY_SIZE(params));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("get input params failed, ret = %d", ret);
+            break;
+        }
+        if (!CmHasCommonPermission()) {
+            CM_LOG_E("caller no permission");
+            ret = CMR_ERROR_PERMISSION_DENIED;
+            break;
+        }
+
+        ret = CmServiceImportUkeyCert(&keyUri, &cert, certPurpose);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("import ukey cert fail, ret = %d", ret);
+            break;
+        }
+    } while (0);
+    void *data = NULL;
+    CmReport(__func__, &cmContext, NULL, ret);
+    CmSendResponseParcel(code, context, ret, data);
+    CmFreeParamSet(&paramSet);
+    CM_LOG_I("leave CmIpcServiceImportUkeyCert: ret = %d", ret);
 }

@@ -33,6 +33,7 @@
 #include "cm_napi_get_app_cert_list_by_uid.h"
 #include "cm_napi_get_ukey_cert_list.h"
 #include "cm_napi_get_ukey_cert.h"
+#include "cm_napi_import_ukey_cert.h"
 
 namespace CMNapi {
     inline void AddInt32Property(napi_env env, napi_value object, const char *name, int32_t value)
@@ -218,6 +219,7 @@ extern "C" {
         /* ukey cred */
         DECLARE_NAPI_FUNCTION("getUkeyCertificateList", CMNapiGetUkeyCertList),
         DECLARE_NAPI_FUNCTION("getUkeyCertificate", CMNapiGetUkeyCert),
+        DECLARE_NAPI_FUNCTION("importUkeyCertificate", CMNapiImportUkeyCert),
     };
 
     static napi_value CMNapiRegister(napi_env env, napi_value exports)
