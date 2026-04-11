@@ -95,7 +95,7 @@ native function importUkeyCertificateNative(
   ukeyInfo: certificateManager.UkeyInfo
 ): NativeResult<void>;
 
-export class NativeResult<T> {
+class NativeResult<T> {
   code: int;
   message: string = "";
   result?: T;
@@ -310,7 +310,7 @@ export namespace certificateManager {
   function checkBufferLen(buffer: Uint8Array, minLen: double, maxLen: double) {
     if (buffer.length < minLen || buffer.length > maxLen) {
       let error = new BusinessError();
-      error.code = 401;
+      error.code = CMErrorCode.CM_ERROR_INVALID_PARAMS;
       error.message = 'the input parameters is invalid.';
       throw error;
     }
@@ -319,7 +319,7 @@ export namespace certificateManager {
   function checkStrLen(str: string, minLen: double, maxLen: double) {
     if (str.length < minLen || str.length > maxLen) {
       let error = new BusinessError();
-      error.code = 401;
+      error.code = CMErrorCode.CM_ERROR_INVALID_PARAMS;
       error.message = 'the input parameters is invalid.';
       throw error;
     }
@@ -510,7 +510,7 @@ export namespace certificateManager {
     let certType: CertType = property.certType;
     if (certType === CertType.CA_CERT_USER && property.certScope === undefined) {
       let error = new BusinessError();
-      error.code = 401;
+      error.code = CMErrorCode.CM_ERROR_INVALID_PARAMS;
       error.message = 'the input parameters is invalid.';
       throw error;
     }
@@ -598,7 +598,7 @@ export namespace certificateManager {
   ): Promise<void> {
     let error = new BusinessError();
     if (keyUri === undefined || cert === undefined || ukeyInfo === undefined) {
-      error.code = 401;
+      error.code = CMErrorCode.CM_ERROR_INVALID_PARAMS;
       error.message = 'the input parameters is invalid.';
       throw error;
     }

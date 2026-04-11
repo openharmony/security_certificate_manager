@@ -64,7 +64,6 @@ static int32_t ParseParamsToHuksParamSet(uint32_t certPurpose, struct HksParamSe
     }
     ret = HksBuildParamSet(paramSetIn);
     if (ret != CM_SUCCESS) {
-        HksFreeParamSet(&paramSet);
         CM_LOG_E("HksBuildParamSet failed");
         return ret;
     }
