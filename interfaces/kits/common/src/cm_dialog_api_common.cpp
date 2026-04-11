@@ -133,7 +133,7 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
         return CM_SUCCESS;
     } else if (ret != HKS_SUCCESS) {
         CM_LOG_E("query ability info failed.");
-        return CMR_ERROR_UKEY_GENERAL_ERROR;
+        return CMR_DIALOG_ERROR_INSTALL_FAILED;
     }
 
     want.SetElementName(bundleName, abilityName);
