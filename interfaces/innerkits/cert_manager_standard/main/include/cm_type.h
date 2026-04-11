@@ -255,7 +255,7 @@ enum CMDialogErrorCode {
     CMR_DIALOG_ERROR_PERMISSION_DENIED = -1011, /* UIExtension will return -1011 if permission check failed */
     CMR_DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED = -1012, /* UIExtension will return -1012 if device check failed */
     CMR_DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE = -1013, /* UIExtension will return -1013 if no available cert to use*/
-    CMR_DIALOG_ERROR_NO_PARAMETER_VALIDATION_FAILED = -1014
+    CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED = -1014
 };
 
 enum CMErrorCode { /* temp use */
