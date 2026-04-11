@@ -248,6 +248,10 @@ static int32_t CheckAndGetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestC
 napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert authorize dialog enter");
+    if (!IsSuportDialogSyscap()) {
+        ThrowError(env, DIALOG_ERROR_GENERIC, "check syscap is not supported.");
+        return nullptr;
+    }
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
     size_t argc = PARAM_SIZE_TWO;
