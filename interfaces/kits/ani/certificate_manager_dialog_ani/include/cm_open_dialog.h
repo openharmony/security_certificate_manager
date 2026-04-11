@@ -25,74 +25,17 @@
 #include "system_ability_definition.h"
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
+#include "cm_dialog_api_common.h"
 
 namespace OHOS::Security::CertManager::Ani {
-const std::string PARAM_UI_EXTENSION_TYPE = "ability.want.params.uiExtensionType";
-const std::string SYS_COMMON_UI = "sys/commonUI";
-const std::string CERT_MANAGER_BUNDLENAME = "com.ohos.certmanager";
-const std::string CERT_MANAGER_ABILITYNAME = "CertPickerUIExtAbility";
-const std::string CERT_MANAGER_PAGE_TYPE = "pageType";
-const std::string CERT_MANAGER_CERTSCOPE_TYPE = "certScope";
-const std::string CERT_MANAGER_CERTIFICATE_DATA = "cert";
-const std::string CERT_MANAGER_CALLER_BUNDLENAME = "bundleName";
-const std::string CERT_MANAGER_CALLER_UID = "appUid";
-const std::string CERT_MANAGER_CERT_URI = "certUri";
-const std::string CERT_MANAGER_OPERATION_TYPE = "operationType";
-const std::string CERT_MANAGER_SHOW_INSTALL_BUTTON = "showInstallButton";
-const std::string CERT_MANAGER_CERT_TYPE = "certType";
-const std::string CERT_MANAGER_CERT_TYPES = "certTypes";
-const std::string CERT_MANAGER_CERT_PURPOSE = "certPurpose";
-const std::string CERT_MANAGER_KEY_ALG_IDS = "keyAlgIDs";
-const std::string CERT_MANAGER_ISSUERS = "issuers";
-const std::string CERT_MANAGER_SERVER_URL = "uri";
-const std::string CERT_MANAGER_CERT_KEY_URI = "keyUri";
-
-constexpr int32_t PARAM0 = 0;
-constexpr int32_t PARAM1 = 1;
-constexpr int32_t PARAM2 = 2;
-constexpr int32_t PARAM3 = 3;
-constexpr int32_t PARAM_SIZE_TWO = 2;
-constexpr int32_t PARAM_SIZE_THREE = 3;
-constexpr int32_t PARAM_SIZE_FOUR = 4;
-
-enum CmDialogPageType {
-    PAGE_MAIN = 1,
-    PAGE_CA_CERTIFICATE = 2,
-    PAGE_CREDENTIAL = 3,
-    PAGE_INSTALL_CERTIFICATE = 4,
-    PAGE_INSTALL_CA_GUIDE = 5,
-    PAGE_REQUEST_AUTHORIZE = 6,
-    PAGE_UKEY_PIN_AUTHORIZE = 7,
-};
-
-enum CmCertificateType {
-    CREDENTIAL_INVALID_TYPE = 0, // invalid type
-    CA_CERT = 1,
-    CREDENTIAL_USER = 2, // private type
-    CREDENTIAL_APP = 3, // app type
-    CREDENTIAL_UKEY = 4, // ukey type
-    CREDENTIAL_SYSTEM = 5, // system cred type
-};
-
-enum CertificateScope {
-    NOT_SPECIFIED = 0,
-    CURRENT_USER = 1,
-    GLOBAL_USER = 2
-};
+using namespace OHOS::Security::CertManager::Dialog;
+using namespace OHOS::AbilityRuntime;
 
 struct CmOpeonInstallDialogParams {
     ani_enum_item aniCertType;
     ani_enum_item aniCertScope;
     ani_string aniCert;
 };
-
-enum OperationType {
-    DIALOG_OPERATION_INSTALL = 1,
-    DIALOG_OPERATION_UNINSTALL = 2,
-    DIALOG_OPERATION_DETAIL = 3,
-};
-
-using namespace OHOS::AbilityRuntime;
 
 class CmAniUIExtensionCallback {
 public:

@@ -18,23 +18,8 @@
 #include "cm_log.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_napi_dialog_callback_void.h"
- 
+
 namespace CMNapi {
-
-static OHOS::AAFwk::Want CMGetAuthCertWant(std::shared_ptr<CmUIExtensionRequestContext> asyncContext)
-{
-    OHOS::AAFwk::Want want;
-    want.SetElementName(CERT_MANAGER_BUNDLENAME, CERT_MANAGER_ABILITYNAME);
-    want.SetParam(CERT_MANAGER_CALLER_BUNDLENAME, asyncContext->labelName);
-    want.SetParam(CERT_MANAGER_CALLER_UID, asyncContext->appUid);
-    want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
-    want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(CmDialogPageType::PAGE_UKEY_PIN_AUTHORIZE));
-    CmBlob *keyUri = asyncContext->certUri;
-    std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
-    want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
-    return want;
-}
-
 static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
 {
     bool hasProperty = false;
@@ -85,7 +70,6 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
         return result;
     }
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
-    asyncContext->opType = static_cast<int32_t>(DIALOG_OPERATION_AUTHORIZE);
     size_t index = 0;
     if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[index], asyncContext->context)) {
         CM_LOG_E("parse abilityContext failed");
@@ -93,7 +77,6 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
         return nullptr;
     }
     ++index;
-    asyncContext->opType = static_cast<int32_t>(DIALOG_OPERATION_AUTHORIZE_UKEY);
     if (IsParamNull(asyncContext->env, argv[index])) {
         ThrowError(env, PARAM_ERROR, "UkeyAuthRequest is null");
         return nullptr;
@@ -103,15 +86,16 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
         ThrowError(env, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, "parse UkeyAuthRequest failed");
         return nullptr;
     }
-    if (GetCallerLabelName(asyncContext) != CM_SUCCESS) {
-        CM_LOG_E("get caller labelName faild");
-        ThrowError(env, DIALOG_ERROR_GENERIC, "get caller labelName faild");
-        return nullptr;
-    }
-    asyncContext->appUid = static_cast<int32_t>(getuid());
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
     auto uiExtCallback = std::make_shared<CmUIExtensionVoidCallback>(asyncContext);
-    StartUIExtensionAbility(asyncContext, CMGetAuthCertWant(asyncContext), uiExtCallback);
+    OHOS::AAFwk::Want want{};
+    int32_t ret = GetCustomerAuthCertWant(asyncContext->certUri, want);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get customer auth cert want failed. ret = %d", ret);
+        ThrowError(env, DIALOG_ERROR_GENERIC, "get customer auth cert want failed.");
+        return nullptr;
+    }
+    StartUIExtensionAbility(asyncContext, want, uiExtCallback);
 
     CM_LOG_I("cert authorize dialog end");
     return result;

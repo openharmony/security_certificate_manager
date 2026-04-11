@@ -28,7 +28,6 @@ CmOpenUkeyAuthDialog::CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, 
     this->aniKeyUri = aniKeyUri;
 }
 
-
 int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
 {
     int32_t ret = CertManagerAsyncImpl::GetParamsFromEnv();
@@ -48,21 +47,12 @@ int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
 int32_t CmOpenUkeyAuthDialog::InvokeAsyncWork()
 {
     CM_LOG_D("InvokeAsyncWork start");
-    std::string labelName = "";
-    int32_t ret = GetCallerLabelName(this->abilityContext, labelName);
+    OHOS::AAFwk::Want want{};
+    int32_t ret = GetCustomerAuthCertWant(&this->keyUri, want);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("get caller labelName failed, ret = %d", ret);
+        CM_LOG_E("get customer auth cert want failed. ret = %d", ret);
         return ret;
     }
-
-    OHOS::AAFwk::Want want;
-    want.SetElementName(CERT_MANAGER_BUNDLENAME, CERT_MANAGER_ABILITYNAME);
-    want.SetParam(CERT_MANAGER_CALLER_BUNDLENAME, labelName);
-    want.SetParam(CERT_MANAGER_CALLER_UID, static_cast<int32_t>(getuid()));
-    want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
-    want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(PAGE_UKEY_PIN_AUTHORIZE));
-    std::string keyUriStr(reinterpret_cast<char *>(this->keyUri.data), this->keyUri.size);
-    want.SetParam(CERT_MANAGER_CERT_KEY_URI, keyUriStr);
 
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallback>(this->vm, this->abilityContext,
         this->globalCallback);
