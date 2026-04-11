@@ -185,5 +185,7 @@ int32_t GetCallerLabelName(std::shared_ptr<OHOS::AbilityRuntime::AbilityContext>
 bool IsEnableCACertDialog();
 
 int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want);
+
+bool IsSuportDialogSyscap();
 }  // namespace
 #endif

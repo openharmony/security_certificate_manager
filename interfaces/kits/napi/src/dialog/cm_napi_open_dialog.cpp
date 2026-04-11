@@ -54,6 +54,10 @@ static bool IsCmDialogPageTypeEnum(const uint32_t value)
 napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert manager dialog enter");
+    if (!IsSuportDialogSyscap()) {
+        ThrowError(env, DIALOG_ERROR_GENERIC, "check syscap is not supported.");
+        return nullptr;
+    }
     size_t argc = PARAM_SIZE_TWO;
     napi_value argv[PARAM_SIZE_TWO] = { nullptr };
     napi_value result = nullptr;

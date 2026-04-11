@@ -83,6 +83,10 @@ napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
 {
     // determine the type of device
     CM_LOG_I("enter uninstall cert dialog");
+    if (!IsSuportDialogSyscap()) {
+        ThrowError(env, DIALOG_ERROR_GENERIC, "check syscap is not supported.");
+        return nullptr;
+    }
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
     if (!IsEnableCACertDialog()) {

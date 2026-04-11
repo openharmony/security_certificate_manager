@@ -133,7 +133,7 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
         return CM_SUCCESS;
     } else if (ret != HKS_SUCCESS) {
         CM_LOG_E("query ability info failed.");
-        return CMR_ERROR_UKEY_GENERAL_ERROR;
+        return CMR_DIALOG_ERROR_INSTALL_FAILED;
     }
 
     want.SetElementName(bundleName, abilityName);
@@ -143,6 +143,11 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
     std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
     want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
     return CM_SUCCESS;
+}
+
+bool IsSuportDialogSyscap()
+{
+    return HasSystemCapability(CERT_MGR_DIALOG_SYSCAP.c_str());
 }
 
 }

@@ -56,6 +56,10 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
 napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert ukey authorize dialog enter");
+    if (!IsSuportDialogSyscap()) {
+        ThrowError(env, DIALOG_ERROR_GENERIC, "check syscap is not supported.");
+        return nullptr;
+    }
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
 
@@ -92,7 +96,7 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
     int32_t ret = GetCustomerAuthCertWant(asyncContext->certUri, want);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get customer auth cert want failed. ret = %d", ret);
-        ThrowError(env, DIALOG_ERROR_GENERIC, "get customer auth cert want failed.");
+        ThrowError(env, DIALOG_ERROR_INSTALL_FAILED, "get customer auth cert want failed.");
         return nullptr;
     }
     StartUIExtensionAbility(asyncContext, want, uiExtCallback);
