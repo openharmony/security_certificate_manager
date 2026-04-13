@@ -127,13 +127,10 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
     std::string abilityName = "";
     std::string bundleName = "";
     int32_t ret = QueryAbilityInfo(keyUri, abilityName, bundleName);
-    if (ret == HKS_ERROR_NOT_EXIST) {
-        CM_LOG_E("query ability info not exist.");
+    if (ret != HKS_SUCCESS) {
+        CM_LOG_E("query ability failed, ret = %d.", ret);
         GetDefaultAuthCertWant(keyUri, want);
         return CM_SUCCESS;
-    } else if (ret != HKS_SUCCESS) {
-        CM_LOG_E("query ability info failed.");
-        return CMR_DIALOG_ERROR_INSTALL_FAILED;
     }
 
     want.SetElementName(bundleName, abilityName);
