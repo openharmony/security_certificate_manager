@@ -127,6 +127,10 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
     std::string abilityName = "";
     std::string bundleName = "";
     int32_t ret = QueryAbilityInfo(keyUri, abilityName, bundleName);
+    /**
+     * When the query for the custom dialog's ability information fails,
+     * launch the default dialog of the certificate manager.
+     */
     if (ret != HKS_SUCCESS) {
         CM_LOG_E("query ability failed, ret = %d.", ret);
         GetDefaultAuthCertWant(keyUri, want);
