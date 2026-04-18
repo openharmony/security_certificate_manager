@@ -470,7 +470,7 @@ static int32_t GetCredCertName(struct CmContext *context, const struct CmAppCert
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get alias from subject name");
             if (certName->displayName->size > 0) {
-                certName->displayName->data = '\0';
+                certName->displayName->data[0] = '\0';
                 certName->displayName->size = 1;
             }
         }
