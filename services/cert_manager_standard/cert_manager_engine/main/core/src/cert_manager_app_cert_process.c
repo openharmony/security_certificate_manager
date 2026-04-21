@@ -469,7 +469,10 @@ static int32_t GetCredCertName(struct CmContext *context, const struct CmAppCert
         ret = GetSubjectNameAndAlias(cert, certParam->certAlias, certName->subjectName, certName->displayName);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get alias from subject name");
-            break;
+            if (certName->displayName->size > 0) {
+                certName->displayName->data[0] = '\0';
+                certName->displayName->size = 1;
+            }
         }
 
         ret = GetObjNameFromCertData(certParam->appCert, certParam->certAlias,
