@@ -146,7 +146,7 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
     return CM_SUCCESS;
 }
 
-bool IsSuportDialogSyscap()
+bool IsSupportDialogSyscap()
 {
     return HasSystemCapability(CERT_MGR_DIALOG_SYSCAP.c_str());
 }

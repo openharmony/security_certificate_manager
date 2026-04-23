@@ -27,8 +27,45 @@
 #include "cm_supports_ca_cert_dialog.h"
 #include "cm_dialog_api_common.h"
 #include "cm_ani_common.h"
+#include "cm_ani_utils.h"
 
 namespace OHOS::Security::CertManager::Ani {
+using namespace Dialog;
+static ani_object GenerateResult(ani_env *env, int32_t code, const char *message)
+{
+    ani_object nativeResult{};
+    int32_t ret = AniUtils::GenerateNativeResult(env, code, message, nullptr, nativeResult);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("generate native result failed, ret = %d", ret);
+        return nullptr;
+    }
+    return nativeResult;
+}
+
+static ani_object InvokeCallbackVoid(ani_env *env, ani_object callback)
+{
+    ani_object businessError{};
+    if (AniUtils::GenerateBusinessError(env, CM_SUCCESS, "", businessError) != CM_SUCCESS) {
+        CM_LOG_E("generate businessError failed.");
+        return GenerateResult(env, DIALOG_ERROR_GENERIC, DIALOG_GENERIC_MSG.c_str());
+    }
+
+    ani_ref nullRef{};
+    ani_status status = env->GetNull(&nullRef);
+    if (status != ANI_OK) {
+        CM_LOG_E("get nullRef failed. status = %d", static_cast<int32_t>(status));
+        return GenerateResult(env, DIALOG_ERROR_GENERIC, DIALOG_GENERIC_MSG.c_str());
+    }
+
+    status = env->Object_CallMethodByName_Void(callback, "invoke", "C{@ohos.base.BusinessError}Y:",
+        businessError, nullRef);
+    if (status != ANI_OK) {
+        CM_LOG_E("invoke callback failed. status = %d", static_cast<int32_t>(status));
+        return GenerateResult(env, DIALOG_ERROR_GENERIC, DIALOG_GENERIC_MSG.c_str());
+    }
+    return GenerateResult(env, CM_SUCCESS, "");
+}
+
 ani_object openCertificateManagerDialogNative(ani_env *env, ani_object context, ani_enum_item pageType,
     ani_object callback)
 {
@@ -36,9 +73,9 @@ ani_object openCertificateManagerDialogNative(ani_env *env, ani_object context, 
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    if (!IsSuportDialogSyscap()) {
+    if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
-        return GetAniDialogNativeResult(env, CMR_DIALOG_ERROR_INTERNAL);
+        return InvokeCallbackVoid(env, callback);
     }
     auto openCertmanagerDialogImpl = std::make_shared<CmOpenCertManagerDialog>(env, context, pageType, callback);
     return openCertmanagerDialogImpl->Invoke();
@@ -51,9 +88,9 @@ ani_object openInstallCertificateDialogNative(ani_env *env, ani_object context, 
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    if (!IsSuportDialogSyscap()) {
+    if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
-        return GetAniDialogNativeResult(env, CMR_DIALOG_ERROR_INTERNAL);
+        return GenerateResult(env, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED, CAPABILITY_NOT_SUPPORTED_MSG.c_str());
     }
     auto openInstallDialogImpl = std::make_shared<CmOpenInstallDialog>(env, context, callback, params);
     return openInstallDialogImpl->Invoke();
@@ -65,9 +102,9 @@ ani_object openUninstallCertificateDialogNative(ani_env *env, ani_object context
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    if (!IsSuportDialogSyscap()) {
+    if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
-        return GetAniDialogNativeResult(env, CMR_DIALOG_ERROR_INTERNAL);
+        return InvokeCallbackVoid(env, callback);
     }
     auto openUninstallDialogImpl = std::make_shared<CmOpenUninstallDialog>(env, context, certType, certUri, callback);
     return openUninstallDialogImpl->Invoke();
@@ -80,9 +117,9 @@ ani_object openCertificateDetailDialogNative(ani_env *env, ani_object context, a
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    if (!IsSuportDialogSyscap()) {
+    if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
-        return GetAniDialogNativeResult(env, CMR_DIALOG_ERROR_INTERNAL);
+        return InvokeCallbackVoid(env, callback);
     }
     auto openCertDetailDialogImpl = std::make_shared<CmOpenCertDetailDialog>(env, context, cert, showInstallButton,
         callback);
@@ -95,9 +132,9 @@ ani_object openAuthorizeDialogNative(ani_env *env, ani_object context, ani_objec
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    if (!IsSuportDialogSyscap()) {
+    if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
-        return GetAniDialogNativeResult(env, CMR_DIALOG_ERROR_INTERNAL);
+        return GenerateResult(env, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED, CAPABILITY_NOT_SUPPORTED_MSG.c_str());
     }
     auto openAuthDialogImpl = std::make_shared<CmOpenAuthDialog>(env, context, callback);
     return openAuthDialogImpl->Invoke();
@@ -109,9 +146,9 @@ ani_object openAuthorizeDialogWithReqNative(ani_env *env, ani_object context, an
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    if (!IsSuportDialogSyscap()) {
+    if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
-        return GetAniDialogNativeResult(env, CMR_DIALOG_ERROR_INTERNAL);
+        return GenerateResult(env, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED, CAPABILITY_NOT_SUPPORTED_MSG.c_str());
     }
     auto openAuthDialogWithReqImpl = std::make_shared<CmOpenAuthDialogWithReq>(
         env, context, params, callback);
@@ -124,9 +161,9 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    if (!IsSuportDialogSyscap()) {
+    if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
-        return GetAniDialogNativeResult(env, CMR_DIALOG_ERROR_INTERNAL);
+        return InvokeCallbackVoid(env, callback);
     }
     auto openUkeyAuthDialogImpl = std::make_shared<CmOpenUkeyAuthDialog>(env, context, keyUri, callback);
     return openUkeyAuthDialogImpl->Invoke();
@@ -137,10 +174,6 @@ ani_object supportsCACertDialogNative(ani_env *env)
     if (env == nullptr) {
         CM_LOG_E("check env is nullptr.");
         return nullptr;
-    }
-    if (!IsSuportDialogSyscap()) {
-        CM_LOG_E("check syscap is not supported.");
-        return GetAniDialogNativeResult(env, CMR_DIALOG_ERROR_INTERNAL);
     }
     return OHOS::Security::CertManager::Ani::SupportsCACertDialog(env);
 }

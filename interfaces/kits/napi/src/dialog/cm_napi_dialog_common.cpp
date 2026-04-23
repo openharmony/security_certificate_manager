@@ -559,4 +559,56 @@ int32_t ParseListUint8Array(napi_env env, napi_value object, std::vector<std::st
     }
     return CM_SUCCESS;
 }
+
+int32_t CheckSyscapReturnVoid(napi_env env, napi_value *result)
+{
+    if (env == nullptr) {
+        CM_LOG_E("check env is nullptr.");
+        return CM_FAILURE;
+    }
+    if (IsSupportDialogSyscap()) {
+        return CM_SUCCESS;
+    }
+    CM_LOG_E("capability not supported.");
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    napi_status status;
+    do {
+        napi_deferred deferred = nullptr;
+        if ((status = napi_create_promise(env, &deferred, result)) != napi_ok || deferred == nullptr) {
+            CM_LOG_E("failed to create promise. ret = %d", static_cast<int32_t>(status));
+            break;
+        }
+        napi_value args = nullptr;
+        if ((status = napi_get_null(env, &args)) != napi_ok || args == nullptr) {
+            CM_LOG_E("failed to get null. ret = %d", static_cast<int32_t>(status));
+            break;
+        }
+        if ((status = napi_resolve_deferred(env, deferred, args)) != napi_ok) {
+            CM_LOG_E("failed to resolve promise. ret = %d", static_cast<int32_t>(status));
+            break;
+        }
+    } while (0);
+    if (status != napi_ok) {
+        ThrowError(env, DIALOG_ERROR_GENERIC, DIALOG_GENERIC_MSG);
+    }
+    if (scope != nullptr) {
+        napi_close_handle_scope(env, scope);
+    }
+    return CM_FAILURE;
+}
+
+int32_t CheckSyscapThrowError(napi_env env)
+{
+    if (env == nullptr) {
+        CM_LOG_E("check env is nullptr.");
+        return CM_FAILURE;
+    }
+    if (IsSupportDialogSyscap()) {
+        return CM_SUCCESS;
+    }
+    CM_LOG_E("capability not supported.");
+    ThrowError(env, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED, CAPABILITY_NOT_SUPPORTED_MSG);
+    return CM_FAILURE;
+}
 }  // namespace CertManagerNapi

@@ -56,12 +56,11 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
 napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert ukey authorize dialog enter");
-    if (!IsSuportDialogSyscap()) {
-        ThrowError(env, DIALOG_ERROR_GENERIC, "check syscap is not supported.");
-        return nullptr;
-    }
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
+    if (CheckSyscapReturnVoid(env, &result) != CM_SUCCESS) {
+        return result;
+    }
 
     size_t argc = PARAM_SIZE_TWO;
     napi_value argv[PARAM_SIZE_TWO] = { nullptr };
