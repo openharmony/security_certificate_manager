@@ -157,7 +157,7 @@ export namespace certificateManagerDialog {
   const MIN_DATA_LEN: double = 1;
   const MAX_DATA_LEN: double = 0x6400000;
 
-  function checkBufferLen(buffer: Uint8Array, minLen: double, maxLen: double) {
+  function checkBufferLen(buffer: Uint8Array, minLen: double, maxLen: double): void {
     if (buffer.length < minLen || buffer.length > maxLen) {
       let error = new BusinessError();
       error.code = 401;
@@ -166,7 +166,7 @@ export namespace certificateManagerDialog {
     }
   }
 
-  function checkStrLen(str: string, minLen: double, maxLen: double) {
+  function checkStrLen(str: string, minLen: double, maxLen: double): void {
     if (str.length < minLen || str.length > maxLen) {
       let error = new BusinessError();
       error.code = 401;
