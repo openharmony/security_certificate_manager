@@ -186,6 +186,6 @@ bool IsEnableCACertDialog();
 
 int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want);
 
-bool IsSuportDialogSyscap();
+bool IsSupportDialogSyscap();
 }  // namespace
 #endif

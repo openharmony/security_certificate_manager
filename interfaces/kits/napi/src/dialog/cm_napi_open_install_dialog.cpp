@@ -114,8 +114,7 @@ static uint32_t GetCertificateType(napi_env env, napi_value argv[], size_t lengt
 napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert install dialog enter");
-    if (!IsSuportDialogSyscap()) {
-        ThrowError(env, DIALOG_ERROR_GENERIC, "check syscap is not supported.");
+    if (CheckSyscapThrowError(env) != CM_SUCCESS) {
         return nullptr;
     }
     napi_value result = nullptr;

@@ -85,9 +85,10 @@ static OHOS::AAFwk::Want CMGetCertDetailWant(std::shared_ptr<CmUIExtensionReques
 napi_value CMNapiOpenDetailDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert open detail dialog enter");
-    if (!IsSuportDialogSyscap()) {
-        ThrowError(env, DIALOG_ERROR_GENERIC, "check syscap is not supported.");
-        return nullptr;
+    napi_value result = nullptr;
+    NAPI_CALL(env, napi_get_undefined(env, &result));
+    if (CheckSyscapReturnVoid(env, &result) != CM_SUCCESS) {
+        return result;
     }
     if (!IsEnableCACertDialog()) {
         CM_LOG_E("check not support ca cert dialog");
@@ -115,7 +116,6 @@ napi_value CMNapiOpenDetailDialog(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    napi_value result = nullptr;
     status = napi_create_promise(env, &asyncContext->deferred, &result);
     if (status != napi_ok) {
         CM_LOG_E("failed to create promise.");

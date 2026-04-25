@@ -24,10 +24,6 @@ using namespace OHOS::Security::CertManager::Dialog;
 napi_value CMNapiSupportsCACertDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("supportsCACertDialog enter");
-    if (!IsSuportDialogSyscap()) {
-        ThrowError(env, DIALOG_ERROR_GENERIC, "check syscap is not supported.");
-        return nullptr;
-    }
     napi_value result = nullptr;
     bool isSupport = IsEnableCACertDialog();
     NAPI_CALL(env, napi_get_boolean(env, isSupport, &result));

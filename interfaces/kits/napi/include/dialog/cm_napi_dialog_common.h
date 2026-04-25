@@ -55,6 +55,10 @@ int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncCon
 
 bool IsParamNull(napi_env env, napi_value obj);
 
+int32_t CheckSyscapReturnVoid(napi_env env, napi_value *result);
+
+int32_t CheckSyscapThrowError(napi_env env);
+
 inline napi_value GetInt32(napi_env env, int32_t value)
 {
     napi_value result = nullptr;
