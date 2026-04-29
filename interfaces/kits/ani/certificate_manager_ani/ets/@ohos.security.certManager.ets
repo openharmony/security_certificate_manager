@@ -307,7 +307,7 @@ export namespace certificateManager {
   const MIN_DATA_LEN: double = 1;
   const MAX_DATA_LEN: double = 0x6400000;
 
-  function checkBufferLen(buffer: Uint8Array, minLen: double, maxLen: double) {
+  function checkBufferLen(buffer: Uint8Array, minLen: double, maxLen: double): void {
     if (buffer.length < minLen || buffer.length > maxLen) {
       let error = new BusinessError();
       error.code = CMErrorCode.CM_ERROR_INVALID_PARAMS;
@@ -316,7 +316,7 @@ export namespace certificateManager {
     }
   }
 
-  function checkStrLen(str: string, minLen: double, maxLen: double) {
+  function checkStrLen(str: string, minLen: double, maxLen: double): void {
     if (str.length < minLen || str.length > maxLen) {
       let error = new BusinessError();
       error.code = CMErrorCode.CM_ERROR_INVALID_PARAMS;
