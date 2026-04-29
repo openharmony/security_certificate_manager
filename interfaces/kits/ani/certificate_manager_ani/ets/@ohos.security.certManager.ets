@@ -607,7 +607,7 @@ export namespace certificateManager {
       error.message = 'the input parameters is invalid.';
       throw error;
     }
-    let certPurpose = ukeyInfo.certPurpose?? CertificatePurpose.PURPOSE_DEFAULT;
+    let certPurpose: CertificatePurpose = ukeyInfo.certPurpose?? CertificatePurpose.PURPOSE_DEFAULT;
     switch (certPurpose) {
       case CertificatePurpose.PURPOSE_DEFAULT:
       case CertificatePurpose.PURPOSE_SIGN:
@@ -618,6 +618,7 @@ export namespace certificateManager {
         error.message = 'the input parameters is invalid.';
         throw error;
     }
+    ukeyInfo.certPurpose = certPurpose;
     return createPromise<void>(
       () => importUkeyCertificateNative(keyUri, cert, ukeyInfo),
       undefined
