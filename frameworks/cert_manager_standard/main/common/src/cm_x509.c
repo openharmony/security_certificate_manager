@@ -379,7 +379,7 @@ int32_t GetX509SubjectNameLongFormat(const X509 *x509cert, char *outBuf, uint32_
     const char *subjectNameList[] = {CM_COMMON_NAME, CM_ORGANIZATION_UNIT_NAME, CM_ORGANIZATION_NAME};
     uint32_t sizeList = sizeof(subjectNameList) / sizeof(subjectNameList[0]);
     for (uint32_t j = 0; j < sizeList; ++j) {
-        if (offset > outBufMaxSize) {
+        if (offset >= outBufMaxSize) {
             CM_LOG_E("offset exceeded outBufMaxSize");
             break;
         }
