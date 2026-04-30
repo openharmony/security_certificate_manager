@@ -701,6 +701,10 @@ int32_t CmServiceGetCertInfo(struct CmContext *context, const struct CmBlob *cer
 
 int32_t CmX509ToPEM(const X509 *x509, struct CmBlob *userCertPem)
 {
+    if (x509 == NULL || userCertPem == NULL) {
+        CM_LOG_E("check params failed");
+        return CMR_ERROR_OPENSSL_FAIL;
+    }
     int32_t ret = CM_SUCCESS;
     char *pemCert = NULL;
 
@@ -1035,18 +1039,18 @@ int32_t CmInstallMultiUserCert(const struct CmContext *context, const struct CmB
     }
 
     uint8_t *outData = certUri->data;
-    uint32_t uriListSize = 0;
+    int32_t uriListSize = 0;
 
     STACK_OF(X509) *certStack = InitCertStackContext(userCert->data, userCert->size);
     if (certStack == NULL) {
         CM_LOG_E("init certStack failed");
         return CMR_ERROR_INVALID_CERT_FORMAT;
     }
-    uriListSize = (uint32_t)sk_X509_num(certStack);
+    uriListSize = sk_X509_num(certStack);
     // check buffer size
     uint32_t capacity = (certUri->size - sizeof(uint32_t)) / MAX_LEN_URI;
-    if (uriListSize > capacity) {
-        CM_LOG_E("too many certs, uriListSize = %u, capacity = %u", uriListSize, capacity);
+    if (uriListSize < 0 || (uint32_t)uriListSize > capacity) {
+        CM_LOG_E("too many certs, uriListSize = %d, capacity = %u", uriListSize, capacity);
         sk_X509_pop_free(certStack, X509_free);
         return CMR_ERROR_MAX_CERT_COUNT_REACHED;
     }
@@ -1058,7 +1062,7 @@ int32_t CmInstallMultiUserCert(const struct CmContext *context, const struct CmB
     }
 
     // set uriListSize
-    *((uint32_t *)outData) = uriListSize;
+    *((uint32_t *)outData) = (uint32_t)uriListSize;
     outData += sizeof(uint32_t);
 
     for (uint32_t i = 0; i < uriListSize; ++i) {

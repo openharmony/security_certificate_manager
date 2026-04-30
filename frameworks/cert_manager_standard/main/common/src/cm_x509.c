@@ -291,6 +291,10 @@ static int32_t GetX509FirstSubjectProp(const X509 *x509cert, struct CmBlob *disp
         return CMR_ERROR_INVALID_CERT_FORMAT;
     }
     X509_NAME_ENTRY *entry = X509_NAME_get_entry(name, 0);
+    if (entry == NULL) {
+        CM_LOG_E("X509_NAME_get_entry get entry faild");
+        return CMR_ERROR_INVALID_CERT_FORMAT;
+    }
     char *data = NULL;
     length = ASN1_STRING_to_UTF8((unsigned char **)&data, X509_NAME_ENTRY_get_data(entry));
     if (length < 0) {
@@ -375,6 +379,10 @@ int32_t GetX509SubjectNameLongFormat(const X509 *x509cert, char *outBuf, uint32_
     const char *subjectNameList[] = {CM_COMMON_NAME, CM_ORGANIZATION_UNIT_NAME, CM_ORGANIZATION_NAME};
     uint32_t sizeList = sizeof(subjectNameList) / sizeof(subjectNameList[0]);
     for (uint32_t j = 0; j < sizeList; ++j) {
+        if (offset >= outBufMaxSize) {
+            CM_LOG_E("offset exceeded outBufMaxSize");
+            break;
+        }
         char subjectName[NAME_MAX_SIZE] = {0};
         int32_t length = GetX509SubjectName(x509cert, subjectNameList[j], subjectName, NAME_MAX_SIZE);
         if (length < 0) {
