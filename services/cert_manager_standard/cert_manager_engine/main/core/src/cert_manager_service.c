@@ -1065,7 +1065,7 @@ int32_t CmInstallMultiUserCert(const struct CmContext *context, const struct CmB
     *((uint32_t *)outData) = (uint32_t)uriListSize;
     outData += sizeof(uint32_t);
 
-    for (uint32_t i = 0; i < uriListSize; ++i) {
+    for (uint32_t i = 0; i < (uint32_t)uriListSize; ++i) {
         struct CmBlob certPemData = { 0, NULL };
         X509 *cert = sk_X509_value(certStack, i);
         ret = CmX509ToPEM(cert, &certPemData);
