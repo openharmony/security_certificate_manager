@@ -95,7 +95,7 @@ native function importUkeyCertificateNative(
   ukeyInfo: certificateManager.UkeyInfo
 ): NativeResult<void>;
 
-class NativeResult<T> {
+export class NativeResult<T> {
   code: int;
   message: string = "";
   result?: T;
