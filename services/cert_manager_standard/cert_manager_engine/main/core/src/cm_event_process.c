@@ -35,7 +35,7 @@
 
 static void DeleteAuth(const struct CmContext *context, const char *fileName, bool isDeleteByUid)
 {
-    CM_LOG_D("isDeleteByUid:%d", isDeleteByUid);
+    CM_LOG_I("isDeleteByUid:%d", isDeleteByUid);
     struct CmBlob keyUri = { strlen(fileName) + 1, (uint8_t *)fileName };
 
     int32_t ret;
@@ -246,7 +246,7 @@ static int32_t TraversalUserIdLayerDir(const struct CmContext *context, const ch
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    CM_LOG_D("CmTraversalUserIdLayerDir userId:%u, uid:%u", context->userId, uid);
+    CM_LOG_I("CmTraversalUserIdLayerDir userId:%u, uid:%u", context->userId, uid);
 
     int32_t ret = CM_SUCCESS;
     if (isUserDeleteEvent) { /* user delete event */
