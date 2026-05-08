@@ -50,8 +50,8 @@ void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData
         if (context.uid == INVALID_VALUE ||
             OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(context.uid, userId) != 0) {
             CM_LOG_E("GetOsAccountLocalIdFromUid err. uid: %d, bundleName: %s", context.uid, bundleName.c_str());
+            return;
         }
-        ;
         context.userId = static_cast<uint32_t>(userId);
         CM_LOG_W("Pacage removed: uid: %u, userId: %u, name: %s", context.uid, context.userId, bundleName.c_str());
         CmDeleteProcessInfo(&context);
