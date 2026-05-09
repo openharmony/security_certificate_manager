@@ -46,7 +46,7 @@ void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData
         action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
         context.uid = static_cast<uint32_t>(want.GetIntParam(AppExecFwk::Constants::UID, -1));
         int userId = 0;
-        std::string bundleName = want.getBundle();
+        std::string bundleName = want.GetBundle();
         if (context.uid == INVALID_VALUE ||
             OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(context.uid, userId) != 0) {
             CM_LOG_E("GetOsAccountLocalIdFromUid err. uid: %d, bundleName: %s", context.uid, bundleName.c_str());
