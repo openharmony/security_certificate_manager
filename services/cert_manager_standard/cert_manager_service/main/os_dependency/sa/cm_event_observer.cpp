@@ -57,7 +57,7 @@ void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData
         CmDeleteProcessInfo(&context);
     } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
         context.userId = static_cast<uint32_t>(data.GetCode());
-        CM_LOG_W("User removed: userId is %d", context.userId);
+        CM_LOG_W("User removed: userId is %u", context.userId);
         CmDeleteProcessInfo(&context);
     }
 }
