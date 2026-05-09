@@ -36,7 +36,7 @@ SystemEventSubscriber::SystemEventSubscriber(const OHOS::EventFwk::CommonEventSu
 
 void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData &data)
 {
-    CM_LOG_D("SystemEventSubscriber::OnReceiveEvent");
+    CM_LOG_I("SystemEventSubscriber::OnReceiveEvent");
 
     struct CmContext context;
     context.uid = INVALID_VALUE;
@@ -46,13 +46,18 @@ void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData
         action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
         context.uid = static_cast<uint32_t>(want.GetIntParam(AppExecFwk::Constants::UID, -1));
         int userId = 0;
-        OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(context.uid, userId);
+        std::string bundleName = want.GetBundle();
+        if (context.uid == INVALID_VALUE ||
+            OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(context.uid, userId) != 0) {
+            CM_LOG_E("GetOsAccountLocalIdFromUid err. uid: %d, bundleName: %s", context.uid, bundleName.c_str());
+            return;
+        }
         context.userId = static_cast<uint32_t>(userId);
-        CM_LOG_D("CmService package removed: uid is %u userId is %u", context.uid, context.userId);
+        CM_LOG_W("Pacage removed: uid: %u, userId: %u, name: %s", context.uid, context.userId, bundleName.c_str());
         CmDeleteProcessInfo(&context);
     } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
         context.userId = static_cast<uint32_t>(data.GetCode());
-        CM_LOG_D("CmService user removed: userId is %d", context.userId);
+        CM_LOG_W("User removed: userId is %u", context.userId);
         CmDeleteProcessInfo(&context);
     }
 }

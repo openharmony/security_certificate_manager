@@ -35,7 +35,7 @@
 
 static void DeleteAuth(const struct CmContext *context, const char *fileName, bool isDeleteByUid)
 {
-    CM_LOG_D("isDeleteByUid:%d", isDeleteByUid);
+    CM_LOG_I("isDeleteByUid:%d", isDeleteByUid);
     struct CmBlob keyUri = { strlen(fileName) + 1, (uint8_t *)fileName };
 
     int32_t ret;
@@ -165,6 +165,7 @@ static int32_t RemoveDir(const char *dirPath)
         dire = readdir(dir);
     }
     (void)closedir(dir);
+    CM_LOG_W("remove dir: %s", dirPath);
     (void)remove(dirPath);
     return CM_SUCCESS;
 }
@@ -246,7 +247,7 @@ static int32_t TraversalUserIdLayerDir(const struct CmContext *context, const ch
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    CM_LOG_D("CmTraversalUserIdLayerDir userId:%u, uid:%u", context->userId, uid);
+    CM_LOG_I("CmTraversalUserIdLayerDir userId:%u, uid:%u", context->userId, uid);
 
     int32_t ret = CM_SUCCESS;
     if (isUserDeleteEvent) { /* user delete event */
@@ -292,6 +293,7 @@ static int32_t CmTraversalUserIdLayerDir(const struct CmContext *context, const 
         if (dire->d_type == DT_DIR && (strcmp("..", dire->d_name) != 0) && (strcmp(".", dire->d_name) != 0)) {
             (void)TraversalUserIdLayerDir(context, userIdPath, dire->d_name, store, isUserDeleteEvent);
         } else if (dire->d_type != DT_DIR) {
+            CM_LOG_W("remove file: %s", userIdPath);
             (void)remove(userIdPath);
         }
         dire = readdir(dir);
@@ -340,6 +342,7 @@ static int32_t CmTraversalDir(const struct CmContext *context, const char *path,
             (uid == context->userId)) {
             ret = CmTraversalUserIdLayerDir(context, deletePath, store);
         } else if (dire->d_type != DT_DIR) {
+            CM_LOG_W("remove file: %s", deletePath);
             (void)remove(deletePath);
         }
         dire = readdir(dir);
