@@ -89,7 +89,7 @@ static napi_value GetLevelOrCallback(napi_env env, InstallAppCertAsyncContext co
             CM_LOG_E("could not get level");
             return nullptr;
         }
-        context->level = (enum CmAuthStorageLevel)level;
+        context->level = static_cast<enum CmAuthStorageLevel>(level);
     } else {
         int32_t ret = GetCallback(env, napiObject, context->callback);
         if (ret != CM_SUCCESS) {
