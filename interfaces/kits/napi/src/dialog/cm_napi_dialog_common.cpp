@@ -118,10 +118,10 @@ static std::string EncodeBase64(const uint8_t *indata, const uint32_t length)
         return encodeStr;
     }
     int i = 0;
-    while (i < (int)length) {
-        unsigned int octeta = i < (int)length ? *(indata + (i++)) : 0;
-        unsigned int octetb = i < (int)length ? *(indata + (i++)) : 0;
-        unsigned int octetc = i < (int)length ? *(indata + (i++)) : 0;
+    while (i < static_cast<int>(length)) {
+        unsigned int octeta = i < static_cast<int>(length) ? *(indata + (i++)) : 0;
+        unsigned int octetb = i < static_cast<int>(length) ? *(indata + (i++)) : 0;
+        unsigned int octetc = i < static_cast<int>(length) ? *(indata + (i++)) : 0;
 
         unsigned int triple = (octeta << BYTE_SHIFT_16) + (octetb << BYTE_SHIFT_8) + octetc;
 

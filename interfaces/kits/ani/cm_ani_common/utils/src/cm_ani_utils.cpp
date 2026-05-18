@@ -76,7 +76,7 @@ bool IsUndefined(ani_env *env, ani_object object)
         CM_LOG_E("check ref is undefined failed.");
         return true;
     }
-    return (bool)isUndefined;
+    return static_cast<bool>(isUndefined);
 }
 
 int32_t ParseUint8Array(ani_env *env, ani_arraybuffer uint8Array, CmBlob &outBlob)

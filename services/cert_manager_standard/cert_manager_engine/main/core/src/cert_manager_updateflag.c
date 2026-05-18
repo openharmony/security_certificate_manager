@@ -307,8 +307,9 @@ int32_t CmBackupUserCert(const struct CmContext *context, const struct CmBlob *c
         }
     } while (0);
 
-    if (certPemDataNeedFree == true)
+    if (certPemDataNeedFree == true) {
         CM_FREE_BLOB(certPemData);
+    }
 
     FreeCertContext(userCertX509);
 
