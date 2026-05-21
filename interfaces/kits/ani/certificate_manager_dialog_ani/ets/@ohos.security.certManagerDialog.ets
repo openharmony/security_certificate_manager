@@ -175,6 +175,16 @@ export namespace certificateManagerDialog {
     }
   }
 
+  function checkInstallCertType(certType: CertificateType): void {
+    if (certType !== CertificateType.CA_CERT && certType !== CertificateType.CREDENTIAL_USER &&
+      certType !== CertificateType.CREDENTIAL_SYSTEM) {
+      let error = new BusinessError();
+      error.code = 401;
+      error.message = 'the input parameters is invalid.';
+      throw error;
+    }
+  }
+
   export function openCertificateManagerDialog(context: common.Context, pageType: CertificateDialogPageType): Promise<void> {
     return new Promise<void>((resolve, reject: (error: BusinessError) => void) => {
         let callback = new AsyncCallbackWrapper<void>((err: BusinessError | null) => {
@@ -195,6 +205,7 @@ export namespace certificateManagerDialog {
   }
 
   export function openInstallCertificateDialog(context: common.Context, certType: CertificateType, certScope: CertificateScope, cert: Uint8Array): Promise<string> {
+    checkInstallCertType(certType);
     checkBufferLen(cert, MIN_DATA_LEN, MAX_DATA_LEN);
     return new Promise<string>((resolve, reject: (error: BusinessError) => void) => {
         let callback = new AsyncCallbackWrapper<string>((err: BusinessError | null, data: string | undefined) => {
