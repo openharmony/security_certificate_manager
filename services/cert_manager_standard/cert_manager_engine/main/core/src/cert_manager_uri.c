@@ -87,7 +87,7 @@ static uint32_t GetComponentEncodedLen(const char *key, const char *value,
     }
     size_t resAvailLen = strlen(resAvail);
     size_t keyLen = strlen(key);
-    size_t valueLen = strnlen(value, MAX_LEN_CERT_ALIAS);
+    size_t valueLen = strlen(value);
     size_t reserved = 0;
     for (size_t i = 0; i < valueLen; i++) {
         if (!IsUnreserved(resAvail, resAvailLen, value[i])) {
