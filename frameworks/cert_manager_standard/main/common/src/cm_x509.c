@@ -337,6 +337,7 @@ static int32_t GetDisplayName(X509 *x509cert, const struct CmBlob *certAlias,
             return CMR_ERROR_MEM_OPERATION_COPY;
         }
         displayName->size = certAlias->size;
+        displayName->data[displayName->size - 1] = '\0';
     }
     return ret;
 }

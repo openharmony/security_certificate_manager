@@ -1067,6 +1067,8 @@ static int32_t HandleNotEmptyAlias(const struct CmBlob *certAlias, const enum Al
             CM_LOG_E("memcpy object name failed");
             return CMR_ERROR_MEM_OPERATION_COPY;
         }
+        objectName->size = object.size;
+        objectName->data[objectName->size - 1] = '\0';
     } else {
         ret = GetNameEncode(&object, objectName);
         if (ret != CM_SUCCESS) {
