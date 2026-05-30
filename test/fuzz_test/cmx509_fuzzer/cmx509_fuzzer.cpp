@@ -27,7 +27,7 @@ using namespace CmFuzzTest;
 namespace OHOS {
     X509 *GetRamdomX509(const uint8_t* data, size_t size)
     {
-        uint32_t minSize = sizeof(struct CmBlob) * CM_BLOB_COUNT + sizeof(uint32_t) * UINT32_COUNT;
+        uint32_t minSize = sizeof(struct CmBlob);
         uint8_t *myData = nullptr;
         if (!CopyMyData(data, size, minSize, &myData)) {
             return nullptr;
