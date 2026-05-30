@@ -267,6 +267,7 @@ namespace OHOS {
         ctx.uri = &randomUri;
         ProcessCertificateOperations(ctx, &appCertParam, &userCert, &certAlias);
         CmFree(myData);
+        delete randomUri.data;
         return true;
     }
 

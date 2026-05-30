@@ -278,6 +278,7 @@ namespace OHOS {
         ExecuteCertOperations(ctx);
         (void)CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
         CmFree(myData);
+        delete randomUri.data;
         return true;
     }
 }
