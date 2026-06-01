@@ -284,12 +284,13 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
     }
     asyncContext->appUid = static_cast<int32_t>(getuid());
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
+    auto want = CMGetAuthCertWant(asyncContext);
     if (argc == PARAM_SIZE_ONE) {
         auto uiExtCallback = std::make_shared<CmUIExtensionStringCallback>(asyncContext);
-        StartUIExtensionAbility(asyncContext, CMGetAuthCertWant(asyncContext), uiExtCallback);
+        StartUIExtensionAbility(asyncContext, want, uiExtCallback);
     } else if (argc == PARAM_SIZE_TWO) {
         auto uiExtCallback = std::make_shared<CmUIExtensionCertReferenceCallback>(asyncContext);
-        StartUIExtensionAbility(asyncContext, CMGetAuthCertWant(asyncContext), uiExtCallback);
+        StartUIExtensionAbility(asyncContext, want, uiExtCallback);
     }
     CM_LOG_I("cert authorize dialog end");
     return result;

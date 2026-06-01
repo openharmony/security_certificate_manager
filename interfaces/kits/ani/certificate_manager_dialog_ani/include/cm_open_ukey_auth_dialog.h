@@ -27,6 +27,8 @@ private:
     ani_string aniKeyUri = nullptr;
     /* parsed params */
     CmBlob keyUri = { 0 };
+    int32_t StartUkeyPinAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Want& want,
+        std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback);
 
 public:
     CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_string aniKeyUri,

@@ -76,7 +76,11 @@ public:
     ani_object GetDefaultResult(ani_env *env) override;
 };
 
-int32_t StartUIExtensionAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Want want,
+int32_t StartUIExtensionAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Want& want,
     std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback);
+
+int32_t StartUIAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Want& want,
+    std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback);
+
 };
 #endif

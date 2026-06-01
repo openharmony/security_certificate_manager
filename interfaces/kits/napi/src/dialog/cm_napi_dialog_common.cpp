@@ -60,7 +60,7 @@ static bool CheckBasicPermission(void)
 }
 
 void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
-    OHOS::AAFwk::Want want, std::shared_ptr<CmUIExtensionCallback> uiExtCallback)
+    OHOS::AAFwk::Want& want, std::shared_ptr<CmUIExtensionCallback> uiExtCallback)
 {
     /*
      * Before starting the UIExtension, the permission is verified for interception.
@@ -72,7 +72,7 @@ void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncC
         return;
     }
 
-    CM_LOG_D("begin StartUIExtensionAbility");
+    CM_LOG_I("begin StartUIExtensionAbility");
     auto abilityContext = asyncContext->context;
     if (abilityContext == nullptr) {
         CM_LOG_E("abilityContext is null");
@@ -107,6 +107,28 @@ void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncC
         ThrowError(asyncContext->env, PARAM_ERROR, "CreateModalUIExtension failed");
     }
     uiExtCallback->SetSessionId(sessionId);
+    return;
+}
+
+void StartUIAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::AAFwk::Want& want, std::shared_ptr<CmUIExtensionCallback> uiExtCallback)
+{
+    if (!CheckBasicPermission()) {
+        CM_LOG_E("not has basic permission");
+        ThrowError(asyncContext->env, HAS_NO_PERMISSION, DIALOG_NO_PERMISSION_MSG);
+        return;
+    }
+    CM_LOG_I("begin StartUIAbility");
+    auto abilityContext = asyncContext->context;
+
+    int32_t ret = abilityContext->StartAbilityForResult(want, -1,
+        [uiExtCallback](int32_t resultCode, const OHOS::AAFwk::Want& result, bool isAccess) {
+            uiExtCallback->OnResult(resultCode, result);
+        });
+    if (ret != CM_SUCCESS) {
+        CM_LOG_I("StartUIAbility error, code: %d", ret);
+        ThrowError(asyncContext->env, DIALOG_ERROR_GENERIC, "CreateModalUIExtension failed");
+    }
     return;
 }
 

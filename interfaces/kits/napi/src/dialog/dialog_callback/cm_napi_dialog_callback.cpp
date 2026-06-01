@@ -28,7 +28,7 @@ CmUIExtensionCallback::CmUIExtensionCallback(std::shared_ptr<CmUIExtensionReques
 
 CmUIExtensionCallback::~CmUIExtensionCallback()
 {
-    CM_LOG_D("~CmUIExtensionCallback");
+    CM_LOG_I("~CmUIExtensionCallback");
 }
 
 void CmUIExtensionCallback::SetSessionId(const int32_t sessionId)
@@ -43,7 +43,7 @@ bool CmUIExtensionCallback::SetErrorCode(int32_t code)
         return false;
     }
     if (this->alreadyCallback_) {
-        CM_LOG_D("alreadyCallback");
+        CM_LOG_I("alreadyCallback");
         return false;
     }
     this->alreadyCallback_ = true;
@@ -53,7 +53,7 @@ bool CmUIExtensionCallback::SetErrorCode(int32_t code)
 
 void CmUIExtensionCallback::OnRelease(const int32_t releaseCode)
 {
-    CM_LOG_D("UIExtensionComponent OnRelease(), releaseCode = %d", releaseCode);
+    CM_LOG_I("UIExtensionComponent OnRelease(), releaseCode = %d", releaseCode);
     if (SetErrorCode(releaseCode)) {
         SendMessageBack();
     }
@@ -61,7 +61,7 @@ void CmUIExtensionCallback::OnRelease(const int32_t releaseCode)
 
 void CmUIExtensionCallback::OnResult(const int32_t resultCode, const OHOS::AAFwk::Want& result)
 {
-    CM_LOG_D("UIExtensionComponent OnResult(), resultCode = %d", resultCode);
+    CM_LOG_I("UIExtensionComponent OnResult(), resultCode = %d", resultCode);
     this->resultCode_ = resultCode;
     this->resultWant_ = result;
     if (SetErrorCode(resultCode)) {
@@ -80,12 +80,12 @@ void CmUIExtensionCallback::OnError(const int32_t errorCode, const std::string& 
 
 void CmUIExtensionCallback::OnRemoteReady(const std::shared_ptr<OHOS::Ace::ModalUIExtensionProxy>& uiProxy)
 {
-    CM_LOG_D("UIExtensionComponent OnRemoteReady()");
+    CM_LOG_I("UIExtensionComponent OnRemoteReady()");
 }
 
 void CmUIExtensionCallback::OnDestroy()
 {
-    CM_LOG_D("UIExtensionComponent OnDestroy()");
+    CM_LOG_I("UIExtensionComponent OnDestroy()");
 }
 
 void CmUIExtensionCallback::SendMessageBack()
@@ -97,15 +97,15 @@ void CmUIExtensionCallback::SendMessageBack()
     }
 
     auto abilityContext = this->reqContext_->context;
-    if (abilityContext != nullptr) {
+    if (abilityContext != nullptr && this->sessionId_ != 0) {
         auto uiContent = abilityContext->GetUIContent();
         if (uiContent != nullptr) {
-            CM_LOG_D("CloseModalUIExtension");
+            CM_LOG_I("CloseModalUIExtension");
             uiContent->CloseModalUIExtension(this->sessionId_);
         }
     }
 
-    CM_LOG_D("ProcessCallback");
+    CM_LOG_I("ProcessCallback");
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(this->reqContext_->env, &scope);
     if (scope == nullptr) {
