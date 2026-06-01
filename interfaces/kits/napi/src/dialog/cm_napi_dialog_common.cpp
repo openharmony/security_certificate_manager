@@ -127,7 +127,7 @@ void StartUIAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
         });
     if (ret != CM_SUCCESS) {
         CM_LOG_I("StartUIAbility error, code: %d", ret);
-        ThrowError(asyncContext->env, DIALOG_ERROR_GENERIC, "CreateModalUIExtension failed");
+        ThrowError(asyncContext->env, PARAM_ERROR, "CreateModalUIExtension failed");
     }
     return;
 }
