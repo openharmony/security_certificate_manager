@@ -73,6 +73,7 @@ static const std::string CERT_MANAGER_ABILITYNAME = "CertPickerUIExtAbility";
 static const std::string CERT_MANAGER_CALLER_UID = "appUid";
 static const std::string PARAM_UI_EXTENSION_TYPE = "ability.want.params.uiExtensionType";
 static const std::string SYS_COMMON_UI = "sys/commonUI";
+static const std::string EMBEDDED_UI = "embeddedUI";
 static const std::string CERT_MANAGER_PAGE_TYPE = "pageType";
 static const std::string CERT_MANAGER_CERT_KEY_URI = "keyUri";
 static const std::string CERT_MANAGER_CERTSCOPE_TYPE = "certScope";

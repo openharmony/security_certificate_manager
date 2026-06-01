@@ -140,7 +140,7 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
     want.SetElementName(bundleName, abilityName);
     want.SetAction(ACTION_UKEY_PIN_AUTH);
     want.SetParam(CERT_MANAGER_CALLER_UID, static_cast<int32_t>(getuid()));
-    want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
+    want.SetParam(PARAM_UI_EXTENSION_TYPE, EMBEDDED_UI);
     std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
     want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
     return CM_SUCCESS;
