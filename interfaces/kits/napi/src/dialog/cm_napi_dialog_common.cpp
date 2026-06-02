@@ -130,8 +130,8 @@ void StartUIAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
         };
     {
         std::lock_guard<std::mutex> lock(g_requestCodeLock);
-        if (g_requestCodeLock <= 0) {
-            g_requestCodeLock = 1;
+        if (g_requestCode <= 0) {
+            g_requestCode = 1;
         }
         int32_t ret = abilityContext->StartAbilityForResult(want, g_requestCode++, std::move(task));
         if (ret != CM_SUCCESS) {
