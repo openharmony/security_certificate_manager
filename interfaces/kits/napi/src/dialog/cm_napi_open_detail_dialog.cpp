@@ -124,7 +124,8 @@ napi_value CMNapiOpenDetailDialog(napi_env env, napi_callback_info info)
     }
 
     auto uiExtCallback = std::make_shared<CmUIExtensionVoidCallback>(asyncContext);
-    StartUIExtensionAbility(asyncContext, CMGetCertDetailWant(asyncContext), uiExtCallback);
+    auto want = CMGetCertDetailWant(asyncContext);
+    StartUIExtensionAbility(asyncContext, want, uiExtCallback);
     CM_LOG_I("cert open detail dialog end");
     return result;
 }

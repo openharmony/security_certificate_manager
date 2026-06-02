@@ -44,6 +44,17 @@ int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
     return CM_SUCCESS;
 }
 
+int32_t CmOpenUkeyAuthDialog::StartUkeyPinAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Want& want,
+    std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback)
+{
+    std::string action = want.GetAction();
+    if (action.empty() || action != ACTION_UKEY_PIN_AUTH) {
+        return StartUIExtensionAbility(context, want, uiExtCallback);
+    } else {
+        return StartUIAbility(context, want, uiExtCallback);
+    }
+}
+
 int32_t CmOpenUkeyAuthDialog::InvokeAsyncWork()
 {
     CM_LOG_D("InvokeAsyncWork start");
@@ -57,7 +68,7 @@ int32_t CmOpenUkeyAuthDialog::InvokeAsyncWork()
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallback>(this->vm, this->abilityContext,
         this->globalCallback);
 
-    return StartUIExtensionAbility(this->abilityContext, want, uiExtensionCallback);
+    return this->StartUkeyPinAbility(this->abilityContext, want, uiExtensionCallback);
 }
 
 int32_t CmOpenUkeyAuthDialog::UnpackResult()

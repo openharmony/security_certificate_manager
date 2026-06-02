@@ -35,7 +35,9 @@ static const std::string BUSINESS_ERROR_PROPERTY_MESSAGE = "message";
 static const int32_t RESULT_NUMBER = 2;
 
 void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
-    OHOS::AAFwk::Want want, std::shared_ptr<CmUIExtensionCallback> uiExtCallback);
+    OHOS::AAFwk::Want& want, std::shared_ptr<CmUIExtensionCallback> uiExtCallback);
+void StartUIAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::AAFwk::Want& want, std::shared_ptr<CmUIExtensionCallback> uiExtCallback);
 bool ParseCmUIAbilityContextReq(
     napi_env env, const napi_value& obj, std::shared_ptr<OHOS::AbilityRuntime::AbilityContext>& abilityContext);
 napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store);

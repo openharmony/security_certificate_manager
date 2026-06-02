@@ -157,7 +157,8 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
 
     auto uiExtCallback = std::make_shared<CmUIExtensionStringCallback>(asyncContext);
-    StartUIExtensionAbility(asyncContext, CMGetInstallCertWant(asyncContext), uiExtCallback);
+    auto want = CMGetInstallCertWant(asyncContext);
+    StartUIExtensionAbility(asyncContext, want, uiExtCallback);
     CM_LOG_I("cert install dialog end");
     return result;
 }

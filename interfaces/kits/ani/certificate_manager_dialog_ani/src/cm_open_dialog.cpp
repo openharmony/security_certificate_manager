@@ -63,7 +63,7 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
         }
         this->isReleased = true;
     }
-    if (this->context != nullptr) {
+    if (this->context != nullptr && this->sessionId != 0) {
         auto uiContent = this->context->GetUIContent();
         if (uiContent != nullptr) {
             CM_LOG_D("close ModalUIExtension");
@@ -245,7 +245,7 @@ static bool CheckBasicPermission(void)
     return false;
 }
 
-int32_t StartUIExtensionAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Want want,
+int32_t StartUIExtensionAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Want& want,
     std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback)
 {
     /*
@@ -289,6 +289,28 @@ int32_t StartUIExtensionAbility(std::shared_ptr<AbilityContext> context, OHOS::A
         return CMR_DIALOG_ERROR_PARAM_INVALID;
     }
     uiExtCallback->SetSessionId(sessionId);
+    return CM_SUCCESS;
+}
+
+int32_t StartUIAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Want& want,
+    std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback)
+{
+    if (!CheckBasicPermission()) {
+        CM_LOG_E("not has basic permission");
+        return CMR_DIALOG_ERROR_PERMISSION_DENIED;
+    }
+    CM_LOG_I("begin StartUIAbility");
+
+    OHOS::AbilityRuntime::RuntimeTask task = [uiExtCallback](
+        const int32_t resultCode, const OHOS::AAFwk::Want& result, bool isInner) {
+            uiExtCallback->OnResult(resultCode, result);
+        };
+
+    int32_t ret = context->StartAbilityForResult(want, -1, std::move(task));
+    if (ret != CM_SUCCESS) {
+        CM_LOG_I("StartUIAbility error, code: %d", ret);
+        return CMR_DIALOG_ERROR_PARAM_INVALID;
+    }
     return CM_SUCCESS;
 }
 }

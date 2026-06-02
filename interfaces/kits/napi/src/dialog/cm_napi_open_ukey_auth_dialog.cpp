@@ -53,6 +53,17 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
     return GetInt32(asyncContext->env, 0);
 }
 
+static void StartUkeyPinAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::AAFwk::Want& want, std::shared_ptr<CmUIExtensionCallback> uiExtCallback)
+{
+    std::string action = want.GetAction();
+    if (action.empty() || action != ACTION_UKEY_PIN_AUTH) {
+        StartUIExtensionAbility(asyncContext, want, uiExtCallback);
+    } else {
+        StartUIAbility(asyncContext, want, uiExtCallback);
+    }
+}
+
 napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert ukey authorize dialog enter");
@@ -95,10 +106,10 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
     int32_t ret = GetCustomerAuthCertWant(asyncContext->certUri, want);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get customer auth cert want failed. ret = %d", ret);
-        ThrowError(env, DIALOG_ERROR_INSTALL_FAILED, "get customer auth cert want failed.");
+        ThrowError(env, DIALOG_ERROR_GENERIC, "get customer auth cert want failed.");
         return nullptr;
     }
-    StartUIExtensionAbility(asyncContext, want, uiExtCallback);
+    StartUkeyPinAbility(asyncContext, want, uiExtCallback);
 
     CM_LOG_I("cert authorize dialog end");
     return result;

@@ -126,7 +126,8 @@ napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
 
     // set want params
     auto uiExtCallback = std::make_shared<CmUIExtensionVoidCallback>(asyncContext);
-    StartUIExtensionAbility(asyncContext, CMGetUninstallCertWant(asyncContext), uiExtCallback);
+    auto want = CMGetUninstallCertWant(asyncContext);
+    StartUIExtensionAbility(asyncContext, want, uiExtCallback);
     CM_LOG_I("cert uninstall dialog end");
     return result;
 }
