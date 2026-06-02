@@ -300,10 +300,13 @@ int32_t StartUIAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Wan
         return CMR_DIALOG_ERROR_PERMISSION_DENIED;
     }
     CM_LOG_I("begin StartUIAbility");
-    int32_t ret = context->StartAbilityForResult(want, -1,
-        [uiExtCallback](int32_t resultCode, const OHOS::AAFwk::Want& result, bool isAccess) {
+
+    OHOS::AbilityRuntime::RuntimeTask task = [uiExtCallback](
+        const int32_t resultCode, const OHOS::AAFwk::Want& result, bool isInner) {
             uiExtCallback->OnResult(resultCode, result);
-        });
+        };
+
+    int32_t ret = context->StartAbilityForResult(want, -1, std::move(task));
     if (ret != CM_SUCCESS) {
         CM_LOG_I("StartUIAbility error, code: %d", ret);
         return CMR_DIALOG_ERROR_PARAM_INVALID;
