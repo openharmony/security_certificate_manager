@@ -44,6 +44,9 @@ using namespace OHOS::Security::AccessToken;
 static const char g_base64Table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 namespace CMNapi {
 namespace {
+static int32_t g_requestCode = 1;
+static std::mutex g_requestCodeLock;
+    
 constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M
 }  // namespace
 
@@ -125,11 +128,16 @@ void StartUIAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
         const int32_t resultCode, const OHOS::AAFwk::Want& result, bool isInner) {
             uiExtCallback->OnResult(resultCode, result);
         };
-
-    int32_t ret = abilityContext->StartAbilityForResult(want, 1, std::move(task));
-    if (ret != CM_SUCCESS) {
-        CM_LOG_I("StartUIAbility error, code: %d", ret);
-        ThrowError(asyncContext->env, PARAM_ERROR, "Start uiAbility failed");
+    {
+        std::lock_guard<std::mutex> lock(g_requestCodeLock);
+        if (g_requestCodeLock <= 0) {
+            g_requestCodeLock = 1;
+        }
+        int32_t ret = abilityContext->StartAbilityForResult(want, g_requestCode++, std::move(task));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_I("StartUIAbility error, code: %d", ret);
+            ThrowError(asyncContext->env, PARAM_ERROR, "Start uiAbility failed");
+        }
     }
     return;
 }

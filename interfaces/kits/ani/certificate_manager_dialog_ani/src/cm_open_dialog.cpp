@@ -25,6 +25,8 @@
 
 namespace OHOS::Security::CertManager::Ani {
 using namespace OHOS::AbilityRuntime;
+static int32_t g_requestCode = 1;
+static std::mutex g_requestCodeLock;
 
 CmAniUIExtensionCallback::CmAniUIExtensionCallback(ani_vm *vm, std::shared_ptr<AbilityContext> context,
     ani_ref aniCallback)
@@ -306,10 +308,16 @@ int32_t StartUIAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Wan
             uiExtCallback->OnResult(resultCode, result);
         };
 
-    int32_t ret = context->StartAbilityForResult(want, 1, std::move(task));
-    if (ret != CM_SUCCESS) {
-        CM_LOG_I("StartUIAbility error, code: %d", ret);
-        return CMR_DIALOG_ERROR_PARAM_INVALID;
+    {
+        std::lock_guard<std::mutex> lock(g_requestCodeLock);
+        if (g_requestCodeLock <= 0) {
+            g_requestCodeLock = 1;
+        }
+        int32_t ret = context->StartAbilityForResult(want, g_requestCode++, std::move(task));
+        if (ret != CM_SUCCESS) {
+            CM_LOG_I("StartUIAbility error, code: %d", ret);
+            return CMR_DIALOG_ERROR_PARAM_INVALID;
+        }
     }
     return CM_SUCCESS;
 }
