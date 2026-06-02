@@ -167,7 +167,7 @@ namespace OHOS {
             storeInfo.isCheckUid, &appCertParam, &cmContext);
         (void)CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
         CmFree(myData);
-        delete randomUri.data;
+        delete[] randomUri.data;
         return true;
     }
 
