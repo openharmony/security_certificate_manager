@@ -25,7 +25,7 @@
 
 using namespace CmFuzzTest;
 namespace OHOS {
-    X509 *GetRamdomX509(const uint8_t* data, size_t size)
+    X509 *GetRandomX509(const uint8_t* data, size_t size)
     {
         uint32_t minSize = sizeof(struct CmBlob);
         uint8_t *myData = nullptr;
@@ -70,7 +70,7 @@ namespace OHOS {
         sk_X509_pop_free(certStack2, X509_free);
         FreeCertContext(x509);
 
-        X509 *ramdomX509 = GetRamdomX509(data, size);
+        X509 *ramdomX509 = GetRandomX509(data, size);
         FreeCertContext(ramdomX509);
         return true;
     }
