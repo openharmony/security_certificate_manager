@@ -306,7 +306,7 @@ int32_t StartUIAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Wan
             uiExtCallback->OnResult(resultCode, result);
         };
 
-    int32_t ret = context->StartAbilityForResult(want, -1, std::move(task));
+    int32_t ret = context->StartAbilityForResult(want, 1, std::move(task));
     if (ret != CM_SUCCESS) {
         CM_LOG_I("StartUIAbility error, code: %d", ret);
         return CMR_DIALOG_ERROR_PARAM_INVALID;

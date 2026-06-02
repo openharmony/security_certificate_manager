@@ -126,7 +126,7 @@ void StartUIAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
             uiExtCallback->OnResult(resultCode, result);
         };
 
-    int32_t ret = abilityContext->StartAbilityForResult(want, -1, std::move(task));
+    int32_t ret = abilityContext->StartAbilityForResult(want, 1, std::move(task));
     if (ret != CM_SUCCESS) {
         CM_LOG_I("StartUIAbility error, code: %d", ret);
         ThrowError(asyncContext->env, PARAM_ERROR, "Start uiAbility failed");
