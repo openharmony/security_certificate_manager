@@ -25,6 +25,27 @@
 
 using namespace CmFuzzTest;
 namespace OHOS {
+    X509 *GetRandomX509(const uint8_t* data, size_t size)
+    {
+        uint32_t minSize = sizeof(struct CmBlob);
+        uint8_t *myData = nullptr;
+        if (!CopyMyData(data, size, minSize, &myData)) {
+            return nullptr;
+        }
+
+        uint32_t remainSize = static_cast<uint32_t>(size);
+        uint32_t offset = 0;
+        struct CmBlob certData = {0, nullptr};
+        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &certData)) {
+            CmFree(myData);
+            return nullptr;
+        }
+
+        X509 *x509 = InitCertContext(certData.data, certData.size);
+        CmFree(myData);
+        return x509;
+    }
+
     bool DoSomethingInterestingWithMyAPIX509All(const uint8_t* data, size_t size)
     {
         struct CmBlob displayName = { 0, nullptr };
@@ -48,6 +69,9 @@ namespace OHOS {
         sk_X509_pop_free(certStack1, X509_free);
         sk_X509_pop_free(certStack2, X509_free);
         FreeCertContext(x509);
+
+        X509 *ramdomX509 = GetRandomX509(data, size);
+        FreeCertContext(ramdomX509);
         return true;
     }
 }
