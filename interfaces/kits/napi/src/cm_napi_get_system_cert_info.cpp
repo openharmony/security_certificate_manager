@@ -157,7 +157,7 @@ static void GetCertInfoComplete(napi_env env, napi_status status, void *data)
     CM_LOG_D("get system cert info end");
 }
 
-static napi_value GetCertInfoAsyncWork(napi_env env, GetCertInfoAsyncContext context)
+static napi_value GetCertInfoAsyncWork(napi_env env, GetCertInfoAsyncContext &context)
 {
     napi_value promise = nullptr;
     GenerateNapiPromise(env, context->callback, &context->deferred, &promise);
@@ -176,7 +176,6 @@ static napi_value GetCertInfoAsyncWork(napi_env env, GetCertInfoAsyncContext con
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
-        DeleteGetCertInfoAsyncContext(env, context);
         CM_LOG_E("get system cert info could not queue async work");
         return nullptr;
     }

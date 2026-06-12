@@ -194,7 +194,7 @@ static void GetCertListComplete(napi_env env, napi_status status, void *data)
     DeleteGetCertListAsyncContext(env, context);
 }
 
-static napi_value GetCertListAsyncWork(napi_env env, GetCertListAsyncContext context)
+static napi_value GetCertListAsyncWork(napi_env env, GetCertListAsyncContext &context)
 {
     napi_value promise = nullptr;
     GenerateNapiPromise(env, context->callback, &context->deferred, &promise);
@@ -214,7 +214,6 @@ static napi_value GetCertListAsyncWork(napi_env env, GetCertListAsyncContext con
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
-        DeleteGetCertListAsyncContext(env, context);
         CM_LOG_E("could not queue async work");
         return nullptr;
     }

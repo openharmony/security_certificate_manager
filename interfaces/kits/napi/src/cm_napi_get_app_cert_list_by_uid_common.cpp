@@ -124,7 +124,7 @@ static void GetAppCertListByUidComplete(napi_env env, napi_status status, void *
     CM_LOG_D("get app cert list end");
 }
 
-napi_value GetAppCertListByUidAsyncWork(napi_env env, GetAppCertListByUidAsyncContext asyncContext)
+napi_value GetAppCertListByUidAsyncWork(napi_env env, GetAppCertListByUidAsyncContext &asyncContext)
 {
     napi_value promise = nullptr;
     GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
@@ -144,7 +144,6 @@ napi_value GetAppCertListByUidAsyncWork(napi_env env, GetAppCertListByUidAsyncCo
     napi_status napiStatus = napi_queue_async_work(env, asyncContext->asyncWork);
     if (napiStatus != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
-        DeleteGetAppCertListByUidAsyncContext(env, asyncContext);
         CM_LOG_E("get app cert list could not queue async work");
         return nullptr;
     }

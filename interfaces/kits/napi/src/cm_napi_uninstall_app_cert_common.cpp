@@ -99,7 +99,7 @@ napi_value UninstallAppCertParseParams(
     return GetInt32(env, 0);
 }
 
-napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext asyncContext)
+napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext &asyncContext)
 {
     napi_value promise = nullptr;
     GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
@@ -141,7 +141,6 @@ napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext 
     napi_status status = napi_queue_async_work(env, asyncContext->asyncWork);
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
-        DeleteUninstallAppCertAsyncContext(env, asyncContext);
         CM_LOG_E("could not queue async work");
         return nullptr;
     }
