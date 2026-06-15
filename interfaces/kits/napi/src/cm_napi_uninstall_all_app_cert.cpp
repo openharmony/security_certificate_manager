@@ -73,7 +73,7 @@ static napi_value UninstallAllAppCertParseParams(
     return GetInt32(env, 0);
 }
 
-static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCertAsyncContext asyncContext)
+static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCertAsyncContext &asyncContext)
 {
     napi_value promise = nullptr;
     napi_value resourceName = nullptr;
@@ -108,7 +108,6 @@ static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCert
     napi_status status = napi_queue_async_work(env, asyncContext->asyncWork);
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
-        DeleteUninstallAllAppCertAsyncContext(env, asyncContext);
         CM_LOG_E("could not queue async work");
         return nullptr;
     }

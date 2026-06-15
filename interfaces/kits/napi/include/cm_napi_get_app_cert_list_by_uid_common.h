@@ -43,7 +43,7 @@ napi_value GetAppCertListByUidParseParams(
 
 napi_value GetAppCertListByUidWriteResult(napi_env env, GetAppCertListByUidAsyncContext context);
 
-napi_value GetAppCertListByUidAsyncWork(napi_env env, GetAppCertListByUidAsyncContext asyncContext);
+napi_value GetAppCertListByUidAsyncWork(napi_env env, GetAppCertListByUidAsyncContext &asyncContext);
 
 napi_value CMNapiGetAppCertListByUidCommon(napi_env env, napi_callback_info info, uint32_t store);
 }  // namespace CertManagerNapi

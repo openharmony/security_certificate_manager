@@ -217,7 +217,7 @@ static void GetUkeyCertComplete(napi_env env, napi_status status, void *data)
     DeleteGetUkeyCertAsyncContext(env, context);
 }
 
-static napi_value GetUkeyCertAsyncWork(napi_env env, GetUkeyCertAsyncContext asyncContext)
+static napi_value GetUkeyCertAsyncWork(napi_env env, GetUkeyCertAsyncContext &asyncContext)
 {
     napi_value promise = nullptr;
     GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
@@ -244,7 +244,6 @@ static napi_value GetUkeyCertAsyncWork(napi_env env, GetUkeyCertAsyncContext asy
     napi_status napiStatus = napi_queue_async_work(env, asyncContext->asyncWork);
     if (napiStatus != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
-        DeleteGetUkeyCertAsyncContext(env, asyncContext);
         CM_LOG_E("get app cert list could not queue async work");
         return nullptr;
     }

@@ -129,7 +129,7 @@ static void GetAppCertListComplete(napi_env env, napi_status status, void *data)
     CM_LOG_D("get app cert list end");
 }
 
-napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyncContext)
+napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext &asyncContext)
 {
     napi_value promise = nullptr;
     GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
@@ -149,7 +149,6 @@ napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyn
     napi_status napiStatus = napi_queue_async_work(env, asyncContext->asyncWork);
     if (napiStatus != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
-        DeleteGetAppCertListAsyncContext(env, asyncContext);
         CM_LOG_E("get app cert list could not queue async work");
         return nullptr;
     }
@@ -187,7 +186,7 @@ static void GetCallingAppCertListComplete(napi_env env, napi_status status, void
     CM_LOG_D("get calling app cert list end");
 }
 
-napi_value GetCallingAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext asyncContext)
+napi_value GetCallingAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext &asyncContext)
 {
     napi_value promise = nullptr;
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &promise));
@@ -207,7 +206,6 @@ napi_value GetCallingAppCertListAsyncWork(napi_env env, GetAppCertListAsyncConte
     napi_status status = napi_queue_async_work(env, asyncContext->asyncWork);
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
-        DeleteGetAppCertListAsyncContext(env, asyncContext);
         CM_LOG_E("get calling app cert list could not queue async work");
         return nullptr;
     }

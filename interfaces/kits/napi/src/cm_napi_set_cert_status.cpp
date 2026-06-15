@@ -144,7 +144,7 @@ static void SetCertStatusComplete(napi_env env, napi_status status, void *data)
     DeleteSetCertStatusAsyncContext(env, context);
 }
 
-static napi_value SetCertStatusAsyncWork(napi_env env, SetCertStatusAsyncContext context)
+static napi_value SetCertStatusAsyncWork(napi_env env, SetCertStatusAsyncContext &context)
 {
     napi_value promise = nullptr;
     GenerateNapiPromise(env, context->callback, &context->deferred, &promise);
@@ -164,7 +164,6 @@ static napi_value SetCertStatusAsyncWork(napi_env env, SetCertStatusAsyncContext
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
-        DeleteSetCertStatusAsyncContext(env, context);
         CM_LOG_E("could not queue async work");
         return nullptr;
     }

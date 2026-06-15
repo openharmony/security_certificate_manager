@@ -126,7 +126,7 @@ static void InitAppCert(struct Credential *credential)
     credential->credData.size = MAX_LEN_CERTIFICATE_CHAIN;
 }
 
-napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext asyncContext)
+napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext &asyncContext)
 {
     napi_value promise = nullptr;
     GenerateNapiPromise(env, asyncContext->callback, &asyncContext->deferred, &promise);
@@ -171,7 +171,6 @@ napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext asyn
     napi_status status = napi_queue_async_work(env, asyncContext->asyncWork);
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
-        DeleteGetAppCertInfoAsyncContext(env, asyncContext);
         CM_LOG_E("could not queue async work");
         return nullptr;
     }
