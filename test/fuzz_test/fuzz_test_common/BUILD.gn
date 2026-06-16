@@ -47,6 +47,7 @@ ohos_static_library("libcert_manager_fuzz_test_common_static") {
     "c_utils:utils",
     "ipc:ipc_core",
     "selinux_adapter:librestorecon",
+    "bounds_checking_function:libsec_shared",
   ]
   complete_static_lib = true
 }
