@@ -37,6 +37,7 @@ ohos_static_library("libcert_manager_log_mem_static") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "bounds_checking_function:libsec_shared",
   ]
   cflags = [
     "-Wall",
@@ -77,6 +78,7 @@ ohos_static_library("libcert_manager_ipc_client_static") {
     "ipc:ipc_single",
     "openssl:libcrypto_shared",
     "samgr:samgr_proxy",
+    "bounds_checking_function:libsec_shared",
   ]
   cflags_cc = [
     "-Wall",
