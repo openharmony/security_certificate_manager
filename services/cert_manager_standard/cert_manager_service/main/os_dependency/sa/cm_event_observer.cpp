@@ -23,6 +23,7 @@
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "securec.h"
+#include "cm_report_wrapper.h"
 
 namespace OHOS {
 namespace Security {
@@ -54,11 +55,15 @@ void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData
         }
         context.userId = static_cast<uint32_t>(userId);
         CM_LOG_W("Pacage removed: uid: %u, userId: %u, name: %s", context.uid, context.userId, bundleName.c_str());
-        CmDeleteProcessInfo(&context);
+        int32_t ret = CmDeleteProcessInfo(&context);
+        (void)ReportFaultEvent(__func__, &context, bundleName.c_str(), ret);
     } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
         context.userId = static_cast<uint32_t>(data.GetCode());
         CM_LOG_W("User removed: userId is %u", context.userId);
-        CmDeleteProcessInfo(&context);
+        int32_t ret = CmDeleteProcessInfo(&context);
+
+        std::string reportMsg = "User " + std::to_string(context.userId) + " removed.";
+        (void)ReportFaultEvent(__func__, &context, reportMsg.c_str(), ret);
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,6 +21,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+int32_t ReportFaultEvent(const char *funcName, const struct CmContext *cmContext,
+    const char *name, int32_t errorCode);
 
 void CmReport(const char *funcName, const struct CmContext *cmContext,
     const struct CmBlob *certName, int32_t errorCode);
