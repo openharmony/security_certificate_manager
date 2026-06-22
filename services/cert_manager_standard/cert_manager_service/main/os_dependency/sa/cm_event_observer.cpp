@@ -56,17 +56,12 @@ void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData
         context.userId = static_cast<uint32_t>(userId);
         CM_LOG_W("Pacage removed: uid: %u, userId: %u, name: %s", context.uid, context.userId, bundleName.c_str());
         int32_t ret = CmDeleteProcessInfo(&context);
-
-        CmBlob bundleNameBlob = {
-            .size = bundleName.size(),
-            .data = reinterpret_cast<uint8_t*>(const_cast<char*>(bundleName.c_str()))
-        };
-        CmReport(__func__, &context, &bundleNameBlob, ret);
+        (void)ReportFaultEvent(__func__, &context, bundleName.c_str(), ret);
     } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
         context.userId = static_cast<uint32_t>(data.GetCode());
         CM_LOG_W("User removed: userId is %u", context.userId);
         int32_t ret = CmDeleteProcessInfo(&context);
-        CmReport(__func__, &context, nullptr, ret);
+        (void)ReportFaultEvent(__func__, &context, nullptr, ret);
     }
 }
 

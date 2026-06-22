@@ -311,7 +311,7 @@ void CmIpcServiceUninstallAppCert(const struct CmBlob *paramSetBlob, struct CmBl
         }
     } while (0);
 
-    CmReport(__func__, &oriContext, &keyUri, ret);
+    (void)ReportFaultEvent(__func__, &oriContext, (char *)keyUri.data, ret);
     CmSendResponse(context, ret, NULL);
     CmReportSGUninstallAppCert(&keyUri, store, false, ret);
     CmFreeParamSet(&paramSet);
