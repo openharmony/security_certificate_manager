@@ -17,10 +17,16 @@
 
 #include "cm_type.h"
 #include "hisysevent_wrapper.h"
+#include "cm_log.h"
 
-static int32_t ReportFaultEvent(const char *funcName, const struct CmContext *cmContext,
+int32_t ReportFaultEvent(const char *funcName, const struct CmContext *cmContext,
     const char *name, int32_t errorCode)
 {
+    if (funcName == NULL || cmContext == NULL || name == NULL) {
+        CM_LOG_E("check nullptr failed.");
+        return CMR_ERROR_NULL_POINTER;
+    }
+    
     struct EventValues eventValues = { cmContext->userId, cmContext->uid, name, errorCode };
     return WriteEvent(funcName, &eventValues);
 }
@@ -45,7 +51,7 @@ static bool CheckCertName(const struct CmBlob *certName)
 void CmReport(const char *funcName, const struct CmContext *cmContext,
     const struct CmBlob *certName, int32_t errorCode)
 {
-    if (errorCode == CM_SUCCESS) {
+    if (errorCode == CM_SUCCESS || funcName == NULL || cmContext == NULL) {
         return;
     }
 
