@@ -61,7 +61,9 @@ void SystemEventSubscriber::OnReceiveEvent(const OHOS::EventFwk::CommonEventData
         context.userId = static_cast<uint32_t>(data.GetCode());
         CM_LOG_W("User removed: userId is %u", context.userId);
         int32_t ret = CmDeleteProcessInfo(&context);
-        (void)ReportFaultEvent(__func__, &context, nullptr, ret);
+
+        std::string reportMsg = "User " + std::to_string(context.userId) + " removed.";
+        (void)ReportFaultEvent(__func__, &context, reportMsg.c_str(), ret);
     }
 }
 
