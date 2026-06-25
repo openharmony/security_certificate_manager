@@ -143,6 +143,11 @@ STACK_OF(X509) *InitCertStackContext(const uint8_t *certBuf, uint32_t size)
         CM_LOG_E("p7 is null");
         return NULL;
     }
+    if (OBJ_obj2nid(p7->type) != NID_pkcs7_signed) {
+        CM_LOG_E("p7 type is not signed");
+        PKCS7_free(p7);
+        return NULL;
+    }
     if (p7->d.sign == NULL) {
         CM_LOG_E("p7->d.sign is null");
         PKCS7_free(p7);
