@@ -33,6 +33,7 @@ ohos_static_library("cm_ani_common_static") {
     integer_overflow = true
     ubsan = true
     cfi_vcall_icall_only = true
+    stack_protector_ret = true
   }
   public_configs = [ ":cm_ani_common_config" ]
   include_dirs = [

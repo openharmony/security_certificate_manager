@@ -30,6 +30,7 @@ ohos_shared_library("cert_manager_service") {
     debug = false
     integer_overflow = true
     ubsan = true
+    stack_protector_ret = true
   }
   subsystem_name = "security"
   part_name = "certificate_manager"
