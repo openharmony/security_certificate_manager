@@ -176,8 +176,8 @@ static napi_value ParseCert(napi_env env, napi_value object, CmBlob &arrayBlob)
         CM_LOG_E("could not get cert");
         return nullptr;
     }
-    if (arrayBlob.size == 0) {
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "cert is empty.");
+    if (arrayBlob.size == 0 || arrayBlob.size > MAX_LEN_UKEY_CERT_IMPORT) {
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "cert data is empty or exceeds limit length.");
         CM_LOG_E("cert is empty");
         return nullptr;
     }

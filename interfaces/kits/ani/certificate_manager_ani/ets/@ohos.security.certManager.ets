@@ -306,6 +306,7 @@ export namespace certificateManager {
 
   const MIN_DATA_LEN: double = 1;
   const MAX_DATA_LEN: double = 0x6400000;
+  const MAX_LEN_UKEY_CERT_IMPORT: double = 10240;
 
   function checkBufferLen(buffer: Uint8Array, minLen: double, maxLen: double): void {
     if (buffer.length < minLen || buffer.length > maxLen) {
@@ -602,7 +603,7 @@ export namespace certificateManager {
       error.message = 'the input parameters is invalid.';
       throw error;
     }
-    if (keyUri.length === 0 || cert.length === 0) {
+    if (keyUri.length === 0 || cert.length === 0 || cert.length > MAX_LEN_UKEY_CERT_IMPORT) {
       error.code = CMErrorCode.CM_ERROR_PARAMETER_VALIDATION_FAILED;
       error.message = 'the input parameters is invalid.';
       throw error;

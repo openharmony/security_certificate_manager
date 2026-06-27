@@ -35,6 +35,7 @@ extern "C" {
 
 #define MAX_LEN_CERTIFICATE      8196
 #define MAX_LEN_CERTIFICATE_P7B  (1024 * 300)
+#define MAX_LEN_UKEY_CERT_IMPORT  10240
 
 #define MAX_LEN_CERTIFICATE_CHAIN    (3 * MAX_LEN_CERTIFICATE)
 
@@ -256,7 +257,8 @@ enum CMDialogErrorCode {
     CMR_DIALOG_ERROR_PERMISSION_DENIED = -1011, /* UIExtension will return -1011 if permission check failed */
     CMR_DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED = -1012, /* UIExtension will return -1012 if device check failed */
     CMR_DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE = -1013, /* UIExtension will return -1013 if no available cert to use*/
-    CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED = -1014
+    CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED = -1014,
+    CMR_DIALOG_ERROR_START_UIABILITY_FAILED = -1015
 };
 
 enum CMErrorCode { /* temp use */
