@@ -62,3 +62,22 @@ void CmReport(const char *funcName, const struct CmContext *cmContext,
 
     (void)ReportFaultEvent(funcName, cmContext, (char *)certName->data, errorCode);
 }
+
+void CmReportBehavior(const char *funcName, const struct CmContext *cmContext,
+    const struct CmBlob *certName, int32_t errorCode)
+{
+    if (funcName == NULL || cmContext == NULL) {
+        return;
+    }
+
+    if (certName == NULL || certName->data == NULL || certName->size <= 1) {
+        (void)ReportFaultEvent(funcName, cmContext, "NULL", errorCode);
+        return;
+    }
+
+    if (!CheckCertName(certName)) {
+        certName->data[certName->size - 1] = '\0';
+    }
+
+    (void)ReportFaultEvent(funcName, cmContext, (char *)certName->data, errorCode);
+}

@@ -28,6 +28,9 @@ int32_t ReportFaultEvent(const char *funcName, const struct CmContext *cmContext
 void CmReport(const char *funcName, const struct CmContext *cmContext,
     const struct CmBlob *certName, int32_t errorCode);
 
+void CmReportBehavior(const char *funcName, const struct CmContext *cmContext,
+    const struct CmBlob *certName, int32_t errorCode);
+
 #ifdef __cplusplus
 }
 #endif
