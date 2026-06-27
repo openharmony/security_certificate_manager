@@ -26,7 +26,9 @@ CertManagerAsyncImpl::CertManagerAsyncImpl(ani_env *env, ani_object aniContext,
     ani_object callback) : CertManagerAniImpl(env)
 {
     this->env = env;
-    env->GetVM(&this->vm);
+    if (env->GetVM(&this->vm) != ANI_OK) {
+        CM_LOG_E("GetVM failed.");
+    }
     this->callback = callback;
     this->aniContext = aniContext;
 }

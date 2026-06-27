@@ -37,6 +37,12 @@ group("cert_manager_napi") {
   }
 }
 
+group("cert_manager_capi") {
+  if (os_level == "standard") {
+    deps = [ "./interfaces/kits/c:ohcert_manager" ]
+  }
+}
+
 group("cert_manager_ani") {
   if (os_level == "standard") {
     if (support_jsapi) {
@@ -54,12 +60,6 @@ group("cert_manager_dialog_ani") {
         "./interfaces/kits/ani:certmanager_dialog_ani_group",
       ]
     }
-  }
-}
-
-group("cert_manager_capi") {
-  if (os_level == "standard") {
-    deps = [ "./interfaces/kits/c:ohcert_manager" ]
   }
 }
 

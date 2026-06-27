@@ -1357,4 +1357,4 @@ int32_t CmServiceCheckAppPermission(const struct CmContext *context, const struc
     CM_FREE_PTR(commonUri.data);
     return ret;
 }
- 
+

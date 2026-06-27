@@ -321,7 +321,7 @@ static int32_t CmAppCertListGetCertCount(const struct CmBlob *outData,
 static int32_t InitAppCertList(const uint32_t credCount, struct CredentialList *credentialList)
 {
     uint32_t buffSize = credCount * sizeof(struct CredentialAbstract);
-    credentialList->credentialAbstract = (struct CredentialAbstract *)(CmMalloc(buffSize));
+    credentialList->credentialAbstract = (struct CredentialAbstract *)CmMalloc(buffSize);
     if (credentialList->credentialAbstract == NULL) {
         CM_LOG_E("malloc file buffer failed");
         return CMR_ERROR_MALLOC_FAIL;
