@@ -30,6 +30,7 @@ ohos_shared_library("ohcert_manager") {
     cfi_cross_dso = true
     boundary_sanitize = true
     ubsan = true
+    stack_protector_ret = true
   }
 
   version_script = "libcmndk.map"

@@ -45,6 +45,7 @@ int32_t CheckUri(const struct CmBlob *keyUri)
 
     if (!hasNull) {
         CM_LOG_E("invalid keyUri: missing null terminator");
+        keyUri->data[keyUri->size - 1] = '\0';
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 

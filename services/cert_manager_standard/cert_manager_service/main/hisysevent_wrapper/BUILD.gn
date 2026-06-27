@@ -30,6 +30,7 @@ ohos_static_library("libcert_manager_hisysevent_wrapper_static") {
     debug = false
     integer_overflow = true
     ubsan = true
+    stack_protector_ret = true
   }
   include_dirs = [ "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main/include" ]
   sources = [

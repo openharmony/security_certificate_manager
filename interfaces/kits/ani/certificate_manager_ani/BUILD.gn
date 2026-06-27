@@ -25,6 +25,7 @@ ohos_shared_library("certmanager_ani") {
     integer_overflow = true
     ubsan = true
     cfi_vcall_icall_only = true
+    stack_protector_ret = true
   }
   include_dirs = [
     "include",

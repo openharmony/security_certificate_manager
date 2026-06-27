@@ -23,6 +23,7 @@ ohos_shared_library("cj_cert_manager_ffi") {
     debug = false
     integer_overflow = true
     ubsan = true
+    stack_protector_ret = true
   }
 
   include_dirs = [ "include" ]

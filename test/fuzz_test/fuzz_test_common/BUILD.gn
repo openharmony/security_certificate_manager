@@ -24,6 +24,16 @@ config("cert_manager_config") {
 ohos_static_library("libcert_manager_fuzz_test_common_static") {
   subsystem_name = "security"
   part_name = "certificate_manager"
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    stack_protector_ret = true
+  }
   public_configs = [ ":cert_manager_config" ]
 
   sources = [
