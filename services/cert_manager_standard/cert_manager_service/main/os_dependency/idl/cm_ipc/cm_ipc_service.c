@@ -1557,6 +1557,11 @@ void CmIpcServiceImportUkeyCert(uint32_t code, const struct CmBlob *paramSetBlob
             CM_LOG_E("get input params failed, ret = %d", ret);
             break;
         }
+        if (cert.size > MAX_LEN_UKEY_CERT_IMPORT) {
+            CM_LOG_E("cert data exceeds limit length.");
+            ret = CMR_ERROR_INVALID_ARGUMENT_LENGTH_TOO_LARGE;
+            break;
+        }
         if (!CmHasCommonPermission()) {
             CM_LOG_E("caller no permission");
             ret = CMR_ERROR_PERMISSION_DENIED;

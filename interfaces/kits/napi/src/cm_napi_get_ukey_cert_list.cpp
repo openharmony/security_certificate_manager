@@ -88,7 +88,9 @@ static napi_value GetUkeyCertListWriteResult(napi_env env, GetUkeyCertListAsyncC
     if (certificateListValue != nullptr) {
         napi_set_named_property(env, result, CM_RESULT_PROPERTY_CREDENTIAL_DETAIL_LIST.c_str(), certificateListValue);
     } else {
-        NAPI_CALL(env, napi_get_undefined(env, &result));
+        napi_value array = nullptr;
+        NAPI_CALL(env, napi_create_array(env, &array));
+        napi_set_named_property(env, result, CM_RESULT_PROPERTY_CREDENTIAL_DETAIL_LIST.c_str(), array);
     }
     return result;
 }

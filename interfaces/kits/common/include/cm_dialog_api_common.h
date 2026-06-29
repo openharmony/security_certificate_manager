@@ -62,6 +62,7 @@ static const std::string NOT_ENTERPRISE_DEVICE_MSG = "The operation does not com
     "such as the device does not allow users to manage the ca certificate of the global user.";
 static const std::string CAPABILITY_NOT_SUPPORTED_MSG = "the capability not supported.";
 static const std::string NO_AVAILABLE_CERTIFICATE_MSG = "no available certificate for authorization.";
+static const std::string START_UIABILITY_FAILED_MSG = "start uiAbility failed.";
 
 static const std::string CERT_MGR_DIALOG_SYSCAP = "SystemCapability.Security.CertificateManagerDialog";
 static const std::string CONST_NAME_DEVICETYPE = "const.product.devicetype";
@@ -157,6 +158,7 @@ static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
     { CMR_DIALOG_ERROR_NOT_EXIST, DIALOG_ERROR_INSTALL_FAILED },
     { CMR_DIALOG_ERROR_NOT_ENTERPRISE_DEVICE, DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY },
     { CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED },
+    { CMR_DIALOG_ERROR_START_UIABILITY_FAILED, DIALOG_ERROR_INSTALL_FAILED },
 
     { DIALOG_ERROR_GENERIC, DIALOG_ERROR_GENERIC },
     { DIALOG_ERROR_OPERATION_CANCELED, DIALOG_ERROR_OPERATION_CANCELED },
@@ -182,6 +184,7 @@ static const std::unordered_map<int32_t, std::string> DIALOG_CODE_TO_MSG_MAP = {
     { CMR_DIALOG_ERROR_SA_INTERNAL_ERROR, DIALOG_OPERATION_FAILED_MSG + SA_INTERNAL_ERROR_MSG },
     { CMR_DIALOG_ERROR_NOT_EXIST, DIALOG_OPERATION_FAILED_MSG + NOT_EXIST_MSG },
     { CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, DIALOG_OPERATION_FAILED_MSG + DIALOG_INVALID_PARAMS_MSG },
+    { CMR_DIALOG_ERROR_START_UIABILITY_FAILED, START_UIABILITY_FAILED_MSG },
 
     { DIALOG_ERROR_GENERIC, DIALOG_GENERIC_MSG },
     { DIALOG_ERROR_OPERATION_CANCELED, DIALOG_OPERATION_CANCELS_MSG },

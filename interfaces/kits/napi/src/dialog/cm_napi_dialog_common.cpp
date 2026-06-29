@@ -136,7 +136,7 @@ void StartUIAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
         int32_t ret = abilityContext->StartAbilityForResult(want, g_requestCode++, std::move(task));
         if (ret != CM_SUCCESS) {
             CM_LOG_I("StartUIAbility error, code: %d", ret);
-            ThrowError(asyncContext->env, PARAM_ERROR, "Start uiAbility failed");
+            ThrowError(asyncContext->env, DIALOG_ERROR_INSTALL_FAILED, "Start uiAbility failed");
         }
     }
     return;

@@ -26,7 +26,10 @@ napi_value CMNapiSupportsCACertDialog(napi_env env, napi_callback_info info)
     CM_LOG_I("supportsCACertDialog enter");
     napi_value result = nullptr;
     bool isSupport = IsEnableCACertDialog();
-    NAPI_CALL(env, napi_get_boolean(env, isSupport, &result));
+    if (napi_get_boolean(env, isSupport, &result) != napi_ok) {
+        ThrowError(env, DIALOG_ERROR_GENERIC, "napi get boolean result error.");
+        return nullptr;
+    }
     CM_LOG_I("supportsCACertDialog end, isSupport = %d", isSupport);
     return result;
 }

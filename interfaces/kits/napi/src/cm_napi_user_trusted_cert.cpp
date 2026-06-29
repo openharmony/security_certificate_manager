@@ -43,7 +43,7 @@ struct UserCertAsyncContextT {
     struct CmBlob *certUri = nullptr;
     struct CertUriList *certUriList = nullptr;
     CmCertFileFormat certFormat = PEM_DER;
-    CmCertScope certScope = CM_ALL_USER;
+    CmCertScope certScope = CM_CURRENT_USER;
 };
 using UserCertAsyncContext = UserCertAsyncContextT *;
 
@@ -95,11 +95,31 @@ static int32_t GetUserCertData(napi_env env, napi_value object, CmBlob **outCert
 
 static napi_value ParseCertFormat(napi_env env, napi_value object, UserCertAsyncContext context)
 {
+    bool hasProperty = false;
+    napi_status status = napi_has_named_property(env, object, "certFormat", &hasProperty);
+    if (status != napi_ok) {
+        CM_LOG_E("Failed to check certFormat");
+        ThrowError(env, PARAM_ERROR, "Failed to get certFormat.");
+        return nullptr;
+    }
+    if (!hasProperty) {
+        context->certFormat = PEM_DER;
+        return GetInt32(env, 0);
+    }
+
     napi_value certFormatValue = nullptr;
-    napi_status status = napi_get_named_property(env, object, "certFormat", &certFormatValue);
+    status = napi_get_named_property(env, object, "certFormat", &certFormatValue);
     if (status != napi_ok || certFormatValue == nullptr) {
         return GetInt32(env, 0);
     }
+
+    napi_valuetype type = napi_undefined;
+    NAPI_CALL(env, napi_typeof(env, certFormatValue, &type));
+    if (type == napi_undefined) {
+        context->certFormat = PEM_DER;
+        return GetInt32(env, 0);
+    }
+
     uint32_t certFormat = PEM_DER;
     if (ParseUint32(env, certFormatValue, certFormat) == nullptr) {
         CM_LOG_E("parse uint32 failed");
@@ -120,12 +140,32 @@ static napi_value ParseCertFormat(napi_env env, napi_value object, UserCertAsync
 
 static napi_value ParseCertScope(napi_env env, napi_value object, UserCertAsyncContext context)
 {
+    bool hasProperty = false;
+    napi_status status = napi_has_named_property(env, object, "certScope", &hasProperty);
+    if (status != napi_ok) {
+        CM_LOG_E("Failed to check certScope");
+        ThrowError(env, PARAM_ERROR, "Failed to get certScope.");
+        return nullptr;
+    }
+    if (!hasProperty) {
+        context->certScope = CM_CURRENT_USER;
+        return GetInt32(env, 0);
+    }
+
     napi_value certScopeValue = nullptr;
-    napi_status status = napi_get_named_property(env, object, "certScope", &certScopeValue);
+    status = napi_get_named_property(env, object, "certScope", &certScopeValue);
     if (status != napi_ok || certScopeValue == nullptr) {
         return GetInt32(env, 0);
     }
-    uint32_t certScope = PEM_DER;
+
+    napi_valuetype type = napi_undefined;
+    NAPI_CALL(env, napi_typeof(env, certScopeValue, &type));
+    if (type == napi_undefined) {
+        context->certScope = CM_CURRENT_USER;
+        return GetInt32(env, 0);
+    }
+
+    uint32_t certScope = CM_CURRENT_USER;
     if (ParseUint32(env, certScopeValue, certScope) == nullptr) {
         CM_LOG_E("parse uint32 failed");
         return nullptr;
