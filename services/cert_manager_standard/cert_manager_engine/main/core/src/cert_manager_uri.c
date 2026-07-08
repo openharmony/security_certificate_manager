@@ -431,13 +431,16 @@ static int32_t DecodePath(struct CMUri *uri, const char *path, uint32_t start, u
         }
 
         if (field != NULL) {
-            char *oldPtr = *field;
-            *field = (valueLen == 0) ? NULL : DecodeValue(path, valueOff, valueLen);
-            // Security note: Preserve old pointer for memory safety during multi-field parsing.
-            if (oldPtr != NULL) {
-                free(oldPtr);
-                oldPtr = NULL;
+            /*
+             * If *field is not a null pointer, it means that a field was passed repeatedly in the URI.
+             * When retrieving the field value again, *field needs to be released;
+             * otherwise, a memory leak will occur.
+             */
+            if (*field != NULL) {
+                free(*field);
+                *field = NULL;
             }
+            *field = (valueLen == 0) ? NULL : DecodeValue(path, valueOff, valueLen);
         } else if (e != NULL) {
             *e = DecodeEnum(path, valueOff, valueLen, values, valueCount);
         } else {
@@ -479,11 +482,16 @@ static int32_t DecodeQuery(struct CMUri *uri, const char *query, uint32_t start,
         }
 
         if (field != NULL) {
-            if (valueLen == 0) {
+            /*
+             * If *field is not a null pointer, it means that a field was passed repeatedly in the URI.
+             * When retrieving the field value again, *field needs to be released;
+             * otherwise, a memory leak will occur.
+             */
+            if (*field != NULL) {
+                free(*field);
                 *field = NULL;
-            } else {
-                *field = DecodeValue(query, valueOff, valueLen);
             }
+            *field = (valueLen == 0) ? NULL : DecodeValue(query, valueOff, valueLen);
         } else {
             CM_LOG_W("Invalid field in query\n");
             return CMR_ERROR_INVALID_ARGUMENT_URI;

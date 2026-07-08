@@ -49,7 +49,7 @@ int32_t CheckUri(const struct CmBlob *keyUri)
     }
 
     const char *path = (const char *)keyUri->data;
-    if (strstr(path, "../") != NULL) {
+    if (strstr(path, "..") != NULL) {
         CM_LOG_E("invalid keyUri: contains ../");
         return CMR_ERROR_INVALID_ARGUMENT;
     }

@@ -89,7 +89,7 @@ static int32_t ValidatePath(const char *verifyPath, char *realPath)
         return CMR_ERROR_NULL_POINTER;
     }
 
-    if (strstr(verifyPath, "../") != NULL) {
+    if (strstr(verifyPath, "..") != NULL) {
         CM_LOG_E("The verify path is relative path: %s", verifyPath);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -177,7 +177,7 @@ static int32_t FileWrite(const char *fileName, uint32_t offset, const uint8_t *b
     if (memcpy_s(filePath, sizeof(filePath) - 1, fileName, strlen(fileName)) != EOK) {
         return CMR_ERROR_MEM_OPERATION_COPY;
     }
-    if (strstr(filePath, "../") != NULL) {
+    if (strstr(filePath, "..") != NULL) {
         CM_LOG_E("invalid filePath");
         return CMR_ERROR_NOT_EXIST;
     }
@@ -267,7 +267,7 @@ int32_t CmMakeDir(const char *path)
         return CMR_OK;
     }
 
-    if (strstr(path, "../") != NULL) {
+    if (strstr(path, "..") != NULL) {
         return CMR_ERROR_MAKE_DIR_FAIL;
     }
 
@@ -290,7 +290,7 @@ int32_t CmUserBakupMakeDir(const char *path, const mode_t *mode)
         return CMR_OK;
     }
 
-    if (strstr(path, "../") != NULL) {
+    if (strstr(path, "..") != NULL) {
         return CMR_ERROR_MAKE_DIR_FAIL;
     }
 
