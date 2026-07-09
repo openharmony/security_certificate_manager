@@ -20,6 +20,7 @@
 #include "cm_log.h"
 #include "cm_napi_common.h"
 #include "cm_type.h"
+#include "cm_metrics.h"
 
 #include "bundle_mgr_proxy.h"
 #include "iservice_registry.h"
@@ -253,12 +254,15 @@ static int32_t GetAndCheckCertAlg(napi_env env, napi_value arg, uint32_t &algori
 napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get cert store path enter");
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetCertStorePath");
+    report.Start();
     // get params
     size_t argc = CM_NAPI_GET_CERT_STORE_PATH_ARGS;
     napi_value argv[CM_NAPI_GET_CERT_STORE_PATH_ARGS] = { nullptr };
     napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     if (status != napi_ok) {
         ThrowError(env, PARAM_ERROR, "Failed to get params");
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
         return nullptr;
     }
 
@@ -266,6 +270,7 @@ napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
     if (argc != CM_NAPI_GET_CERT_STORE_PATH_ARGS) {
         ThrowError(env, PARAM_ERROR, "param count invalid, should be 1.");
         CM_LOG_E("args count[%zu] invalid, should be 1.", argc);
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
         return nullptr;
     }
 
@@ -273,6 +278,7 @@ napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
     int32_t ret = GetAndCheckCertType(env, argv[0], type);
     if (ret != CM_SUCCESS) {
         ThrowError(env, PARAM_ERROR, "Failed to get param certType");
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
         return nullptr;
     }
 
@@ -280,6 +286,7 @@ napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
     ret = GetAndCheckCertScope(env, argv[0], static_cast<CmCertType>(type), scope);
     if (ret != CM_SUCCESS) {
         ThrowError(env, PARAM_ERROR, "Failed to get param certScope");
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
         return nullptr;
     }
 
@@ -287,11 +294,17 @@ napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
     ret = GetAndCheckCertAlg(env, argv[0], algorithm);
     if (ret != CM_SUCCESS) {
         ThrowError(env, PARAM_ERROR, "Failed to get param certAlg");
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
         return nullptr;
     }
 
     napi_value res = GetCertStorePath(env, static_cast<CmCertType>(type), static_cast<CmCertScope>(scope),
         static_cast<CmCertAlg>(algorithm));
+    if (res == nullptr) {
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
+    } else {
+        report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    }
     CM_LOG_I("get cert store path end");
     return res;
 }

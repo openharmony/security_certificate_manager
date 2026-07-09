@@ -17,6 +17,8 @@
 
 #include "securec.h"
 
+#include <memory>
+
 #include "cert_manager_api.h"
 #include "cm_log.h"
 #include "cm_mem.h"
@@ -24,6 +26,7 @@
 #include "cm_util.h"
 #include "cm_napi_common.h"
 #include "cm_type_free.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -39,6 +42,7 @@ struct GetUkeyCertAsyncContextT {
     struct UkeyInfo *ukeyInfo = nullptr;
     struct CredentialDetailList *credentialDetailList = nullptr;
     int32_t result = 0;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 using GetUkeyCertAsyncContext = GetUkeyCertAsyncContextT *;
 
@@ -214,6 +218,9 @@ static void GetUkeyCertComplete(napi_env env, napi_status status, void *data)
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+    if (context->metricsReport != nullptr) {
+        context->metricsReport->Finish(context->result);
+    }
     DeleteGetUkeyCertAsyncContext(env, context);
 }
 
@@ -253,22 +260,29 @@ static napi_value GetUkeyCertAsyncWork(napi_env env, GetUkeyCertAsyncContext &as
 napi_value CMNapiGetUkeyCert(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get ukey cert enter");
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetUkeyCert");
+    report.Start();
 
     GetUkeyCertAsyncContext context = CreateGetUkeyCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = GetUkeyCertParseParams(env, info, context);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
+        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
         DeleteGetUkeyCertAsyncContext(env, context);
         return nullptr;
     }
     result = GetUkeyCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         DeleteGetUkeyCertAsyncContext(env, context);
         return nullptr;
     }
