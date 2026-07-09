@@ -22,7 +22,7 @@
 namespace CMNapi {
 napi_value CMNapiGetPublicCertInfo(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetPublicCertInfo");
+    OHOS::Security::CertManager::CmMetricsReport report("getPublicCertificate");
     report.Start();
     napi_value result = CMNapiGetAppCertInfoCommon(env, info, APPLICATION_CERTIFICATE_STORE);
     report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
@@ -31,7 +31,7 @@ napi_value CMNapiGetPublicCertInfo(napi_env env, napi_callback_info info)
 
 napi_value CMNapiGetPrivateAppCertInfo(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetPrivateAppCertInfo");
+    OHOS::Security::CertManager::CmMetricsReport report("getPrivateCertificate");
     report.Start();
     napi_value result = CMNapiGetAppCertInfoCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
     report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
@@ -40,7 +40,7 @@ napi_value CMNapiGetPrivateAppCertInfo(napi_env env, napi_callback_info info)
 
 napi_value CMNapiGetSystemAppCertInfo(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetSystemAppCertInfo");
+    OHOS::Security::CertManager::CmMetricsReport report("getSystemAppCertificate");
     report.Start();
     napi_value result = CMNapiGetAppCertInfoCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
     report.Finish(OHOS::Security::CertManager::CM_SUCCESS);

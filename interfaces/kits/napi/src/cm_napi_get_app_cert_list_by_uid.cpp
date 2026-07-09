@@ -22,7 +22,7 @@
 namespace CMNapi {
 napi_value CMNapiGetPrivateAppCertListByUid(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetPrivateAppCertListByUid");
+    OHOS::Security::CertManager::CmMetricsReport report("getAllAppPrivateCertificatesByUid");
     report.Start();
     napi_value result = CMNapiGetAppCertListByUidCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
     report.Finish(OHOS::Security::CertManager::CM_SUCCESS);

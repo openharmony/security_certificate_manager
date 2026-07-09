@@ -825,7 +825,7 @@ static napi_value CMAbortAsyncWork(napi_env env, SignVerifyAsyncContext context)
 napi_value CMNapiInit(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cm napi init enter");
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiInit");
+    OHOS::Security::CertManager::CmMetricsReport report("init");
     report.Start();
 
     SignVerifyAsyncContext context = InitSignVerifyAsyncContext();
@@ -860,7 +860,7 @@ napi_value CMNapiInit(napi_env env, napi_callback_info info)
 napi_value CMNapiUpdate(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cm napi update enter");
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiUpdate");
+    OHOS::Security::CertManager::CmMetricsReport report("update");
     report.Start();
     SignVerifyAsyncContext context = InitSignVerifyAsyncContext();
     if (context == nullptr) {
@@ -894,7 +894,7 @@ napi_value CMNapiUpdate(napi_env env, napi_callback_info info)
 napi_value CMNapiFinish(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cm napi finish enter");
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiFinish");
+    OHOS::Security::CertManager::CmMetricsReport report("finish");
     report.Start();
     SignVerifyAsyncContext context = InitSignVerifyAsyncContext();
     if (context == nullptr) {
@@ -928,7 +928,7 @@ napi_value CMNapiFinish(napi_env env, napi_callback_info info)
 napi_value CMNapiAbort(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cm napi abort enter");
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiAbort");
+    OHOS::Security::CertManager::CmMetricsReport report("abort");
     report.Start();
     SignVerifyAsyncContext context = InitSignVerifyAsyncContext();
     if (context == nullptr) {

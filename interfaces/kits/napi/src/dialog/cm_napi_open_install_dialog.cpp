@@ -118,7 +118,7 @@ static uint32_t GetCertificateType(napi_env env, napi_value argv[], size_t lengt
 napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert install dialog enter");
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiOpenInstallCertDialog");
+    OHOS::Security::CertManager::CmMetricsReport report("openInstallCertificateDialog");
     report.Start();
     if (CheckSyscapThrowError(env) != CM_SUCCESS) {
         report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED);

@@ -22,7 +22,7 @@
 namespace CMNapi {
 napi_value CMNapiUninstallPublicCert(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiUninstallPublicCert");
+    OHOS::Security::CertManager::CmMetricsReport report("uninstallPublicCertificate");
     report.Start();
     napi_value result = CMNapiUninstallAppCertCommon(env, info, APPLICATION_CERTIFICATE_STORE);
     report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
@@ -31,7 +31,7 @@ napi_value CMNapiUninstallPublicCert(napi_env env, napi_callback_info info)
 
 napi_value CMNapiUninstallPrivateAppCert(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiUninstallPrivateAppCert");
+    OHOS::Security::CertManager::CmMetricsReport report("uninstallPrivateCertificate");
     report.Start();
     napi_value result = CMNapiUninstallAppCertCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
     report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
@@ -40,7 +40,7 @@ napi_value CMNapiUninstallPrivateAppCert(napi_env env, napi_callback_info info)
 
 napi_value CMNapiUninstallSystemAppCert(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiUninstallSystemAppCert");
+    OHOS::Security::CertManager::CmMetricsReport report("uninstallSystemAppCertificate");
     report.Start();
     napi_value result = CMNapiUninstallAppCertCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
     report.Finish(OHOS::Security::CertManager::CM_SUCCESS);

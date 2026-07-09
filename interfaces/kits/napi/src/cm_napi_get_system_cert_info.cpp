@@ -193,7 +193,7 @@ static napi_value GetCertInfoAsyncWork(napi_env env, GetCertInfoAsyncContext &co
 napi_value CMNapiGetSystemCertInfo(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get system cert info enter");
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetSystemCertInfo");
+    OHOS::Security::CertManager::CmMetricsReport report("getSystemTrustedCertificate");
     report.Start();
     GetCertInfoAsyncContext context = CreateGetCertInfoAsyncContext();
     if (context == nullptr) {
@@ -225,7 +225,7 @@ napi_value CMNapiGetSystemCertInfo(napi_env env, napi_callback_info info)
 napi_value CMNapiGetUserTrustedCertInfo(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get user cert info enter");
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetUserTrustedCertInfo");
+    OHOS::Security::CertManager::CmMetricsReport report("getUserTrustedCertificate");
     report.Start();
 
     GetCertInfoAsyncContext context = CreateGetCertInfoAsyncContext();

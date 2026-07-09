@@ -58,7 +58,7 @@ static bool IsCmDialogPageTypeEnum(const uint32_t value)
 napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert manager dialog enter");
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiOpenCertManagerDialog");
+    OHOS::Security::CertManager::CmMetricsReport report("openCertificateManagerDialog");
     report.Start();
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));

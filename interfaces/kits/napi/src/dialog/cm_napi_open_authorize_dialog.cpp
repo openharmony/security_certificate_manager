@@ -252,7 +252,7 @@ static int32_t CheckAndGetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestC
 napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert authorize dialog enter");
-    OHOS::Security::CertManager::CmMetricsReport report("CMNapiOpenAuthorizeDialog");
+    OHOS::Security::CertManager::CmMetricsReport report("openAuthorizeDialog");
     report.Start();
     if (CheckSyscapThrowError(env) != CM_SUCCESS) {
         report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED);
