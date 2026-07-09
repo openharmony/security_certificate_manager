@@ -62,7 +62,7 @@ void CmGetCaListImpl::OnFinish()
 }
 
 CmGetAllUserCaByScopeImpl::CmGetAllUserCaByScopeImpl(ani_env *env, ani_enum_item aniScope)
-    : CmGetCaListImpl(env, "CmAniGetAllUserCAByScope")
+    : CmGetCaListImpl(env, "getAllUserCAByScopeNative")
 {
     this->aniScope = aniScope;
 }

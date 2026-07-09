@@ -20,7 +20,7 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmAbortImpl::CmAbortImpl(ani_env *env, ani_arraybuffer aniHandle)
-    : CertManagerAniImpl(env, "CmAniAbort")
+    : CertManagerAniImpl(env, "abort")
 {
     this->aniHandle = aniHandle;
 }

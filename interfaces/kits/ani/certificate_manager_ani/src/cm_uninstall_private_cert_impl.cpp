@@ -22,7 +22,7 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmUninstallPrivateCertImpl::CmUninstallPrivateCertImpl(ani_env *env, ani_string aniKeyUri)
-    : CertManagerAniImpl(env, "CmAniUninstallPrivateCertificate")
+    : CertManagerAniImpl(env, "uninstallPrivateCertificate")
 {
     this->aniKeyUri = aniKeyUri;
 }

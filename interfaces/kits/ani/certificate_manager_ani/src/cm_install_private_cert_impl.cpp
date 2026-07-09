@@ -23,7 +23,7 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmInstallPrivateCertImpl::CmInstallPrivateCertImpl(ani_env *env, ani_arraybuffer aniKeystore,
-    ani_string aniKeystorePwd, ani_string aniCertAlias) : CertManagerAniImpl(env, "CmAniInstallPrivateCertificate")
+    ani_string aniKeystorePwd, ani_string aniCertAlias) : CertManagerAniImpl(env, "installPrivateCertificate")
 {
     this->aniKeystore = aniKeystore;
     this->aniKeystorePwd = aniKeystorePwd;

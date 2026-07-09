@@ -23,7 +23,7 @@
 namespace OHOS::Security::CertManager::Ani {
 CmGetCredListImpl::CmGetCredListImpl(ani_env *env, uint32_t store)
     : CertManagerAniImpl(env, (store == APPLICATION_PRIVATE_CERTIFICATE_STORE) ?
-        "CmAniGetAllAppPrivateCertificates" : "CmAniGetAllSystemCred")
+        "getAllAppPrivateCertificates" : "getAllSystemCredNative")
 {
     this->store = store;
 }

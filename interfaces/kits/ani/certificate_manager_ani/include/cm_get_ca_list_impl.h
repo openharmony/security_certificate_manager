@@ -36,7 +36,7 @@ public:
 
 class CmGetAllUserCaImpl : public CmGetCaListImpl {
 public:
-    CmGetAllUserCaImpl(ani_env *env) : CmGetCaListImpl(env, "CmAniGetAllUserCA") {};
+    CmGetAllUserCaImpl(ani_env *env) : CmGetCaListImpl(env, "getAllUserCANative") {};
     ~CmGetAllUserCaImpl() {};
 
     int32_t InvokeInnerApi() override

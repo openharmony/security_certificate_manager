@@ -20,7 +20,7 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmUpdateImpl::CmUpdateImpl(ani_env *env, ani_arraybuffer aniHandle, ani_arraybuffer aniData)
-    : CertManagerAniImpl(env, "CmAniUpdate")
+    : CertManagerAniImpl(env, "update")
 {
     this->aniHandle = aniHandle;
     this->aniData = aniData;

@@ -41,7 +41,7 @@ int32_t CmFinishImpl::GetParamsFromEnv()
 
 // CmSignatureFinishImpl
 CmSignatureFinishImpl::CmSignatureFinishImpl(ani_env *env, ani_arraybuffer aniHandle)
-    : CmFinishImpl(env, "CmAniSignatureFinish")
+    : CmFinishImpl(env, "finish")
 {
     this->aniHandle = aniHandle;
 }
@@ -86,7 +86,7 @@ void CmSignatureFinishImpl::OnFinish()
 
 // CmVerifyFinishImpl
 CmVerifyFinishImpl::CmVerifyFinishImpl(ani_env *env, ani_arraybuffer aniHandle,
-    ani_arraybuffer aniSignature) : CmFinishImpl(env, "CmAniVerifyFinish")
+    ani_arraybuffer aniSignature) : CmFinishImpl(env, "finish")
 {
     this->aniHandle = aniHandle;
     this->aniSignature = aniSignature;

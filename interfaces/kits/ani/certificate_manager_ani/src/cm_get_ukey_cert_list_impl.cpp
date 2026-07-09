@@ -26,7 +26,7 @@ namespace OHOS::Security::CertManager::Ani {
 CmGetUkeyCertListImpl::CmGetUkeyCertListImpl(ani_env *env, ani_string aniStrParam, ani_enum_item aniCertPurpose,
     uint32_t mode)
     : CertManagerAniImpl(env, (mode == LIST_UKEY) ?
-        "CmAniGetUkeyCertificate" : "CmAniGetUkeyCertificateList")
+        "getUkeyCertificate" : "getUkeyCertificateList")
 {
     this->aniStrParam = aniStrParam;
     this->aniCertPurpose = aniCertPurpose;

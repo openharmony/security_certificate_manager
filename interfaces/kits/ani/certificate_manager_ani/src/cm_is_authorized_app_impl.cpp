@@ -20,7 +20,7 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmIsAuthorizedAppImpl::CmIsAuthorizedAppImpl(ani_env *env, ani_string aniKeyUri)
-    : CertManagerAniImpl(env, "CmAniIsAuthorizedApp")
+    : CertManagerAniImpl(env, "isAuthorizedApp")
 {
     this->aniKeyUri = aniKeyUri;
 }

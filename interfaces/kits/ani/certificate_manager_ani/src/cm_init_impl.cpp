@@ -24,7 +24,7 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmInitImpl::CmInitImpl(ani_env *env, ani_string aniAuthUri, ani_object spec)
-    : CertManagerAniImpl(env, "CmAniInit")
+    : CertManagerAniImpl(env, "init")
 {
     this->aniAuthUri = aniAuthUri;
     this->spec = spec;
