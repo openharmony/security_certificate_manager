@@ -27,7 +27,7 @@ public:
     ani_object result = nullptr;
 
 public:
-    CertManagerAniImpl(ani_env *env);
+    CertManagerAniImpl(ani_env *env, const char *interfaceName);
     virtual ~CertManagerAniImpl();
 
     virtual int32_t Init() = 0;
@@ -36,7 +36,13 @@ public:
     virtual int32_t UnpackResult() = 0;
     virtual void OnFinish() = 0;
     virtual ani_object GenerateResult();
+
+    const char *GetInterfaceName() const { return interfaceName_; }
+
     ani_object Invoke();
+
+private:
+    const char *interfaceName_ = "CmAniUnknown";
 };
 } // OHOS::Security::CertManager::Ani
 

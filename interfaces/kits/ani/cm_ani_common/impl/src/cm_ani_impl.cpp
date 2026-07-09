@@ -17,12 +17,14 @@
 #include "cm_log.h"
 #include "cm_ani_utils.h"
 #include "cm_ani_common.h"
+#include "cm_metrics.h"
 
 namespace OHOS::Security::CertManager::Ani {
 
-CertManagerAniImpl::CertManagerAniImpl(ani_env *env)
+CertManagerAniImpl::CertManagerAniImpl(ani_env *env, const char *interfaceName)
 {
     this->env = env;
+    this->interfaceName_ = interfaceName;
 }
 
 CertManagerAniImpl::~CertManagerAniImpl() {}
@@ -50,6 +52,9 @@ ani_object CertManagerAniImpl::Invoke()
         return nullptr;
     }
 
+    OHOS::Security::CertManager::CmMetricsReport report(this->GetInterfaceName());
+    report.Start();
+
     int32_t ret = CM_SUCCESS;
     do {
         ret = this->Init();
@@ -75,6 +80,7 @@ ani_object CertManagerAniImpl::Invoke()
     } while (0);
     this->OnFinish();
     this->resultCode = ret;
+    report.Finish(this->resultCode);
     CM_LOG_I("ani invoke end. ret = %d", this->resultCode);
     return this->GenerateResult();
 }
