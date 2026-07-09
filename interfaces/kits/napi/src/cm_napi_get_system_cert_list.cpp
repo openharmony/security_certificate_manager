@@ -20,6 +20,7 @@
 #include <memory>
 
 #include "cert_manager_api.h"
+#include "cm_api_common.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_type.h"
@@ -235,7 +236,7 @@ napi_value CMNapiGetSystemCertList(napi_env env, napi_callback_info info)
     GetCertListAsyncContext context = CreateGetCertListAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
-        report.Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
+        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
         return nullptr;
     }
     // 把 report 句柄转移到 async context,完成时由 Complete 回调收尾
@@ -244,14 +245,14 @@ napi_value CMNapiGetSystemCertList(napi_env env, napi_callback_info info)
     napi_value result = GetCertListParseParams(env, info, context, CM_SYSTEM_TRUSTED_STORE);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
-        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
+        reportHolder->Finish(OHOS::Security::CertManager::PARAM_ERROR);
         DeleteGetCertListAsyncContext(env, context);
         return nullptr;
     }
     result = GetCertListAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
-        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
+        reportHolder->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteGetCertListAsyncContext(env, context);
         return nullptr;
     }
@@ -267,7 +268,7 @@ napi_value CMNapiGetAllUserTrustedCertList(napi_env env, napi_callback_info info
     GetCertListAsyncContext context = CreateGetCertListAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("create context failed");
-        report.Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
+        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
         return nullptr;
     }
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
@@ -275,14 +276,14 @@ napi_value CMNapiGetAllUserTrustedCertList(napi_env env, napi_callback_info info
     napi_value result = GetCertListParseParams(env, info, context, CM_USER_TRUSTED_STORE);
     if (result == nullptr) {
         CM_LOG_E("could not parse user trusted cert list params");
-        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
+        reportHolder->Finish(OHOS::Security::CertManager::PARAM_ERROR);
         DeleteGetCertListAsyncContext(env, context);
         return nullptr;
     }
     result = GetCertListAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("get user trusted cert list async work failed");
-        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
+        reportHolder->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteGetCertListAsyncContext(env, context);
         return nullptr;
     }
