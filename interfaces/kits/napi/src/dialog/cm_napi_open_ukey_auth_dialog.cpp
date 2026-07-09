@@ -15,7 +15,11 @@
 
 #include "cm_napi_open_ukey_auth_dialog.h"
 
+#include <memory>
+
+#include "cm_api_common.h"
 #include "cm_log.h"
+#include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_napi_dialog_callback_void.h"
 
@@ -67,9 +71,12 @@ static void StartUkeyPinAbility(std::shared_ptr<CmUIExtensionRequestContext> asy
 napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert ukey authorize dialog enter");
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiOpenUkeyAuthorizeDialog");
+    report.Start();
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
     if (CheckSyscapReturnVoid(env, &result) != CM_SUCCESS) {
+        report.Finish(OHOS::Security::CertManager::CAPABILITY_NOT_SUPPORTED);
         return result;
     }
 
@@ -81,6 +88,7 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
         std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_TWO)
             + ", given " + std::to_string(argc);
         ThrowError(env, PARAM_ERROR, errMsg);
+        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
         return result;
     }
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
@@ -88,25 +96,31 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
     if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[index], asyncContext->context)) {
         CM_LOG_E("parse abilityContext failed");
         ThrowError(env, PARAM_ERROR, "parse abilityContext failed");
+        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
         return nullptr;
     }
     ++index;
     if (IsParamNull(asyncContext->env, argv[index])) {
         ThrowError(env, PARAM_ERROR, "UkeyAuthRequest is null");
+        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
         return nullptr;
     }
     if (GetUkeyAuthRequest(asyncContext, argv[index]) == nullptr) {
         CM_LOG_E("parse UkeyAuthRequest failed");
         ThrowError(env, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, "parse UkeyAuthRequest failed");
+        report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_PARAMETER_VALIDATION_FAILED);
         return nullptr;
     }
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    asyncContext->metricsReport = reportHolder;
     auto uiExtCallback = std::make_shared<CmUIExtensionVoidCallback>(asyncContext);
     OHOS::AAFwk::Want want{};
     int32_t ret = GetCustomerAuthCertWant(asyncContext->certUri, want);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get customer auth cert want failed. ret = %d", ret);
         ThrowError(env, DIALOG_ERROR_GENERIC, "get customer auth cert want failed.");
+        reportHolder->Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_GENERIC);
         return nullptr;
     }
     StartUkeyPinAbility(asyncContext, want, uiExtCallback);

@@ -15,7 +15,11 @@
 
 #include "cm_napi_open_install_dialog.h"
 
+#include <memory>
+
+#include "cm_api_common.h"
 #include "cm_log.h"
+#include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_napi_dialog_callback_string.h"
 
@@ -114,7 +118,10 @@ static uint32_t GetCertificateType(napi_env env, napi_value argv[], size_t lengt
 napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert install dialog enter");
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiOpenInstallCertDialog");
+    report.Start();
     if (CheckSyscapThrowError(env) != CM_SUCCESS) {
+        report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED);
         return nullptr;
     }
     napi_value result = nullptr;
@@ -131,6 +138,7 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
     if (asyncContext->certificateType == CA_CERT && !IsEnableCACertDialog()) {
         CM_LOG_E("check not support ca cert dialog");
         ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, "DeviceType Error. deviceType is not support.");
+        report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_NOT_SUPPORTED);
         return result;
     }
 
@@ -139,6 +147,7 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
         std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_FOUR)
             + ", given " + std::to_string(argc);
         ThrowError(env, PARAM_ERROR, errMsg);
+        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
         return result;
     }
 
@@ -146,16 +155,20 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
     if (CMCheckArgvAndInitContext(asyncContext, argv, sizeof(argv) / sizeof(argv[0])) == nullptr) {
         CM_LOG_E("check argv vaild and init faild");
         ThrowError(env, PARAM_ERROR, "check argv vaild and init faild");
+        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
         return nullptr;
     }
 
     if (GetCallerLabelName(asyncContext) != CM_SUCCESS) {
         CM_LOG_E("get caller labelName faild");
         ThrowError(env, DIALOG_ERROR_GENERIC, "get caller labelName faild");
+        report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_GENERIC);
         return nullptr;
     }
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
 
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    asyncContext->metricsReport = reportHolder;
     auto uiExtCallback = std::make_shared<CmUIExtensionStringCallback>(asyncContext);
     auto want = CMGetInstallCertWant(asyncContext);
     StartUIExtensionAbility(asyncContext, want, uiExtCallback);

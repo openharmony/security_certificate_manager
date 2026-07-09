@@ -15,11 +15,15 @@
 
 #include "cm_napi_open_authorize_dialog.h"
 
+#include <memory>
+
+#include "cm_api_common.h"
 #include "cm_log.h"
+#include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_napi_dialog_callback_string.h"
 #include "cm_napi_dialog_callback_cert_reference.h"
- 
+
 namespace CMNapi {
 
 static const uint32_t CRITERIA_MAX_SIZE = 20;
@@ -248,7 +252,10 @@ static int32_t CheckAndGetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestC
 napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert authorize dialog enter");
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiOpenAuthorizeDialog");
+    report.Start();
     if (CheckSyscapThrowError(env) != CM_SUCCESS) {
+        report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED);
         return nullptr;
     }
     napi_value result = nullptr;
@@ -261,6 +268,7 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
         std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_ONE)
             + " or" + std::to_string(PARAM_SIZE_TWO) + ", given " + std::to_string(argc);
         ThrowError(env, PARAM_ERROR, errMsg);
+        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
         return result;
     }
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
@@ -268,22 +276,27 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
     if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[index], asyncContext->context)) {
         CM_LOG_E("parse abilityContext failed");
         ThrowError(env, PARAM_ERROR, "parse abilityContext failed");
+        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
         return nullptr;
     }
     ++index;
     if (index < argc) {
         if (CheckAndGetAuthorizeRequest(asyncContext, argv[index]) != CM_SUCCESS) {
             CM_LOG_E("parse AuthorizeRequest failed");
+            report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_PARAMETER_VALIDATION_FAILED);
             return nullptr;
         }
     }
     if (GetCallerLabelName(asyncContext) != CM_SUCCESS) {
         CM_LOG_E("get caller labelName faild");
         ThrowError(env, DIALOG_ERROR_GENERIC, "get caller labelName faild");
+        report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_GENERIC);
         return nullptr;
     }
     asyncContext->appUid = static_cast<int32_t>(getuid());
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    asyncContext->metricsReport = reportHolder;
     auto want = CMGetAuthCertWant(asyncContext);
     if (argc == PARAM_SIZE_ONE) {
         auto uiExtCallback = std::make_shared<CmUIExtensionStringCallback>(asyncContext);

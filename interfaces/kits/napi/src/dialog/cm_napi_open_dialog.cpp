@@ -17,8 +17,12 @@
 
 #include "securec.h"
 
+#include <memory>
+
 #include "cert_manager_api.h"
+#include "cm_api_common.h"
 #include "cm_log.h"
+#include "cm_metrics.h"
 
 #include "cm_napi_dialog_callback_int_bool.h"
 #include "cm_napi_dialog_common.h"
@@ -54,9 +58,12 @@ static bool IsCmDialogPageTypeEnum(const uint32_t value)
 napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert manager dialog enter");
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiOpenCertManagerDialog");
+    report.Start();
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
     if (CheckSyscapReturnVoid(env, &result) != CM_SUCCESS) {
+        report.Finish(OHOS::Security::CertManager::CAPABILITY_NOT_SUPPORTED);
         return result;
     }
     size_t argc = PARAM_SIZE_TWO;
@@ -67,6 +74,7 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
         std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_TWO)
             + ", given " + std::to_string(argc);
         ThrowError(env, PARAM_ERROR, errMsg);
+        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
         return result;
     }
 
@@ -75,6 +83,7 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
     if (!ParseCmUIAbilityContextReq(env, argv[PARAM0], asyncContext->context)) {
         CM_LOG_E("ParseUIAbilityContextReq failed");
         ThrowError(env, PARAM_ERROR, "Get context failed.");
+        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
         return result;
     }
 
@@ -83,12 +92,14 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
     if (result == nullptr) {
         CM_LOG_E("parse type failed");
         ThrowError(env, PARAM_ERROR, "parse type failed");
+        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
         return result;
     }
 
     if (!IsCmDialogPageTypeEnum(asyncContext->pageType)) {
         CM_LOG_E("pageType invalid");
         ThrowError(env, PARAM_ERROR, "pageType invalid");
+        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
         return nullptr;
     }
 
@@ -99,6 +110,8 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
     want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
 
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    asyncContext->metricsReport = reportHolder;
     auto uiExtCallback = std::make_shared<CmUIExtensionIntBoolCallback>(asyncContext);
     // Start ui extension by context.
     StartUIExtensionAbility(asyncContext, want, uiExtCallback);
