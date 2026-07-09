@@ -18,6 +18,10 @@
 #include "cm_api_common.h"
 #include "cm_dialog_api_common.h"
 
+#ifdef CM_API_METRICS_ENABLE
+#include "histogram_plugin_macros.h"
+#endif
+
 namespace OHOS::Security::CertManager {
 
 int32_t CmGetMetricErrorCode(int32_t jsErrorCode)
@@ -72,5 +76,53 @@ int32_t CmGetMetricErrorCode(int32_t jsErrorCode)
         default:
             return CM_METRIC_UNKNOWN_ERROR;
     }
+}
+
+CmMetricsReport::CmMetricsReport(const std::string &interfaceName)
+    : interfaceName_(interfaceName), startTime_{}, started_(false), finished_(false)
+{
+}
+
+CmMetricsReport::~CmMetricsReport() = default;
+
+void CmMetricsReport::Start()
+{
+    if (started_) {
+        return;
+    }
+    started_ = true;
+    startTime_ = std::chrono::steady_clock::now();
+#ifdef CM_API_METRICS_ENABLE
+    HISTOGRAM_BOOLEAN(interfaceName_.c_str(), true);
+#endif
+}
+
+void CmMetricsReport::Finish(int32_t jsErrorCode)
+{
+    if (!started_ || finished_) {
+        return;
+    }
+    finished_ = true;
+    int32_t metricCode = CmGetMetricErrorCode(jsErrorCode);
+#ifdef CM_API_METRICS_ENABLE
+    auto endTime = std::chrono::steady_clock::now();
+    auto elapsedMs =
+        std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime_).count();
+    HISTOGRAM_ENUMERATION(interfaceName_.c_str(), metricCode, CM_METRICS_ENUM_BOUNDARY);
+    HISTOGRAM_TIMES(interfaceName_.c_str(), static_cast<int32_t>(elapsedMs));
+#endif
+}
+
+int64_t CmMetricsReport::GetElapsedMs() const
+{
+#ifdef CM_API_METRICS_ENABLE
+    if (!started_ || finished_) {
+        return 0;
+    }
+    auto now = std::chrono::steady_clock::now();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(now - startTime_).count();
+#else
+    return 0;
+#endif
 }
 } // namespace OHOS::Security::CertManager

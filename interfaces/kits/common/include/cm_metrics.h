@@ -16,7 +16,9 @@
 #ifndef CM_METRICS_H
 #define CM_METRICS_H
 
+#include <chrono>
 #include <cstdint>
+#include <string>
 
 namespace OHOS::Security::CertManager {
 
@@ -49,6 +51,34 @@ constexpr int32_t CM_METRICS_ENUM_BOUNDARY = 20;
 
 // 把 JS 侧 ErrorCode(包括 dialog 公共码)映射为紧凑 metric code
 int32_t CmGetMetricErrorCode(int32_t jsErrorCode);
+
+class CmMetricsReport {
+public:
+    explicit CmMetricsReport(const std::string &interfaceName);
+    ~CmMetricsReport();
+
+    CmMetricsReport(const CmMetricsReport &) = delete;
+    CmMetricsReport &operator=(const CmMetricsReport &) = delete;
+
+    CmMetricsReport(CmMetricsReport &&) = default;
+    CmMetricsReport &operator=(CmMetricsReport &&) = default;
+
+    // 在 NAPI/ANI 入口函数最前面调用,idempotent;重复调用为 no-op
+    void Start();
+    // 入口函数返回前调用,触发剩余两个宏;idempotent;若未 Start 或已 Finish 则 no-op
+    void Finish(int32_t jsErrorCode);
+
+    // 仅供测试使用:返回从 Start 到当前时刻的耗时(毫秒)。
+    // - 当宏关闭时恒为 0
+    // - 当 Start 未调用或已 Finish 时也返回 0
+    int64_t GetElapsedMs() const;
+
+private:
+    std::string interfaceName_;
+    std::chrono::steady_clock::time_point startTime_;
+    bool started_ = false;
+    bool finished_ = false;
+};
 
 } // namespace OHOS::Security::CertManager
 
