@@ -75,7 +75,7 @@ ani_object openCertificateManagerDialogNative(ani_env *env, ani_object context, 
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    OHOS::Security::CertManager::CmMetricsReport report("AniOpenCertificateManagerDialog");
+    OHOS::Security::CertManager::CmMetricsReport report("openCertificateManagerDialog");
     report.Start();
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
@@ -96,7 +96,7 @@ ani_object openInstallCertificateDialogNative(ani_env *env, ani_object context, 
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    OHOS::Security::CertManager::CmMetricsReport report("AniOpenInstallCertificateDialog");
+    OHOS::Security::CertManager::CmMetricsReport report("openInstallCertificateDialog");
     report.Start();
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
@@ -117,7 +117,7 @@ ani_object openUninstallCertificateDialogNative(ani_env *env, ani_object context
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    OHOS::Security::CertManager::CmMetricsReport report("AniOpenUninstallCertificateDialog");
+    OHOS::Security::CertManager::CmMetricsReport report("openUninstallCertificateDialog");
     report.Start();
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
@@ -138,7 +138,7 @@ ani_object openCertificateDetailDialogNative(ani_env *env, ani_object context, a
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    OHOS::Security::CertManager::CmMetricsReport report("AniOpenCertificateDetailDialog");
+    OHOS::Security::CertManager::CmMetricsReport report("openCertificateDetailDialog");
     report.Start();
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
@@ -159,7 +159,7 @@ ani_object openAuthorizeDialogNative(ani_env *env, ani_object context, ani_objec
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    OHOS::Security::CertManager::CmMetricsReport report("AniOpenAuthorizeDialog");
+    OHOS::Security::CertManager::CmMetricsReport report("openAuthorizeDialog");
     report.Start();
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
@@ -180,7 +180,7 @@ ani_object openAuthorizeDialogWithReqNative(ani_env *env, ani_object context, an
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    OHOS::Security::CertManager::CmMetricsReport report("AniOpenAuthorizeDialogWithReq");
+    OHOS::Security::CertManager::CmMetricsReport report("openAuthorizeDialogWithReq");
     report.Start();
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
@@ -202,7 +202,7 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    OHOS::Security::CertManager::CmMetricsReport report("AniOpenUkeyAuthDialog");
+    OHOS::Security::CertManager::CmMetricsReport report("openUkeyAuthDialog");
     report.Start();
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
@@ -222,7 +222,7 @@ ani_object supportsCACertDialogNative(ani_env *env)
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    OHOS::Security::CertManager::CmMetricsReport report("AniSupportsCACertDialog");
+    OHOS::Security::CertManager::CmMetricsReport report("supportsCACertDialog");
     report.Start();
     auto result = OHOS::Security::CertManager::Ani::SupportsCACertDialog(env);
     report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
