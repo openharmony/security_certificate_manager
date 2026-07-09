@@ -91,4 +91,14 @@ HWTEST_F(CmMetricsTest, ReportGuard_DoubleFinish_IsSafe, TestSize.Level1)
     // 重复 Finish 应被内部 finished_ 标志忽略
     report.Finish(INNER_FAILURE);
 }
+
+HWTEST_F(CmMetricsTest, ReportGuard_FinishWithBoundaryValue, TestSize.Level1)
+{
+    CmMetricsReport report("UnitTestApi");
+    report.Start();
+    // boundary 边界值:本测试不真正打开宏,只确认不会越界访问
+    report.Finish(static_cast<int32_t>(CM_METRICS_ENUM_BOUNDARY) - 1);
+    report.Finish(static_cast<int32_t>(CM_METRICS_ENUM_BOUNDARY));
+    report.Finish(static_cast<int32_t>(CM_METRICS_ENUM_BOUNDARY) + 1);
+}
 } // namespace CertmanagerTest
