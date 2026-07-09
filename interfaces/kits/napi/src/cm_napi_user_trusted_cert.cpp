@@ -17,11 +17,14 @@
 
 #include "securec.h"
 
+#include <memory>
+
 #include "cert_manager_api.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "cm_napi_common.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -44,6 +47,7 @@ struct UserCertAsyncContextT {
     struct CertUriList *certUriList = nullptr;
     CmCertFileFormat certFormat = PEM_DER;
     CmCertScope certScope = CM_CURRENT_USER;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 using UserCertAsyncContext = UserCertAsyncContextT *;
 
@@ -433,6 +437,9 @@ static void InstallUserCertComplete(napi_env env, napi_status status, void *data
     }
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
+    if (context->metricsReport != nullptr) {
+        context->metricsReport->Finish(context->errCode);
+    }
     FreeUserCertAsyncContext(env, context);
 }
 
@@ -472,6 +479,9 @@ static void UninstallAllUserCertComplete(napi_env env, napi_status status, void 
     napi_get_undefined(env, &result[1]);
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
+    if (context->metricsReport != nullptr) {
+        context->metricsReport->Finish(context->errCode);
+    }
     FreeUserCertAsyncContext(env, context);
 }
 
@@ -533,16 +543,22 @@ static int32_t InstallUserCertSyncExecute(CmBlob *userCert, const CmCertScope sc
 napi_value CMNapiInstallUserTrustedCert(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("install user trusted cert enter");
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiInstallUserTrustedCert");
+    report.Start();
 
     UserCertAsyncContext context = InitUserCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init install user cert context failed");
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = ParseInstallUserCertParams(env, info, context);
     if (result == nullptr) {
         CM_LOG_E("parse install user cert params failed");
+        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
         FreeUserCertAsyncContext(env, context);
         return nullptr;
     }
@@ -550,6 +566,7 @@ napi_value CMNapiInstallUserTrustedCert(napi_env env, napi_callback_info info)
     result = InstallUserCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("start install user cert async work failed");
+        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         FreeUserCertAsyncContext(env, context);
         return nullptr;
     }
@@ -560,6 +577,8 @@ napi_value CMNapiInstallUserTrustedCert(napi_env env, napi_callback_info info)
 
 napi_value CMNapiInstallUserTrustedCertSync(napi_env env, napi_callback_info info)
 {
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiInstallUserTrustedCertSync");
+    report.Start();
     CM_LOG_I("install user trusted cert sync enter");
 
     CmBlob *userCert = nullptr;
@@ -586,27 +605,35 @@ napi_value CMNapiInstallUserTrustedCertSync(napi_env env, napi_callback_info inf
     if (ret != CM_SUCCESS) {
         CM_LOG_E("install user cert sync failed, ret = %d", ret);
         napi_throw(env, GenerateBusinessError(env, ret));
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
         return nullptr;
     }
-    
+
     napi_value result = ConvertResultCertUri(env, &certUri);
     CM_LOG_I("install user trusted cert sync end");
+    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
     return result;
 }
 
 napi_value CMNapiUninstallAllUserTrustedCert(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("uninstall all user trusted cert enter");
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiUninstallAllUserTrustedCert");
+    report.Start();
 
     UserCertAsyncContext context = InitUserCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init uninstall all user cert context failed");
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = UninstallAllUserCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("start uninstall all user cert async work failed");
+        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         FreeUserCertAsyncContext(env, context);
         return nullptr;
     }
@@ -617,6 +644,8 @@ napi_value CMNapiUninstallAllUserTrustedCert(napi_env env, napi_callback_info in
 
 napi_value CMNapiUninstallUserCertSync(napi_env env, napi_callback_info info)
 {
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiUninstallUserCertSync");
+    report.Start();
     CM_LOG_I("uninstall user trusted cert sync enter");
 
     UserCertAsyncContext context = InitUserCertAsyncContext();
@@ -644,6 +673,9 @@ napi_value CMNapiUninstallUserCertSync(napi_env env, napi_callback_info info)
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uninstall user cert sync failed, ret = %d", ret);
         napi_throw(env, GenerateBusinessError(env, ret));
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
+    } else {
+        report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
     }
 
     FreeUserCertAsyncContext(env, context);
