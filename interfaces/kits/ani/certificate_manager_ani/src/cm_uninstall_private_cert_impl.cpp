@@ -21,7 +21,8 @@
 #include "cm_ani_common.h"
 
 namespace OHOS::Security::CertManager::Ani {
-CmUninstallPrivateCertImpl::CmUninstallPrivateCertImpl(ani_env *env, ani_string aniKeyUri) : CertManagerAniImpl(env)
+CmUninstallPrivateCertImpl::CmUninstallPrivateCertImpl(ani_env *env, ani_string aniKeyUri)
+    : CertManagerAniImpl(env, "CmAniUninstallPrivateCertificate")
 {
     this->aniKeyUri = aniKeyUri;
 }

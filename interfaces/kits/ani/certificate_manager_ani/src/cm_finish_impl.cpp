@@ -23,7 +23,7 @@
 
 namespace OHOS::Security::CertManager::Ani {
 // CmFinishImpl
-CmFinishImpl::CmFinishImpl(ani_env *env) : CertManagerAniImpl(env) {}
+CmFinishImpl::CmFinishImpl(ani_env *env, const char *interfaceName) : CertManagerAniImpl(env, interfaceName) {}
 
 int32_t CmFinishImpl::GetParamsFromEnv()
 {
@@ -40,7 +40,8 @@ int32_t CmFinishImpl::GetParamsFromEnv()
 }
 
 // CmSignatureFinishImpl
-CmSignatureFinishImpl::CmSignatureFinishImpl(ani_env *env, ani_arraybuffer aniHandle) : CmFinishImpl(env)
+CmSignatureFinishImpl::CmSignatureFinishImpl(ani_env *env, ani_arraybuffer aniHandle)
+    : CmFinishImpl(env, "CmAniSignatureFinish")
 {
     this->aniHandle = aniHandle;
 }
@@ -85,7 +86,7 @@ void CmSignatureFinishImpl::OnFinish()
 
 // CmVerifyFinishImpl
 CmVerifyFinishImpl::CmVerifyFinishImpl(ani_env *env, ani_arraybuffer aniHandle,
-    ani_arraybuffer aniSignature) : CmFinishImpl(env)
+    ani_arraybuffer aniSignature) : CmFinishImpl(env, "CmAniVerifyFinish")
 {
     this->aniHandle = aniHandle;
     this->aniSignature = aniSignature;

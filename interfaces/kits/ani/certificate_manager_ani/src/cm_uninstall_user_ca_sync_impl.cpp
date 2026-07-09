@@ -20,7 +20,8 @@
 #include "cm_mem.h"
 
 namespace OHOS::Security::CertManager::Ani {
-CmUninstallUserCaSyncImpl::CmUninstallUserCaSyncImpl(ani_env *env, ani_string aniCertUri) : CertManagerAniImpl(env)
+CmUninstallUserCaSyncImpl::CmUninstallUserCaSyncImpl(ani_env *env, ani_string aniCertUri)
+    : CertManagerAniImpl(env, "CmAniUninstallUserCASync")
 {
     this->aniCertUri = aniCertUri;
 }

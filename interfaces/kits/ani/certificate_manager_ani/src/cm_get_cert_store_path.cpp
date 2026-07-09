@@ -20,7 +20,8 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmGetCertStorePathImpl::CmGetCertStorePathImpl(ani_env *env, ani_enum_item aniCertType,
-    ani_enum_item aniCertScope, ani_enum_item aniCertAlg) : CertManagerAniImpl(env)
+    ani_enum_item aniCertScope, ani_enum_item aniCertAlg)
+    : CertManagerAniImpl(env, "CmAniGetCertificateStorePath")
 {
     this->aniCertType = aniCertType;
     this->aniCertScope = aniCertScope;

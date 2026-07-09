@@ -22,7 +22,7 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmImportUkeyCertImpl::CmImportUkeyCertImpl(ani_env *env, ani_string aniKeyUri, ani_object aniCert,
-    ani_object aniUkeyInfo) : CertManagerAniImpl(env)
+    ani_object aniUkeyInfo) : CertManagerAniImpl(env, "CmAniImportUkeyCertificate")
 {
     this->aniKeyUri_ = aniKeyUri;
     this->aniCert_ = aniCert;

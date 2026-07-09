@@ -29,7 +29,7 @@ public:
     /* parsed params */
     CmBlob handle = { 0 };
     CmBlob signature = { 0 };
-    CmFinishImpl(ani_env *env);
+    CmFinishImpl(ani_env *env, const char *interfaceName);
     ~CmFinishImpl() {};
 
     int32_t GetParamsFromEnv() override;

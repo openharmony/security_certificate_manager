@@ -22,7 +22,9 @@
 #include "cm_ani_utils.h"
 
 namespace OHOS::Security::CertManager::Ani {
-CmGetAppCertImpl::CmGetAppCertImpl(ani_env *env, ani_string aniKeyUri, uint32_t store) : CertManagerAniImpl(env)
+CmGetAppCertImpl::CmGetAppCertImpl(ani_env *env, ani_string aniKeyUri, uint32_t store)
+    : CertManagerAniImpl(env, (store == APPLICATION_PRIVATE_CERTIFICATE_STORE) ?
+        "CmAniGetPrivateCertificate" : "CmAniGetPublicCertificate")
 {
     this->aniKeyUri = aniKeyUri;
     this->store = store;

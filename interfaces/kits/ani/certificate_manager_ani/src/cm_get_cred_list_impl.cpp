@@ -21,7 +21,9 @@
 #include "cm_ani_common.h"
 
 namespace OHOS::Security::CertManager::Ani {
-CmGetCredListImpl::CmGetCredListImpl(ani_env *env, uint32_t store) : CertManagerAniImpl(env)
+CmGetCredListImpl::CmGetCredListImpl(ani_env *env, uint32_t store)
+    : CertManagerAniImpl(env, (store == APPLICATION_PRIVATE_CERTIFICATE_STORE) ?
+        "CmAniGetAllAppPrivateCertificates" : "CmAniGetAllSystemCred")
 {
     this->store = store;
 }

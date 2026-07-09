@@ -19,7 +19,8 @@
 #include "cert_manager_api.h"
 
 namespace OHOS::Security::CertManager::Ani {
-CmUpdateImpl::CmUpdateImpl(ani_env *env, ani_arraybuffer aniHandle, ani_arraybuffer aniData) : CertManagerAniImpl(env)
+CmUpdateImpl::CmUpdateImpl(ani_env *env, ani_arraybuffer aniHandle, ani_arraybuffer aniData)
+    : CertManagerAniImpl(env, "CmAniUpdate")
 {
     this->aniHandle = aniHandle;
     this->aniData = aniData;
