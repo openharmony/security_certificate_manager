@@ -14,6 +14,13 @@
 import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
 
+cm_napi_metrics_cflags = []
+cm_napi_metrics_deps = []
+if (cm_api_metrics_enable) {
+  cm_napi_metrics_cflags = [ "-DCM_API_METRICS_ENABLE" ]
+  cm_napi_metrics_deps = [ "api_metrics:histogrammanager" ]
+}
+
 ohos_shared_library("certmanager") {
   branch_protector_ret = "pac_ret"
   sanitize = {
@@ -70,6 +77,11 @@ ohos_shared_library("certmanager") {
   deps = [
     "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
     "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+  ]
+  external_deps += cm_napi_metrics_deps
+  cflags_cc += cm_napi_metrics_cflags
+  deps += [
+    "${cert_manager_root_dir}/interfaces/kits/common:libcm_metrics_static",
   ]
 
   relative_install_dir = "module/security"
@@ -138,6 +150,11 @@ ohos_shared_library("certmanagerdialog") {
   deps = [
     "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
     "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+  ]
+  external_deps += cm_napi_metrics_deps
+  cflags_cc += cm_napi_metrics_cflags
+  deps += [
+    "${cert_manager_root_dir}/interfaces/kits/common:libcm_metrics_static",
   ]
 
   relative_install_dir = "module/security"
