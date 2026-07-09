@@ -17,25 +17,34 @@
 #include "cm_napi_get_app_cert_list_common.h"
 #include "cm_napi_common.h"
 #include "cm_log.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 napi_value CMNapiGetAllPublicCertList(napi_env env, napi_callback_info info)
 {
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetAllPublicCertList");
+    report.Start();
     return CMNapiGetAppCertListCommon(env, info, APPLICATION_CERTIFICATE_STORE);
 }
 
 napi_value CMNapiGetPrivateAppCertList(napi_env env, napi_callback_info info)
 {
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetPrivateAppCertList");
+    report.Start();
     return CMNapiGetAppCertListCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
 }
 
 napi_value CMNapiGetSystemAppCertList(napi_env env, napi_callback_info info)
 {
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetSystemAppCertList");
+    report.Start();
     return CMNapiGetAppCertListCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
 }
 
 napi_value CMNapiGetCallingPrivateAppCertList(napi_env env, napi_callback_info info)
 {
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetCallingPrivateAppCertList");
+    report.Start();
     return CMNapiGetCallingAppCertListCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
 }
 }  // namespace CertManagerNapi
