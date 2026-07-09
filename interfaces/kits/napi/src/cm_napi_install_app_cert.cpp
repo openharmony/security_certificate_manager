@@ -17,20 +17,33 @@
 #include "cm_napi_install_app_cert_common.h"
 #include "cm_napi_common.h"
 #include "cm_log.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 napi_value CMNapiInstallPublicCert(napi_env env, napi_callback_info info)
 {
-    return CMNapiInstallAppCertCommon(env, info, APPLICATION_CERTIFICATE_STORE);
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiInstallPublicCert");
+    report.Start();
+    napi_value result = CMNapiInstallAppCertCommon(env, info, APPLICATION_CERTIFICATE_STORE);
+    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    return result;
 }
 
 napi_value CMNapiInstallPrivateAppCert(napi_env env, napi_callback_info info)
 {
-    return CMNapiInstallAppCertCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiInstallPrivateAppCert");
+    report.Start();
+    napi_value result = CMNapiInstallAppCertCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
+    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    return result;
 }
 
 napi_value CMNapiInstallSystemAppCert(napi_env env, napi_callback_info info)
 {
-    return CMNapiInstallAppCertCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiInstallSystemAppCert");
+    report.Start();
+    napi_value result = CMNapiInstallAppCertCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
+    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    return result;
 }
 }  // namespace CertManagerNapi

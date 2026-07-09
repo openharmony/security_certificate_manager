@@ -17,11 +17,14 @@
 
 #include "securec.h"
 
+#include <memory>
+
 #include "cert_manager_api.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "cm_napi_common.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 
@@ -30,6 +33,7 @@ struct UninstallAllAppCertAsyncContextT {
     napi_deferred deferred = nullptr;
 
     int32_t result = 0;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 using UninstallAllAppCertAsyncContext = UninstallAllAppCertAsyncContextT *;
 
@@ -100,6 +104,9 @@ static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCert
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
             GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+            if (context->metricsReport != nullptr) {
+                context->metricsReport->Finish(context->result);
+            }
             DeleteUninstallAllAppCertAsyncContext(env, context);
         },
         static_cast<void *>(asyncContext),
@@ -118,22 +125,29 @@ static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCert
 napi_value CMNapiUninstallAllAppCert(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("uninstall all app cert enter");
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiUninstallAllAppCert");
+    report.Start();
 
     UninstallAllAppCertAsyncContext context = CreateUninstallAllAppCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = UninstallAllAppCertParseParams(env, info, context);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
+        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
         DeleteUninstallAllAppCertAsyncContext(env, context);
         return nullptr;
     }
     result = UninstallAllAppCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         DeleteUninstallAllAppCertAsyncContext(env, context);
         return nullptr;
     }

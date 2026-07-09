@@ -17,11 +17,14 @@
 
 #include "securec.h"
 
+#include <memory>
+
 #include "cert_manager_api.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "cm_napi_common.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -37,6 +40,7 @@ struct GetCertInfoAsyncContextT {
     struct CmBlob *certUri = nullptr;
     uint32_t store = 0;
     struct CertInfo *certificate = nullptr;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 using GetCertInfoAsyncContext = GetCertInfoAsyncContextT *;
 
@@ -153,6 +157,9 @@ static void GetCertInfoComplete(napi_env env, napi_status status, void *data)
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
     }
+    if (context->metricsReport != nullptr) {
+        context->metricsReport->Finish(context->result);
+    }
     DeleteGetCertInfoAsyncContext(env, context);
     CM_LOG_D("get system cert info end");
 }
@@ -185,21 +192,28 @@ static napi_value GetCertInfoAsyncWork(napi_env env, GetCertInfoAsyncContext &co
 napi_value CMNapiGetSystemCertInfo(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get system cert info enter");
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetSystemCertInfo");
+    report.Start();
     GetCertInfoAsyncContext context = CreateGetCertInfoAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = GetCertInfoParseParams(env, info, context, CM_SYSTEM_TRUSTED_STORE);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
+        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
         DeleteGetCertInfoAsyncContext(env, context);
         return nullptr;
     }
     result = GetCertInfoAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         DeleteGetCertInfoAsyncContext(env, context);
         return nullptr;
     }
@@ -210,22 +224,29 @@ napi_value CMNapiGetSystemCertInfo(napi_env env, napi_callback_info info)
 napi_value CMNapiGetUserTrustedCertInfo(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get user cert info enter");
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiGetUserTrustedCertInfo");
+    report.Start();
 
     GetCertInfoAsyncContext context = CreateGetCertInfoAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("create cert info context failed");
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = GetCertInfoParseParams(env, info, context, CM_USER_TRUSTED_STORE);
     if (result == nullptr) {
         CM_LOG_E("parse get cert info params failed");
+        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
         DeleteGetCertInfoAsyncContext(env, context);
         return nullptr;
     }
     result = GetCertInfoAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("get cert info params async work failed");
+        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         DeleteGetCertInfoAsyncContext(env, context);
         return nullptr;
     }

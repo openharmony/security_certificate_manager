@@ -17,20 +17,33 @@
 #include "cm_napi_uninstall_app_cert_common.h"
 #include "cm_napi_common.h"
 #include "cm_log.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 napi_value CMNapiUninstallPublicCert(napi_env env, napi_callback_info info)
 {
-    return CMNapiUninstallAppCertCommon(env, info, APPLICATION_CERTIFICATE_STORE);
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiUninstallPublicCert");
+    report.Start();
+    napi_value result = CMNapiUninstallAppCertCommon(env, info, APPLICATION_CERTIFICATE_STORE);
+    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    return result;
 }
 
 napi_value CMNapiUninstallPrivateAppCert(napi_env env, napi_callback_info info)
 {
-    return CMNapiUninstallAppCertCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiUninstallPrivateAppCert");
+    report.Start();
+    napi_value result = CMNapiUninstallAppCertCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
+    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    return result;
 }
 
 napi_value CMNapiUninstallSystemAppCert(napi_env env, napi_callback_info info)
 {
-    return CMNapiUninstallAppCertCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiUninstallSystemAppCert");
+    report.Start();
+    napi_value result = CMNapiUninstallAppCertCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
+    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    return result;
 }
 }  // namespace CertManagerNapi

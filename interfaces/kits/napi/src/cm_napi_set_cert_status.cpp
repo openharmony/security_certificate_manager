@@ -17,11 +17,14 @@
 
 #include "securec.h"
 
+#include <memory>
+
 #include "cert_manager_api.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "cm_napi_common.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -38,6 +41,7 @@ struct SetCertStatusAsyncContextT {
     uint32_t store = 0;
     uint32_t certType = 0;
     bool status = false;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 using SetCertStatusAsyncContext = SetCertStatusAsyncContextT *;
 
@@ -141,6 +145,9 @@ static void SetCertStatusComplete(napi_env env, napi_status status, void *data)
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
     }
+    if (context->metricsReport != nullptr) {
+        context->metricsReport->Finish(context->result);
+    }
     DeleteSetCertStatusAsyncContext(env, context);
 }
 
@@ -173,22 +180,29 @@ static napi_value SetCertStatusAsyncWork(napi_env env, SetCertStatusAsyncContext
 napi_value CMNapiSetCertStatus(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("set cert status enter");
+    OHOS::Security::CertManager::CmMetricsReport report("CMNapiSetCertStatus");
+    report.Start();
 
     SetCertStatusAsyncContext context = CreateSetCertStatusAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
+        report.Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = SetCertStatusParseParams(env, info, context);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
+        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_PARAM_ERROR);
         DeleteSetCertStatusAsyncContext(env, context);
         return nullptr;
     }
     result = SetCertStatusAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        reportHolder->Finish(OHOS::Security::CertManager::CM_METRIC_INNER_FAILURE);
         DeleteSetCertStatusAsyncContext(env, context);
         return nullptr;
     }
