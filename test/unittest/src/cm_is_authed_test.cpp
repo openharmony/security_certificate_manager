@@ -354,5 +354,21 @@ HWTEST_F(CmIsAuthedTest, CmIsAuthedTestPerformance017, TestSize.Level1)
         EXPECT_EQ(ret, CM_SUCCESS);
     }
 }
+
+/**
+ * @tc.name: CmIsAuthedTest018
+ * @tc.desc: Test CmIsAuthorizedApp obj and mac key repeat
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MIA /SR000H09NA
+ */
+HWTEST_F(CmIsAuthedTest, CmIsAuthedTest018, TestSize.Level0)
+{
+    uint8_t uriDataFail[] =
+        "oh:t=ak;o=keyA;o=keyA;u=0;a=0?ca=0&m=BA632421B76F1059BC28184FB9E50D5795232B6D5C535E0DCAC0114A7AD8FAFE"
+        "&m=BA632421B76F1059BC28184FB9E50D5795232B6D5C535E0DCAC0114A7AD8FAFE";
+    struct CmBlob authUriFail = { sizeof(uriDataFail), uriDataFail };
+    int32_t ret = CmIsAuthorizedApp(&authUriFail);
+    EXPECT_EQ(ret, CMR_ERROR_AUTH_CHECK_FAILED);
+}
 } // end of namespace
 
