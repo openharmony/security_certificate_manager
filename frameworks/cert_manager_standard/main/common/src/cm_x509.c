@@ -302,7 +302,7 @@ static int32_t GetX509FirstSubjectProp(const X509 *x509cert, struct CmBlob *disp
     }
     char *data = NULL;
     length = ASN1_STRING_to_UTF8((unsigned char **)&data, X509_NAME_ENTRY_get_data(entry));
-    if (length < 0) {
+    if (length < 0 || data == NULL) {
         return CMR_ERROR_INVALID_CERT_FORMAT;
     } else if ((uint32_t)length >= displayName->size) {
         OPENSSL_free(data);
