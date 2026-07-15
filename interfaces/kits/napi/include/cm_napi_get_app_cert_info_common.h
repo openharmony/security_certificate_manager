@@ -16,8 +16,11 @@
 #ifndef CM_NAPI_GET_APP_CERT_INFO_COMMON_H
 #define CM_NAPI_GET_APP_CERT_INFO_COMMON_H
 
+#include <memory>
+
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "cm_metrics.h"
 
 struct GetAppCertInfoAsyncContextT {
     napi_async_work asyncWork = nullptr;
@@ -29,6 +32,7 @@ struct GetAppCertInfoAsyncContextT {
     struct CmBlob *keyUri = nullptr;
     uint32_t store = 0;
     struct Credential *credential = nullptr;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 using GetAppCertInfoAsyncContext = GetAppCertInfoAsyncContextT *;
 

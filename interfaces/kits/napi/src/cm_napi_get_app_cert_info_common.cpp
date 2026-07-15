@@ -23,6 +23,7 @@
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "cm_napi_common.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -163,6 +164,9 @@ napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext &asy
             } else {
                 GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
             }
+            if (context->metricsReport != nullptr) {
+                context->metricsReport->Finish(context->result);
+            }
             DeleteGetAppCertInfoAsyncContext(env, context);
         },
         static_cast<void *>(asyncContext),
@@ -196,9 +200,24 @@ napi_value CMNapiGetAppCertInfoCommon(napi_env env, napi_callback_info info, uin
         DeleteGetAppCertInfoAsyncContext(env, context);
         return nullptr;
     }
+
+    // 根据 store 选择对应的 JS 接口名,启动打点
+    const char *jsName = "getAppCertificateInfo";
+    if (store == APPLICATION_CERTIFICATE_STORE) {
+        jsName = "getPublicCertificate";
+    } else if (store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
+        jsName = "getPrivateCertificate";
+    } else if (store == APPLICATION_SYSTEM_CERTIFICATE_STORE) {
+        jsName = "getSystemAppCertificate";
+    }
+    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(jsName);
+    report->Start();
+    context->metricsReport = report;
+
     result = GetAppCertInfoAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        report->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteGetAppCertInfoAsyncContext(env, context);
         return nullptr;
     }
