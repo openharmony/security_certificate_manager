@@ -52,9 +52,19 @@ constexpr int32_t CM_METRICS_ENUM_BOUNDARY = 20;
 // 把 JS 侧 ErrorCode(包括 dialog 公共码)映射为紧凑 metric code
 int32_t CmGetMetricErrorCode(int32_t jsErrorCode);
 
+// 区分 dialog 与非 dialog JS 接口:两者的错误码映射表不同(分别对应
+// cm_api_common.h 的 ErrorCode 和 cm_dialog_api_common.h 的 ErrorCode),
+// histogram key 也使用不同的前缀以便在 HiView 中区分
+enum class CmMetricsKind {
+    NON_DIALOG,  // 证书管理普通接口,前缀 "DeviceCertificateKit.certificateManager."
+    DIALOG,      // 弹框类接口,前缀 "DeviceCertificateKit.certificateManagerDialog."
+};
+
 class CmMetricsReport {
 public:
-    explicit CmMetricsReport(const std::string &interfaceName);
+    // 默认是 NON_DIALOG(证书管理普通接口);弹框类接口需显式传 DIALOG
+    explicit CmMetricsReport(const std::string &interfaceName,
+        CmMetricsKind kind = CmMetricsKind::NON_DIALOG);
     ~CmMetricsReport();
 
     CmMetricsReport(const CmMetricsReport &) = delete;
@@ -74,7 +84,10 @@ public:
     int64_t GetElapsedMs() const;
 
 private:
-    std::string interfaceName_;
+    // 三个 histogram key 预先拼好,带前缀(根据 kind)和后缀(CALL/Time/errorcode)
+    std::string keyCall_;
+    std::string keyTime_;
+    std::string keyErrorcode_;
     std::chrono::steady_clock::time_point startTime_;
     bool started_ = false;
     bool finished_ = false;

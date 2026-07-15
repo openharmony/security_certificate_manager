@@ -78,9 +78,14 @@ int32_t CmGetMetricErrorCode(int32_t jsErrorCode)
     }
 }
 
-CmMetricsReport::CmMetricsReport(const std::string &interfaceName)
-    : interfaceName_(interfaceName), startTime_{}, started_(false), finished_(false)
+CmMetricsReport::CmMetricsReport(const std::string &interfaceName, CmMetricsKind kind)
 {
+    const char *prefix = (kind == CmMetricsKind::DIALOG)
+        ? "DeviceCertificateKit.certificateManagerDialog."
+        : "DeviceCertificateKit.certificateManager.";
+    keyCall_ = std::string(prefix) + interfaceName + ".CALL";
+    keyTime_ = std::string(prefix) + interfaceName + ".Time";
+    keyErrorcode_ = std::string(prefix) + interfaceName + ".errorcode";
 }
 
 CmMetricsReport::~CmMetricsReport() = default;
@@ -93,7 +98,7 @@ void CmMetricsReport::Start()
     started_ = true;
     startTime_ = std::chrono::steady_clock::now();
 #ifdef CM_API_METRICS_ENABLE
-    HISTOGRAM_BOOLEAN(interfaceName_.c_str(), true);
+    HISTOGRAM_BOOLEAN(keyCall_.c_str(), true);
 #endif
 }
 
@@ -108,8 +113,8 @@ void CmMetricsReport::Finish(int32_t jsErrorCode)
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedMs =
         std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime_).count();
-    HISTOGRAM_ENUMERATION(interfaceName_.c_str(), metricCode, CM_METRICS_ENUM_BOUNDARY);
-    HISTOGRAM_TIMES(interfaceName_.c_str(), static_cast<int32_t>(elapsedMs));
+    HISTOGRAM_ENUMERATION(keyErrorcode_.c_str(), metricCode, CM_METRICS_ENUM_BOUNDARY);
+    HISTOGRAM_TIMES(keyTime_.c_str(), static_cast<int32_t>(elapsedMs));
 #endif
 }
 
