@@ -44,6 +44,19 @@ ani_object CertManagerAniImpl::GenerateResult()
     return nativeResult;
 }
 
+void CertManagerAniImpl::OnInvokeStart()
+{
+    this->metricsReport_ = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(this->GetInterfaceName());
+    this->metricsReport_->Start();
+}
+
+void CertManagerAniImpl::OnInvokeEnd(int32_t errorCode)
+{
+    if (this->metricsReport_ != nullptr) {
+        this->metricsReport_->Finish(errorCode);
+    }
+}
+
 ani_object CertManagerAniImpl::Invoke()
 {
     CM_LOG_I("ani invoke start.");
@@ -52,8 +65,7 @@ ani_object CertManagerAniImpl::Invoke()
         return nullptr;
     }
 
-    OHOS::Security::CertManager::CmMetricsReport report(this->GetInterfaceName());
-    report.Start();
+    this->OnInvokeStart();
 
     int32_t ret = CM_SUCCESS;
     do {
@@ -80,7 +92,7 @@ ani_object CertManagerAniImpl::Invoke()
     } while (0);
     this->OnFinish();
     this->resultCode = ret;
-    report.Finish(this->resultCode);
+    this->OnInvokeEnd(this->resultCode);
     CM_LOG_I("ani invoke end. ret = %d", this->resultCode);
     return this->GenerateResult();
 }

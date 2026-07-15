@@ -16,7 +16,10 @@
 #ifndef CM_ANI_IMPL_H
 #define CM_ANI_IMPL_H
 
+#include <memory>
+
 #include "ani.h"
+#include "cm_metrics.h"
 #include "cm_type.h"
 
 namespace OHOS::Security::CertManager::Ani {
@@ -40,6 +43,14 @@ public:
     const char *GetInterfaceName() const { return interfaceName_; }
 
     ani_object Invoke();
+
+    // 开始执行打点上报(虚函数,子类可自定义上报逻辑)
+    virtual void OnInvokeStart();
+    // 结束执行打点上报(虚函数,子类可自定义上报逻辑,如异步场景下延迟到回调再上报)
+    virtual void OnInvokeEnd(int32_t errorCode);
+
+protected:
+    std::shared_ptr<CmMetricsReport> metricsReport_ = nullptr;
 
 private:
     const char *interfaceName_ = "CmAniUnknown";

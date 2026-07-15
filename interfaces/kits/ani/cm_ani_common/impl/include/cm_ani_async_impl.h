@@ -33,7 +33,8 @@ public:
 
     std::shared_ptr<AbilityContext> abilityContext = nullptr;
 public:
-    CertManagerAsyncImpl(ani_env *env, ani_object aniContext, ani_object callback);
+    CertManagerAsyncImpl(ani_env *env, ani_object aniContext, ani_object callback,
+        const char *interfaceName);
     virtual ~CertManagerAsyncImpl();
 
     virtual int32_t InvokeAsyncWork() = 0;

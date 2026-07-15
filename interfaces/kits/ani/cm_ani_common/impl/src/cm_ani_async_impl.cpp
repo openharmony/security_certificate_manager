@@ -23,7 +23,7 @@ namespace OHOS::Security::CertManager::Ani {
 using namespace OHOS::AbilityRuntime;
 
 CertManagerAsyncImpl::CertManagerAsyncImpl(ani_env *env, ani_object aniContext,
-    ani_object callback) : CertManagerAniImpl(env)
+    ani_object callback, const char *interfaceName) : CertManagerAniImpl(env, interfaceName)
 {
     this->env = env;
     if (env->GetVM(&this->vm) != ANI_OK) {
