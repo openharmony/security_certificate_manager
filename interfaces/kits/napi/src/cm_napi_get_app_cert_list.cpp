@@ -24,27 +24,35 @@ napi_value CMNapiGetAllPublicCertList(napi_env env, napi_callback_info info)
 {
     OHOS::Security::CertManager::CmMetricsReport report("getAllPublicCertificates");
     report.Start();
-    return CMNapiGetAppCertListCommon(env, info, APPLICATION_CERTIFICATE_STORE);
+    napi_value result = CMNapiGetAppCertListCommon(env, info, APPLICATION_CERTIFICATE_STORE);
+    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    return result;
 }
 
 napi_value CMNapiGetPrivateAppCertList(napi_env env, napi_callback_info info)
 {
     OHOS::Security::CertManager::CmMetricsReport report("getAllAppPrivateCertificates");
     report.Start();
-    return CMNapiGetAppCertListCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
+    napi_value result = CMNapiGetAppCertListCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
+    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    return result;
 }
 
 napi_value CMNapiGetSystemAppCertList(napi_env env, napi_callback_info info)
 {
     OHOS::Security::CertManager::CmMetricsReport report("getAllSystemAppCertificates");
     report.Start();
-    return CMNapiGetAppCertListCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
+    napi_value result = CMNapiGetAppCertListCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
+    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    return result;
 }
 
 napi_value CMNapiGetCallingPrivateAppCertList(napi_env env, napi_callback_info info)
 {
     OHOS::Security::CertManager::CmMetricsReport report("getPrivateCertificates");
     report.Start();
-    return CMNapiGetCallingAppCertListCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
+    napi_value result = CMNapiGetCallingAppCertListCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
+    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    return result;
 }
 }  // namespace CertManagerNapi
