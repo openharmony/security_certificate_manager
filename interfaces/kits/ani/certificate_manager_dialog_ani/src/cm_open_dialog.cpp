@@ -29,11 +29,12 @@ static int32_t g_requestCode = 1;
 static std::mutex g_requestCodeLock;
 
 CmAniUIExtensionCallback::CmAniUIExtensionCallback(ani_vm *vm, std::shared_ptr<AbilityContext> context,
-    ani_ref aniCallback)
+    ani_ref aniCallback, std::shared_ptr<CmMetricsReport> metricsReport)
 {
     this->vm = vm;
     this->context = context;
     this->aniCallback = aniCallback;
+    this->metricsReport = metricsReport;
 }
 
 CmAniUIExtensionCallback::~CmAniUIExtensionCallback() {}
@@ -64,6 +65,10 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
             return;
         }
         this->isReleased = true;
+    }
+    // 异步场景下,打点上报在回调结束时执行
+    if (this->metricsReport != nullptr) {
+        this->metricsReport->Finish(code);
     }
     if (this->context != nullptr && this->sessionId != 0) {
         auto uiContent = this->context->GetUIContent();
@@ -169,8 +174,9 @@ void CmAniUIExtensionCallback::OnDestroy()
 CmAniUIExtensionCallbackString::CmAniUIExtensionCallbackString(
     ani_vm *vm,
     std::shared_ptr<AbilityContext> context,
-    ani_ref aniCallback
-) : CmAniUIExtensionCallback(vm, context, aniCallback) {}
+    ani_ref aniCallback,
+    std::shared_ptr<CmMetricsReport> metricsReport
+) : CmAniUIExtensionCallback(vm, context, aniCallback, metricsReport) {}
 
 ani_object CmAniUIExtensionCallbackString::GetDefaultResult(ani_env *env)
 {
@@ -197,8 +203,9 @@ void CmAniUIExtensionCallbackString::OnReceive(const OHOS::AAFwk::WantParams &re
 CmAniUIExtensionCallbackCertReference::CmAniUIExtensionCallbackCertReference(
     ani_vm *vm,
     std::shared_ptr<AbilityContext> context,
-    ani_ref aniCallback
-) : CmAniUIExtensionCallback(vm, context, aniCallback) {}
+    ani_ref aniCallback,
+    std::shared_ptr<CmMetricsReport> metricsReport
+) : CmAniUIExtensionCallback(vm, context, aniCallback, metricsReport) {}
 
 ani_object CmAniUIExtensionCallbackCertReference::GetDefaultResult(ani_env *env)
 {
