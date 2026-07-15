@@ -30,7 +30,8 @@ public:
     ani_object result = nullptr;
 
 public:
-    CertManagerAniImpl(ani_env *env, const char *interfaceName);
+    CertManagerAniImpl(ani_env *env, const char *interfaceName,
+        CmMetricsKind kind = CmMetricsKind::NON_DIALOG);
     virtual ~CertManagerAniImpl();
 
     virtual int32_t Init() = 0;
@@ -51,6 +52,7 @@ public:
 
 protected:
     std::shared_ptr<CmMetricsReport> metricsReport_ = nullptr;
+    CmMetricsKind metricsKind_ = CmMetricsKind::NON_DIALOG;
 
 private:
     const char *interfaceName_ = "CmAniUnknown";

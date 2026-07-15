@@ -21,10 +21,11 @@
 
 namespace OHOS::Security::CertManager::Ani {
 
-CertManagerAniImpl::CertManagerAniImpl(ani_env *env, const char *interfaceName)
+CertManagerAniImpl::CertManagerAniImpl(ani_env *env, const char *interfaceName, CmMetricsKind kind)
 {
     this->env = env;
     this->interfaceName_ = interfaceName;
+    this->metricsKind_ = kind;
 }
 
 CertManagerAniImpl::~CertManagerAniImpl() {}
@@ -46,7 +47,8 @@ ani_object CertManagerAniImpl::GenerateResult()
 
 void CertManagerAniImpl::OnInvokeStart()
 {
-    this->metricsReport_ = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(this->GetInterfaceName());
+    this->metricsReport_ = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
+        this->GetInterfaceName(), this->metricsKind_);
     this->metricsReport_->Start();
 }
 
