@@ -53,7 +53,7 @@ int32_t CmOpenCertManagerDialog::InvokeAsyncWork()
     want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
 
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallback>(this->vm, this->abilityContext,
-        this->globalCallback);
+        this->globalCallback, this->metricsReport_);
 
     return StartUIExtensionAbility(this->abilityContext, want, uiExtensionCallback);
 }

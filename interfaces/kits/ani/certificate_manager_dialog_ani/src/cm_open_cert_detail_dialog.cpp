@@ -64,7 +64,7 @@ int32_t CmOpenCertDetailDialog::InvokeAsyncWork()
     want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(PAGE_INSTALL_CA_GUIDE));
 
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallback>(this->vm, this->abilityContext,
-        this->globalCallback);
+        this->globalCallback, this->metricsReport_);
 
     return StartUIExtensionAbility(this->abilityContext, want, uiExtensionCallback);
 }

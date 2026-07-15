@@ -140,7 +140,7 @@ int32_t CmOpenAuthDialogWithReq::InvokeAsyncWork()
     }
 
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallbackCertReference>(this->vm, this->abilityContext,
-        this->globalCallback);
+        this->globalCallback, this->metricsReport_);
 
     return StartUIExtensionAbility(this->abilityContext, want, uiExtensionCallback);
 }

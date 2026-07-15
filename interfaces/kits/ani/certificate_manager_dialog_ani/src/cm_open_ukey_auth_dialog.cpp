@@ -66,7 +66,7 @@ int32_t CmOpenUkeyAuthDialog::InvokeAsyncWork()
     }
 
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallback>(this->vm, this->abilityContext,
-        this->globalCallback);
+        this->globalCallback, this->metricsReport_);
 
     return this->StartUkeyPinAbility(this->abilityContext, want, uiExtensionCallback);
 }

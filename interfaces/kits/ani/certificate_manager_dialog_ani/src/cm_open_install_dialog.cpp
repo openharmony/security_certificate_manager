@@ -114,7 +114,7 @@ int32_t CmOpenInstallDialog::InvokeAsyncWork()
     want.SetParam(CERT_MANAGER_OPERATION_TYPE, static_cast<int32_t>(DIALOG_OPERATION_INSTALL));
 
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallbackString>(this->vm, this->abilityContext,
-        this->globalCallback);
+        this->globalCallback, this->metricsReport_);
 
     return StartUIExtensionAbility(this->abilityContext, want, uiExtensionCallback);
 }

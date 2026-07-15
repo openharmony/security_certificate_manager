@@ -85,7 +85,7 @@ int32_t CmOpenUninstallDialog::InvokeAsyncWork()
     want.SetParam(CERT_MANAGER_OPERATION_TYPE, DIALOG_OPERATION_UNINSTALL);
 
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallback>(this->vm, this->abilityContext,
-        this->globalCallback);
+        this->globalCallback, this->metricsReport_);
 
     return StartUIExtensionAbility(this->abilityContext, want, uiExtensionCallback);
 }
