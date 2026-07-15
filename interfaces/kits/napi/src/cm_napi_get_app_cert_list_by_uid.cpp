@@ -17,15 +17,10 @@
 #include "cm_napi_get_app_cert_list_by_uid_common.h"
 #include "cm_napi_common.h"
 #include "cm_log.h"
-#include "cm_metrics.h"
 
 namespace CMNapi {
 napi_value CMNapiGetPrivateAppCertListByUid(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("getAllAppPrivateCertificatesByUid");
-    report.Start();
-    napi_value result = CMNapiGetAppCertListByUidCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
-    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
-    return result;
+    return CMNapiGetAppCertListByUidCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
 }
 }  // namespace CertManagerNapi

@@ -24,6 +24,7 @@
 #include "cm_type.h"
 #include "cm_util.h"
 #include "cm_napi_common.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -120,6 +121,9 @@ static void GetAppCertListByUidComplete(napi_env env, napi_status status, void *
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+    if (context->metricsReport != nullptr) {
+        context->metricsReport->Finish(context->result);
+    }
     DeleteGetAppCertListByUidAsyncContext(env, context);
     CM_LOG_D("get app cert list end");
 }
@@ -168,9 +172,16 @@ napi_value CMNapiGetAppCertListByUidCommon(napi_env env, napi_callback_info info
         DeleteGetAppCertListByUidAsyncContext(env, context);
         return nullptr;
     }
+
+    // getAppCertListByUidCommon 对应的 JS 接口固定为 getAllAppPrivateCertificatesByUid
+    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>("getAllAppPrivateCertificatesByUid");
+    report->Start();
+    context->metricsReport = report;
+
     result = GetAppCertListByUidAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        report->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteGetAppCertListByUidAsyncContext(env, context);
         return nullptr;
     }
