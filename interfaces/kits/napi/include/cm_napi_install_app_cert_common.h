@@ -16,8 +16,11 @@
 #ifndef CM_NAPI_INSTALL_APP_CERT_COMMON_H
 #define CM_NAPI_INSTALL_APP_CERT_COMMON_H
 
+#include <memory>
+
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "cm_metrics.h"
 #include "cm_type.h"
 
 struct InstallAppCertAsyncContextT {
@@ -34,6 +37,7 @@ struct InstallAppCertAsyncContextT {
 
     /* add auth storage level: default el1, only valid while install private cert */
     enum CmAuthStorageLevel level = CM_AUTH_STORAGE_LEVEL_EL1;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 using InstallAppCertAsyncContext = InstallAppCertAsyncContextT *;
 
