@@ -17,42 +17,25 @@
 #include "cm_napi_get_app_cert_list_common.h"
 #include "cm_napi_common.h"
 #include "cm_log.h"
-#include "cm_metrics.h"
 
 namespace CMNapi {
 napi_value CMNapiGetAllPublicCertList(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("getAllPublicCertificates");
-    report.Start();
-    napi_value result = CMNapiGetAppCertListCommon(env, info, APPLICATION_CERTIFICATE_STORE);
-    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
-    return result;
+    return CMNapiGetAppCertListCommon(env, info, APPLICATION_CERTIFICATE_STORE);
 }
 
 napi_value CMNapiGetPrivateAppCertList(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("getAllAppPrivateCertificates");
-    report.Start();
-    napi_value result = CMNapiGetAppCertListCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
-    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
-    return result;
+    return CMNapiGetAppCertListCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
 }
 
 napi_value CMNapiGetSystemAppCertList(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("getAllSystemAppCertificates");
-    report.Start();
-    napi_value result = CMNapiGetAppCertListCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
-    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
-    return result;
+    return CMNapiGetAppCertListCommon(env, info, APPLICATION_SYSTEM_CERTIFICATE_STORE);
 }
 
 napi_value CMNapiGetCallingPrivateAppCertList(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("getPrivateCertificates");
-    report.Start();
-    napi_value result = CMNapiGetCallingAppCertListCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
-    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
-    return result;
+    return CMNapiGetCallingAppCertListCommon(env, info, APPLICATION_PRIVATE_CERTIFICATE_STORE);
 }
 }  // namespace CertManagerNapi

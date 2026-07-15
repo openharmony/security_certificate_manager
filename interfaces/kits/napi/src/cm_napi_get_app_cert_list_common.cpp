@@ -23,6 +23,7 @@
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "cm_napi_common.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -125,6 +126,9 @@ static void GetAppCertListComplete(napi_env env, napi_status status, void *data)
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
     }
+    if (context->metricsReport != nullptr) {
+        context->metricsReport->Finish(context->result);
+    }
     DeleteGetAppCertListAsyncContext(env, context);
     CM_LOG_D("get app cert list end");
 }
@@ -182,6 +186,9 @@ static void GetCallingAppCertListComplete(napi_env env, napi_status status, void
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &res[1]));
     }
     GeneratePromise(env, mcontext->deferred, mcontext->result, res, CM_ARRAY_SIZE(res));
+    if (mcontext->metricsReport != nullptr) {
+        mcontext->metricsReport->Finish(mcontext->result);
+    }
     DeleteGetAppCertListAsyncContext(env, mcontext);
     CM_LOG_D("get calling app cert list end");
 }
@@ -230,9 +237,24 @@ napi_value CMNapiGetAppCertListCommon(napi_env env, napi_callback_info info, uin
         DeleteGetAppCertListAsyncContext(env, context);
         return nullptr;
     }
+
+    // 根据 store 选择对应的 JS 接口名,启动打点
+    const char *jsName = "getAllAppCertificates";
+    if (store == APPLICATION_CERTIFICATE_STORE) {
+        jsName = "getAllPublicCertificates";
+    } else if (store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
+        jsName = "getAllAppPrivateCertificates";
+    } else if (store == APPLICATION_SYSTEM_CERTIFICATE_STORE) {
+        jsName = "getAllSystemAppCertificates";
+    }
+    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(jsName);
+    report->Start();
+    context->metricsReport = report;
+
     result = GetAppCertListAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        report->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteGetAppCertListAsyncContext(env, context);
         return nullptr;
     }
@@ -259,9 +281,16 @@ napi_value CMNapiGetCallingAppCertListCommon(napi_env env, napi_callback_info in
         DeleteGetAppCertListAsyncContext(env, context);
         return nullptr;
     }
+
+    // getCallingAppCertListCommon 对应的 JS 接口固定为 getPrivateCertificates
+    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>("getPrivateCertificates");
+    report->Start();
+    context->metricsReport = report;
+
     result = GetCallingAppCertListAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        report->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteGetAppCertListAsyncContext(env, context);
         return nullptr;
     }
