@@ -24,7 +24,8 @@
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
 CmOpenUninstallDialog::CmOpenUninstallDialog(ani_env *env, ani_object aniContext, ani_enum_item aniCertType,
-    ani_string aniCertUri, ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback)
+    ani_string aniCertUri, ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback,
+    "openUninstallCertificateDialog")
 {
     this->aniCertType = aniCertType;
     this->aniCertUri = aniCertUri;

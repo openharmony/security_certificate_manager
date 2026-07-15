@@ -20,7 +20,8 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmOpenCertManagerDialog::CmOpenCertManagerDialog(ani_env *env, ani_object aniContext,
-    ani_enum_item aniPageType, ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback)
+    ani_enum_item aniPageType, ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback,
+    "openCertificateManagerDialog")
 {
     this->aniPageType = aniPageType;
 }

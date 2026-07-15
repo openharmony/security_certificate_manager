@@ -23,7 +23,8 @@
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
 CmOpenCertDetailDialog::CmOpenCertDetailDialog(ani_env *env, ani_object aniContext, ani_string aniCert,
-    ani_boolean showInstallButton, ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback)
+    ani_boolean showInstallButton, ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback,
+    "openCertificateDetailDialog")
 {
     this->showInstallButton = showInstallButton;
     this->aniCert = aniCert;

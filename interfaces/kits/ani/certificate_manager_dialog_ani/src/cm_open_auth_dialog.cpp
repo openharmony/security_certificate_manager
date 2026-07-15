@@ -24,7 +24,7 @@
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
 CmOpenAuthDialog::CmOpenAuthDialog(ani_env *env, ani_object aniContext, ani_object callback)
-    : CertManagerAsyncImpl(env, aniContext, callback) {}
+    : CertManagerAsyncImpl(env, aniContext, callback, "openAuthorizeDialog") {}
 
 int32_t CmOpenAuthDialog::InvokeAsyncWork()
 {

@@ -23,7 +23,7 @@
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
 CmOpenUkeyAuthDialog::CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_string aniKeyUri,
-    ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback)
+    ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback, "openUkeyAuthDialog")
 {
     this->aniKeyUri = aniKeyUri;
 }
