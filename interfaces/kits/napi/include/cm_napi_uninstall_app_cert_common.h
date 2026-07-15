@@ -16,8 +16,11 @@
 #ifndef CM_NAPI_UNINSTALL_APP_CERT_COMMON_H
 #define CM_NAPI_UNINSTALL_APP_CERT_COMMON_H
 
+#include <memory>
+
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
+#include "cm_metrics.h"
 
 struct UninstallAppCertAsyncContextT {
     napi_async_work asyncWork = nullptr;
@@ -27,6 +30,7 @@ struct UninstallAppCertAsyncContextT {
     int32_t result = 0;
     struct CmBlob *keyUri = nullptr;
     uint32_t store = 0;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 using UninstallAppCertAsyncContext = UninstallAppCertAsyncContextT *;
 

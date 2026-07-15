@@ -23,6 +23,7 @@
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "cm_napi_common.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -133,6 +134,9 @@ napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext 
             } else {
                 GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
             }
+            if (context->metricsReport != nullptr) {
+                context->metricsReport->Finish(context->result);
+            }
             DeleteUninstallAppCertAsyncContext(env, context);
         },
         static_cast<void *>(asyncContext),
@@ -166,9 +170,24 @@ napi_value CMNapiUninstallAppCertCommon(napi_env env, napi_callback_info info, u
         DeleteUninstallAppCertAsyncContext(env, context);
         return nullptr;
     }
+
+    // 根据 store 选择对应的 JS 接口名,启动打点
+    const char *jsName = "uninstallAppCertificate";
+    if (store == APPLICATION_CERTIFICATE_STORE) {
+        jsName = "uninstallPublicCertificate";
+    } else if (store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
+        jsName = "uninstallPrivateCertificate";
+    } else if (store == APPLICATION_SYSTEM_CERTIFICATE_STORE) {
+        jsName = "uninstallSystemAppCertificate";
+    }
+    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(jsName);
+    report->Start();
+    context->metricsReport = report;
+
     result = UninstallAppCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        report->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteUninstallAppCertAsyncContext(env, context);
         return nullptr;
     }
