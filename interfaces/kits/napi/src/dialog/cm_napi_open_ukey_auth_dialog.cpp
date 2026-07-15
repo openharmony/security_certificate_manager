@@ -71,7 +71,8 @@ static void StartUkeyPinAbility(std::shared_ptr<CmUIExtensionRequestContext> asy
 napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert ukey authorize dialog enter");
-    OHOS::Security::CertManager::CmMetricsReport report("openUkeyAuthDialog");
+    OHOS::Security::CertManager::CmMetricsReport report("openUkeyAuthDialog",
+        OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));

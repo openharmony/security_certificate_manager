@@ -89,7 +89,8 @@ static OHOS::AAFwk::Want CMGetCertDetailWant(std::shared_ptr<CmUIExtensionReques
 napi_value CMNapiOpenDetailDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert open detail dialog enter");
-    OHOS::Security::CertManager::CmMetricsReport report("openCertificateDetailDialog");
+    OHOS::Security::CertManager::CmMetricsReport report("openCertificateDetailDialog",
+        OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
