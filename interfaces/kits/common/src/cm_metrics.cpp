@@ -51,6 +51,7 @@ int32_t CmGetMetricErrorCode(int32_t nativeErrorCode, CmMetricsKind kind)
 }
 
 CmMetricsReport::CmMetricsReport(const std::string &interfaceName, CmMetricsKind kind)
+    : kind_(kind)
 {
     const char *prefix = (kind == CmMetricsKind::DIALOG)
         ? "DeviceCertificateKit.certificateManagerDialog."
