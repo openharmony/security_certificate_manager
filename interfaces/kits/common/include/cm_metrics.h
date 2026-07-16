@@ -49,8 +49,11 @@ enum CmMetricErrorCode {
 // boundary = enum 元素总数;实际取值范围 [0, CM_METRICS_ENUM_BOUNDARY)
 constexpr int32_t CM_METRICS_ENUM_BOUNDARY = 20;
 
-// 把 JS 侧 ErrorCode(包括 dialog 公共码)映射为紧凑 metric code
-int32_t CmGetMetricErrorCode(int32_t jsErrorCode);
+// 把 native 侧 ErrorCode 映射为紧凑 metric code
+// - 非 dialog 接口走 NATIVE_CODE_TO_JS_CODE_MAP(cm_api_common.h)
+// - dialog 接口走 DIALOG_CODE_TO_JS_CODE_MAP(cm_dialog_api_common.h)
+// 再由 JS 码转为 CmMetricErrorCode
+int32_t CmGetMetricErrorCode(int32_t nativeErrorCode, CmMetricsKind kind);
 
 // 区分 dialog 与非 dialog JS 接口:两者的错误码映射表不同(分别对应
 // cm_api_common.h 的 ErrorCode 和 cm_dialog_api_common.h 的 ErrorCode),
@@ -76,7 +79,8 @@ public:
     // 在 NAPI/ANI 入口函数最前面调用,idempotent;重复调用为 no-op
     void Start();
     // 入口函数返回前调用,触发剩余两个宏;idempotent;若未 Start 或已 Finish 则 no-op
-    void Finish(int32_t jsErrorCode);
+    // nativeErrorCode 是 native 侧错误码(如 CMR_ERROR_NOT_FOUND),通过内部映射转 JS 再转 metric code
+    void Finish(int32_t nativeErrorCode);
 
     // 仅供测试使用:返回从 Start 到当前时刻的耗时(毫秒)。
     // - 当宏关闭时恒为 0

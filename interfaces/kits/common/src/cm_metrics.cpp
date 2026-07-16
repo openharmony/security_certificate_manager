@@ -24,8 +24,23 @@
 
 namespace OHOS::Security::CertManager {
 
-int32_t CmGetMetricErrorCode(int32_t jsErrorCode)
+int32_t CmGetMetricErrorCode(int32_t nativeErrorCode, CmMetricsKind kind)
 {
+    // 第一步:native code → JS code,用对应的映射表
+    int32_t jsErrorCode = INNER_FAILURE;  // native 0 兜底
+    if (kind == CmMetricsKind::DIALOG) {
+        auto iter = Dialog::DIALOG_CODE_TO_JS_CODE_MAP.find(nativeErrorCode);
+        if (iter != Dialog::DIALOG_CODE_TO_JS_CODE_MAP.end()) {
+            jsErrorCode = iter->second;
+        }
+    } else {
+        auto iter = NATIVE_CODE_TO_JS_CODE_MAP.find(nativeErrorCode);
+        if (iter != NATIVE_CODE_TO_JS_CODE_MAP.end()) {
+            jsErrorCode = iter->second;
+        }
+    }
+
+    // 第二步:JS code → 紧凑 metric code
     switch (jsErrorCode) {
         case SUCCESS:
             return CM_METRIC_SUCCESS;
@@ -57,22 +72,14 @@ int32_t CmGetMetricErrorCode(int32_t jsErrorCode)
             return CM_METRIC_ACCESS_UKEY_SERVICE_FAILED;
         case PARAMETER_VALIDATION_FAILED:
             return CM_METRIC_PARAMETER_VALIDATION_FAILED;
-        case Dialog::DIALOG_ERROR_GENERIC:
-            return CM_METRIC_INNER_FAILURE;
         case Dialog::DIALOG_ERROR_OPERATION_CANCELED:
             return CM_METRIC_DIALOG_OPERATION_CANCELED;
         case Dialog::DIALOG_ERROR_INSTALL_FAILED:
             return CM_METRIC_DIALOG_INSTALL_FAILED;
-        case Dialog::DIALOG_ERROR_NOT_SUPPORTED:
-            return CM_METRIC_CAPABILITY_NOT_SUPPORTED;
         case Dialog::DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY:
             return CM_METRIC_DIALOG_NOT_COMPLY_SECURITY_POLICY;
-        case Dialog::DIALOG_ERROR_PARAMETER_VALIDATION_FAILED:
-            return CM_METRIC_PARAMETER_VALIDATION_FAILED;
         case Dialog::DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE:
             return CM_METRIC_DIALOG_NO_AVAILABLE_CERTIFICATE;
-        case Dialog::DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED:
-            return CM_METRIC_CAPABILITY_NOT_SUPPORTED;
         default:
             return CM_METRIC_UNKNOWN_ERROR;
     }
@@ -102,13 +109,13 @@ void CmMetricsReport::Start()
 #endif
 }
 
-void CmMetricsReport::Finish(int32_t jsErrorCode)
+void CmMetricsReport::Finish(int32_t nativeErrorCode)
 {
     if (!started_ || finished_) {
         return;
     }
     finished_ = true;
-    int32_t metricCode = CmGetMetricErrorCode(jsErrorCode);
+    int32_t metricCode = CmGetMetricErrorCode(nativeErrorCode, kind_);
 #ifdef CM_API_METRICS_ENABLE
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedMs =
