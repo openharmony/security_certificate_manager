@@ -22,37 +22,15 @@
 
 namespace OHOS::Security::CertManager {
 
-// 与 cm_api_common.h 中 ErrorCode 一一对应的紧凑枚举,仅用于 histogram 打点
-enum CmMetricErrorCode {
-    CM_METRIC_SUCCESS = 0,
-    CM_METRIC_HAS_NO_PERMISSION = 1,
-    CM_METRIC_NOT_SYSTEM_APP = 2,
-    CM_METRIC_PARAM_ERROR = 3,
-    CM_METRIC_CAPABILITY_NOT_SUPPORTED = 4,
-    CM_METRIC_INNER_FAILURE = 5,
-    CM_METRIC_NOT_FOUND = 6,
-    CM_METRIC_INVALID_CERT_FORMAT = 7,
-    CM_METRIC_MAX_CERT_COUNT_REACHED = 8,
-    CM_METRIC_NO_AUTHORIZATION = 9,
-    CM_METRIC_DEVICE_ENTER_ADVSECMODE = 10,
-    CM_METRIC_PASSWORD_IS_ERROR = 11,
-    CM_METRIC_STORE_PATH_NOT_SUPPORTED = 12,
-    CM_METRIC_ACCESS_UKEY_SERVICE_FAILED = 13,
-    CM_METRIC_PARAMETER_VALIDATION_FAILED = 14,
-    CM_METRIC_DIALOG_OPERATION_CANCELED = 15,
-    CM_METRIC_DIALOG_INSTALL_FAILED = 16,
-    CM_METRIC_DIALOG_NOT_COMPLY_SECURITY_POLICY = 17,
-    CM_METRIC_DIALOG_NO_AVAILABLE_CERTIFICATE = 18,
-    CM_METRIC_UNKNOWN_ERROR = 19,
-};
+// histogram 的 ENUMERATION 取值范围上限(取 max(JS ErrorCode) + 1)
+// 涵盖 cm_api_common.h 和 cm_dialog_api_common.h 中所有 ErrorCode 值
+// (最大为 Dialog::DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE = 29700007)
+constexpr int32_t CM_METRICS_ENUM_BOUNDARY = 30000000;
 
-// boundary = enum 元素总数;实际取值范围 [0, CM_METRICS_ENUM_BOUNDARY)
-constexpr int32_t CM_METRICS_ENUM_BOUNDARY = 20;
-
-// 把 native 侧 ErrorCode 映射为紧凑 metric code
+// 把 native 侧 ErrorCode 映射为 JS 侧 ErrorCode(直接作为 histogram 值上报)
 // - 非 dialog 接口走 NATIVE_CODE_TO_JS_CODE_MAP(cm_api_common.h)
 // - dialog 接口走 DIALOG_CODE_TO_JS_CODE_MAP(cm_dialog_api_common.h)
-// 再由 JS 码转为 CmMetricErrorCode
+// 找不到时兜底返回 INNER_FAILURE
 int32_t CmGetMetricErrorCode(int32_t nativeErrorCode, CmMetricsKind kind);
 
 // 区分 dialog 与非 dialog JS 接口:两者的错误码映射表不同(分别对应
@@ -79,7 +57,7 @@ public:
     // 在 NAPI/ANI 入口函数最前面调用,idempotent;重复调用为 no-op
     void Start();
     // 入口函数返回前调用,触发剩余两个宏;idempotent;若未 Start 或已 Finish 则 no-op
-    // nativeErrorCode 是 native 侧错误码(如 CMR_ERROR_NOT_FOUND),通过内部映射转 JS 再转 metric code
+    // nativeErrorCode 是 native 侧错误码(如 CMR_ERROR_NOT_FOUND),会被映射为 JS ErrorCode 上报
     void Finish(int32_t nativeErrorCode);
 
     // 仅供测试使用:返回从 Start 到当前时刻的耗时(毫秒)。

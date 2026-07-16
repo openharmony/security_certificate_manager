@@ -26,63 +26,20 @@ namespace OHOS::Security::CertManager {
 
 int32_t CmGetMetricErrorCode(int32_t nativeErrorCode, CmMetricsKind kind)
 {
-    // 第一步:native code → JS code,用对应的映射表
-    int32_t jsErrorCode = INNER_FAILURE;  // native 0 兜底
+    // native code → JS code,直接用 JS 码作为 histogram 值上报
     if (kind == CmMetricsKind::DIALOG) {
         auto iter = Dialog::DIALOG_CODE_TO_JS_CODE_MAP.find(nativeErrorCode);
         if (iter != Dialog::DIALOG_CODE_TO_JS_CODE_MAP.end()) {
-            jsErrorCode = iter->second;
+            return iter->second;
         }
     } else {
         auto iter = NATIVE_CODE_TO_JS_CODE_MAP.find(nativeErrorCode);
         if (iter != NATIVE_CODE_TO_JS_CODE_MAP.end()) {
-            jsErrorCode = iter->second;
+            return iter->second;
         }
     }
-
-    // 第二步:JS code → 紧凑 metric code
-    switch (jsErrorCode) {
-        case SUCCESS:
-            return CM_METRIC_SUCCESS;
-        case HAS_NO_PERMISSION:
-            return CM_METRIC_HAS_NO_PERMISSION;
-        case NOT_SYSTEM_APP:
-            return CM_METRIC_NOT_SYSTEM_APP;
-        case PARAM_ERROR:
-            return CM_METRIC_PARAM_ERROR;
-        case CAPABILITY_NOT_SUPPORTED:
-            return CM_METRIC_CAPABILITY_NOT_SUPPORTED;
-        case INNER_FAILURE:
-            return CM_METRIC_INNER_FAILURE;
-        case NOT_FOUND:
-            return CM_METRIC_NOT_FOUND;
-        case INVALID_CERT_FORMAT:
-            return CM_METRIC_INVALID_CERT_FORMAT;
-        case MAX_CERT_COUNT_REACHED:
-            return CM_METRIC_MAX_CERT_COUNT_REACHED;
-        case NO_AUTHORIZATION:
-            return CM_METRIC_NO_AUTHORIZATION;
-        case DEVICE_ENTER_ADVSECMODE:
-            return CM_METRIC_DEVICE_ENTER_ADVSECMODE;
-        case PASSWORD_IS_ERROR:
-            return CM_METRIC_PASSWORD_IS_ERROR;
-        case STORE_PATH_NOT_SUPPORTED:
-            return CM_METRIC_STORE_PATH_NOT_SUPPORTED;
-        case ACCESS_UKEY_SERVICE_FAILED:
-            return CM_METRIC_ACCESS_UKEY_SERVICE_FAILED;
-        case PARAMETER_VALIDATION_FAILED:
-            return CM_METRIC_PARAMETER_VALIDATION_FAILED;
-        case Dialog::DIALOG_ERROR_OPERATION_CANCELED:
-            return CM_METRIC_DIALOG_OPERATION_CANCELED;
-        case Dialog::DIALOG_ERROR_INSTALL_FAILED:
-            return CM_METRIC_DIALOG_INSTALL_FAILED;
-        case Dialog::DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY:
-            return CM_METRIC_DIALOG_NOT_COMPLY_SECURITY_POLICY;
-        case Dialog::DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE:
-            return CM_METRIC_DIALOG_NO_AVAILABLE_CERTIFICATE;
-        default:
-            return CM_METRIC_UNKNOWN_ERROR;
-    }
+    // 找不到时兜底返回 INNER_FAILURE
+    return INNER_FAILURE;
 }
 
 CmMetricsReport::CmMetricsReport(const std::string &interfaceName, CmMetricsKind kind)

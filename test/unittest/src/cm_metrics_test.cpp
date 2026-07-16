@@ -25,36 +25,40 @@ using namespace testing;
 using namespace OHOS::Security::CertManager;
 
 namespace CertmanagerTest {
-HWTEST_F(CmMetricsTest, MetricErrorCode_BoundaryCoversAllCompactMetricCodes, TestSize.Level1)
+HWTEST_F(CmMetricsTest, BoundaryCoversAllJsErrorCodes, TestSize.Level1)
 {
-    EXPECT_GT(CM_METRICS_ENUM_BOUNDARY, static_cast<int32_t>(CM_METRIC_PARAMETER_VALIDATION_FAILED));
-    EXPECT_GT(CM_METRICS_ENUM_BOUNDARY, static_cast<int32_t>(CM_METRIC_DIALOG_NO_AVAILABLE_CERTIFICATE));
-    EXPECT_LT(static_cast<int32_t>(CM_METRIC_SUCCESS), CM_METRICS_ENUM_BOUNDARY);
-    EXPECT_LT(static_cast<int32_t>(CM_METRIC_UNKNOWN_ERROR), CM_METRICS_ENUM_BOUNDARY);
+    // boundary 需要覆盖 max JS ErrorCode(29700007 = DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE)
+    EXPECT_GT(CM_METRICS_ENUM_BOUNDARY, static_cast<int32_t>(PARAMETER_VALIDATION_FAILED));
+    EXPECT_GT(CM_METRICS_ENUM_BOUNDARY, OHOS::Security::CertManager::Dialog::DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE);
+    EXPECT_LT(static_cast<int32_t>(SUCCESS), CM_METRICS_ENUM_BOUNDARY);
+    EXPECT_LT(static_cast<int32_t>(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE), CM_METRICS_ENUM_BOUNDARY);
 }
 
-HWTEST_F(CmMetricsTest, NativeToMetric_KnownCodes_AreInRange, TestSize.Level1)
+HWTEST_F(CmMetricsTest, NativeToJs_KnownNonDialogCodes, TestSize.Level1)
 {
-    EXPECT_EQ(CmGetMetricErrorCode(SUCCESS), CM_METRIC_SUCCESS);
-    EXPECT_EQ(CmGetMetricErrorCode(HAS_NO_PERMISSION), CM_METRIC_HAS_NO_PERMISSION);
-    EXPECT_EQ(CmGetMetricErrorCode(NOT_FOUND), CM_METRIC_NOT_FOUND);
-    EXPECT_EQ(CmGetMetricErrorCode(INNER_FAILURE), CM_METRIC_INNER_FAILURE);
-    EXPECT_EQ(CmGetMetricErrorCode(PARAM_ERROR), CM_METRIC_PARAM_ERROR);
+    EXPECT_EQ(CmGetMetricErrorCode(CMR_ERROR_INVALID_ARGUMENT, CmMetricsKind::NON_DIALOG), PARAM_ERROR);
+    EXPECT_EQ(CmGetMetricErrorCode(CMR_ERROR_PERMISSION_DENIED, CmMetricsKind::NON_DIALOG), HAS_NO_PERMISSION);
+    EXPECT_EQ(CmGetMetricErrorCode(CMR_ERROR_NOT_FOUND, CmMetricsKind::NON_DIALOG), NOT_FOUND);
+    EXPECT_EQ(CmGetMetricErrorCode(CMR_SUCCESS, CmMetricsKind::NON_DIALOG), SUCCESS);
 }
 
-HWTEST_F(CmMetricsTest, NativeToMetric_DialogKnownCodes_AreInRange, TestSize.Level1)
+HWTEST_F(CmMetricsTest, NativeToJs_KnownDialogCodes, TestSize.Level1)
 {
-    EXPECT_EQ(CmGetMetricErrorCode(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_GENERIC), CM_METRIC_INNER_FAILURE);
-    EXPECT_EQ(CmGetMetricErrorCode(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_OPERATION_CANCELED), CM_METRIC_DIALOG_OPERATION_CANCELED);
-    EXPECT_EQ(CmGetMetricErrorCode(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_INSTALL_FAILED), CM_METRIC_DIALOG_INSTALL_FAILED);
-    EXPECT_EQ(CmGetMetricErrorCode(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_NOT_SUPPORTED), CM_METRIC_CAPABILITY_NOT_SUPPORTED);
-    EXPECT_EQ(CmGetMetricErrorCode(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED), CM_METRIC_CAPABILITY_NOT_SUPPORTED);
+    EXPECT_EQ(CmGetMetricErrorCode(OHOS::Security::CertManager::Dialog::CMR_DIALOG_ERROR_INTERNAL,
+        CmMetricsKind::DIALOG), OHOS::Security::CertManager::Dialog::DIALOG_ERROR_GENERIC);
+    EXPECT_EQ(CmGetMetricErrorCode(OHOS::Security::CertManager::Dialog::CMR_DIALOG_ERROR_OPERATION_CANCELS,
+        CmMetricsKind::DIALOG), OHOS::Security::CertManager::Dialog::DIALOG_ERROR_OPERATION_CANCELED);
+    EXPECT_EQ(CmGetMetricErrorCode(OHOS::Security::CertManager::Dialog::CMR_DIALOG_ERROR_INSTALL_FAILED,
+        CmMetricsKind::DIALOG), OHOS::Security::CertManager::Dialog::DIALOG_ERROR_INSTALL_FAILED);
+    EXPECT_EQ(CmGetMetricErrorCode(OHOS::Security::CertManager::Dialog::CMR_DIALOG_ERROR_NOT_SUPPORTED,
+        CmMetricsKind::DIALOG), OHOS::Security::CertManager::Dialog::DIALOG_ERROR_NOT_SUPPORTED);
 }
 
-HWTEST_F(CmMetricsTest, NativeToMetric_UnknownCode_ReturnsUnknown, TestSize.Level1)
+HWTEST_F(CmMetricsTest, NativeToJs_UnknownCode_ReturnsInnerFailure, TestSize.Level1)
 {
-    EXPECT_EQ(CmGetMetricErrorCode(0x7fffffff), CM_METRIC_UNKNOWN_ERROR);
-    EXPECT_EQ(CmGetMetricErrorCode(-99999), CM_METRIC_UNKNOWN_ERROR);
+    EXPECT_EQ(CmGetMetricErrorCode(0x7fffffff, CmMetricsKind::NON_DIALOG), INNER_FAILURE);
+    EXPECT_EQ(CmGetMetricErrorCode(-99999, CmMetricsKind::NON_DIALOG), INNER_FAILURE);
+    EXPECT_EQ(CmGetMetricErrorCode(0x7fffffff, CmMetricsKind::DIALOG), INNER_FAILURE);
 }
 
 HWTEST_F(CmMetricsTest, ReportGuard_StartRecordsCalled, TestSize.Level1)
