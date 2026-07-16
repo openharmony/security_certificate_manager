@@ -24,6 +24,13 @@
 
 namespace OHOS::Security::CertManager {
 
+int32_t CmGetMetricErrorBoundary()
+{
+    int32_t sz1 = static_cast<int32_t>(NATIVE_CODE_TO_JS_CODE_MAP.size());
+    int32_t sz2 = static_cast<int32_t>(Dialog::DIALOG_CODE_TO_JS_CODE_MAP.size());
+    return (sz1 > sz2) ? sz1 : sz2;
+}
+
 int32_t CmGetMetricErrorCode(int32_t nativeErrorCode, CmMetricsKind kind)
 {
     // native code → JS code,直接用 JS 码作为 histogram 值上报
@@ -77,7 +84,7 @@ void CmMetricsReport::Finish(int32_t nativeErrorCode)
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedMs =
         std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime_).count();
-    HISTOGRAM_ENUMERATION(keyErrorcode_.c_str(), metricCode, CM_METRICS_ENUM_BOUNDARY);
+    HISTOGRAM_ENUMERATION(keyErrorcode_.c_str(), metricCode, CmGetMetricErrorBoundary());
     HISTOGRAM_TIMES(keyTime_.c_str(), static_cast<int32_t>(elapsedMs));
 #endif
 }

@@ -27,9 +27,13 @@ using namespace OHOS::Security::CertManager;
 namespace CertmanagerTest {
 HWTEST_F(CmMetricsTest, BoundaryMatchesMapSize, TestSize.Level1)
 {
-    // boundary = max(NATIVE_CODE_TO_JS_CODE_MAP.size(), DIALOG_CODE_TO_JS_CODE_MAP.size()) = 21
-    EXPECT_EQ(CM_METRICS_ENUM_BOUNDARY, 21);
-    EXPECT_GT(CM_METRICS_ENUM_BOUNDARY, static_cast<size_t>(0));
+    // boundary 动态计算:max(NATIVE_CODE_TO_JS_CODE_MAP.size(), DIALOG_CODE_TO_JS_CODE_MAP.size())
+    int32_t boundary = CmGetMetricErrorBoundary();
+    EXPECT_GT(boundary, static_cast<int32_t>(0));
+    EXPECT_EQ(boundary, static_cast<int32_t>(
+        NATIVE_CODE_TO_JS_CODE_MAP.size() > Dialog::DIALOG_CODE_TO_JS_CODE_MAP.size()
+            ? NATIVE_CODE_TO_JS_CODE_MAP.size()
+            : Dialog::DIALOG_CODE_TO_JS_CODE_MAP.size()));
 }
 
 HWTEST_F(CmMetricsTest, NativeToJs_KnownNonDialogCodes, TestSize.Level1)
@@ -99,8 +103,9 @@ HWTEST_F(CmMetricsTest, ReportGuard_FinishWithBoundaryValue, TestSize.Level1)
     CmMetricsReport report("UnitTestApi");
     report.Start();
     // boundary 边界值:本测试不真正打开宏,只确认不会越界访问
-    report.Finish(static_cast<int32_t>(CM_METRICS_ENUM_BOUNDARY) - 1);
-    report.Finish(static_cast<int32_t>(CM_METRICS_ENUM_BOUNDARY));
-    report.Finish(static_cast<int32_t>(CM_METRICS_ENUM_BOUNDARY) + 1);
+    int32_t boundary = CmGetMetricErrorBoundary();
+    report.Finish(boundary - 1);
+    report.Finish(boundary);
+    report.Finish(boundary + 1);
 }
 } // namespace CertmanagerTest

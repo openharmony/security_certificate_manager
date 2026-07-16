@@ -22,11 +22,10 @@
 
 namespace OHOS::Security::CertManager {
 
-// histogram 的 ENUMERATION boundary,取 NATIVE_CODE_TO_JS_CODE_MAP 和
-// DIALOG_CODE_TO_JS_CODE_MAP 两个映射表中较大的 size:
-// - NATIVE_CODE_TO_JS_CODE_MAP: 15 项(cm_api_common.h)
-// - DIALOG_CODE_TO_JS_CODE_MAP: 21 项(cm_dialog_api_common.h)
-constexpr int32_t CM_METRICS_ENUM_BOUNDARY = 21;
+// histogram 的 ENUMERATION boundary,根据映射表的实际 size 动态计算:
+// 取 NATIVE_CODE_TO_JS_CODE_MAP 和 DIALOG_CODE_TO_JS_CODE_MAP 中较大的 size
+// 调用方传入 native → JS 映射后的 JS code 作为 histogram 值
+int32_t CmGetMetricErrorBoundary();
 
 // 把 native 侧 ErrorCode 映射为 JS 侧 ErrorCode(直接作为 histogram 值上报)
 // - 非 dialog 接口走 NATIVE_CODE_TO_JS_CODE_MAP(cm_api_common.h)
