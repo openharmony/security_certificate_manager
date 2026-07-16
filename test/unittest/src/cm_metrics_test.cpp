@@ -25,13 +25,11 @@ using namespace testing;
 using namespace OHOS::Security::CertManager;
 
 namespace CertmanagerTest {
-HWTEST_F(CmMetricsTest, BoundaryCoversAllJsErrorCodes, TestSize.Level1)
+HWTEST_F(CmMetricsTest, BoundaryMatchesMapSize, TestSize.Level1)
 {
-    // boundary 需要覆盖 max JS ErrorCode(29700007 = DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE)
-    EXPECT_GT(CM_METRICS_ENUM_BOUNDARY, static_cast<int32_t>(PARAMETER_VALIDATION_FAILED));
-    EXPECT_GT(CM_METRICS_ENUM_BOUNDARY, OHOS::Security::CertManager::Dialog::DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE);
-    EXPECT_LT(static_cast<int32_t>(SUCCESS), CM_METRICS_ENUM_BOUNDARY);
-    EXPECT_LT(static_cast<int32_t>(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE), CM_METRICS_ENUM_BOUNDARY);
+    // boundary = max(NATIVE_CODE_TO_JS_CODE_MAP.size(), DIALOG_CODE_TO_JS_CODE_MAP.size()) = 21
+    EXPECT_EQ(CM_METRICS_ENUM_BOUNDARY, 21);
+    EXPECT_GT(CM_METRICS_ENUM_BOUNDARY, static_cast<size_t>(0));
 }
 
 HWTEST_F(CmMetricsTest, NativeToJs_KnownNonDialogCodes, TestSize.Level1)
