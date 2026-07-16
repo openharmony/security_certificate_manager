@@ -25,15 +25,13 @@ using namespace testing;
 using namespace OHOS::Security::CertManager;
 
 namespace CertmanagerTest {
-HWTEST_F(CmMetricsTest, BoundaryMatchesMapSize, TestSize.Level1)
+HWTEST_F(CmMetricsTest, BoundaryMatchesKindMapSize, TestSize.Level1)
 {
-    // boundary 动态计算:max(NATIVE_CODE_TO_JS_CODE_MAP.size(), DIALOG_CODE_TO_JS_CODE_MAP.size())
-    int32_t boundary = CmGetMetricErrorBoundary();
-    EXPECT_GT(boundary, static_cast<int32_t>(0));
-    EXPECT_EQ(boundary, static_cast<int32_t>(
-        NATIVE_CODE_TO_JS_CODE_MAP.size() > Dialog::DIALOG_CODE_TO_JS_CODE_MAP.size()
-            ? NATIVE_CODE_TO_JS_CODE_MAP.size()
-            : Dialog::DIALOG_CODE_TO_JS_CODE_MAP.size()));
+    // boundary 根据 kind 选对应映射表的 size
+    EXPECT_EQ(CmGetMetricErrorBoundary(CmMetricsKind::NON_DIALOG),
+        static_cast<int32_t>(NATIVE_CODE_TO_JS_CODE_MAP.size()));
+    EXPECT_EQ(CmGetMetricErrorBoundary(CmMetricsKind::DIALOG),
+        static_cast<int32_t>(Dialog::DIALOG_CODE_TO_JS_CODE_MAP.size()));
 }
 
 HWTEST_F(CmMetricsTest, NativeToJs_KnownNonDialogCodes, TestSize.Level1)
@@ -103,7 +101,7 @@ HWTEST_F(CmMetricsTest, ReportGuard_FinishWithBoundaryValue, TestSize.Level1)
     CmMetricsReport report("UnitTestApi");
     report.Start();
     // boundary 边界值:本测试不真正打开宏,只确认不会越界访问
-    int32_t boundary = CmGetMetricErrorBoundary();
+    int32_t boundary = CmGetMetricErrorBoundary(CmMetricsKind::NON_DIALOG);
     report.Finish(boundary - 1);
     report.Finish(boundary);
     report.Finish(boundary + 1);
