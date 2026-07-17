@@ -460,7 +460,7 @@ static int32_t UnpackCertUriList(struct CertUriList *certUriList, uint8_t *inDat
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     uint8_t *data = inData;
-    uint32_t certCount = (uint32_t)*data;
+    uint32_t certCount = *(uint32_t *)data;
     if (dataSize < (sizeof(uint32_t) + (certCount * MAX_LEN_URI))) {
         CM_LOG_E("buffer size too small");
         return CMR_ERROR_BUFFER_TOO_SMALL;
