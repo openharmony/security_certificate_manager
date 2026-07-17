@@ -121,7 +121,11 @@ int32_t SendRequest(enum CertManagerInterfaceCode type, const struct CmBlob *inB
         data.WriteUint32(outBlob->size);
     }
     data.WriteUint32(inBlob->size);
-    data.WriteBuffer(inBlob->data, static_cast<size_t>(inBlob->size));
+    if (!data.WriteBuffer(inBlob->data, static_cast<size_t>(inBlob->size)) &&
+        !data.WriteRawData(inBlob->data, static_cast<size_t>(inBlob->size))) {
+        CM_LOG_E("WriteBuffer and WriteRawData both failed, size: %u", inBlob->size);
+        return CMR_ERROR_IPC_WRITE_FAIL;
+    }
 
     int error = cmProxy->SendRequest(static_cast<uint32_t>(type), data, reply, option);
     if (error != 0) {
