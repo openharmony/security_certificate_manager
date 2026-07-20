@@ -427,7 +427,7 @@ static int32_t CmUidLayerGetFileNames(const char *filePath, struct CmBlob *credF
         return CMR_ERROR_MALLOC_FAIL;
     }
     (void)memset_s(credFilePaths[count].data, filePathLen + 1, 0, filePathLen + 1);
-    if (memcpy_s(credFilePaths[count].data, CM_MAX_FILE_NAME_LEN, filePath, filePathLen) != EOK) {
+    if (memcpy_s(credFilePaths[count].data, filePathLen + 1, filePath, filePathLen) != EOK) {
         /* credFilePaths memory free in top layer function */
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
