@@ -218,10 +218,17 @@ static int32_t GetSrcData(MessageParcel &data, struct CmBlob *srcData)
         CM_LOG_E("Malloc srcData failed.");
         return CMR_ERROR_MALLOC_FAIL;
     }
-    const uint8_t *pdata = data.ReadBuffer(static_cast<size_t>(srcData->size));
+    const uint8_t *bufferData = data.ReadBuffer(static_cast<size_t>(srcData->size));
+    const uint8_t *pdata;
+    if (bufferData == nullptr) {
+        CM_LOG_E("ReadBuffer failed.");
+        pdata = static_cast<const uint8_t *>(data.ReadRawData(static_cast<size_t>(srcData->size)));
+    } else {
+        pdata = bufferData;
+    }
     if (pdata == nullptr) {
         CM_FREE_BLOB(*srcData);
-        CM_LOG_E("CMR_ERROR_NULL_POINTER");
+        CM_LOG_E("ReadBuffer and ReadRawData both failed.");
         return CMR_ERROR_NULL_POINTER;
     }
     if (memcpy_s(srcData->data, srcData->size, pdata, srcData->size) != EOK) {

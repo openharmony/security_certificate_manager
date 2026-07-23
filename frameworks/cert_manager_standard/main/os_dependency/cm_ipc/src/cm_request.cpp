@@ -121,7 +121,18 @@ int32_t SendRequest(enum CertManagerInterfaceCode type, const struct CmBlob *inB
         data.WriteUint32(outBlob->size);
     }
     data.WriteUint32(inBlob->size);
-    data.WriteBuffer(inBlob->data, static_cast<size_t>(inBlob->size));
+    // Write parcel data.
+    bool isWriteSuccess = true;
+    if (!data.WriteBuffer(inBlob->data, static_cast<size_t>(inBlob->size))) {
+        CM_LOG_E("WriteBuffer failed, size: %zu", inBlob->size);
+        // If WriteData failed, maybe buffer size large than 200kb, try again with WriteRawData.
+        isWriteSuccess = data.WriteRawData(inBlob->data, static_cast<size_t>(inBlob->size));
+    }
+
+    if (!isWriteSuccess) {
+        CM_LOG_E("WriteBuffer and WriteRawData both failed, size: %zu", inBlob->size);
+        return CMR_ERROR_IPC_WRITE_FAIL;
+    }
 
     int error = cmProxy->SendRequest(static_cast<uint32_t>(type), data, reply, option);
     if (error != 0) {
@@ -150,7 +161,18 @@ int32_t SendRequestParcel(enum CertManagerInterfaceCode type, const struct CmBlo
 
     inputData.WriteInterfaceToken(SA_KEYSTORE_SERVICE_DESCRIPTOR);
     inputData.WriteUint32(inBlob->size);
-    inputData.WriteBuffer(inBlob->data, static_cast<size_t>(inBlob->size));
+    // Write parcel data.
+    bool isWriteSuccess = true;
+    if (!inputData.WriteBuffer(inBlob->data, static_cast<size_t>(inBlob->size))) {
+        CM_LOG_E("WriteBuffer failed, size: %zu", inBlob->size);
+        // If WriteData failed, maybe buffer size large than 200kb, try again with WriteRawData.
+        isWriteSuccess = inputData.WriteRawData(inBlob->data, static_cast<size_t>(inBlob->size));
+    }
+
+    if (!isWriteSuccess) {
+        CM_LOG_E("WriteBuffer and WriteRawData both failed, size: %zu", inBlob->size);
+        return CMR_ERROR_IPC_WRITE_FAIL;
+    }
 
     int32_t ret = cmProxy->SendRequest(static_cast<uint32_t>(type), inputData, reply, option);
     if (ret != 0) {
