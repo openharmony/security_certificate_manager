@@ -45,12 +45,6 @@ namespace OHOS {
             return false;
         }
 
-        struct CmBlob fileNames = {0, nullptr};
-        if (!GetCmBlobFromBuffer(myData, &remainSize, &offset, &fileNames)) {
-            CmFree(myData);
-            return false;
-        }
-
         uint32_t store;
         if (!GetUintFromBuffer(myData, &remainSize, &offset, &store)) {
             CmFree(myData);
@@ -63,15 +57,19 @@ namespace OHOS {
             return false;
         }
 
-        uint32_t fileCount;
-        if (!GetUintFromBuffer(myData, &remainSize, &offset, &fileCount)) {
-            CmFree(myData);
-            return false;
-        }
+        uint32_t fileCount = 0;
+        struct CmBlob fileNames[MAX_COUNT_CERTIFICATE];
+        uint32_t len = MAX_COUNT_CERTIFICATE * sizeof(struct CmBlob);
+        (void)memset_s(fileNames, len, 0, len);
 
         CertmanagerTest::MockHapToken mockHap;
-        (void)CmServiceGetAppCertList(&cmContext, store, &fileNames, fileSize, &fileCount);
-        (void)CmServiceGetCallingAppCertList(&cmContext, store, &fileNames, fileSize, &fileCount);
+        (void)CmServiceGetAppCertList(&cmContext, store, fileNames, MAX_COUNT_CERTIFICATE, &fileCount);
+        CmFreeFileNames(fileNames, MAX_COUNT_CERTIFICATE);
+
+        fileCount = 0;
+        (void)memset_s(fileNames, len, 0, len);
+        (void)CmServiceGetCallingAppCertList(&cmContext, store, fileNames, MAX_COUNT_CERTIFICATE, &fileCount);
+        CmFreeFileNames(fileNames, MAX_COUNT_CERTIFICATE);
         CmFree(myData);
         return true;
     }
