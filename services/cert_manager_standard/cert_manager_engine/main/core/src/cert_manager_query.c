@@ -421,12 +421,12 @@ static int32_t GetUserCertAlias(const char *uri, struct CmBlob *alias)
     uint32_t size = strlen(certProperty.alias) + 1;
     if (size <= 1) {
         size = strlen(certUri.object) + 1;
-        if (memcpy_s(alias->data, size, certUri.object, size) != EOK) {
+        if (memcpy_s(alias->data, alias->size, certUri.object, size) != EOK) {
             (void)CertManagerFreeUri(&certUri);
             return CMR_ERROR_MEM_OPERATION_COPY;
         }
     } else {
-        if (memcpy_s(alias->data, size, (uint8_t *)certProperty.alias, size) != EOK) {
+        if (memcpy_s(alias->data, alias->size, (uint8_t *)certProperty.alias, size) != EOK) {
             (void)CertManagerFreeUri(&certUri);
             return CMR_ERROR_MEM_OPERATION_COPY;
         }

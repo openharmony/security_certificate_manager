@@ -157,6 +157,7 @@ static int32_t EncodeComp(
     if (*sep) {
         buf[off] = sepChar;
         off++;
+        avail--;
     }
 
     if (memcpy_s(buf + off, avail, key, keyLen) != EOK) {
