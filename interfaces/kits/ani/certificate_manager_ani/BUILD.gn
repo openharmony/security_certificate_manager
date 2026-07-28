@@ -79,7 +79,7 @@ ohos_shared_library("certmanager_ani") {
   external_deps += cm_ani_metrics_deps
   cflags_cc += cm_ani_metrics_cflags
   deps += [
-    "${cert_manager_root_dir}/interfaces/kits/common:libcm_metrics_static",
+    "${cert_manager_root_dir}/interfaces/kits/common/metrics:libcm_metrics_static",
   ]
 
   subsystem_name = "security"

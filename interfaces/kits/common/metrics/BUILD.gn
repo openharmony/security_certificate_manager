@@ -14,6 +14,9 @@
 import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
 
+# libcm_metrics_static:histogram 打点工具,独立模块
+# - 不依赖 cm_api_common.h / cm_dialog_api_common.h
+# - 错误码映射表由调用方在构造 CmMetricsReport 时传入
 ohos_static_library("libcm_metrics_static") {
   branch_protector_ret = "pac_ret"
   sanitize = {
@@ -29,10 +32,6 @@ ohos_static_library("libcm_metrics_static") {
   include_dirs = [ "include" ]
 
   sources = [ "src/cm_metrics.cpp" ]
-
-  deps = [
-    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
-  ]
 
   cflags_cc = [
     "-Wall",

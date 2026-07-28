@@ -19,7 +19,7 @@ config("cm_ani_common_config") {
     "./builder/include",
     "./impl/include",
     "./utils/include",
-    "../../common/include",
+    "../../common/metrics/include",
   ]
 }
 

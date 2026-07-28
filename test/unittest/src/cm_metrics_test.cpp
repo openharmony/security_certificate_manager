@@ -46,11 +46,12 @@ HWTEST_F(CmMetricsTest, JsCodeMap_LookupKnownDialogCodes, TestSize.Level1)
         Dialog::DIALOG_CODE_TO_JS_CODE_MAP), Dialog::DIALOG_ERROR_NOT_SUPPORTED);
 }
 
-HWTEST_F(CmMetricsTest, JsCodeMap_UnknownCode_ReturnsInnerFailure, TestSize.Level1)
+HWTEST_F(CmMetricsTest, JsCodeMap_UnknownCode_ReturnsUnknownDefault, TestSize.Level1)
 {
-    EXPECT_EQ(CmGetMetricErrorCodeFromMap(0x7fffffff, NATIVE_CODE_TO_JS_CODE_MAP), INNER_FAILURE);
-    EXPECT_EQ(CmGetMetricErrorCodeFromMap(-99999, NATIVE_CODE_TO_JS_CODE_MAP), INNER_FAILURE);
-    EXPECT_EQ(CmGetMetricErrorCodeFromMap(0x7fffffff, Dialog::DIALOG_CODE_TO_JS_CODE_MAP), INNER_FAILURE);
+    // metrics 模块自己定义的默认值(0 = kMetricsUnknownJsCode),不依赖 cm_api_common.h
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(0x7fffffff, NATIVE_CODE_TO_JS_CODE_MAP), 0);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(-99999, NATIVE_CODE_TO_JS_CODE_MAP), 0);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(0x7fffffff, Dialog::DIALOG_CODE_TO_JS_CODE_MAP), 0);
 }
 
 HWTEST_F(CmMetricsTest, ReportGuard_StartRecordsCalled, TestSize.Level1)
