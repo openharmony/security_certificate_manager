@@ -17,6 +17,8 @@
 #include "cm_log.h"
 #include "cm_ani_utils.h"
 #include "cm_ani_common.h"
+#include "cm_api_common.h"
+#include "cm_dialog_api_common.h"
 #include "cm_metrics.h"
 
 namespace OHOS::Security::CertManager::Ani {
@@ -47,8 +49,13 @@ ani_object CertManagerAniImpl::GenerateResult()
 
 void CertManagerAniImpl::OnInvokeStart()
 {
+    // 根据 metricsKind_ 选择对应的 native → JS 错误码映射表
+    using JsCodeMap = OHOS::Security::CertManager::CmMetricsReport::JsCodeMap;
+    const JsCodeMap &jsCodeMap = (this->metricsKind_ == CmMetricsKind::DIALOG)
+        ? static_cast<const JsCodeMap &>(Dialog::DIALOG_CODE_TO_JS_CODE_MAP)
+        : static_cast<const JsCodeMap &>(NATIVE_CODE_TO_JS_CODE_MAP);
     this->metricsReport_ = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
-        this->GetInterfaceName(), this->metricsKind_);
+        this->GetInterfaceName(), jsCodeMap, this->metricsKind_);
     this->metricsReport_->Start();
 }
 

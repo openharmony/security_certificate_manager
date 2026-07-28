@@ -24,34 +24,20 @@
 
 namespace OHOS::Security::CertManager {
 
-int32_t CmGetMetricErrorBoundary(CmMetricsKind kind)
+int32_t CmGetMetricErrorCodeFromMap(int32_t nativeErrorCode,
+    const std::unordered_map<int32_t, int32_t> &jsCodeMap)
 {
-    if (kind == CmMetricsKind::DIALOG) {
-        return static_cast<int32_t>(Dialog::DIALOG_CODE_TO_JS_CODE_MAP.size());
-    }
-    return static_cast<int32_t>(NATIVE_CODE_TO_JS_CODE_MAP.size());
-}
-
-int32_t CmGetMetricErrorCode(int32_t nativeErrorCode, CmMetricsKind kind)
-{
-    // native code → JS code,直接用 JS 码作为 histogram 值上报
-    if (kind == CmMetricsKind::DIALOG) {
-        auto iter = Dialog::DIALOG_CODE_TO_JS_CODE_MAP.find(nativeErrorCode);
-        if (iter != Dialog::DIALOG_CODE_TO_JS_CODE_MAP.end()) {
-            return iter->second;
-        }
-    } else {
-        auto iter = NATIVE_CODE_TO_JS_CODE_MAP.find(nativeErrorCode);
-        if (iter != NATIVE_CODE_TO_JS_CODE_MAP.end()) {
-            return iter->second;
-        }
+    auto iter = jsCodeMap.find(nativeErrorCode);
+    if (iter != jsCodeMap.end()) {
+        return iter->second;
     }
     // 找不到时兜底返回 INNER_FAILURE
     return INNER_FAILURE;
 }
 
-CmMetricsReport::CmMetricsReport(const std::string &interfaceName, CmMetricsKind kind)
-    : kind_(kind)
+CmMetricsReport::CmMetricsReport(const std::string &interfaceName,
+    const JsCodeMap &jsCodeMap, CmMetricsKind kind)
+    : jsCodeMap_(&jsCodeMap), kind_(kind)
 {
     const char *prefix = (kind == CmMetricsKind::DIALOG)
         ? "DeviceCertificateKit.certificateManagerDialog."
@@ -81,12 +67,17 @@ void CmMetricsReport::Finish(int32_t nativeErrorCode)
         return;
     }
     finished_ = true;
-    int32_t metricCode = CmGetMetricErrorCode(nativeErrorCode, kind_);
+    int32_t metricCode = INNER_FAILURE;
+    int32_t boundary = 0;
+    if (jsCodeMap_ != nullptr) {
+        metricCode = CmGetMetricErrorCodeFromMap(nativeErrorCode, *jsCodeMap_);
+        boundary = static_cast<int32_t>(jsCodeMap_->size());
+    }
 #ifdef CM_API_METRICS_ENABLE
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedMs =
         std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime_).count();
-    HISTOGRAM_ENUMERATION(keyErrorcode_.c_str(), metricCode, CmGetMetricErrorBoundary(kind_));
+    HISTOGRAM_ENUMERATION(keyErrorcode_.c_str(), metricCode, boundary);
     HISTOGRAM_TIMES(keyTime_.c_str(), static_cast<int32_t>(elapsedMs));
 #endif
 }

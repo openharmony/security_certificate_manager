@@ -19,19 +19,17 @@
 #include <chrono>
 #include <cstdint>
 #include <string>
+#include <unordered_map>
 
 namespace OHOS::Security::CertManager {
 
-// histogram 的 ENUMERATION boundary,根据 kind 选取对应映射表的 size:
-// - NON_DIALOG → NATIVE_CODE_TO_JS_CODE_MAP.size()
-// - DIALOG → DIALOG_CODE_TO_JS_CODE_MAP.size()
-int32_t CmGetMetricErrorBoundary(CmMetricsKind kind);
-
 // 把 native 侧 ErrorCode 映射为 JS 侧 ErrorCode(直接作为 histogram 值上报)
-// - 非 dialog 接口走 NATIVE_CODE_TO_JS_CODE_MAP(cm_api_common.h)
-// - dialog 接口走 DIALOG_CODE_TO_JS_CODE_MAP(cm_dialog_api_common.h)
-// 找不到时兜底返回 INNER_FAILURE
-int32_t CmGetMetricErrorCode(int32_t nativeErrorCode, CmMetricsKind kind);
+// 用调用方传入的 jsCodeMap 查表;找不到时兜底返回 INNER_FAILURE
+// histogram boundary 也取该 map 的 size
+// 注意:本文件不再直接引用 NATIVE_CODE_TO_JS_CODE_MAP / DIALOG_CODE_TO_JS_CODE_MAP,
+// 这两个表由调用方从 cm_api_common.h / cm_dialog_api_common.h 取出后传入
+int32_t CmGetMetricErrorCodeFromMap(int32_t nativeErrorCode,
+    const std::unordered_map<int32_t, int32_t> &jsCodeMap);
 
 // 区分 dialog 与非 dialog JS 接口:两者的错误码映射表不同(分别对应
 // cm_api_common.h 的 ErrorCode 和 cm_dialog_api_common.h 的 ErrorCode),
@@ -43,8 +41,13 @@ enum class CmMetricsKind {
 
 class CmMetricsReport {
 public:
-    // 默认是 NON_DIALOG(证书管理普通接口);弹框类接口需显式传 DIALOG
+    using JsCodeMap = std::unordered_map<int32_t, int32_t>;
+
+    // interfaceName: JS 接口名
+    // jsCodeMap:    native → JS 错误码映射表(指向全局表的引用,生命周期 >= report)
+    // kind:         用于选择 histogram key 前缀(区分 dialog 与非 dialog)
     explicit CmMetricsReport(const std::string &interfaceName,
+        const JsCodeMap &jsCodeMap,
         CmMetricsKind kind = CmMetricsKind::NON_DIALOG);
     ~CmMetricsReport();
 
@@ -57,7 +60,7 @@ public:
     // 在 NAPI/ANI 入口函数最前面调用,idempotent;重复调用为 no-op
     void Start();
     // 入口函数返回前调用,触发剩余两个宏;idempotent;若未 Start 或已 Finish 则 no-op
-    // nativeErrorCode 是 native 侧错误码(如 CMR_ERROR_NOT_FOUND),会被映射为 JS ErrorCode 上报
+    // nativeErrorCode 是 native 侧错误码(如 CMR_ERROR_NOT_FOUND),按传入的 map 映射后上报
     void Finish(int32_t nativeErrorCode);
 
     // 仅供测试使用:返回从 Start 到当前时刻的耗时(毫秒)。
@@ -71,6 +74,7 @@ private:
     std::string keyTime_;
     std::string keyErrorcode_;
     std::chrono::steady_clock::time_point startTime_;
+    const JsCodeMap *jsCodeMap_ = nullptr;
     CmMetricsKind kind_ = CmMetricsKind::NON_DIALOG;
     bool started_ = false;
     bool finished_ = false;
