@@ -69,12 +69,14 @@ public:
     int64_t GetElapsedMs() const;
 
 private:
+    // 空 map,作为默认 jsCodeMap_(调用方不传时使用)
+    static const JsCodeMap kEmptyJsCodeMap_;
     // 三个 histogram key 预先拼好,带前缀(根据 kind)和后缀(CALL/Time/errorcode)
     std::string keyCall_;
     std::string keyTime_;
     std::string keyErrorcode_;
     std::chrono::steady_clock::time_point startTime_;
-    const JsCodeMap *jsCodeMap_ = nullptr;
+    const JsCodeMap *jsCodeMap_ = &kEmptyJsCodeMap_;
     CmMetricsKind kind_ = CmMetricsKind::NON_DIALOG;
     bool started_ = false;
     bool finished_ = false;

@@ -24,6 +24,9 @@
 
 namespace OHOS::Security::CertManager {
 
+// 空 jsCodeMap,作为默认的 jsCodeMap_ 指向
+const CmMetricsReport::JsCodeMap CmMetricsReport::kEmptyJsCodeMap_{};
+
 int32_t CmGetMetricErrorCodeFromMap(int32_t nativeErrorCode,
     const std::unordered_map<int32_t, int32_t> &jsCodeMap)
 {
@@ -67,12 +70,8 @@ void CmMetricsReport::Finish(int32_t nativeErrorCode)
         return;
     }
     finished_ = true;
-    int32_t metricCode = INNER_FAILURE;
-    int32_t boundary = 0;
-    if (jsCodeMap_ != nullptr) {
-        metricCode = CmGetMetricErrorCodeFromMap(nativeErrorCode, *jsCodeMap_);
-        boundary = static_cast<int32_t>(jsCodeMap_->size());
-    }
+    int32_t metricCode = CmGetMetricErrorCodeFromMap(nativeErrorCode, *jsCodeMap_);
+    int32_t boundary = static_cast<int32_t>(jsCodeMap_->size());
 #ifdef CM_API_METRICS_ENABLE
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedMs =
