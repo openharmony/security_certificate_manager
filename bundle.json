@@ -42,6 +42,7 @@
           "ace_engine",
           "ability_runtime",
           "access_token",
+          "api_metrics",
           "bounds_checking_function",
           "bundle_framework",
           "cJSON",
