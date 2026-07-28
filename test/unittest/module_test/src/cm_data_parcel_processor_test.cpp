@@ -23,6 +23,7 @@
 #include "cert_manager_service_ipc_interface_code.h"
 #include "cm_mem.h"
 #include "cm_type.h"
+#include "securec.h"
 
 namespace {
 const uint32_t INVALID_CODE = 100;
@@ -138,7 +139,8 @@ HWTEST_F(CmDataParcelProcessorTest, WriteToParcelTest001, TestSize.Level0)
     auto parcelStrategy2 = CmDataParcelProcessor::CreateParcelStrategy(
         static_cast<enum CertManagerInterfaceCode>(UkEY_CODE));
     processor.SetParcelStrategy(std::move(parcelStrategy2));
-    void *data2 = static_cast<void*>(CmMalloc(1));
+    void *data2 = static_cast<void*>(CmMalloc(sizeof(CredentialDetailList)));
+    (void)memset_s(data2, sizeof(CredentialDetailList), 0, sizeof(CredentialDetailList));
     ret = processor.WriteToParcel(&reply, data2);
     EXPECT_EQ(ret, CM_SUCCESS);
     CM_FREE_PTR(data2);
