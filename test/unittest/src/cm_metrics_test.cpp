@@ -25,45 +25,37 @@ using namespace testing;
 using namespace OHOS::Security::CertManager;
 
 namespace CertmanagerTest {
-HWTEST_F(CmMetricsTest, BoundaryMatchesKindMapSize, TestSize.Level1)
+HWTEST_F(CmMetricsTest, JsCodeMap_LookupKnownNonDialogCodes, TestSize.Level1)
 {
-    // boundary 根据 kind 选对应映射表的 size
-    EXPECT_EQ(CmGetMetricErrorBoundary(CmMetricsKind::NON_DIALOG),
-        static_cast<int32_t>(NATIVE_CODE_TO_JS_CODE_MAP.size()));
-    EXPECT_EQ(CmGetMetricErrorBoundary(CmMetricsKind::DIALOG),
-        static_cast<int32_t>(Dialog::DIALOG_CODE_TO_JS_CODE_MAP.size()));
+    // 用传入的 map 查表,不再依赖 kind
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(CMR_ERROR_INVALID_ARGUMENT, NATIVE_CODE_TO_JS_CODE_MAP), PARAM_ERROR);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(CMR_ERROR_PERMISSION_DENIED, NATIVE_CODE_TO_JS_CODE_MAP), HAS_NO_PERMISSION);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(CMR_ERROR_NOT_FOUND, NATIVE_CODE_TO_JS_CODE_MAP), NOT_FOUND);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(CMR_SUCCESS, NATIVE_CODE_TO_JS_CODE_MAP), SUCCESS);
 }
 
-HWTEST_F(CmMetricsTest, NativeToJs_KnownNonDialogCodes, TestSize.Level1)
+HWTEST_F(CmMetricsTest, JsCodeMap_LookupKnownDialogCodes, TestSize.Level1)
 {
-    EXPECT_EQ(CmGetMetricErrorCode(CMR_ERROR_INVALID_ARGUMENT, CmMetricsKind::NON_DIALOG), PARAM_ERROR);
-    EXPECT_EQ(CmGetMetricErrorCode(CMR_ERROR_PERMISSION_DENIED, CmMetricsKind::NON_DIALOG), HAS_NO_PERMISSION);
-    EXPECT_EQ(CmGetMetricErrorCode(CMR_ERROR_NOT_FOUND, CmMetricsKind::NON_DIALOG), NOT_FOUND);
-    EXPECT_EQ(CmGetMetricErrorCode(CMR_SUCCESS, CmMetricsKind::NON_DIALOG), SUCCESS);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(Dialog::CMR_DIALOG_ERROR_INTERNAL,
+        Dialog::DIALOG_CODE_TO_JS_CODE_MAP), Dialog::DIALOG_ERROR_GENERIC);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(Dialog::CMR_DIALOG_ERROR_OPERATION_CANCELS,
+        Dialog::DIALOG_CODE_TO_JS_CODE_MAP), Dialog::DIALOG_ERROR_OPERATION_CANCELED);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(Dialog::CMR_DIALOG_ERROR_INSTALL_FAILED,
+        Dialog::DIALOG_CODE_TO_JS_CODE_MAP), Dialog::DIALOG_ERROR_INSTALL_FAILED);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(Dialog::CMR_DIALOG_ERROR_NOT_SUPPORTED,
+        Dialog::DIALOG_CODE_TO_JS_CODE_MAP), Dialog::DIALOG_ERROR_NOT_SUPPORTED);
 }
 
-HWTEST_F(CmMetricsTest, NativeToJs_KnownDialogCodes, TestSize.Level1)
+HWTEST_F(CmMetricsTest, JsCodeMap_UnknownCode_ReturnsInnerFailure, TestSize.Level1)
 {
-    EXPECT_EQ(CmGetMetricErrorCode(OHOS::Security::CertManager::Dialog::CMR_DIALOG_ERROR_INTERNAL,
-        CmMetricsKind::DIALOG), OHOS::Security::CertManager::Dialog::DIALOG_ERROR_GENERIC);
-    EXPECT_EQ(CmGetMetricErrorCode(OHOS::Security::CertManager::Dialog::CMR_DIALOG_ERROR_OPERATION_CANCELS,
-        CmMetricsKind::DIALOG), OHOS::Security::CertManager::Dialog::DIALOG_ERROR_OPERATION_CANCELED);
-    EXPECT_EQ(CmGetMetricErrorCode(OHOS::Security::CertManager::Dialog::CMR_DIALOG_ERROR_INSTALL_FAILED,
-        CmMetricsKind::DIALOG), OHOS::Security::CertManager::Dialog::DIALOG_ERROR_INSTALL_FAILED);
-    EXPECT_EQ(CmGetMetricErrorCode(OHOS::Security::CertManager::Dialog::CMR_DIALOG_ERROR_NOT_SUPPORTED,
-        CmMetricsKind::DIALOG), OHOS::Security::CertManager::Dialog::DIALOG_ERROR_NOT_SUPPORTED);
-}
-
-HWTEST_F(CmMetricsTest, NativeToJs_UnknownCode_ReturnsInnerFailure, TestSize.Level1)
-{
-    EXPECT_EQ(CmGetMetricErrorCode(0x7fffffff, CmMetricsKind::NON_DIALOG), INNER_FAILURE);
-    EXPECT_EQ(CmGetMetricErrorCode(-99999, CmMetricsKind::NON_DIALOG), INNER_FAILURE);
-    EXPECT_EQ(CmGetMetricErrorCode(0x7fffffff, CmMetricsKind::DIALOG), INNER_FAILURE);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(0x7fffffff, NATIVE_CODE_TO_JS_CODE_MAP), INNER_FAILURE);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(-99999, NATIVE_CODE_TO_JS_CODE_MAP), INNER_FAILURE);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(0x7fffffff, Dialog::DIALOG_CODE_TO_JS_CODE_MAP), INNER_FAILURE);
 }
 
 HWTEST_F(CmMetricsTest, ReportGuard_StartRecordsCalled, TestSize.Level1)
 {
-    CmMetricsReport report("UnitTestApi");
+    CmMetricsReport report("UnitTestApi", NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
     // 关闭 metrics 宏时,Start 为空操作;这里至少验证不崩溃、可析构
     report.Finish(CM_SUCCESS);
@@ -71,7 +63,7 @@ HWTEST_F(CmMetricsTest, ReportGuard_StartRecordsCalled, TestSize.Level1)
 
 HWTEST_F(CmMetricsTest, ReportGuard_FinishComputesElapsedMs, TestSize.Level1)
 {
-    CmMetricsReport report("UnitTestApi");
+    CmMetricsReport report("UnitTestApi", NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
     // 主动 sleep 不少于 1ms,确保 elapsed > 0
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -82,14 +74,14 @@ HWTEST_F(CmMetricsTest, ReportGuard_FinishComputesElapsedMs, TestSize.Level1)
 
 HWTEST_F(CmMetricsTest, ReportGuard_FinishWithoutStart_IsSafe, TestSize.Level1)
 {
-    CmMetricsReport report("UnitTestApi");
+    CmMetricsReport report("UnitTestApi", NATIVE_CODE_TO_JS_CODE_MAP);
     // 不调用 Start,直接 Finish,应不崩溃
     report.Finish(INNER_FAILURE);
 }
 
 HWTEST_F(CmMetricsTest, ReportGuard_DoubleFinish_IsSafe, TestSize.Level1)
 {
-    CmMetricsReport report("UnitTestApi");
+    CmMetricsReport report("UnitTestApi", NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
     report.Finish(CM_SUCCESS);
     // 重复 Finish 应被内部 finished_ 标志忽略
@@ -98,10 +90,10 @@ HWTEST_F(CmMetricsTest, ReportGuard_DoubleFinish_IsSafe, TestSize.Level1)
 
 HWTEST_F(CmMetricsTest, ReportGuard_FinishWithBoundaryValue, TestSize.Level1)
 {
-    CmMetricsReport report("UnitTestApi");
+    CmMetricsReport report("UnitTestApi", NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
-    // boundary 边界值:本测试不真正打开宏,只确认不会越界访问
-    int32_t boundary = CmGetMetricErrorBoundary(CmMetricsKind::NON_DIALOG);
+    // boundary 取 map size,边界值测试
+    int32_t boundary = static_cast<int32_t>(NATIVE_CODE_TO_JS_CODE_MAP.size());
     report.Finish(boundary - 1);
     report.Finish(boundary);
     report.Finish(boundary + 1);
