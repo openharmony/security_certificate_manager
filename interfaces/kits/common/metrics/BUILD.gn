@@ -17,6 +17,8 @@ import("//build/ohos.gni")
 # libcm_metrics_static:histogram 打点工具,独立模块
 # - 不依赖 cm_api_common.h / cm_dialog_api_common.h
 # - 错误码映射表由调用方在构造 CmMetricsReport 时传入
+# - CM_API_METRICS_ENABLE 宏和 api_metrics:histogrammanager 依赖只在 libcm_metrics_static 内部使用,
+#   静态库链接到消费方后,消费方调用类方法即可,不需要在消费方的 BUILD.gn 中重复声明
 ohos_static_library("libcm_metrics_static") {
   branch_protector_ret = "pac_ret"
   sanitize = {
@@ -37,6 +39,11 @@ ohos_static_library("libcm_metrics_static") {
     "-Wall",
     "-Werror",
   ]
+
+  if (cm_api_metrics_enable) {
+    cflags_cc += [ "-DCM_API_METRICS_ENABLE" ]
+    external_deps = [ "api_metrics:histogrammanager" ]
+  }
 
   part_name = "certificate_manager"
   subsystem_name = "security"

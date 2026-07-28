@@ -15,13 +15,7 @@ import("//build/config/components/ets_frontend/ets2abc_config.gni")
 import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
 
-cm_ani_metrics_cflags = []
-cm_ani_metrics_deps = []
-if (cm_api_metrics_enable) {
-  cm_ani_metrics_cflags = [ "-DCM_API_METRICS_ENABLE" ]
-  cm_ani_metrics_deps = [ "api_metrics:histogrammanager" ]
-}
-
+# metrics 相关宏和 api_metrics 依赖由 libcm_metrics_static 内部处理,此处不重复声明
 ohos_shared_library("certmanager_dialog_ani") {
   branch_protector_ret = "pac_ret"
   sanitize = {
@@ -77,8 +71,6 @@ ohos_shared_library("certmanager_dialog_ani") {
     "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
     "${cert_manager_root_dir}/interfaces/kits/ani/cm_ani_common:cm_ani_common_static",
   ]
-  external_deps += cm_ani_metrics_deps
-  cflags_cc += cm_ani_metrics_cflags
   deps += [
     "${cert_manager_root_dir}/interfaces/kits/common/metrics:libcm_metrics_static",
   ]
