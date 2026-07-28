@@ -454,7 +454,8 @@ napi_value CMNapiGrantPublicCertificate(napi_env env, napi_callback_info info)
 napi_value CMNapiIsAuthorizedApp(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("is authed app enter");
-    OHOS::Security::CertManager::CmMetricsReport report("isAuthorizedApp");
+    OHOS::Security::CertManager::CmMetricsReport report("isAuthorizedApp",
+        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
 
     GrantAsyncContext context = InitGrantAsyncContext();
@@ -489,7 +490,8 @@ napi_value CMNapiIsAuthorizedApp(napi_env env, napi_callback_info info)
 napi_value CMNapiGetAuthorizedAppList(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get auth app list enter");
-    OHOS::Security::CertManager::CmMetricsReport report("getAuthorizedAppList");
+    OHOS::Security::CertManager::CmMetricsReport report("getAuthorizedAppList",
+        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
 
     GrantAsyncContext context = InitGrantAsyncContext();
@@ -524,7 +526,8 @@ napi_value CMNapiGetAuthorizedAppList(napi_env env, napi_callback_info info)
 napi_value CMNapiRemoveGrantedPublic(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("remove granted app enter");
-    OHOS::Security::CertManager::CmMetricsReport report("removeGrantedPublicCertificate");
+    OHOS::Security::CertManager::CmMetricsReport report("removeGrantedPublicCertificate",
+        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
 
     GrantAsyncContext context = InitGrantAsyncContext();

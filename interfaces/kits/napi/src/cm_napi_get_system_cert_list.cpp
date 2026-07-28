@@ -264,7 +264,8 @@ napi_value CMNapiGetSystemCertList(napi_env env, napi_callback_info info)
 napi_value CMNapiGetAllUserTrustedCertList(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get all user cert list enter");
-    OHOS::Security::CertManager::CmMetricsReport report("getAllUserTrustedCertificates");
+    OHOS::Security::CertManager::CmMetricsReport report("getAllUserTrustedCertificates",
+        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
     GetCertListAsyncContext context = CreateGetCertListAsyncContext();
     if (context == nullptr) {

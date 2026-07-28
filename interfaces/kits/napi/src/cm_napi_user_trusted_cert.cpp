@@ -579,7 +579,8 @@ napi_value CMNapiInstallUserTrustedCert(napi_env env, napi_callback_info info)
 
 napi_value CMNapiInstallUserTrustedCertSync(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("installUserTrustedCertificateSync");
+    OHOS::Security::CertManager::CmMetricsReport report("installUserTrustedCertificateSync",
+        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
     CM_LOG_I("install user trusted cert sync enter");
 
@@ -620,7 +621,8 @@ napi_value CMNapiInstallUserTrustedCertSync(napi_env env, napi_callback_info inf
 napi_value CMNapiUninstallAllUserTrustedCert(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("uninstall all user trusted cert enter");
-    OHOS::Security::CertManager::CmMetricsReport report("uninstallAllUserTrustedCertificate");
+    OHOS::Security::CertManager::CmMetricsReport report("uninstallAllUserTrustedCertificate",
+        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
 
     UserCertAsyncContext context = InitUserCertAsyncContext();
@@ -646,7 +648,8 @@ napi_value CMNapiUninstallAllUserTrustedCert(napi_env env, napi_callback_info in
 
 napi_value CMNapiUninstallUserCertSync(napi_env env, napi_callback_info info)
 {
-    OHOS::Security::CertManager::CmMetricsReport report("uninstallUserTrustedCertificateSync");
+    OHOS::Security::CertManager::CmMetricsReport report("uninstallUserTrustedCertificateSync",
+        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
     CM_LOG_I("uninstall user trusted cert sync enter");
 
