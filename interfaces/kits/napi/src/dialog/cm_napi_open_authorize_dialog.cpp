@@ -253,6 +253,7 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert authorize dialog enter");
     OHOS::Security::CertManager::CmMetricsReport report("openAuthorizeDialog",
+        Dialog::DIALOG_CODE_TO_JS_CODE_MAP,
         OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
     if (CheckSyscapThrowError(env) != CM_SUCCESS) {

@@ -27,6 +27,7 @@ napi_value CMNapiSupportsCACertDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("supportsCACertDialog enter");
     OHOS::Security::CertManager::CmMetricsReport report("supportsCACertDialog",
+        Dialog::DIALOG_CODE_TO_JS_CODE_MAP,
         OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
     napi_value result = nullptr;
