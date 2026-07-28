@@ -255,7 +255,8 @@ static int32_t GetAndCheckCertAlg(napi_env env, napi_value arg, uint32_t &algori
 napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get cert store path enter");
-    OHOS::Security::CertManager::CmMetricsReport report("getCertificateStorePath");
+    OHOS::Security::CertManager::CmMetricsReport report("getCertificateStorePath",
+        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
     // get params
     size_t argc = CM_NAPI_GET_CERT_STORE_PATH_ARGS;

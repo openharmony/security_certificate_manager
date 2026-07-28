@@ -825,7 +825,8 @@ static napi_value CMAbortAsyncWork(napi_env env, SignVerifyAsyncContext context)
 napi_value CMNapiInit(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cm napi init enter");
-    OHOS::Security::CertManager::CmMetricsReport report("init");
+    OHOS::Security::CertManager::CmMetricsReport report("init",
+        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
 
     SignVerifyAsyncContext context = InitSignVerifyAsyncContext();

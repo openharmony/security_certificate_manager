@@ -231,7 +231,8 @@ static napi_value GetCertListAsyncWork(napi_env env, GetCertListAsyncContext &co
 napi_value CMNapiGetSystemCertList(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get system cert list enter");
-    OHOS::Security::CertManager::CmMetricsReport report("getSystemTrustedCertificateList");
+    OHOS::Security::CertManager::CmMetricsReport report("getSystemTrustedCertificateList",
+        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
     GetCertListAsyncContext context = CreateGetCertListAsyncContext();
     if (context == nullptr) {

@@ -126,7 +126,8 @@ static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCert
 napi_value CMNapiUninstallAllAppCert(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("uninstall all app cert enter");
-    OHOS::Security::CertManager::CmMetricsReport report("uninstallAllAppCertificate");
+    OHOS::Security::CertManager::CmMetricsReport report("uninstallAllAppCertificate",
+        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
 
     UninstallAllAppCertAsyncContext context = CreateUninstallAllAppCertAsyncContext();

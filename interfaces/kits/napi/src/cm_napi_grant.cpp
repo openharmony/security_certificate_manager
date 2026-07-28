@@ -418,7 +418,8 @@ static napi_value GetUidListAsyncWork(napi_env env, GrantAsyncContext context)
 napi_value CMNapiGrantPublicCertificate(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("grant publice cert enter");
-    OHOS::Security::CertManager::CmMetricsReport report("grantPublicCertificate");
+    OHOS::Security::CertManager::CmMetricsReport report("grantPublicCertificate",
+        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
     report.Start();
 
     GrantAsyncContext context = InitGrantAsyncContext();
