@@ -75,7 +75,7 @@ void CmMetricsReport::Start()
     started_ = true;
     startTime_ = std::chrono::steady_clock::now();
 #ifdef CM_API_METRICS_ENABLE
-    HISTOGRAM_BOOLEAN(keys_[0].c_str(), true);
+    HISTOGRAM_BOOLEAN(keys_[kIdxCall].c_str(), true);
 #endif
 }
 
@@ -89,10 +89,12 @@ void CmMetricsReport::Finish(int32_t nativeErrorCode)
     int32_t boundary = static_cast<int32_t>(jsCodeMap_->size());
 #ifdef CM_API_METRICS_ENABLE
     auto endTime = std::chrono::steady_clock::now();
-    auto elapsedMs =
+    int64_t elapsedMs =
         std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime_).count();
-    HISTOGRAM_ENUMERATION(keys_[2].c_str(), metricCode, boundary);
-    HISTOGRAM_TIMES(keys_[1].c_str(), static_cast<int32_t>(elapsedMs));
+    // 防止 int64_t 截断到 int32_t 时溢出(API 调用一般不会超过 INT32_MAX ms,但加 clamp 更稳妥)
+    int32_t elapsed = (elapsedMs > INT32_MAX) ? INT32_MAX : static_cast<int32_t>(elapsedMs);
+    HISTOGRAM_ENUMERATION(keys_[kIdxErrorcode].c_str(), metricCode, boundary);
+    HISTOGRAM_TIMES(keys_[kIdxTime].c_str(), elapsed);
 #endif
 }
 

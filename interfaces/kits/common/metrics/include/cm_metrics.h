@@ -73,8 +73,10 @@ public:
 private:
     // 空 map,作为默认 jsCodeMap_(调用方不传时使用)
     static const JsCodeMap kEmptyJsCodeMap_;
-    // 三个 histogram key 预先拼好,索引含义:
-    // 0 → BOOLEAN (Call), 1 → TIMES (Time), 2 → ENUMERATION (errorcode)
+    // keys_ 数组索引,命名常量方便阅读
+    static constexpr size_t kIdxCall = 0;        // 对应 HISTOGRAM_BOOLEAN
+    static constexpr size_t kIdxTime = 1;        // 对应 HISTOGRAM_TIMES
+    static constexpr size_t kIdxErrorcode = 2;  // 对应 HISTOGRAM_ENUMERATION
     std::array<std::string, 3> keys_;
     std::chrono::steady_clock::time_point startTime_;
     const JsCodeMap *jsCodeMap_ = &kEmptyJsCodeMap_;
