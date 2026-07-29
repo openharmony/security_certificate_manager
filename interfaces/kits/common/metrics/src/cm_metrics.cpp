@@ -21,6 +21,26 @@
 
 namespace OHOS::Security::CertManager {
 
+namespace {
+
+// histogram key 前缀(按 kind 区分)
+constexpr const char *kPrefixDialog = "DeviceCertificateKit.certificateManagerDialog.";
+constexpr const char *kPrefixNonDialog = "DeviceCertificateKit.certificateManager.";
+
+// histogram key 后缀(分别对应 BOOLEAN / TIMES / ENUMERATION 三种 histogram)
+constexpr const char *kSuffixCall = ".CALL";
+constexpr const char *kSuffixTime = ".Time";
+constexpr const char *kSuffixErrorcode = ".errorcode";
+
+// 查表未命中时的兜底 JS 错误码
+// - DIALOG → 29700001 (= Dialog::DIALOG_ERROR_GENERIC)
+// - 非 DIALOG → 17500001 (= INNER_FAILURE)
+// 这两个值是 JS ErrorCode 枚举里约定好的值,metrics 模块不依赖 cm_api_common.h / cm_dialog_api_common.h
+constexpr int32_t kMetricsFallbackDialog = 29700001;
+constexpr int32_t kMetricsFallbackNonDialog = 17500001;
+
+}  // namespace
+
 // 空 jsCodeMap,作为默认的 jsCodeMap_ 指向
 const CmMetricsReport::JsCodeMap CmMetricsReport::kEmptyJsCodeMap_{};
 
@@ -31,22 +51,18 @@ int32_t CmGetMetricErrorCodeFromMap(int32_t nativeErrorCode,
     if (iter != jsCodeMap.end()) {
         return iter->second;
     }
-    // 找不到时按 kind 区分兜底:
-    // - DIALOG → 29700001 (= Dialog::DIALOG_ERROR_GENERIC)
-    // - 非 DIALOG → 17500001 (= INNER_FAILURE)
-    return (kind == CmMetricsKind::DIALOG) ? 29700001 : 17500001;
+    // 找不到时按 kind 区分兜底
+    return (kind == CmMetricsKind::DIALOG) ? kMetricsFallbackDialog : kMetricsFallbackNonDialog;
 }
 
 CmMetricsReport::CmMetricsReport(const std::string &interfaceName,
     const JsCodeMap &jsCodeMap, CmMetricsKind kind)
     : jsCodeMap_(&jsCodeMap), kind_(kind)
 {
-    const char *prefix = (kind == CmMetricsKind::DIALOG)
-        ? "DeviceCertificateKit.certificateManagerDialog."
-        : "DeviceCertificateKit.certificateManager.";
-    keyCall_ = std::string(prefix) + interfaceName + ".CALL";
-    keyTime_ = std::string(prefix) + interfaceName + ".Time";
-    keyErrorcode_ = std::string(prefix) + interfaceName + ".errorcode";
+    const char *prefix = (kind == CmMetricsKind::DIALOG) ? kPrefixDialog : kPrefixNonDialog;
+    keyCall_ = std::string(prefix) + interfaceName + kSuffixCall;
+    keyTime_ = std::string(prefix) + interfaceName + kSuffixTime;
+    keyErrorcode_ = std::string(prefix) + interfaceName + kSuffixErrorcode;
 }
 
 CmMetricsReport::~CmMetricsReport() = default;
