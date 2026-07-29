@@ -27,31 +27,41 @@ using namespace OHOS::Security::CertManager;
 namespace CertmanagerTest {
 HWTEST_F(CmMetricsTest, JsCodeMap_LookupKnownNonDialogCodes, TestSize.Level1)
 {
-    // 用传入的 map 查表,不再依赖 kind
-    EXPECT_EQ(CmGetMetricErrorCodeFromMap(CMR_ERROR_INVALID_ARGUMENT, NATIVE_CODE_TO_JS_CODE_MAP), PARAM_ERROR);
-    EXPECT_EQ(CmGetMetricErrorCodeFromMap(CMR_ERROR_PERMISSION_DENIED, NATIVE_CODE_TO_JS_CODE_MAP), HAS_NO_PERMISSION);
-    EXPECT_EQ(CmGetMetricErrorCodeFromMap(CMR_ERROR_NOT_FOUND, NATIVE_CODE_TO_JS_CODE_MAP), NOT_FOUND);
-    EXPECT_EQ(CmGetMetricErrorCodeFromMap(CMR_SUCCESS, NATIVE_CODE_TO_JS_CODE_MAP), SUCCESS);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(CMR_ERROR_INVALID_ARGUMENT, NATIVE_CODE_TO_JS_CODE_MAP,
+        CmMetricsKind::NON_DIALOG), PARAM_ERROR);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(CMR_ERROR_PERMISSION_DENIED, NATIVE_CODE_TO_JS_CODE_MAP,
+        CmMetricsKind::NON_DIALOG), HAS_NO_PERMISSION);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(CMR_ERROR_NOT_FOUND, NATIVE_CODE_TO_JS_CODE_MAP,
+        CmMetricsKind::NON_DIALOG), NOT_FOUND);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(CMR_SUCCESS, NATIVE_CODE_TO_JS_CODE_MAP,
+        CmMetricsKind::NON_DIALOG), SUCCESS);
 }
 
 HWTEST_F(CmMetricsTest, JsCodeMap_LookupKnownDialogCodes, TestSize.Level1)
 {
     EXPECT_EQ(CmGetMetricErrorCodeFromMap(Dialog::CMR_DIALOG_ERROR_INTERNAL,
-        Dialog::DIALOG_CODE_TO_JS_CODE_MAP), Dialog::DIALOG_ERROR_GENERIC);
+        Dialog::DIALOG_CODE_TO_JS_CODE_MAP, CmMetricsKind::DIALOG), Dialog::DIALOG_ERROR_GENERIC);
     EXPECT_EQ(CmGetMetricErrorCodeFromMap(Dialog::CMR_DIALOG_ERROR_OPERATION_CANCELS,
-        Dialog::DIALOG_CODE_TO_JS_CODE_MAP), Dialog::DIALOG_ERROR_OPERATION_CANCELED);
+        Dialog::DIALOG_CODE_TO_JS_CODE_MAP, CmMetricsKind::DIALOG), Dialog::DIALOG_ERROR_OPERATION_CANCELED);
     EXPECT_EQ(CmGetMetricErrorCodeFromMap(Dialog::CMR_DIALOG_ERROR_INSTALL_FAILED,
-        Dialog::DIALOG_CODE_TO_JS_CODE_MAP), Dialog::DIALOG_ERROR_INSTALL_FAILED);
+        Dialog::DIALOG_CODE_TO_JS_CODE_MAP, CmMetricsKind::DIALOG), Dialog::DIALOG_ERROR_INSTALL_FAILED);
     EXPECT_EQ(CmGetMetricErrorCodeFromMap(Dialog::CMR_DIALOG_ERROR_NOT_SUPPORTED,
-        Dialog::DIALOG_CODE_TO_JS_CODE_MAP), Dialog::DIALOG_ERROR_NOT_SUPPORTED);
+        Dialog::DIALOG_CODE_TO_JS_CODE_MAP, CmMetricsKind::DIALOG), Dialog::DIALOG_ERROR_NOT_SUPPORTED);
 }
 
-HWTEST_F(CmMetricsTest, JsCodeMap_UnknownCode_ReturnsUnknownDefault, TestSize.Level1)
+HWTEST_F(CmMetricsTest, JsCodeMap_UnknownCode_FallbackByKind, TestSize.Level1)
 {
-    // metrics 模块自己定义的默认值(0 = kMetricsUnknownJsCode),不依赖 cm_api_common.h
-    EXPECT_EQ(CmGetMetricErrorCodeFromMap(0x7fffffff, NATIVE_CODE_TO_JS_CODE_MAP), 0);
-    EXPECT_EQ(CmGetMetricErrorCodeFromMap(-99999, NATIVE_CODE_TO_JS_CODE_MAP), 0);
-    EXPECT_EQ(CmGetMetricErrorCodeFromMap(0x7fffffff, Dialog::DIALOG_CODE_TO_JS_CODE_MAP), 0);
+    // 找不到时按 kind 区分兜底:
+    // - 非 DIALOG → 17500001 (= INNER_FAILURE)
+    // - DIALOG     → 29700001 (= DIALOG_ERROR_GENERIC)
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(0x7fffffff, NATIVE_CODE_TO_JS_CODE_MAP,
+        CmMetricsKind::NON_DIALOG), 17500001);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(-99999, NATIVE_CODE_TO_JS_CODE_MAP,
+        CmMetricsKind::NON_DIALOG), 17500001);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(0x7fffffff, Dialog::DIALOG_CODE_TO_JS_CODE_MAP,
+        CmMetricsKind::DIALOG), 29700001);
+    EXPECT_EQ(CmGetMetricErrorCodeFromMap(-99999, Dialog::DIALOG_CODE_TO_JS_CODE_MAP,
+        CmMetricsKind::DIALOG), 29700001);
 }
 
 HWTEST_F(CmMetricsTest, ReportGuard_StartRecordsCalled, TestSize.Level1)

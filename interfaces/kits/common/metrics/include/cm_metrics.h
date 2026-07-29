@@ -24,12 +24,13 @@
 namespace OHOS::Security::CertManager {
 
 // 把 native 侧 ErrorCode 映射为 JS 侧 ErrorCode(直接作为 histogram 值上报)
-// 用调用方传入的 jsCodeMap 查表;找不到时兜底返回 INNER_FAILURE
-// histogram boundary 也取该 map 的 size
-// 注意:本文件不再直接引用 NATIVE_CODE_TO_JS_CODE_MAP / DIALOG_CODE_TO_JS_CODE_MAP,
-// 这两个表由调用方从 cm_api_common.h / cm_dialog_api_common.h 取出后传入
+// 用调用方传入的 jsCodeMap 查表;找不到时按 kind 区分兜底:
+// - DIALOG → 29700001 (= Dialog::DIALOG_ERROR_GENERIC)
+// - 非 DIALOG → 17500001 (= INNER_FAILURE)
+// 注意:本文件不再直接引用 cm_api_common.h / cm_dialog_api_common.h,
+// 这两个常量值是 JS ErrorCode 枚举里约定好的值,直接以 magic number 形式给出
 int32_t CmGetMetricErrorCodeFromMap(int32_t nativeErrorCode,
-    const std::unordered_map<int32_t, int32_t> &jsCodeMap);
+    const std::unordered_map<int32_t, int32_t> &jsCodeMap, CmMetricsKind kind);
 
 // 区分 dialog 与非 dialog JS 接口:两者的错误码映射表不同(分别对应
 // cm_api_common.h 的 ErrorCode 和 cm_dialog_api_common.h 的 ErrorCode),

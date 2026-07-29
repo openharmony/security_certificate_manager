@@ -21,22 +21,20 @@
 
 namespace OHOS::Security::CertManager {
 
-// metrics 模块自己定义的兜底 JS 错误码(避免依赖 cm_api_common.h)
-// 0 表示未知,HiView 看到 0 会归到 SUCCESS 桶,需要调用方确保 map 覆盖所有 native code
-constexpr int32_t kMetricsUnknownJsCode = 0;
-
 // 空 jsCodeMap,作为默认的 jsCodeMap_ 指向
 const CmMetricsReport::JsCodeMap CmMetricsReport::kEmptyJsCodeMap_{};
 
 int32_t CmGetMetricErrorCodeFromMap(int32_t nativeErrorCode,
-    const std::unordered_map<int32_t, int32_t> &jsCodeMap)
+    const std::unordered_map<int32_t, int32_t> &jsCodeMap, CmMetricsKind kind)
 {
     auto iter = jsCodeMap.find(nativeErrorCode);
     if (iter != jsCodeMap.end()) {
         return iter->second;
     }
-    // 找不到时兜底返回 kMetricsUnknownJsCode
-    return kMetricsUnknownJsCode;
+    // 找不到时按 kind 区分兜底:
+    // - DIALOG → 29700001 (= Dialog::DIALOG_ERROR_GENERIC)
+    // - 非 DIALOG → 17500001 (= INNER_FAILURE)
+    return (kind == CmMetricsKind::DIALOG) ? 29700001 : 17500001;
 }
 
 CmMetricsReport::CmMetricsReport(const std::string &interfaceName,
@@ -71,7 +69,7 @@ void CmMetricsReport::Finish(int32_t nativeErrorCode)
         return;
     }
     finished_ = true;
-    int32_t metricCode = CmGetMetricErrorCodeFromMap(nativeErrorCode, *jsCodeMap_);
+    int32_t metricCode = CmGetMetricErrorCodeFromMap(nativeErrorCode, *jsCodeMap_, kind_);
     int32_t boundary = static_cast<int32_t>(jsCodeMap_->size());
 #ifdef CM_API_METRICS_ENABLE
     auto endTime = std::chrono::steady_clock::now();
