@@ -27,10 +27,9 @@ namespace {
 constexpr const char *kPrefixDialog = "DeviceCertificateKit.certificateManagerDialog";
 constexpr const char *kPrefixNonDialog = "DeviceCertificateKit.certificateManager";
 
-// histogram key 后缀(分别对应 BOOLEAN / TIMES / ENUMERATION 三种 histogram)
-constexpr const char *kSuffixCall = ".CALL";
-constexpr const char *kSuffixTime = ".Time";
-constexpr const char *kSuffixErrorcode = ".errorcode";
+// histogram key 后缀,顺序与 CmMetricsReport::keys_ 的索引对应
+// 0 → BOOLEAN (Call), 1 → TIMES (Time), 2 → ENUMERATION (errorcode)
+constexpr const char *kSuffixes[] = { ".CALL", ".Time", ".errorcode" };
 
 // 查表未命中时的兜底 JS 错误码
 // - DIALOG → 29700001 (= Dialog::DIALOG_ERROR_GENERIC)
@@ -60,9 +59,10 @@ CmMetricsReport::CmMetricsReport(const std::string &interfaceName,
     : jsCodeMap_(&jsCodeMap), kind_(kind)
 {
     const char *prefix = (kind == CmMetricsKind::DIALOG) ? kPrefixDialog : kPrefixNonDialog;
-    keyCall_ = std::string(prefix) + interfaceName + kSuffixCall;
-    keyTime_ = std::string(prefix) + interfaceName + kSuffixTime;
-    keyErrorcode_ = std::string(prefix) + interfaceName + kSuffixErrorcode;
+    const std::string base = std::string(prefix) + interfaceName;
+    for (size_t i = 0; i < keys_.size(); ++i) {
+        keys_[i] = base + kSuffixes[i];
+    }
 }
 
 CmMetricsReport::~CmMetricsReport() = default;
@@ -75,7 +75,7 @@ void CmMetricsReport::Start()
     started_ = true;
     startTime_ = std::chrono::steady_clock::now();
 #ifdef CM_API_METRICS_ENABLE
-    HISTOGRAM_BOOLEAN(keyCall_.c_str(), true);
+    HISTOGRAM_BOOLEAN(keys_[0].c_str(), true);
 #endif
 }
 
@@ -91,8 +91,8 @@ void CmMetricsReport::Finish(int32_t nativeErrorCode)
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedMs =
         std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime_).count();
-    HISTOGRAM_ENUMERATION(keyErrorcode_.c_str(), metricCode, boundary);
-    HISTOGRAM_TIMES(keyTime_.c_str(), static_cast<int32_t>(elapsedMs));
+    HISTOGRAM_ENUMERATION(keys_[2].c_str(), metricCode, boundary);
+    HISTOGRAM_TIMES(keys_[1].c_str(), static_cast<int32_t>(elapsedMs));
 #endif
 }
 
