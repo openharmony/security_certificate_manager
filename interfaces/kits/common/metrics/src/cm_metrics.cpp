@@ -23,24 +23,36 @@ namespace OHOS::Security::CertManager {
 
 namespace {
 
-// histogram key 前缀(按 kind 区分;不带末尾 '.',由 suffix 的 '.' 衔接)
+/**
+ * Histogram-key prefixes, selected by `kind`. Note the trailing '.' is omitted;
+ * the leading '.' comes from the suffix (see `kSuffixes`).
+ */
 constexpr const char *kPrefixDialog = "DeviceCertificateKit.certificateManagerDialog.";
 constexpr const char *kPrefixNonDialog = "DeviceCertificateKit.certificateManager.";
 
-// histogram key 后缀,顺序与 CmMetricsReport::keys_ 的索引对应
-// 0 → BOOLEAN (Call), 1 → TIMES (Time), 2 → ENUMERATION (errorcode)
+/**
+ * Histogram-key suffixes, indexed by CmMetricsReport::keys_:
+ *   0 -> BOOLEAN    ("Call")
+ *   1 -> TIMES      ("Time")
+ *   2 -> ENUMERATION ("errorcode")
+ */
 constexpr const char *kSuffixes[] = { ".CALL", ".Time", ".errcode" };
 
-// 查表未命中时的兜底 JS 错误码
-// - DIALOG → 29700001 (= Dialog::DIALOG_ERROR_GENERIC)
-// - 非 DIALOG → 17500001 (= INNER_FAILURE)
-// 这两个值是 JS ErrorCode 枚举里约定好的值,metrics 模块不依赖 cm_api_common.h / cm_dialog_api_common.h
+/**
+ * Fallback JS ErrorCode when a native code is not found in `jsCodeMap`.
+ *   - DIALOG     -> 29700001 (= Dialog::DIALOG_ERROR_GENERIC)
+ *   - non-DIALOG -> 17500001 (= INNER_FAILURE)
+ * These values are part of the JS-side ErrorCode enum contract; the metrics
+ * module deliberately does NOT depend on cm_api_common.h / cm_dialog_api_common.h.
+ */
 constexpr int32_t kMetricsFallbackDialog = 29700001;
 constexpr int32_t kMetricsFallbackNonDialog = 17500001;
 
 }  // namespace
 
-// 空 jsCodeMap,作为默认的 jsCodeMap_ 指向
+/**
+ * Empty map used as the default `jsCodeMap_` when callers don't supply one.
+ */
 const CmMetricsReport::JsCodeMap CmMetricsReport::kEmptyJsCodeMap_{};
 
 int32_t CmGetMetricErrorCodeFromMap(int32_t nativeErrorCode,
@@ -50,7 +62,6 @@ int32_t CmGetMetricErrorCodeFromMap(int32_t nativeErrorCode,
     if (iter != jsCodeMap.end()) {
         return iter->second;
     }
-    // 找不到时按 kind 区分兜底
     return (kind == CmMetricsKind::DIALOG) ? kMetricsFallbackDialog : kMetricsFallbackNonDialog;
 }
 
@@ -75,7 +86,10 @@ void CmMetricsReport::Start()
     started_ = true;
     startTime_ = std::chrono::steady_clock::now();
 #ifdef CM_API_METRICS_ENABLE
-    // 即使 HistogramException() 实现抛异常,finished_ 还没设,后续 Finish 仍可重试
+    /**
+     * `finished_` is intentionally NOT set here. If HISTOGRAM_BOOLEAN() throws,
+     * the caller can retry via Finish() because `finished_` is still false.
+     */
     HISTOGRAM_BOOLEAN(keys_[kIdxCall].c_str(), true);
 #endif
 }
@@ -83,11 +97,14 @@ void CmMetricsReport::Start()
 void CmMetricsReport::Finish(int32_t nativeErrorCode)
 {
     if (finished_) {
-        return;  // 重复 Finish:idempotent,no-op
+        return;  // Double-Finish: idempotent, no-op.
     }
     if (!started_) {
-        // 异常路径:忘调 Start 直接 Finish。自动补一次 Start,保证 BOOLEAN 也上报,
-        // 否则 BOOLEAN/ENUMERATION/TIMES 三种 histogram 会丢 BOOLEAN(数据不完整)。
+        /**
+         * Defensive path: caller forgot to call Start(). Auto-Start here so the
+         * BOOLEAN histogram is also reported; otherwise the data set would show
+         * ENUMERATION + TIMES without a matching BOOLEAN (incomplete record).
+         */
         Start();
     }
     finished_ = true;
@@ -97,7 +114,10 @@ void CmMetricsReport::Finish(int32_t nativeErrorCode)
     auto endTime = std::chrono::steady_clock::now();
     int64_t elapsedMs =
         std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime_).count();
-    // 防止 int64_t 截断到 int32_t 时溢出(API 调用一般不会超过 INT32_MAX ms,但加 clamp 更稳妥)
+    /**
+     * Clamp int64_t -> int32_t to prevent silent overflow (API calls rarely
+     * exceed INT32_MAX ms, but a defensive clamp keeps us safe).
+     */
     int32_t elapsed = (elapsedMs > INT32_MAX) ? INT32_MAX : static_cast<int32_t>(elapsedMs);
     HISTOGRAM_ENUMERATION(keys_[kIdxErrorcode].c_str(), metricCode, boundary);
     HISTOGRAM_TIMES(keys_[kIdxTime].c_str(), elapsed);

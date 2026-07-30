@@ -24,20 +24,28 @@
 
 namespace OHOS::Security::CertManager {
 
-// 区分 dialog 与非 dialog JS 接口:两者的错误码映射表不同(分别对应
-// cm_api_common.h 的 ErrorCode 和 cm_dialog_api_common.h 的 ErrorCode),
-// histogram key 也使用不同的前缀以便在 HiView 中区分
+/**
+ * @brief Distinguish dialog vs non-dialog JS interfaces.
+ *        The two API families use different error-code mapping tables (defined
+ *        in `cm_api_common.h::ErrorCode` and `cm_dialog_api_common.h::ErrorCode`
+ *        respectively) and different histogram-key prefixes so they can be
+ *        told apart in HiView.
+ */
 enum CmMetricsKind {
-    NON_DIALOG,  // 证书管理普通接口,前缀 "DeviceCertificateKit.certificateManager."
-    DIALOG,      // 弹框类接口,前缀 "DeviceCertificateKit.certificateManagerDialog."
+    NON_DIALOG,  // Certificate-manager regular API; prefix "DeviceCertificateKit.certificateManager."
+    DIALOG,      // Dialog API; prefix "DeviceCertificateKit.certificateManagerDialog."
 };
 
-// 把 native 侧 ErrorCode 映射为 JS 侧 ErrorCode(直接作为 histogram 值上报)
-// 用调用方传入的 jsCodeMap 查表;找不到时按 kind 区分兜底:
-// - DIALOG → 29700001 (= Dialog::DIALOG_ERROR_GENERIC)
-// - 非 DIALOG → 17500001 (= INNER_FAILURE)
-// 注意:本文件不再直接引用 cm_api_common.h / cm_dialog_api_common.h,
-// 这两个常量值是 JS ErrorCode 枚举里约定好的值,直接以 magic number 形式给出
+/**
+ * @brief Map a native ErrorCode to a JS-side ErrorCode (used directly as the
+ *        histogram value). Looks up the caller's `jsCodeMap`; falls back by
+ *        `kind` if the entry is missing:
+ *        - DIALOG     -> 29700001 (= Dialog::DIALOG_ERROR_GENERIC)
+ *        - non-DIALOG -> 17500001 (= INNER_FAILURE)
+ * @note  This file does NOT depend on `cm_api_common.h` / `cm_dialog_api_common.h`.
+ *        The two fallback constants above are values defined in the JS-side
+ *        ErrorCode enum, inlined here as magic numbers.
+ */
 int32_t CmGetMetricErrorCodeFromMap(int32_t nativeErrorCode,
     const std::unordered_map<int32_t, int32_t> &jsCodeMap, CmMetricsKind kind);
 
@@ -45,9 +53,12 @@ class CmMetricsReport {
 public:
     using JsCodeMap = std::unordered_map<int32_t, int32_t>;
 
-    // interfaceName: JS 接口名
-    // jsCodeMap:    native → JS 错误码映射表(指向全局表的引用,生命周期 >= report)
-    // kind:         用于选择 histogram key 前缀(区分 dialog 与非 dialog)
+    /**
+     * @param interfaceName JS interface name
+     * @param jsCodeMap     native -> JS error-code map (reference to a global
+     *                       map; lifetime must outlive this report)
+     * @param kind          selects histogram-key prefix (dialog vs non-dialog)
+     */
     explicit CmMetricsReport(const std::string &interfaceName,
         const JsCodeMap &jsCodeMap,
         CmMetricsKind kind = CmMetricsKind::NON_DIALOG);
@@ -59,25 +70,40 @@ public:
     CmMetricsReport(CmMetricsReport &&) = default;
     CmMetricsReport &operator=(CmMetricsReport &&) = default;
 
-    // 在 NAPI/ANI 入口函数最前面调用,idempotent;重复调用为 no-op
+    /**
+     * @brief Call at the entry of every NAPI/ANI function. Idempotent. 
+     */
     void Start();
-    // 入口函数返回前调用,触发剩余两个宏;idempotent;若未 Start 或已 Finish 则 no-op
-    // nativeErrorCode 是 native 侧错误码(如 CMR_ERROR_NOT_FOUND),按传入的 map 映射后上报
+
+    /**
+     * @brief Call before returning from the entry function. Idempotent. No-op if
+     *        Start was never called or Finish was already called.
+     * @param nativeErrorCode native-side error code (e.g. CMR_ERROR_NOT_FOUND);
+     *        mapped through `jsCodeMap` before reporting.
+     */
     void Finish(int32_t nativeErrorCode);
 
-    // 仅供测试使用:返回从 Start 到当前时刻的耗时(毫秒)。
-    // - 当宏关闭时恒为 0
-    // - 当 Start 未调用或已 Finish 时也返回 0
+    /**
+     * @brief Test-only helper: returns elapsed milliseconds since Start.
+     * @return 0 when the metrics macro is disabled, when Start was never called,
+     *         or after Finish has already been called.
+     */
     int64_t GetElapsedMs() const;
 
 private:
-    // 空 map,作为默认 jsCodeMap_(调用方不传时使用)
+    /**
+     * Empty map used as the default `jsCodeMap_` when callers don't supply one.
+     */
     static const JsCodeMap kEmptyJsCodeMap_;
-    // keys_ 数组索引,命名常量方便阅读
-    static constexpr size_t kIdxCall = 0;        // 对应 HISTOGRAM_BOOLEAN
-    static constexpr size_t kIdxTime = 1;        // 对应 HISTOGRAM_TIMES
-    static constexpr size_t kIdxErrorcode = 2;  // 对应 HISTOGRAM_ENUMERATION
+
+    /**
+     * keys_ array indices, named here for readability.
+     */
+    static constexpr size_t kIdxCall = 0;        // maps to HISTOGRAM_BOOLEAN
+    static constexpr size_t kIdxTime = 1;        // maps to HISTOGRAM_TIMES
+    static constexpr size_t kIdxErrorcode = 2;  // maps to HISTOGRAM_ENUMERATION
     std::array<std::string, 3> keys_;
+
     std::chrono::steady_clock::time_point startTime_;
     const JsCodeMap *jsCodeMap_ = &kEmptyJsCodeMap_;
     CmMetricsKind kind_ = CmMetricsKind::NON_DIALOG;
