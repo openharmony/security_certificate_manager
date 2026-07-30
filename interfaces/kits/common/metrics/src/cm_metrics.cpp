@@ -29,7 +29,7 @@ constexpr const char *kPrefixNonDialog = "DeviceCertificateKit.certificateManage
 
 // histogram key 后缀,顺序与 CmMetricsReport::keys_ 的索引对应
 // 0 → BOOLEAN (Call), 1 → TIMES (Time), 2 → ENUMERATION (errorcode)
-constexpr const char *kSuffixes[] = { ".CALL", ".Time", ".errorcode" };
+constexpr const char *kSuffixes[] = { ".CALL", ".Time", ".errcode" };
 
 // 查表未命中时的兜底 JS 错误码
 // - DIALOG → 29700001 (= Dialog::DIALOG_ERROR_GENERIC)
