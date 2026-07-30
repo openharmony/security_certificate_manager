@@ -59,6 +59,7 @@ ohos_static_library("cm_ani_common_static") {
     "ability_runtime:ability_manager",
     "ability_runtime:abilitykit_native",
     "ability_runtime:app_context",
+    "node:node_header_notice",
   ]
   cflags_cc = [
     "-Wall",

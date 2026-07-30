@@ -61,7 +61,8 @@
           "security_guard",
           "selinux_adapter",
           "openssl",
-          "runtime_core"
+          "runtime_core",
+          "node"
         ]
       },
       "build": {

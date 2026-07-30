@@ -60,6 +60,7 @@ ohos_shared_library("certmanager_dialog_ani") {
     "samgr:samgr_proxy",
     "runtime_core:libarkruntime",
     "huks:libhukssdk",
+    "node:node_header_notice",
   ]
   cflags_cc = [
     "-Wall",
