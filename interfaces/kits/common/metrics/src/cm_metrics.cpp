@@ -24,8 +24,8 @@ namespace OHOS::Security::CertManager {
 namespace {
 
 // histogram key 前缀(按 kind 区分;不带末尾 '.',由 suffix 的 '.' 衔接)
-constexpr const char *kPrefixDialog = "DeviceCertificateKit.certificateManagerDialog";
-constexpr const char *kPrefixNonDialog = "DeviceCertificateKit.certificateManager";
+constexpr const char *kPrefixDialog = "DeviceCertificateKit.certificateManagerDialog.";
+constexpr const char *kPrefixNonDialog = "DeviceCertificateKit.certificateManager.";
 
 // histogram key 后缀,顺序与 CmMetricsReport::keys_ 的索引对应
 // 0 → BOOLEAN (Call), 1 → TIMES (Time), 2 → ENUMERATION (errorcode)

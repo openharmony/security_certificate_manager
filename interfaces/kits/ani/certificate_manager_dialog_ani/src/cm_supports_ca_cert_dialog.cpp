@@ -17,6 +17,7 @@
 #include "cm_log.h"
 #include "cm_dialog_api_common.h"
 #include "cm_ani_utils.h"
+#include "cm_metrics.h"
 
 namespace OHOS::Security::CertManager::Ani {
 using namespace OHOS::Security::CertManager::Dialog;
