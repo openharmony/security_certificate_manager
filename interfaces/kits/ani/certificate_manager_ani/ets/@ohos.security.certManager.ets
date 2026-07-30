@@ -22,8 +22,6 @@ native function uninstallPrivateCertificateNative(keyUri: string): NativeResult<
 
 native function getAllAppPrivateCertificatesNative(): NativeResult<certificateManager.CMResult>;
 
-native function getAllAppPrivateCertificatesByUidNative(appUid: int): NativeResult<certificateManager.CMResult>;
-
 native function getPrivateCertificateNative(keyUri: string): NativeResult<certificateManager.CMResult>;
 
 native function initNative(authUri: string,
@@ -399,10 +397,6 @@ export namespace certificateManager {
 
   export function getAllAppPrivateCertificates(): Promise<CMResult> {
     return createPromise<CMResult>(() => getAllAppPrivateCertificatesNative(), {});
-  }
-
-  export function getAllAppPrivateCertificatesByUid(appUid: int): Promise<CMResult> {
-    return createPromise<CMResult>(() => getAllAppPrivateCertificatesByUidNative(appUid), {});
   }
 
   export function getPrivateCertificate(keyUri: string, callback: AsyncCallback<CMResult>): void {

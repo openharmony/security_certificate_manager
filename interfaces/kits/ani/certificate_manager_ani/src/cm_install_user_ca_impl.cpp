@@ -24,7 +24,7 @@
 namespace OHOS::Security::CertManager::Ani {
 CmInstallUserCaImpl::CmInstallUserCaImpl(ani_env *env, ani_arraybuffer aniCertData,
     ani_enum_item aniCertScope, ani_enum_item aniCertFormat)
-    : CertManagerAniImpl(env, "installUserCANative")
+    : CertManagerAniImpl(env, "installUserTrustedCertificate")
 {
     this->aniCertData = aniCertData;
     this->aniCertScope = aniCertScope;

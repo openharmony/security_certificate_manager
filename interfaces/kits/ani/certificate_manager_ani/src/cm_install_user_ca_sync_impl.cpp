@@ -22,7 +22,7 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmInstallUserCaSyncImpl::CmInstallUserCaSyncImpl(ani_env *env, ani_arraybuffer aniCertData,
-    ani_enum_item aniCertScope) : CertManagerAniImpl(env, "installUserCASyncNative")
+    ani_enum_item aniCertScope) : CertManagerAniImpl(env, "installUserTrustedCertificateSync")
 {
     this->aniCertData = aniCertData;
     this->aniCertScope = aniCertScope;

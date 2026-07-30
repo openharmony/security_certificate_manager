@@ -180,12 +180,7 @@ ani_object supportsCACertDialogNative(ani_env *env)
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    OHOS::Security::CertManager::CmMetricsReport report("supportsCACertDialog",
-        Dialog::DIALOG_CODE_TO_JS_CODE_MAP,
-        OHOS::Security::CertManager::CmMetricsKind::DIALOG);
-    report.Start();
     auto result = OHOS::Security::CertManager::Ani::SupportsCACertDialog(env);
-    report.Finish(CM_SUCCESS);
     return result;
 }
 }

@@ -20,7 +20,7 @@
 #include "cm_result_builder.h"
 
 namespace OHOS::Security::CertManager::Ani {
-CmGetCaListImpl::CmGetCaListImpl(ani_env *env, const char *interfaceName) : CertManagerAniImpl(env, interfaceName) {}
+CmGetCaListImpl::CmGetCaListImpl(ani_env *env) : CertManagerAniImpl(env, "getAllUserTrustedCertificates") {}
 
 int32_t CmGetCaListImpl::Init()
 {
@@ -62,7 +62,7 @@ void CmGetCaListImpl::OnFinish()
 }
 
 CmGetAllUserCaByScopeImpl::CmGetAllUserCaByScopeImpl(ani_env *env, ani_enum_item aniScope)
-    : CmGetCaListImpl(env, "getAllUserCAByScopeNative")
+    : CmGetCaListImpl(env)
 {
     this->aniScope = aniScope;
 }

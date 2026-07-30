@@ -21,7 +21,7 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmUninstallUserCaSyncImpl::CmUninstallUserCaSyncImpl(ani_env *env, ani_string aniCertUri)
-    : CertManagerAniImpl(env, "uninstallUserCASyncNative")
+    : CertManagerAniImpl(env, "uninstallUserTrustedCertificateSync")
 {
     this->aniCertUri = aniCertUri;
 }

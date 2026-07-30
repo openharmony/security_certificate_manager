@@ -22,7 +22,7 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmGetCertInfoImpl::CmGetCertInfoImpl(ani_env *env, ani_string aniCertUri, uint32_t store)
-    : CertManagerAniImpl(env, "getUserCANative")
+    : CertManagerAniImpl(env, "getUserTrustedCertificate")
 {
     this->aniCertUri = aniCertUri;
     this->store = store;

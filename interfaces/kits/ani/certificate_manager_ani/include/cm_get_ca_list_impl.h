@@ -25,7 +25,7 @@ class CmGetCaListImpl : public CertManagerAniImpl {
 protected:
     CertList certList = { 0 };
 public:
-    CmGetCaListImpl(ani_env *env, const char *interfaceName);
+    CmGetCaListImpl(ani_env *env);
     ~CmGetCaListImpl() {};
 
     int32_t Init() override;
@@ -36,7 +36,7 @@ public:
 
 class CmGetAllUserCaImpl : public CmGetCaListImpl {
 public:
-    CmGetAllUserCaImpl(ani_env *env) : CmGetCaListImpl(env, "getAllUserCANative") {};
+    CmGetAllUserCaImpl(ani_env *env) : CmGetCaListImpl(env) {};
     ~CmGetAllUserCaImpl() {};
 
     int32_t InvokeInnerApi() override
