@@ -17,7 +17,6 @@
 
 #include <memory>
 
-#include "cm_api_common.h"
 #include "cm_log.h"
 #include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
@@ -72,13 +71,13 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert ukey authorize dialog enter");
     OHOS::Security::CertManager::CmMetricsReport report("openUkeyAuthDialog",
-        Dialog::DIALOG_CODE_TO_JS_CODE_MAP,
+        DIALOG_CODE_TO_JS_CODE_MAP,
         OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
     if (CheckSyscapReturnVoid(env, &result) != CM_SUCCESS) {
-        report.Finish(OHOS::Security::CertManager::CAPABILITY_NOT_SUPPORTED);
+        report.Finish(DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED);
         return result;
     }
 
@@ -90,7 +89,7 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
         std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_TWO)
             + ", given " + std::to_string(argc);
         ThrowError(env, PARAM_ERROR, errMsg);
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
+        report.Finish(PARAM_ERROR);
         return result;
     }
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
@@ -98,13 +97,13 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
     if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[index], asyncContext->context)) {
         CM_LOG_E("parse abilityContext failed");
         ThrowError(env, PARAM_ERROR, "parse abilityContext failed");
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
+        report.Finish(PARAM_ERROR);
         return nullptr;
     }
     ++index;
     if (IsParamNull(asyncContext->env, argv[index])) {
         ThrowError(env, PARAM_ERROR, "UkeyAuthRequest is null");
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
+        report.Finish(PARAM_ERROR);
         return nullptr;
     }
     if (GetUkeyAuthRequest(asyncContext, argv[index]) == nullptr) {

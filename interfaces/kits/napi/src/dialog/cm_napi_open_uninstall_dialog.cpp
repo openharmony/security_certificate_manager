@@ -17,7 +17,6 @@
 
 #include <memory>
 
-#include "cm_api_common.h"
 #include "cm_log.h"
 #include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
@@ -88,13 +87,13 @@ napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
     // determine the type of device
     CM_LOG_I("enter uninstall cert dialog");
     OHOS::Security::CertManager::CmMetricsReport report("openUninstallCertificateDialog",
-        Dialog::DIALOG_CODE_TO_JS_CODE_MAP,
+        DIALOG_CODE_TO_JS_CODE_MAP,
         OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
     if (CheckSyscapReturnVoid(env, &result) != CM_SUCCESS) {
-        report.Finish(OHOS::Security::CertManager::CAPABILITY_NOT_SUPPORTED);
+        report.Finish(DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED);
         return result;
     }
     if (!IsEnableCACertDialog()) {
@@ -113,7 +112,7 @@ napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
         std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_THREE)
             + ", given " + std::to_string(argc);
         ThrowError(env, PARAM_ERROR, errMsg);
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
+        report.Finish(PARAM_ERROR);
         return result;
     }
 
@@ -124,7 +123,7 @@ napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
     if (CMInitAsyncContext(asyncContext, argv, argc) == nullptr) {
         CM_LOG_E("Parse param and init asyncContext failed");
         ThrowError(env, PARAM_ERROR, "Parse param and init asyncContext failed");
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
+        report.Finish(PARAM_ERROR);
         return nullptr;
     }
 

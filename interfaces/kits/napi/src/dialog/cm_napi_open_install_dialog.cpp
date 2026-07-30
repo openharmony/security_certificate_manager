@@ -17,7 +17,6 @@
 
 #include <memory>
 
-#include "cm_api_common.h"
 #include "cm_log.h"
 #include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
@@ -119,7 +118,7 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert install dialog enter");
     OHOS::Security::CertManager::CmMetricsReport report("openInstallCertificateDialog",
-        Dialog::DIALOG_CODE_TO_JS_CODE_MAP,
+        DIALOG_CODE_TO_JS_CODE_MAP,
         OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
     if (CheckSyscapThrowError(env) != CM_SUCCESS) {
@@ -149,7 +148,7 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
         std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_FOUR)
             + ", given " + std::to_string(argc);
         ThrowError(env, PARAM_ERROR, errMsg);
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
+        report.Finish(PARAM_ERROR);
         return result;
     }
 
@@ -157,7 +156,7 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
     if (CMCheckArgvAndInitContext(asyncContext, argv, sizeof(argv) / sizeof(argv[0])) == nullptr) {
         CM_LOG_E("check argv vaild and init faild");
         ThrowError(env, PARAM_ERROR, "check argv vaild and init faild");
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
+        report.Finish(PARAM_ERROR);
         return nullptr;
     }
 

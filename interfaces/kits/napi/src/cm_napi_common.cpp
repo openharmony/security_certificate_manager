@@ -22,61 +22,11 @@
 #include "cm_type.h"
 
 namespace CMNapi {
+
+using namespace OHOS::Security::CertManager;
+
 namespace {
 constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M
-
-static const std::string NO_PERMISSION_MSG = "the caller has no permission";
-static const std::string NOT_SYSTEM_APP_MSG = "the caller is not a system application";
-static const std::string INVALID_PARAMS_MSG = "the input parameters is invalid";
-static const std::string NO_FOUND_MSG = "the certificate do not exist";
-static const std::string INCORRECT_FORMAT_MSG = "the input cert data is invalid";
-static const std::string MAX_CERT_COUNT_REACHED_MSG = "the count of certificates or credentials reach the max";
-static const std::string NO_AUTHORIZATION_MSG = "the application is not authorized by user";
-static const std::string DEVICE_ENTER_ADVSECMODE_MSG = "the device enters advanced security mode";
-static const std::string PASSWORD_IS_ERROR_MSG = "the input password is error";
-static const std::string ACCESS_UKEY_SERVICE_FAILED_MSG = "the access USB key service failed";
-static const std::string CAPABILITY_NOT_SUPPORTED_MSG = "capability not support";
-static const std::string HUKS_ABNORMAL_MSG = "huks encountered an exception";
-
-static const std::unordered_map<int32_t, int32_t> NATIVE_CODE_TO_JS_CODE_MAP = {
-    // invalid params
-    { CMR_ERROR_INVALID_ARGUMENT, PARAM_ERROR },
-
-    // no permission
-    { CMR_ERROR_PERMISSION_DENIED, HAS_NO_PERMISSION },
-    { CMR_ERROR_NOT_SYSTEMP_APP, NOT_SYSTEM_APP },
-
-    { CMR_ERROR_INVALID_CERT_FORMAT, INVALID_CERT_FORMAT },
-    { CMR_ERROR_INSUFFICIENT_DATA, INVALID_CERT_FORMAT },
-    { CMR_ERROR_NOT_FOUND, NOT_FOUND },
-    { CMR_ERROR_NOT_EXIST, NOT_FOUND },
-    { CMR_ERROR_MAX_CERT_COUNT_REACHED, MAX_CERT_COUNT_REACHED },
-    { CMR_ERROR_AUTH_CHECK_FAILED, NO_AUTHORIZATION },
-    { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE },
-    { CMR_ERROR_PASSWORD_IS_ERR, PASSWORD_IS_ERROR },
-
-    // ukey
-    { CMR_ERROR_UKEY_GENERAL_ERROR, ACCESS_UKEY_SERVICE_FAILED },
-    { CMR_ERROR_UKEY_DEVICE_SUPPORT, CAPABILITY_NOT_SUPPORTED },
-    { CMR_ERROR_HUKS_GENERAL_ERROR, INNER_FAILURE },
-};
-
-static const std::unordered_map<int32_t, std::string> NATIVE_CODE_TO_MSG_MAP = {
-    { CMR_ERROR_PERMISSION_DENIED, NO_PERMISSION_MSG },
-    { CMR_ERROR_NOT_SYSTEMP_APP, NOT_SYSTEM_APP_MSG },
-    { CMR_ERROR_INVALID_ARGUMENT, INVALID_PARAMS_MSG },
-    { CMR_ERROR_NOT_FOUND, NO_FOUND_MSG },
-    { CMR_ERROR_NOT_EXIST, NO_FOUND_MSG },
-    { CMR_ERROR_INVALID_CERT_FORMAT, INCORRECT_FORMAT_MSG },
-    { CMR_ERROR_INSUFFICIENT_DATA, INCORRECT_FORMAT_MSG },
-    { CMR_ERROR_MAX_CERT_COUNT_REACHED, MAX_CERT_COUNT_REACHED_MSG },
-    { CMR_ERROR_AUTH_CHECK_FAILED, NO_AUTHORIZATION_MSG },
-    { CMR_ERROR_DEVICE_ENTER_ADVSECMODE, DEVICE_ENTER_ADVSECMODE_MSG },
-    { CMR_ERROR_PASSWORD_IS_ERR, PASSWORD_IS_ERROR_MSG },
-    { CMR_ERROR_UKEY_GENERAL_ERROR, ACCESS_UKEY_SERVICE_FAILED_MSG },
-    { CMR_ERROR_UKEY_DEVICE_SUPPORT, CAPABILITY_NOT_SUPPORTED_MSG },
-    { CMR_ERROR_HUKS_GENERAL_ERROR, HUKS_ABNORMAL_MSG },
-};
 }  // namespace
 
 napi_value ParseUint32(napi_env env, napi_value object, uint32_t &store)

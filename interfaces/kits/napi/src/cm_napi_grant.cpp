@@ -20,7 +20,6 @@
 #include <memory>
 
 #include "cert_manager_api.h"
-#include "cm_api_common.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_type.h"

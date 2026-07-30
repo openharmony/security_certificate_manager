@@ -27,7 +27,10 @@ ohos_shared_library("certmanager") {
     stack_protector_ret = true
   }
 
-  include_dirs = [ "include" ]
+  include_dirs = [
+    "include",
+    "../common/include",
+  ]
 
   sources = [
     "src/cm_napi.cpp",

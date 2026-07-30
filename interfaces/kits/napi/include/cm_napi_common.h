@@ -23,6 +23,7 @@
 
 #include "cm_mem.h"
 #include "cm_type.h"
+#include "cm_api_common.h"
 
 namespace CMNapi {
 static const std::string CM_CERT_PROPERTY_URI = "uri";

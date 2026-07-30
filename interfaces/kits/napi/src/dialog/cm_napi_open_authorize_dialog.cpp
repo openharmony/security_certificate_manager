@@ -17,7 +17,6 @@
 
 #include <memory>
 
-#include "cm_api_common.h"
 #include "cm_log.h"
 #include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
@@ -253,7 +252,7 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert authorize dialog enter");
     OHOS::Security::CertManager::CmMetricsReport report("openAuthorizeDialog",
-        Dialog::DIALOG_CODE_TO_JS_CODE_MAP,
+        DIALOG_CODE_TO_JS_CODE_MAP,
         OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
     if (CheckSyscapThrowError(env) != CM_SUCCESS) {
@@ -270,7 +269,7 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
         std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_ONE)
             + " or" + std::to_string(PARAM_SIZE_TWO) + ", given " + std::to_string(argc);
         ThrowError(env, PARAM_ERROR, errMsg);
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
+        report.Finish(PARAM_ERROR);
         return result;
     }
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
@@ -278,7 +277,7 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
     if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[index], asyncContext->context)) {
         CM_LOG_E("parse abilityContext failed");
         ThrowError(env, PARAM_ERROR, "parse abilityContext failed");
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
+        report.Finish(PARAM_ERROR);
         return nullptr;
     }
     ++index;

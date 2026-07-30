@@ -14,6 +14,10 @@
 import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
 
+config("cm_metrics_config") {
+  include_dirs = [ "include" ]
+}
+
 # libcm_metrics_static:histogram 打点工具,独立模块
 # - 不依赖 cm_api_common.h / cm_dialog_api_common.h
 # - 错误码映射表由调用方在构造 CmMetricsReport 时传入
@@ -33,7 +37,15 @@ ohos_static_library("libcm_metrics_static") {
 
   include_dirs = [ "include" ]
 
+  public_configs = [
+    ":cm_metrics_config"
+  ]
+
   sources = [ "src/cm_metrics.cpp" ]
+
+  external_deps = [
+    "hilog:libhilog"
+  ]
 
   cflags_cc = [
     "-Wall",
@@ -42,7 +54,7 @@ ohos_static_library("libcm_metrics_static") {
 
   if (cm_api_metrics_enable) {
     cflags_cc += [ "-DCM_API_METRICS_ENABLE" ]
-    external_deps = [ "api_metrics:histogrammanager" ]
+    external_deps += [ "api_metrics:histogrammanager" ]
   }
 
   part_name = "certificate_manager"

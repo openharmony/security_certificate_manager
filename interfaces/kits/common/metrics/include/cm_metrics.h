@@ -24,6 +24,14 @@
 
 namespace OHOS::Security::CertManager {
 
+// 区分 dialog 与非 dialog JS 接口:两者的错误码映射表不同(分别对应
+// cm_api_common.h 的 ErrorCode 和 cm_dialog_api_common.h 的 ErrorCode),
+// histogram key 也使用不同的前缀以便在 HiView 中区分
+enum CmMetricsKind {
+    NON_DIALOG,  // 证书管理普通接口,前缀 "DeviceCertificateKit.certificateManager."
+    DIALOG,      // 弹框类接口,前缀 "DeviceCertificateKit.certificateManagerDialog."
+};
+
 // 把 native 侧 ErrorCode 映射为 JS 侧 ErrorCode(直接作为 histogram 值上报)
 // 用调用方传入的 jsCodeMap 查表;找不到时按 kind 区分兜底:
 // - DIALOG → 29700001 (= Dialog::DIALOG_ERROR_GENERIC)
@@ -32,14 +40,6 @@ namespace OHOS::Security::CertManager {
 // 这两个常量值是 JS ErrorCode 枚举里约定好的值,直接以 magic number 形式给出
 int32_t CmGetMetricErrorCodeFromMap(int32_t nativeErrorCode,
     const std::unordered_map<int32_t, int32_t> &jsCodeMap, CmMetricsKind kind);
-
-// 区分 dialog 与非 dialog JS 接口:两者的错误码映射表不同(分别对应
-// cm_api_common.h 的 ErrorCode 和 cm_dialog_api_common.h 的 ErrorCode),
-// histogram key 也使用不同的前缀以便在 HiView 中区分
-enum class CmMetricsKind {
-    NON_DIALOG,  // 证书管理普通接口,前缀 "DeviceCertificateKit.certificateManager."
-    DIALOG,      // 弹框类接口,前缀 "DeviceCertificateKit.certificateManagerDialog."
-};
 
 class CmMetricsReport {
 public:

@@ -17,7 +17,6 @@
 
 #include <unistd.h>
 
-#include "cm_api_common.h"
 #include "cm_log.h"
 #include "cm_napi_common.h"
 #include "cm_type.h"
@@ -305,7 +304,7 @@ napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
     if (res == nullptr) {
         report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
     } else {
-        report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+        report.Finish(CM_SUCCESS);
     }
     CM_LOG_I("get cert store path end");
     return res;

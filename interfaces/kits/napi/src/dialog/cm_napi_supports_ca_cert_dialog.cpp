@@ -15,7 +15,6 @@
 
 #include "cm_napi_supports_ca_cert_dialog.h"
 
-#include "cm_api_common.h"
 #include "cm_log.h"
 #include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
@@ -38,7 +37,7 @@ napi_value CMNapiSupportsCACertDialog(napi_env env, napi_callback_info info)
         return nullptr;
     }
     CM_LOG_I("supportsCACertDialog end, isSupport = %d", isSupport);
-    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    report.Finish(CM_SUCCESS);
     return result;
 }
 }  // namespace CMNapi

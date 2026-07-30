@@ -93,7 +93,7 @@ ani_object openInstallCertificateDialogNative(ani_env *env, ani_object context, 
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
         return GenerateResult(env, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED,
-            CAPABILITY_NOT_SUPPORTED_MSG.c_str());
+            Dialog::CAPABILITY_NOT_SUPPORTED_MSG.c_str());
     }
     auto openInstallDialogImpl = std::make_shared<CmOpenInstallDialog>(env, context, callback, params);
     return openInstallDialogImpl->Invoke();
@@ -138,7 +138,7 @@ ani_object openAuthorizeDialogNative(ani_env *env, ani_object context, ani_objec
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
         return GenerateResult(env, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED,
-            CAPABILITY_NOT_SUPPORTED_MSG.c_str());
+            Dialog::CAPABILITY_NOT_SUPPORTED_MSG.c_str());
     }
     auto openAuthDialogImpl = std::make_shared<CmOpenAuthDialog>(env, context, callback);
     return openAuthDialogImpl->Invoke();
@@ -153,7 +153,7 @@ ani_object openAuthorizeDialogWithReqNative(ani_env *env, ani_object context, an
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
         return GenerateResult(env, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED,
-            CAPABILITY_NOT_SUPPORTED_MSG.c_str());
+            Dialog::CAPABILITY_NOT_SUPPORTED_MSG.c_str());
     }
     auto openAuthDialogWithReqImpl = std::make_shared<CmOpenAuthDialogWithReq>(
         env, context, params, callback);
@@ -185,7 +185,7 @@ ani_object supportsCACertDialogNative(ani_env *env)
         OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
     auto result = OHOS::Security::CertManager::Ani::SupportsCACertDialog(env);
-    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    report.Finish(CM_SUCCESS);
     return result;
 }
 }

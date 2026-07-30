@@ -20,7 +20,6 @@
 #include <memory>
 
 #include "cert_manager_api.h"
-#include "cm_api_common.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_type.h"
@@ -614,7 +613,7 @@ napi_value CMNapiInstallUserTrustedCertSync(napi_env env, napi_callback_info inf
 
     napi_value result = ConvertResultCertUri(env, &certUri);
     CM_LOG_I("install user trusted cert sync end");
-    report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+    report.Finish(CM_SUCCESS);
     return result;
 }
 
@@ -680,7 +679,7 @@ napi_value CMNapiUninstallUserCertSync(napi_env env, napi_callback_info info)
         napi_throw(env, GenerateBusinessError(env, ret));
         report.Finish(ret);
     } else {
-        report.Finish(OHOS::Security::CertManager::CM_SUCCESS);
+        report.Finish(CM_SUCCESS);
     }
 
     FreeUserCertAsyncContext(env, context);
