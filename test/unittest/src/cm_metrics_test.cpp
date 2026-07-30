@@ -86,7 +86,18 @@ HWTEST_F(CmMetricsTest, ReportGuard_FinishComputesElapsedMs, TestSize.Level1)
 HWTEST_F(CmMetricsTest, ReportGuard_FinishWithoutStart_IsSafe, TestSize.Level1)
 {
     CmMetricsReport report("UnitTestApi", NATIVE_CODE_TO_JS_CODE_MAP);
-    // 不调用 Start,直接 Finish,应不崩溃
+    // 不调用 Start,直接 Finish:Finish 内部自动补一次 Start,保证 BOOLEAN+ENUMERATION+TIMES 都上报
+    report.Finish(INNER_FAILURE);
+    // GetElapsedMs 在 finished_=true 后应返回 0
+    EXPECT_EQ(report.GetElapsedMs(), 0);
+}
+
+HWTEST_F(CmMetricsTest, ReportGuard_FinishAutoStart_BoundaryValue, TestSize.Level1)
+{
+    // 异常分支:Start 没调过,Finish 触发自动 Start。验证 finish 后 finished_=true 且第二次 Finish 是 no-op
+    CmMetricsReport report("UnitTestApi", NATIVE_CODE_TO_JS_CODE_MAP);
+    report.Finish(CM_SUCCESS);
+    // 第二次 Finish 应被 finished_ 标志拦截,不重复上报
     report.Finish(INNER_FAILURE);
 }
 

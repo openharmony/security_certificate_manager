@@ -75,19 +75,25 @@ void CmMetricsReport::Start()
     started_ = true;
     startTime_ = std::chrono::steady_clock::now();
 #ifdef CM_API_METRICS_ENABLE
+    // 即使 HistogramException() 实现抛异常,finished_ 还没设,后续 Finish 仍可重试
     HISTOGRAM_BOOLEAN(keys_[kIdxCall].c_str(), true);
 #endif
 }
 
 void CmMetricsReport::Finish(int32_t nativeErrorCode)
 {
-    if (!started_ || finished_) {
-        return;
+    if (finished_) {
+        return;  // 重复 Finish:idempotent,no-op
+    }
+    if (!started_) {
+        // 异常路径:忘调 Start 直接 Finish。自动补一次 Start,保证 BOOLEAN 也上报,
+        // 否则 BOOLEAN/ENUMERATION/TIMES 三种 histogram 会丢 BOOLEAN(数据不完整)。
+        Start();
     }
     finished_ = true;
+#ifdef CM_API_METRICS_ENABLE
     int32_t metricCode = CmGetMetricErrorCodeFromMap(nativeErrorCode, *jsCodeMap_, kind_);
     int32_t boundary = static_cast<int32_t>(jsCodeMap_->size());
-#ifdef CM_API_METRICS_ENABLE
     auto endTime = std::chrono::steady_clock::now();
     int64_t elapsedMs =
         std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime_).count();
