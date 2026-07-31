@@ -28,7 +28,6 @@ constexpr int32_t PARAM_ERROR = 401;
 constexpr int32_t NOT_FOUND = 17500002;
 constexpr int32_t INNER_FAILURE = 17500001;
 constexpr int32_t ERROR_CODE_COUNT = 15;
-}  // namespace
 
 class CmMetricsTest : public testing::Test {
 public:
@@ -115,4 +114,4 @@ public:
         EXPECT_EQ(report.GetElapsedMs(), 0);
     }
 };
-} // namespace
+}  // namespace
