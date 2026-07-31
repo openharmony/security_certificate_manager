@@ -61,6 +61,7 @@ static SignVerifyAsyncContext InitSignVerifyAsyncContext(void)
     SignVerifyAsyncContext context = static_cast<SignVerifyAsyncContext>(CmMalloc(sizeof(SignVerifyAsyncContextT)));
     if (context != nullptr) {
         (void)memset_s(context, sizeof(SignVerifyAsyncContextT), 0, sizeof(SignVerifyAsyncContextT));
+        context->errCode = PARAM_ERROR;
     }
     return context;
 }
@@ -71,6 +72,9 @@ static void FreeSignVerifyAsyncContext(napi_env env, SignVerifyAsyncContext &con
         return;
     }
 
+    if (context->metricsReport != nullptr) {
+        context->metricsReport->Finish(context->errCode);
+    }
     DeleteNapiContext(env, context->asyncWork, context->callback);
     FreeCmBlob(context->authUri);
     FreeCmBlob(context->handle);
@@ -281,8 +285,7 @@ static napi_value ParseCMInitParams(napi_env env, napi_callback_info info, SignV
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_INIT_ARGS_CNT) && (argc != (CM_NAPI_INIT_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        ThrowError(env, PARAM_ERROR, "init arguments count invalid, arguments count need between 2 and 3.",
-            context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "init arguments count invalid, arguments count need between 2 and 3.");
         CM_LOG_E("init arguments count is not expected");
         return nullptr;
     }
@@ -290,8 +293,7 @@ static napi_value ParseCMInitParams(napi_env env, napi_callback_info info, SignV
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->authUri);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "authUri is not a string or the length is 0 or too long.",
-            context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "authUri is not a string or the length is 0 or too long.");
         CM_LOG_E("get uri failed when using init function");
         return nullptr;
     }
@@ -299,7 +301,7 @@ static napi_value ParseCMInitParams(napi_env env, napi_callback_info info, SignV
     index++;
     result = ParseSpec(env, argv[index], context->spec);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "get spec type error", context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "get spec type error");
         CM_LOG_E("get sepc failed when using init function");
         return nullptr;
     }
@@ -308,8 +310,7 @@ static napi_value ParseCMInitParams(napi_env env, napi_callback_info info, SignV
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.",
-                context->metricsReport.get());
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
             CM_LOG_E("get callback function failed when using init function");
             return nullptr;
         }
@@ -325,8 +326,7 @@ static napi_value ParseCMUpdateParams(napi_env env, napi_callback_info info, Sig
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_UPDATE_ARGS_CNT) && (argc != (CM_NAPI_UPDATE_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        ThrowError(env, PARAM_ERROR, "update arguments count invalid, arguments count need between 2 and 3.",
-            context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "update arguments count invalid, arguments count need between 2 and 3.");
         CM_LOG_E("update arguments count is not expected");
         return nullptr;
     }
@@ -334,8 +334,7 @@ static napi_value ParseCMUpdateParams(napi_env env, napi_callback_info info, Sig
     size_t index = 0;
     napi_value result = GetBlob(env, argv[index], context->handle);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "handle is not a uint8Array or the length is 0 or too long.",
-            context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "handle is not a uint8Array or the length is 0 or too long.");
         CM_LOG_E("get handle failed when using update function");
         return nullptr;
     }
@@ -343,8 +342,7 @@ static napi_value ParseCMUpdateParams(napi_env env, napi_callback_info info, Sig
     index++;
     result = GetBlob(env, argv[index], context->inData);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "inData is not a uint8Array or the length is 0 or too long.",
-            context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "inData is not a uint8Array or the length is 0 or too long.");
         CM_LOG_E("get inData failed when using update function");
         return nullptr;
     }
@@ -353,8 +351,7 @@ static napi_value ParseCMUpdateParams(napi_env env, napi_callback_info info, Sig
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.",
-                context->metricsReport.get());
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
             CM_LOG_E("get callback function failed when using update function");
             return nullptr;
         }
@@ -368,7 +365,7 @@ static napi_value MallocFinishOutData(napi_env env, SignVerifyAsyncContext conte
     context->signature = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
     if (context->signature == nullptr) { /* signature will free after all process */
         CM_LOG_E("malloc outData failed when process sign finish");
-        ThrowError(env, INNER_FAILURE, GENERIC_MSG, context->metricsReport.get());
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG);
         return nullptr;
     }
     (void)memset_s(context->signature, sizeof(CmBlob), 0, sizeof(CmBlob));
@@ -376,7 +373,7 @@ static napi_value MallocFinishOutData(napi_env env, SignVerifyAsyncContext conte
     uint8_t *data = static_cast<uint8_t *>(CmMalloc(OUT_SIGNATURE_SIZE));
     if (data == nullptr) {
         CM_LOG_E("malloc outData.data failed when process sign finish");
-        ThrowError(env, INNER_FAILURE, GENERIC_MSG, context->metricsReport.get());
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG);
         return nullptr;
     }
     (void)memset_s(data, OUT_SIGNATURE_SIZE, 0, OUT_SIGNATURE_SIZE);
@@ -438,8 +435,7 @@ static napi_value ProcessFinishTwoParam(napi_env env, napi_value *argv, SignVeri
 
         ret = GetCallback(env, argv[curIndex], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.",
-                context->metricsReport.get());
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
             CM_LOG_E("arg2 is callback: get sign callback function failed when using finish function");
             return nullptr;
         }
@@ -451,8 +447,7 @@ static napi_value ProcessFinishTwoParam(napi_env env, napi_value *argv, SignVeri
     context->isSign = false;
     result = GetBlob(env, argv[curIndex], context->signature);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "signature is not a uint8Array or the length is 0 or too long.",
-            context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "signature is not a uint8Array or the length is 0 or too long.");
         CM_LOG_E("get signature failed when process promise verify");
         return nullptr;
     }
@@ -473,8 +468,7 @@ static napi_value ProcessFinishThreeParam(napi_env env, napi_value *argv, SignVe
 
     napi_value result = GetBlob(env, argv[curIndex], context->signature);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "signature is not a uint8Array or the length is 0 or too long.",
-            context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "signature is not a uint8Array or the length is 0 or too long.");
         CM_LOG_E("get signature failed when process callback verify");
         return nullptr;
     }
@@ -486,8 +480,7 @@ static napi_value ProcessFinishThreeParam(napi_env env, napi_value *argv, SignVe
 
     int32_t ret = GetCallback(env, argv[curIndex], context->callback);
     if (ret != CM_SUCCESS) {
-        ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.",
-            context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
         CM_LOG_E("get verify callback function failed when using finish function");
         return nullptr;
     }
@@ -503,8 +496,7 @@ static napi_value ParseCMFinishParams(napi_env env, napi_callback_info info, Sig
 
     if ((argc != CM_NAPI_FINISH_ARGS_CNT) && (argc != (CM_NAPI_FINISH_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT)) &&
         (argc != (CM_NAPI_FINISH_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT - CM_NAPI_SIGNATURE_ARG_CNT))) {
-        ThrowError(env, PARAM_ERROR, "finish arguments count invalid, arguments count need between 1 and 3.",
-            context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "finish arguments count invalid, arguments count need between 1 and 3.");
         CM_LOG_E("finish arguments count is not expected");
         return nullptr;
     }
@@ -512,8 +504,7 @@ static napi_value ParseCMFinishParams(napi_env env, napi_callback_info info, Sig
     size_t index = 0;
     napi_value result = GetBlob(env, argv[index], context->handle);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "handle is not a uint8Array or the length is 0 or too long.",
-            context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "handle is not a uint8Array or the length is 0 or too long.");
         CM_LOG_E("get handle failed when using finish function");
         return nullptr;
     }
@@ -534,8 +525,7 @@ static napi_value ParseCMAbortParams(napi_env env, napi_callback_info info, Sign
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if ((argc != CM_NAPI_ABORT_ARGS_CNT) && (argc != (CM_NAPI_ABORT_ARGS_CNT - CM_NAPI_CALLBACK_ARG_CNT))) {
-        ThrowError(env, PARAM_ERROR, "abort arguments count invalid, arguments count need between 1 and 2.",
-            context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "abort arguments count invalid, arguments count need between 1 and 2.");
         CM_LOG_E("abort arguments count is not expected");
         return nullptr;
     }
@@ -543,8 +533,7 @@ static napi_value ParseCMAbortParams(napi_env env, napi_callback_info info, Sign
     size_t index = 0;
     napi_value result = GetBlob(env, argv[index], context->handle);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "handle is not a uint8Array or the length is 0 or too long.",
-            context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "handle is not a uint8Array or the length is 0 or too long.");
         CM_LOG_E("get handle failed when using abort function");
         return nullptr;
     }
@@ -553,8 +542,7 @@ static napi_value ParseCMAbortParams(napi_env env, napi_callback_info info, Sign
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.",
-                context->metricsReport.get());
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
             CM_LOG_E("get callback function failed when using abort function");
             return nullptr;
         }
@@ -643,9 +631,6 @@ static void InitComplete(napi_env env, napi_status status, void *data)
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
     }
-    if (context->metricsReport != nullptr) {
-        context->metricsReport->Finish(context->errCode);
-    }
     FreeSignVerifyAsyncContext(env, context);
 }
 
@@ -671,9 +656,6 @@ static void UpdateOrAbortComplete(napi_env env, napi_status status, void *data)
         GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
-    }
-    if (context->metricsReport != nullptr) {
-        context->metricsReport->Finish(context->errCode);
     }
     FreeSignVerifyAsyncContext(env, context);
 }
@@ -729,9 +711,6 @@ static void FinishComplete(napi_env env, napi_status status, void *data)
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
     }
-    if (context->metricsReport != nullptr) {
-        context->metricsReport->Finish(context->errCode);
-    }
     FreeSignVerifyAsyncContext(env, context);
 }
 
@@ -758,7 +737,7 @@ static napi_value CMInitAsyncWork(napi_env env, SignVerifyAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowError(env, PARAM_ERROR, "queue async work error", context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "queue async work error");
         CM_LOG_E("queue async work failed when using init function");
         return nullptr;
     }
@@ -782,7 +761,7 @@ static napi_value CMUpdateAsyncWork(napi_env env, SignVerifyAsyncContext context
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowError(env, PARAM_ERROR, "queue async work error", context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "queue async work error");
         CM_LOG_E("queue async work failed when using update function");
         return nullptr;
     }
@@ -806,7 +785,7 @@ static napi_value CMFinishAsyncWork(napi_env env, SignVerifyAsyncContext context
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowError(env, PARAM_ERROR, "queue async work error", context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "queue async work error");
         CM_LOG_E("queue async work failed when using finish function");
         return nullptr;
     }
@@ -830,7 +809,7 @@ static napi_value CMAbortAsyncWork(napi_env env, SignVerifyAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowError(env, PARAM_ERROR, "queue async work error", context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "queue async work error");
         CM_LOG_E("queue async work failed when using abort function");
         return nullptr;
     }
