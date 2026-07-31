@@ -24,19 +24,11 @@ namespace OHOS::Security::CertManager {
 namespace {
 
 /**
- * Histogram-key prefixes, selected by `kind`. Note the trailing '.' is omitted;
- * the leading '.' comes from the suffix (see `kSuffixes`).
+ * Histogram-key prefixes, selected by `kind`. Callers append a suffix
+ * (".CALL" / ".Time" / ".errcode") at the call site to form the final key.
  */
 constexpr const char *kPrefixDialog = "DeviceCertificateKit.certificateManagerDialog.";
 constexpr const char *kPrefixNonDialog = "DeviceCertificateKit.certificateManager.";
-
-/**
- * Histogram-key suffixes, indexed by CmMetricsReport::keys_:
- *   0 -> BOOLEAN    ("CALL")
- *   1 -> TIMES      ("Time")
- *   2 -> ENUMERATION ("errcode")
- */
-constexpr const char *kSuffixes[] = { ".CALL", ".Time", ".errcode" };
 
 }  // namespace
 
@@ -45,10 +37,7 @@ CmMetricsReport::CmMetricsReport(const std::string &interfaceName,
     : boundary_(boundary), kind_(kind)
 {
     const char *prefix = (kind == CmMetricsKind::DIALOG) ? kPrefixDialog : kPrefixNonDialog;
-    const std::string base = std::string(prefix) + interfaceName;
-    for (size_t i = 0; i < keys_.size(); ++i) {
-        keys_[i] = base + kSuffixes[i];
-    }
+    keyPrefix_ = std::string(prefix) + interfaceName;
 }
 
 CmMetricsReport::~CmMetricsReport() = default;
@@ -65,7 +54,7 @@ void CmMetricsReport::Start()
      * `finished_` is intentionally NOT set here. If HISTOGRAM_BOOLEAN() throws,
      * the caller can retry via Finish() because `finished_` is still false.
      */
-    HISTOGRAM_BOOLEAN(keys_[kIdxCall].c_str(), true);
+    HISTOGRAM_BOOLEAN((keyPrefix_ + ".CALL").c_str(), true);
 #endif
 }
 
@@ -92,8 +81,8 @@ void CmMetricsReport::Finish(int32_t errorCode)
      * exceed INT32_MAX ms, but a defensive clamp keeps us safe).
      */
     int32_t elapsed = (elapsedMs > INT32_MAX) ? INT32_MAX : static_cast<int32_t>(elapsedMs);
-    HISTOGRAM_ENUMERATION(keys_[kIdxErrorcode].c_str(), errorCode, boundary_);
-    HISTOGRAM_TIMES(keys_[kIdxTime].c_str(), elapsed);
+    HISTOGRAM_ENUMERATION((keyPrefix_ + ".errcode").c_str(), errorCode, boundary_);
+    HISTOGRAM_TIMES((keyPrefix_ + ".Time").c_str(), elapsed);
 #endif
 }
 

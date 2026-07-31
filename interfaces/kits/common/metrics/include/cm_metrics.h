@@ -16,7 +16,6 @@
 #ifndef CM_METRICS_H
 #define CM_METRICS_H
 
-#include <array>
 #include <chrono>
 #include <cstdint>
 #include <string>
@@ -77,12 +76,11 @@ public:
 
 private:
     /**
-     * keys_ array indices, named here for readability.
+     * Histogram-key prefix resolved once at construction: `<kind-prefix><interfaceName>`,
+     * e.g. `DeviceCertificateKit.certificateManager.init`. Each metric report
+     * appends its own suffix (".CALL" / ".Time" / ".errcode") on demand.
      */
-    static constexpr size_t kIdxCall = 0;        // maps to HISTOGRAM_BOOLEAN
-    static constexpr size_t kIdxTime = 1;        // maps to HISTOGRAM_TIMES
-    static constexpr size_t kIdxErrorcode = 2;  // maps to HISTOGRAM_ENUMERATION
-    std::array<std::string, 3> keys_;
+    std::string keyPrefix_;
 
     int32_t boundary_ = 0;
     CmMetricsKind kind_ = CmMetricsKind::NON_DIALOG;
