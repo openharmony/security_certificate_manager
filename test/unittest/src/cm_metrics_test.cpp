@@ -29,7 +29,8 @@ HWTEST_F(CmMetricsTest, ReportGuard_StartRecordsCalled, TestSize.Level1)
 {
     CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
     report.Start();
-    // 关闭 metrics 宏时,Start 为空操作;这里至少验证不崩溃、可析构
+    // When the metrics macro is disabled, Start is a no-op; this only verifies
+    // that construction/destruction do not crash.
     report.Finish(CM_SUCCESS);
 }
 
@@ -37,28 +38,31 @@ HWTEST_F(CmMetricsTest, ReportGuard_FinishComputesElapsedMs, TestSize.Level1)
 {
     CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
     report.Start();
-    // 主动 sleep 不少于 1ms,确保 elapsed > 0
+    // Sleep at least 1 ms to ensure elapsed > 0.
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
     report.Finish(CM_SUCCESS);
-    // 关闭宏时 elapsed 仍应为 0(Finish 中未读取时钟)
+    // With the macro disabled elapsed stays 0 (Finish does not read the clock).
     EXPECT_EQ(report.GetElapsedMs(), 0);
 }
 
 HWTEST_F(CmMetricsTest, ReportGuard_FinishWithoutStart_IsSafe, TestSize.Level1)
 {
     CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
-    // 不调用 Start,直接 Finish:Finish 内部自动补一次 Start,保证 BOOLEAN+ENUMERATION+TIMES 都上报
+    // Skip Start and call Finish directly: Finish internally auto-Starts so all
+    // three histograms (BOOLEAN + ENUMERATION + TIMES) are still emitted.
     report.Finish(INNER_FAILURE);
-    // GetElapsedMs 在 finished_=true 后应返回 0
+    // GetElapsedMs should return 0 once finished_ is true.
     EXPECT_EQ(report.GetElapsedMs(), 0);
 }
 
 HWTEST_F(CmMetricsTest, ReportGuard_FinishAutoStart_BoundaryValue, TestSize.Level1)
 {
-    // 异常分支:Start 没调过,Finish 触发自动 Start。验证 finish 后 finished_=true 且第二次 Finish 是 no-op
+    // Edge case: Start is never called; Finish auto-Starts. Verifies that
+    // finished_ is set after Finish and that a second Finish is a no-op.
     CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
     report.Finish(CM_SUCCESS);
-    // 第二次 Finish 应被 finished_ 标志拦截,不重复上报
+    // The second Finish must be intercepted by the finished_ flag and not
+    // emit a duplicate histogram.
     report.Finish(INNER_FAILURE);
 }
 
@@ -67,7 +71,7 @@ HWTEST_F(CmMetricsTest, ReportGuard_DoubleFinish_IsSafe, TestSize.Level1)
     CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
     report.Start();
     report.Finish(CM_SUCCESS);
-    // 重复 Finish 应被内部 finished_ 标志忽略
+    // A repeated Finish must be ignored by the internal finished_ flag.
     report.Finish(INNER_FAILURE);
 }
 
@@ -75,7 +79,8 @@ HWTEST_F(CmMetricsTest, ReportGuard_FinishWithBoundaryValue, TestSize.Level1)
 {
     CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
     report.Start();
-    // boundary 取 ERROR_CODE_COUNT,边界值测试
+    // Boundary stress: drive Finish with values below, at, and above the
+    // histogram boundary (ERROR_CODE_COUNT).
     int32_t boundary = ERROR_CODE_COUNT;
     report.Finish(boundary - 1);
     report.Finish(boundary);
@@ -84,13 +89,14 @@ HWTEST_F(CmMetricsTest, ReportGuard_FinishWithBoundaryValue, TestSize.Level1)
 
 HWTEST_F(CmMetricsTest, ReportGuard_FinishPassesErrorCodeThrough, TestSize.Level1)
 {
-    // Finish 接收的 errorCode 应直接作为 histogram 值,不做映射
+    // Finish passes the errorCode through verbatim to the histogram; no mapping
+    // is applied any more.
     CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
     report.Start();
     report.Finish(PARAM_ERROR);
     report.Finish(NOT_FOUND);
     report.Finish(INNER_FAILURE);
-    // 只验证不崩溃、不重复上报
+    // Only verifies it does not crash and does not re-emit on duplicate Finish.
     EXPECT_EQ(report.GetElapsedMs(), 0);
 }
 } // namespace CertmanagerTest
