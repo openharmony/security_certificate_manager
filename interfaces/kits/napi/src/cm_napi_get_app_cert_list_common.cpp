@@ -238,7 +238,7 @@ napi_value CMNapiGetAppCertListCommon(napi_env env, napi_callback_info info, uin
         return nullptr;
     }
 
-    // 根据 store 选择对应的 JS 接口名,启动打点
+    // Pick the JS interface name based on the store, then start the histogram.
     const char *jsName = "getAllAppCertificates";
     if (store == APPLICATION_CERTIFICATE_STORE) {
         jsName = "getAllPublicCertificates";
@@ -283,7 +283,8 @@ napi_value CMNapiGetCallingAppCertListCommon(napi_env env, napi_callback_info in
         return nullptr;
     }
 
-    // getCallingAppCertListCommon 对应的 JS 接口固定为 getPrivateCertificates
+    // getCallingAppCertListCommon maps to the fixed JS interface name
+    // getPrivateCertificates.
     auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
         "getPrivateCertificates", OHOS::Security::CertManager::ERROR_CODE_COUNT);
     report->Start();

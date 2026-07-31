@@ -42,9 +42,11 @@ public:
     int32_t InvokeInnerApi() override;
     int32_t Init() override;
     ani_object GenerateResult() override;
-    // 异步场景:Invoke() 同步返回时只在 errorCode != CM_SUCCESS 时上报结束打点;
-    // CM_SUCCESS 表示已成功拉起 Ability,实际结果在 UIExtension 回调中,
-    // 结束打点由 CmAniUIExtensionCallback::invokeCallback() 上报。
+    // Async scenario: when Invoke() returns synchronously, only report the finish
+    // histogram when errorCode != CM_SUCCESS. CM_SUCCESS means the Ability has
+    // been launched successfully and the actual outcome is delivered through
+    // the UIExtension callback, where CmAniUIExtensionCallback::invokeCallback()
+    // is responsible for emitting the finish histogram.
     void OnInvokeEnd(int32_t errorCode) override;
 };
 

@@ -850,7 +850,7 @@ int32_t SetObjStringProperty(ani_env *env, ani_object obj, const std::map<std::s
         }
         status = env->Object_SetPropertyByName_Ref(obj, it->first.c_str(), strObj);
         if (status != ANI_OK) {
-            CM_LOG_E("set propterty %s failed。", it->first.c_str());
+            CM_LOG_E("set property %s failed.", it->first.c_str());
             return CMR_ERROR_INVALID_ARGUMENT;
         }
     }

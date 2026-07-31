@@ -309,7 +309,7 @@ napi_value CMNapiInstallAppCertCommon(napi_env env, napi_callback_info info, uin
         return nullptr;
     }
 
-    // 根据 store 选择对应的 JS 接口名,启动打点
+    // Pick the JS interface name based on the store, then start the histogram.
     const char *jsName = "installAppCertificate";
     if (store == APPLICATION_CERTIFICATE_STORE) {
         jsName = "installPublicCertificate";

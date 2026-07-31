@@ -49,7 +49,8 @@ ani_object CertManagerAniImpl::GenerateResult()
 
 void CertManagerAniImpl::OnInvokeStart()
 {
-    // 根据 metricsKind_ 选择 boundary(枚举元素数量,用于 histogram 上界)
+    // Select the histogram upper bound based on metricsKind_ (number of enum
+    // entries in the corresponding ErrorCode).
     int32_t boundary = (this->metricsKind_ == CmMetricsKind::DIALOG)
         ? Dialog::DIALOG_ERROR_CODE_COUNT
         : OHOS::Security::CertManager::ERROR_CODE_COUNT;
@@ -63,7 +64,7 @@ void CertManagerAniImpl::OnInvokeEnd(int32_t errorCode)
     if (this->metricsReport_ == nullptr) {
         return;
     }
-    // 上报使用转换后的 JS ErrorCode 值,与 JS 侧错误码契约一致
+    // Report the value transformed to the JS-side ErrorCode contract.
     int32_t jsCode = (this->metricsKind_ == CmMetricsKind::DIALOG)
         ? TransformDialogErrorCode(errorCode)
         : TransformErrorCode(errorCode);

@@ -173,7 +173,8 @@ napi_value CMNapiGetAppCertListByUidCommon(napi_env env, napi_callback_info info
         return nullptr;
     }
 
-    // getAppCertListByUidCommon 对应的 JS 接口固定为 getAllAppPrivateCertificatesByUid
+    // getAppCertListByUidCommon maps to the fixed JS interface name
+    // getAllAppPrivateCertificatesByUid.
     auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
         "getAllAppPrivateCertificatesByUid", OHOS::Security::CertManager::ERROR_CODE_COUNT);
     report->Start();

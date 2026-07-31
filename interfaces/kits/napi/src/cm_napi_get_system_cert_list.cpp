@@ -241,7 +241,8 @@ napi_value CMNapiGetSystemCertList(napi_env env, napi_callback_info info)
         report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
         return nullptr;
     }
-    // 把 report 句柄转移到 async context,完成时由 Complete 回调收尾
+    // Move the report handle into the async context; the Complete callback owns
+    // Finish from now on.
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
     context->metricsReport = reportHolder;
     napi_value result = GetCertListParseParams(env, info, context, CM_SYSTEM_TRUSTED_STORE);

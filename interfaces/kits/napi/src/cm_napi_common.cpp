@@ -458,9 +458,10 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode,
     napi_value businessError = nullptr;
     NAPI_CALL(env, napi_create_error(env, nullptr, message, &businessError));
     NAPI_CALL(env, napi_set_named_property(env, businessError, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
-    // 异常分支自动补打点:传入 metricsReport 时直接 Finish,
-    // 不依赖调用方在返回后再显式 recordFinish
-    // 上报使用转换后的 JS ErrorCode 值,与 JS 侧错误码契约一致
+    // Auto-record the histogram on the error path: when metricsReport is provided,
+    // emit Finish immediately so callers do not need to repeat the work after
+    // returning nullptr. The reported value is the JS-side ErrorCode, matching
+    // the JS contract.
     if (metricsReport != nullptr) {
         metricsReport->Finish(outCode);
     }
@@ -478,8 +479,9 @@ void ThrowError(napi_env env, int32_t errorCode, std::string errMsg,
     NAPI_CALL_RETURN_VOID(env, napi_create_error(env, nullptr, message, &paramsError));
     NAPI_CALL_RETURN_VOID(env, napi_set_named_property(env, paramsError, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
     NAPI_CALL_RETURN_VOID(env, napi_throw(env, paramsError));
-    // 异常分支自动补打点:传入 metricsReport 时直接 Finish,
-    // 不依赖调用方在 return nullptr 后再显式 recordFinish
+    // Auto-record the histogram on the error path: when metricsReport is provided,
+    // emit Finish immediately so callers do not need to repeat the work after
+    // returning nullptr.
     if (metricsReport != nullptr) {
         metricsReport->Finish(errorCode);
     }

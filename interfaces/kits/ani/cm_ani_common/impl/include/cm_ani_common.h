@@ -35,8 +35,9 @@ ani_object GetDialogAniErrorResult(ani_env *env, int32_t resultCode);
 
 ani_object GetAniDialogNativeResult(ani_env *env, int32_t resultCode);
 
-// 把 native 错误码转换为 JS 侧 ErrorCode 值,用于打点上报
-// 调用方需根据接口是否属于 dialog 选择使用对应的函数
+// Convert a native error code to its JS-side ErrorCode value for histogram
+// reporting. Callers must pick the variant that matches whether the API is a
+// dialog interface.
 int32_t TransformErrorCode(int32_t errorCode);
 int32_t TransformDialogErrorCode(int32_t errorCode);
 

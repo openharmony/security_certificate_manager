@@ -38,10 +38,12 @@ CertManagerAsyncImpl::~CertManagerAsyncImpl() {}
 
 void CertManagerAsyncImpl::OnInvokeEnd(int32_t errorCode)
 {
-    // 同步失败:立即上报结束打点
-    // 同步成功(CM_SUCCESS):Ability 已拉起,实际结果在 UIExtension 回调中,
-    // 由 CmAniUIExtensionCallback::invokeCallback() 负责调用 metricsReport->Finish()
-    // CertManagerAsyncImpl 总是 dialog 类型(CmMetricsKind::DIALOG),所以用 Dialog 转换
+    // Synchronous failure: emit the finish histogram immediately.
+// Synchronous success (CM_SUCCESS): the Ability has been launched and the
+// real outcome arrives via the UIExtension callback; the finish histogram is
+// emitted by CmAniUIExtensionCallback::invokeCallback().
+// CertManagerAsyncImpl is always a dialog interface (CmMetricsKind::DIALOG),
+// so use the Dialog-side transform.
     if (errorCode != CM_SUCCESS) {
         if (this->metricsReport_ != nullptr) {
             this->metricsReport_->Finish(TransformDialogErrorCode(errorCode));

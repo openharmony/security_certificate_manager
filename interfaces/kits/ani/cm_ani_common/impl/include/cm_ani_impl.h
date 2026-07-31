@@ -45,9 +45,10 @@ public:
 
     ani_object Invoke();
 
-    // 开始执行打点上报(虚函数,子类可自定义上报逻辑)
+    // Begin histogram reporting (virtual; subclasses may override).
     virtual void OnInvokeStart();
-    // 结束执行打点上报(虚函数,子类可自定义上报逻辑,如异步场景下延迟到回调再上报)
+    // End histogram reporting (virtual; subclasses may override, e.g. to defer
+    // emission until the asynchronous callback fires).
     virtual void OnInvokeEnd(int32_t errorCode);
 
 protected:
