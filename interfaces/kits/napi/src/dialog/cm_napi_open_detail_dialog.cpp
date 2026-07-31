@@ -100,8 +100,7 @@ napi_value CMNapiOpenDetailDialog(napi_env env, napi_callback_info info)
     }
     if (!IsEnableCACertDialog()) {
         CM_LOG_E("check not support ca cert dialog");
-        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, "DeviceType Error. deviceType is not support.");
-        report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_NOT_SUPPORTED);
+        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, "DeviceType Error. deviceType is not support.", &report);
         return nullptr;
     }
 
@@ -110,8 +109,7 @@ napi_value CMNapiOpenDetailDialog(napi_env env, napi_callback_info info)
     napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     if (status != napi_ok || argc != PARAM_SIZE_THREE) {
         CM_LOG_E("params number mismatch");
-        ThrowError(env, PARAM_ERROR, "Parameter Error. Params number mismatch.");
-        report.Finish(PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, "Parameter Error. Params number mismatch.", &report);
         return nullptr;
     }
 
@@ -122,16 +120,14 @@ napi_value CMNapiOpenDetailDialog(napi_env env, napi_callback_info info)
     int32_t ret = CheckDetailParamsAndInitContext(asyncContext, argv, argc);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("failed to check params and init.");
-        ThrowError(env, PARAM_ERROR, "failed to check params and init.");
-        report.Finish(PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, "failed to check params and init.", &report);
         return nullptr;
     }
 
     status = napi_create_promise(env, &asyncContext->deferred, &result);
     if (status != napi_ok) {
         CM_LOG_E("failed to create promise.");
-        ThrowError(env, DIALOG_ERROR_GENERIC, "failed to create promise.");
-        report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_GENERIC);
+        ThrowError(env, DIALOG_ERROR_GENERIC, "failed to create promise.", &report);
         return nullptr;
     }
 

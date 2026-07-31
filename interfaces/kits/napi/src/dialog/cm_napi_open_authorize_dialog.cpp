@@ -268,16 +268,14 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
         CM_LOG_E("params number mismatch");
         std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_ONE)
             + " or" + std::to_string(PARAM_SIZE_TWO) + ", given " + std::to_string(argc);
-        ThrowError(env, PARAM_ERROR, errMsg);
-        report.Finish(PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, errMsg, &report);
         return result;
     }
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
     size_t index = 0;
     if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[index], asyncContext->context)) {
         CM_LOG_E("parse abilityContext failed");
-        ThrowError(env, PARAM_ERROR, "parse abilityContext failed");
-        report.Finish(PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, "parse abilityContext failed", &report);
         return nullptr;
     }
     ++index;
@@ -290,8 +288,7 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
     }
     if (GetCallerLabelName(asyncContext) != CM_SUCCESS) {
         CM_LOG_E("get caller labelName faild");
-        ThrowError(env, DIALOG_ERROR_GENERIC, "get caller labelName faild");
-        report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_GENERIC);
+        ThrowError(env, DIALOG_ERROR_GENERIC, "get caller labelName faild", &report);
         return nullptr;
     }
     asyncContext->appUid = static_cast<int32_t>(getuid());

@@ -262,40 +262,35 @@ napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
     napi_value argv[CM_NAPI_GET_CERT_STORE_PATH_ARGS] = { nullptr };
     napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     if (status != napi_ok) {
-        ThrowError(env, PARAM_ERROR, "Failed to get params");
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, "Failed to get params", &report);
         return nullptr;
     }
 
     // check param count should be 1.
     if (argc != CM_NAPI_GET_CERT_STORE_PATH_ARGS) {
-        ThrowError(env, PARAM_ERROR, "param count invalid, should be 1.");
+        ThrowError(env, PARAM_ERROR, "param count invalid, should be 1.", &report);
         CM_LOG_E("args count[%zu] invalid, should be 1.", argc);
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
         return nullptr;
     }
 
     uint32_t type;
     int32_t ret = GetAndCheckCertType(env, argv[0], type);
     if (ret != CM_SUCCESS) {
-        ThrowError(env, PARAM_ERROR, "Failed to get param certType");
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, "Failed to get param certType", &report);
         return nullptr;
     }
 
     uint32_t scope = INIT_INVALID_VALUE;
     ret = GetAndCheckCertScope(env, argv[0], static_cast<CmCertType>(type), scope);
     if (ret != CM_SUCCESS) {
-        ThrowError(env, PARAM_ERROR, "Failed to get param certScope");
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, "Failed to get param certScope", &report);
         return nullptr;
     }
 
     uint32_t algorithm;
     ret = GetAndCheckCertAlg(env, argv[0], algorithm);
     if (ret != CM_SUCCESS) {
-        ThrowError(env, PARAM_ERROR, "Failed to get param certAlg");
-        report.Finish(OHOS::Security::CertManager::PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, "Failed to get param certAlg", &report);
         return nullptr;
     }
 

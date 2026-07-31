@@ -138,8 +138,7 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
 
     if (asyncContext->certificateType == CA_CERT && !IsEnableCACertDialog()) {
         CM_LOG_E("check not support ca cert dialog");
-        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, "DeviceType Error. deviceType is not support.");
-        report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_NOT_SUPPORTED);
+        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, "DeviceType Error. deviceType is not support.", &report);
         return result;
     }
 
@@ -147,23 +146,20 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
         CM_LOG_E("params number mismatch");
         std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_FOUR)
             + ", given " + std::to_string(argc);
-        ThrowError(env, PARAM_ERROR, errMsg);
-        report.Finish(PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, errMsg, &report);
         return result;
     }
 
     asyncContext->opType = static_cast<int32_t>(DIALOG_OPERATION_INSTALL);
     if (CMCheckArgvAndInitContext(asyncContext, argv, sizeof(argv) / sizeof(argv[0])) == nullptr) {
         CM_LOG_E("check argv vaild and init faild");
-        ThrowError(env, PARAM_ERROR, "check argv vaild and init faild");
-        report.Finish(PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, "check argv vaild and init faild", &report);
         return nullptr;
     }
 
     if (GetCallerLabelName(asyncContext) != CM_SUCCESS) {
         CM_LOG_E("get caller labelName faild");
-        ThrowError(env, DIALOG_ERROR_GENERIC, "get caller labelName faild");
-        report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_GENERIC);
+        ThrowError(env, DIALOG_ERROR_GENERIC, "get caller labelName faild", &report);
         return nullptr;
     }
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));

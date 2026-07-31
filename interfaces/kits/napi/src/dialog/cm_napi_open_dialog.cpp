@@ -74,8 +74,7 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
         CM_LOG_E("params number mismatch");
         std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_TWO)
             + ", given " + std::to_string(argc);
-        ThrowError(env, PARAM_ERROR, errMsg);
-        report.Finish(PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, errMsg, &report);
         return result;
     }
 
@@ -83,8 +82,7 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
     if (!ParseCmUIAbilityContextReq(env, argv[PARAM0], asyncContext->context)) {
         CM_LOG_E("ParseUIAbilityContextReq failed");
-        ThrowError(env, PARAM_ERROR, "Get context failed.");
-        report.Finish(PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, "Get context failed.", &report);
         return result;
     }
 
@@ -92,15 +90,13 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
     result = ParseUint32(env, argv[PARAM1], asyncContext->pageType);
     if (result == nullptr) {
         CM_LOG_E("parse type failed");
-        ThrowError(env, PARAM_ERROR, "parse type failed");
-        report.Finish(PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, "parse type failed", &report);
         return result;
     }
 
     if (!IsCmDialogPageTypeEnum(asyncContext->pageType)) {
         CM_LOG_E("pageType invalid");
-        ThrowError(env, PARAM_ERROR, "pageType invalid");
-        report.Finish(PARAM_ERROR);
+        ThrowError(env, PARAM_ERROR, "pageType invalid", &report);
         return nullptr;
     }
 
