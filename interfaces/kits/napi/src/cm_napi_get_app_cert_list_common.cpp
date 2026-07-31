@@ -242,7 +242,7 @@ napi_value CMNapiGetAppCertListCommon(napi_env env, napi_callback_info info, uin
         jsName = "getAllSystemAppCertificates";
     }
     auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
-        jsName, OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
+        jsName, OHOS::Security::CertManager::ERROR_CODE_COUNT);
     report->Start();
     context->metricsReport = report;
 
@@ -279,7 +279,7 @@ napi_value CMNapiGetCallingAppCertListCommon(napi_env env, napi_callback_info in
 
     // getCallingAppCertListCommon 对应的 JS 接口固定为 getPrivateCertificates
     auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
-        "getPrivateCertificates", OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
+        "getPrivateCertificates", OHOS::Security::CertManager::ERROR_CODE_COUNT);
     report->Start();
     context->metricsReport = report;
 

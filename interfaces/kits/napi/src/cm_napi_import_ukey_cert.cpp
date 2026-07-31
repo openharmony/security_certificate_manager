@@ -277,7 +277,7 @@ napi_value CMNapiImportUkeyCert(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("import ukey cert enter");
     OHOS::Security::CertManager::CmMetricsReport report("importUkeyCertificate",
-        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
+        OHOS::Security::CertManager::ERROR_CODE_COUNT);
     report.Start();
 
     ImportUkeyCertAsyncContext context = CreateImportUkeyCertAsyncContext();

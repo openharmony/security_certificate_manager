@@ -20,7 +20,8 @@ config("cm_metrics_config") {
 
 # libcm_metrics_static:histogram 打点工具,独立模块
 # - 不依赖 cm_api_common.h / cm_dialog_api_common.h
-# - 错误码映射表由调用方在构造 CmMetricsReport 时传入
+# - 调用方在构造 CmMetricsReport 时传入 boundary(通常取 ERROR_CODE_COUNT 或
+#   DIALOG_ERROR_CODE_COUNT),Finish 直接使用传入的 errorCode 不做映射
 # - CM_API_METRICS_ENABLE 宏和 api_metrics:histogrammanager 依赖只在 libcm_metrics_static 内部使用,
 #   静态库链接到消费方后,消费方调用类方法即可,不需要在消费方的 BUILD.gn 中重复声明
 ohos_static_library("libcm_metrics_static") {

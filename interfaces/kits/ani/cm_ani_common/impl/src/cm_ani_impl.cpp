@@ -49,13 +49,12 @@ ani_object CertManagerAniImpl::GenerateResult()
 
 void CertManagerAniImpl::OnInvokeStart()
 {
-    // 根据 metricsKind_ 选择对应的 native → JS 错误码映射表
-    using JsCodeMap = OHOS::Security::CertManager::CmMetricsReport::JsCodeMap;
-    const JsCodeMap &jsCodeMap = (this->metricsKind_ == CmMetricsKind::DIALOG)
-        ? static_cast<const JsCodeMap &>(Dialog::DIALOG_CODE_TO_JS_CODE_MAP)
-        : static_cast<const JsCodeMap &>(NATIVE_CODE_TO_JS_CODE_MAP);
+    // 根据 metricsKind_ 选择 boundary(枚举元素数量,用于 histogram 上界)
+    int32_t boundary = (this->metricsKind_ == CmMetricsKind::DIALOG)
+        ? Dialog::DIALOG_ERROR_CODE_COUNT
+        : OHOS::Security::CertManager::ERROR_CODE_COUNT;
     this->metricsReport_ = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
-        this->GetInterfaceName(), jsCodeMap, this->metricsKind_);
+        this->GetInterfaceName(), boundary, this->metricsKind_);
     this->metricsReport_->Start();
 }
 

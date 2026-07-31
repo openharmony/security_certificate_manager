@@ -87,7 +87,7 @@ napi_value CMNapiOpenUninstallCertDialog(napi_env env, napi_callback_info info)
     // determine the type of device
     CM_LOG_I("enter uninstall cert dialog");
     OHOS::Security::CertManager::CmMetricsReport report("openUninstallCertificateDialog",
-        DIALOG_CODE_TO_JS_CODE_MAP,
+        OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CODE_COUNT,
         OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
     napi_value result = nullptr;

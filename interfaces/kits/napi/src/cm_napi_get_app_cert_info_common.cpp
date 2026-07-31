@@ -209,7 +209,7 @@ napi_value CMNapiGetAppCertInfoCommon(napi_env env, napi_callback_info info, uin
         jsName = "getSystemAppCertificate";
     }
     auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
-        jsName, OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
+        jsName, OHOS::Security::CertManager::ERROR_CODE_COUNT);
     report->Start();
     context->metricsReport = report;
 

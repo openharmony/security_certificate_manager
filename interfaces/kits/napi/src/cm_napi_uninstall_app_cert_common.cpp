@@ -179,7 +179,7 @@ napi_value CMNapiUninstallAppCertCommon(napi_env env, napi_callback_info info, u
         jsName = "uninstallSystemAppCertificate";
     }
     auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
-        jsName, OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
+        jsName, OHOS::Security::CertManager::ERROR_CODE_COUNT);
     report->Start();
     context->metricsReport = report;
 

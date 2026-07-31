@@ -260,7 +260,7 @@ napi_value CMNapiGetUkeyCertList(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get ukey cert list enter");
     OHOS::Security::CertManager::CmMetricsReport report("getUkeyCertificateList",
-        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
+        OHOS::Security::CertManager::ERROR_CODE_COUNT);
     report.Start();
 
     GetUkeyCertListAsyncContext context = CreateGetUkeyCertListAsyncContext();

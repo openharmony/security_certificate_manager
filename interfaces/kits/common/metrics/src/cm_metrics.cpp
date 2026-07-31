@@ -32,42 +32,17 @@ constexpr const char *kPrefixNonDialog = "DeviceCertificateKit.certificateManage
 
 /**
  * Histogram-key suffixes, indexed by CmMetricsReport::keys_:
- *   0 -> BOOLEAN    ("Call")
+ *   0 -> BOOLEAN    ("CALL")
  *   1 -> TIMES      ("Time")
- *   2 -> ENUMERATION ("errorcode")
+ *   2 -> ENUMERATION ("errcode")
  */
 constexpr const char *kSuffixes[] = { ".CALL", ".Time", ".errcode" };
 
-/**
- * Fallback JS ErrorCode when a native code is not found in `jsCodeMap`.
- *   - DIALOG     -> 29700001 (= Dialog::DIALOG_ERROR_GENERIC)
- *   - non-DIALOG -> 17500001 (= INNER_FAILURE)
- * These values are part of the JS-side ErrorCode enum contract; the metrics
- * module deliberately does NOT depend on cm_api_common.h / cm_dialog_api_common.h.
- */
-constexpr int32_t kMetricsFallbackDialog = 29700001;
-constexpr int32_t kMetricsFallbackNonDialog = 17500001;
-
 }  // namespace
 
-/**
- * Empty map used as the default `jsCodeMap_` when callers don't supply one.
- */
-const CmMetricsReport::JsCodeMap CmMetricsReport::kEmptyJsCodeMap_{};
-
-int32_t CmGetMetricErrorCodeFromMap(int32_t nativeErrorCode,
-    const std::unordered_map<int32_t, int32_t> &jsCodeMap, CmMetricsKind kind)
-{
-    auto iter = jsCodeMap.find(nativeErrorCode);
-    if (iter != jsCodeMap.end()) {
-        return iter->second;
-    }
-    return (kind == CmMetricsKind::DIALOG) ? kMetricsFallbackDialog : kMetricsFallbackNonDialog;
-}
-
 CmMetricsReport::CmMetricsReport(const std::string &interfaceName,
-    const JsCodeMap &jsCodeMap, CmMetricsKind kind)
-    : jsCodeMap_(&jsCodeMap), kind_(kind)
+    int32_t boundary, CmMetricsKind kind)
+    : boundary_(boundary), kind_(kind)
 {
     const char *prefix = (kind == CmMetricsKind::DIALOG) ? kPrefixDialog : kPrefixNonDialog;
     const std::string base = std::string(prefix) + interfaceName;
@@ -94,7 +69,7 @@ void CmMetricsReport::Start()
 #endif
 }
 
-void CmMetricsReport::Finish(int32_t nativeErrorCode)
+void CmMetricsReport::Finish(int32_t errorCode)
 {
     if (finished_) {
         return;  // Double-Finish: idempotent, no-op.
@@ -109,8 +84,6 @@ void CmMetricsReport::Finish(int32_t nativeErrorCode)
     }
     finished_ = true;
 #ifdef CM_API_METRICS_ENABLE
-    int32_t metricCode = CmGetMetricErrorCodeFromMap(nativeErrorCode, *jsCodeMap_, kind_);
-    int32_t boundary = static_cast<int32_t>(jsCodeMap_->size());
     auto endTime = std::chrono::steady_clock::now();
     int64_t elapsedMs =
         std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime_).count();
@@ -119,7 +92,7 @@ void CmMetricsReport::Finish(int32_t nativeErrorCode)
      * exceed INT32_MAX ms, but a defensive clamp keeps us safe).
      */
     int32_t elapsed = (elapsedMs > INT32_MAX) ? INT32_MAX : static_cast<int32_t>(elapsedMs);
-    HISTOGRAM_ENUMERATION(keys_[kIdxErrorcode].c_str(), metricCode, boundary);
+    HISTOGRAM_ENUMERATION(keys_[kIdxErrorcode].c_str(), errorCode, boundary_);
     HISTOGRAM_TIMES(keys_[kIdxTime].c_str(), elapsed);
 #endif
 }

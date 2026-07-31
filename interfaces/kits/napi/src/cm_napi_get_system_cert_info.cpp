@@ -191,7 +191,7 @@ napi_value CMNapiGetSystemCertInfo(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get system cert info enter");
     OHOS::Security::CertManager::CmMetricsReport report("getSystemTrustedCertificate",
-        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
+        OHOS::Security::CertManager::ERROR_CODE_COUNT);
     report.Start();
     GetCertInfoAsyncContext context = CreateGetCertInfoAsyncContext();
     if (context == nullptr) {
@@ -223,7 +223,7 @@ napi_value CMNapiGetUserTrustedCertInfo(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get user cert info enter");
     OHOS::Security::CertManager::CmMetricsReport report("getUserTrustedCertificate",
-        OHOS::Security::CertManager::NATIVE_CODE_TO_JS_CODE_MAP);
+        OHOS::Security::CertManager::ERROR_CODE_COUNT);
     report.Start();
 
     GetCertInfoAsyncContext context = CreateGetCertInfoAsyncContext();
