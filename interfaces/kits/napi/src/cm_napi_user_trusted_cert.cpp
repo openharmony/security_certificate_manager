@@ -431,15 +431,15 @@ static void InstallUserCertComplete(napi_env env, napi_status status, void *data
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertInstallCertResult(env, context);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
         result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
-    if (context->metricsReport != nullptr) {
-        context->metricsReport->Finish(context->errCode);
-    }
     FreeUserCertAsyncContext(env, context);
 }
 
@@ -473,15 +473,15 @@ static void UninstallAllUserCertComplete(napi_env env, napi_status status, void 
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
         result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
     }
     napi_get_undefined(env, &result[1]);
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
-    if (context->metricsReport != nullptr) {
-        context->metricsReport->Finish(context->errCode);
-    }
     FreeUserCertAsyncContext(env, context);
 }
 

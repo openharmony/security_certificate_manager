@@ -183,15 +183,15 @@ static void GrantUidComplete(napi_env env, napi_status status, void *data)
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultAuthUri(env, context->authUri);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
         result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
-    if (context->metricsReport != nullptr) {
-        context->metricsReport->Finish(context->errCode);
-    }
     FreeGrantAsyncContext(env, context);
 }
 
@@ -207,18 +207,20 @@ static void RemoveUidComplete(napi_env env, napi_status status, void *data)
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else if (context->errCode == CMR_ERROR_AUTH_CHECK_FAILED) {
         napi_create_uint32(env, 0, &result[0]);
-        context->errCode = CM_SUCCESS;
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
         result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
     }
     napi_get_undefined(env, &result[1]);
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
-    if (context->metricsReport != nullptr) {
-        context->metricsReport->Finish(context->errCode);
-    }
     FreeGrantAsyncContext(env, context);
 }
 
@@ -229,19 +231,21 @@ static void IsAuthedComplete(napi_env env, napi_status status, void *data)
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         napi_get_boolean(env, true, &result[1]);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else if (context->errCode == CMR_ERROR_AUTH_CHECK_FAILED) {
         napi_create_uint32(env, 0, &result[0]);
         napi_get_boolean(env, false, &result[1]);
-        context->errCode = CM_SUCCESS;
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
         result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
-    if (context->metricsReport != nullptr) {
-        context->metricsReport->Finish(context->errCode);
-    }
     FreeGrantAsyncContext(env, context);
 }
 
@@ -306,15 +310,15 @@ static void GetUidListComplete(napi_env env, napi_status status, void *data)
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultAuthList(env, context->uidList);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
         result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
-    if (context->metricsReport != nullptr) {
-        context->metricsReport->Finish(context->errCode);
-    }
     FreeGrantAsyncContext(env, context);
 }
 

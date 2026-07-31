@@ -52,6 +52,9 @@ void CmUIExtensionIntBoolCallback::ProcessCallback(napi_env env, const CommonAsy
     if (asyncContext->errCode == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &args[PARAM0]));
         NAPI_CALL_RETURN_VOID(env, napi_get_boolean(env, true, &args[PARAM1]));
+        if (asyncContext->metricsReport != nullptr) {
+            asyncContext->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
         args[PARAM0] = GenerateBusinessError(env, asyncContext->errCode, asyncContext->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &args[PARAM1]));
