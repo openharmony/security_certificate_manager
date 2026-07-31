@@ -52,7 +52,8 @@ static sptr<IBundleMgr> GetBundleMgrProxy()
     return iface_cast<IBundleMgr>(remoteObject);
 }
 
-static int32_t GetUserCaStorePath(const enum CmCertScope certScope, string &path)
+static int32_t GetUserCaStorePath(napi_env env, const enum CmCertScope certScope, string &path,
+    OHOS::Security::CertManager::CmMetricsReport *report)
 {
     path += CA_STORE_PATH_USER_SANDBOX_BASE;
     if (certScope == CM_GLOBAL_USER) {
@@ -64,6 +65,7 @@ static int32_t GetUserCaStorePath(const enum CmCertScope certScope, string &path
     sptr<IBundleMgr> bundleMgrProxy = GetBundleMgrProxy();
     if (bundleMgrProxy == nullptr) {
         CM_LOG_E("Failed to get bundle manager proxy.");
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG, report);
         return CM_FAILURE;
     }
 
@@ -73,12 +75,14 @@ static int32_t GetUserCaStorePath(const enum CmCertScope certScope, string &path
     int32_t ret = bundleMgrProxy->GetBundleInfoForSelf(flags, bundleInfo);
     if (ret != 0) {
         CM_LOG_E("Failed to get bundle info for self");
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG, report);
         return CM_FAILURE;
     }
 
     ret = AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(bundleInfo.applicationInfo.uid, userId);
     if (ret != 0) {
         CM_LOG_E("Failed to get userid from uid[%d]", bundleInfo.applicationInfo.uid);
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG, report);
         return CM_FAILURE;
     }
 
@@ -97,7 +101,8 @@ static bool IsDirExist(const char *fileName)
     return false;
 }
 
-static int32_t GetSysCaStorePath(napi_env env, const enum CmCertAlg certAlg, string &path)
+static int32_t GetSysCaStorePath(napi_env env, const enum CmCertAlg certAlg, string &path,
+    OHOS::Security::CertManager::CmMetricsReport *report)
 {
     if (certAlg == CM_ALG_INTERNATIONAL) {
         path = CA_STORE_PATH_SYSTEM;
@@ -105,7 +110,7 @@ static int32_t GetSysCaStorePath(napi_env env, const enum CmCertAlg certAlg, str
     }
     if (!IsDirExist(SYSTEM_CA_STORE_GM)) {
         CM_LOG_E("system gm ca store path not exist");
-        ThrowError(env, STORE_PATH_NOT_SUPPORTED, "the device does not support specified certificate store path");
+        ThrowError(env, STORE_PATH_NOT_SUPPORTED, "the device does not support specified certificate store path", report);
         return STORE_PATH_NOT_SUPPORTED;
     } else {
         path = CA_STORE_PATH_SYSTEM_SM;
@@ -114,20 +119,20 @@ static int32_t GetSysCaStorePath(napi_env env, const enum CmCertAlg certAlg, str
 }
 
 static napi_value GetCertStorePath(napi_env env, const enum CmCertType certType, const enum CmCertScope certScope,
-    const enum CmCertAlg certAlg)
+    const enum CmCertAlg certAlg, OHOS::Security::CertManager::CmMetricsReport *report)
 {
     string path = "";
     if (certType == CM_CA_CERT_SYSTEM) {
-        int32_t ret = GetSysCaStorePath(env, certAlg, path);
+        int32_t ret = GetSysCaStorePath(env, certAlg, path, report);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get system ca path, ret = %d", ret);
             return nullptr;
         }
     } else {
-        int32_t ret = GetUserCaStorePath(certScope, path);
+        int32_t ret = GetUserCaStorePath(env, certScope, path, report);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get user ca path.");
-            ThrowError(env, INNER_FAILURE, GENERIC_MSG);
+            ThrowError(env, INNER_FAILURE, GENERIC_MSG, report);
             return nullptr;
         }
     }
@@ -136,7 +141,7 @@ static napi_value GetCertStorePath(napi_env env, const enum CmCertType certType,
     napi_status status = napi_create_string_utf8(env, path.c_str(), path.length(), &result);
     if (status != napi_ok) {
         CM_LOG_E("Failed to creat string out.");
-        ThrowError(env, INNER_FAILURE, GENERIC_MSG);
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG, report);
         return nullptr;
     }
     return result;
@@ -295,12 +300,13 @@ napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
     }
 
     napi_value res = GetCertStorePath(env, static_cast<CmCertType>(type), static_cast<CmCertScope>(scope),
-        static_cast<CmCertAlg>(algorithm));
+        static_cast<CmCertAlg>(algorithm), &report);
     if (res == nullptr) {
-        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
-    } else {
-        report.Finish(CM_SUCCESS);
+        // GetCertStorePath already invoked ThrowError with the precise error
+        // code; only record the success case here.
+        return nullptr;
     }
+    report.Finish(CM_SUCCESS);
     CM_LOG_I("get cert store path end");
     return res;
 }
