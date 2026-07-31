@@ -34,7 +34,7 @@ constexpr const char *kPrefixNonDialog = "DeviceCertificateKit.certificateManage
 
 CmMetricsReport::CmMetricsReport(const std::string &interfaceName,
     int32_t boundary, CmMetricsKind kind)
-    : boundary_(boundary), kind_(kind)
+    : boundary_(boundary)
 {
     const char *prefix = (kind == CmMetricsKind::DIALOG) ? kPrefixDialog : kPrefixNonDialog;
     keyPrefix_ = std::string(prefix) + interfaceName;
