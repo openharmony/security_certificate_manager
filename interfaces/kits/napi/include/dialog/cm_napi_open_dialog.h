@@ -40,6 +40,7 @@ struct CommonAsyncContext {
     std::string uri = "";
     int32_t opType = 0;
     uint32_t certificateType = 0;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 
 struct CmUIExtensionRequestContext : public CommonAsyncContext {
@@ -57,7 +58,6 @@ struct CmUIExtensionRequestContext : public CommonAsyncContext {
     std::vector<std::string> keyAlgIds;
     std::vector<std::string> issuers;
     std::string serverUrl = "";
-    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 }  // namespace CertManagerNapi
 #endif  // CM_NAPI_OPEN_DIALOG_H
