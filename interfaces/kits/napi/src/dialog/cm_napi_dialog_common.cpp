@@ -415,7 +415,8 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode)
     return businessErrorMsg;
 }
 
-void ThrowError(napi_env env, int32_t errorCode, const std::string errMsg)
+void ThrowError(napi_env env, int32_t errorCode, const std::string errMsg,
+    OHOS::Security::CertManager::CmMetricsReport *metricsReport)
 {
     napi_value paramsError = nullptr;
     napi_value outCode = nullptr;
@@ -426,6 +427,11 @@ void ThrowError(napi_env env, int32_t errorCode, const std::string errMsg)
     NAPI_CALL_RETURN_VOID(env, napi_set_named_property(env, paramsError,
         BUSINESS_ERROR_PROPERTY_CODE.c_str(), outCode));
     NAPI_CALL_RETURN_VOID(env, napi_throw(env, paramsError));
+    // 异常分支自动补打点:传入 metricsReport 时直接 Finish,
+    // 不依赖调用方在 return nullptr 后再显式 recordFinish
+    if (metricsReport != nullptr) {
+        metricsReport->Finish(errorCode);
+    }
 }
 
 void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
