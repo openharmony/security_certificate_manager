@@ -15,7 +15,6 @@ import("//build/config/components/ets_frontend/ets2abc_config.gni")
 import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
 
-# metrics 相关宏和 api_metrics 依赖�?libcm_metrics_static 内部处理,此处不重复声�?
 ohos_shared_library("certmanager_ani") {
   branch_protector_ret = "pac_ret"
   sanitize = {
