@@ -72,13 +72,13 @@ static bool BuildInvokeBusinessError(ani_env *env, int32_t code, ani_object &bus
 }
 
 // Release the callback resources: global ref + detach env. Logs but does not propagate.
-static void ReleaseInvokeResources(ani_env *env)
+static void ReleaseInvokeResources(ani_env *env, ani_ref aniCallback, ani_vm *vm)
 {
-    ani_status status = env->GlobalReference_Delete(this->aniCallback);
+    ani_status status = env->GlobalReference_Delete(aniCallback);
     if (status != ANI_OK) {
         CM_LOG_E("delete global reference failed. status = %d", static_cast<int32_t>(status));
     }
-    status = DetachCurrentThreadEnv(this->vm);
+    status = DetachCurrentThreadEnv(vm);
     if (status != ANI_OK) {
         CM_LOG_E("DetachCurrentThreadEnv failed. status = %d", static_cast<int32_t>(status));
     }
@@ -120,7 +120,7 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
         CM_LOG_E("invoke callback failed. status = %d", static_cast<int32_t>(status));
         return;
     }
-    ReleaseInvokeResources(env);
+    ReleaseInvokeResources(env, this->aniCallback, this->vm);
 }
 
 void CmAniUIExtensionCallback::OnRelease(const int32_t releaseCode)
