@@ -250,6 +250,22 @@ static int32_t CheckAndGetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestC
     return CM_SUCCESS;
 }
 
+// Validate argv count and produce a user-facing error message on mismatch.
+// Returns true when argc is acceptable; otherwise emits ThrowError and returns false.
+static bool CheckAuthorizeDialogArgc(napi_env env, size_t argc,
+    OHOS::Security::CertManager::CmMetricsReport *report)
+{
+    if (argc == PARAM_SIZE_ONE || argc == PARAM_SIZE_TWO) {
+        return true;
+    }
+    CM_LOG_E("params number mismatch");
+    std::string errMsg = "Parameter Error. Params number mismatch, need " +
+        std::to_string(PARAM_SIZE_ONE) + " or" + std::to_string(PARAM_SIZE_TWO) +
+        ", given " + std::to_string(argc);
+    ThrowError(env, PARAM_ERROR, errMsg, report);
+    return false;
+}
+
 napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert authorize dialog enter");
@@ -266,30 +282,23 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
     size_t argc = PARAM_SIZE_TWO;
     napi_value argv[PARAM_SIZE_TWO] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-    if (argc != PARAM_SIZE_ONE && argc != PARAM_SIZE_TWO) {
-        CM_LOG_E("params number mismatch");
-        std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_ONE)
-            + " or" + std::to_string(PARAM_SIZE_TWO) + ", given " + std::to_string(argc);
-        ThrowError(env, PARAM_ERROR, errMsg, &report);
+    if (!CheckAuthorizeDialogArgc(env, argc, &report)) {
         return result;
     }
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
     asyncContext->metricsReport = reportHolder;
-    size_t index = 0;
-    if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[index], asyncContext->context)) {
+    if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[0], asyncContext->context)) {
         CM_LOG_E("parse abilityContext failed");
         ThrowError(env, PARAM_ERROR, "parse abilityContext failed", reportHolder.get());
         return nullptr;
     }
-    ++index;
-    if (index < argc) {
-        if (CheckAndGetAuthorizeRequest(asyncContext, argv[index]) != CM_SUCCESS) {
-            // CheckAndGetAuthorizeRequest already invoked ThrowError with the
-            // precise error code; metric is already recorded via reportHolder.
-            CM_LOG_E("parse AuthorizeRequest failed");
-            return nullptr;
-        }
+    if (argc > PARAM_SIZE_ONE &&
+        CheckAndGetAuthorizeRequest(asyncContext, argv[1]) != CM_SUCCESS) {
+        // CheckAndGetAuthorizeRequest already invoked ThrowError with the
+        // precise error code; metric is already recorded via reportHolder.
+        CM_LOG_E("parse AuthorizeRequest failed");
+        return nullptr;
     }
     if (GetCallerLabelName(asyncContext) != CM_SUCCESS) {
         CM_LOG_E("get caller labelName faild");
@@ -302,7 +311,7 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
     if (argc == PARAM_SIZE_ONE) {
         auto uiExtCallback = std::make_shared<CmUIExtensionStringCallback>(asyncContext);
         StartUIExtensionAbility(asyncContext, want, uiExtCallback);
-    } else if (argc == PARAM_SIZE_TWO) {
+    } else {
         auto uiExtCallback = std::make_shared<CmUIExtensionCertReferenceCallback>(asyncContext);
         StartUIExtensionAbility(asyncContext, want, uiExtCallback);
     }

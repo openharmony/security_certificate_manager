@@ -54,6 +54,20 @@ static bool IsCmDialogPageTypeEnum(const uint32_t value)
     }
 }
 
+// Validate that argc equals the expected PARAM_SIZE_TWO and emit ThrowError if not.
+static bool CheckCertManagerDialogArgc(napi_env env, size_t argc,
+    OHOS::Security::CertManager::CmMetricsReport *report)
+{
+    if (argc == PARAM_SIZE_TWO) {
+        return true;
+    }
+    CM_LOG_E("params number mismatch");
+    std::string errMsg = "Parameter Error. Params number mismatch, need " +
+        std::to_string(PARAM_SIZE_TWO) + ", given " + std::to_string(argc);
+    ThrowError(env, PARAM_ERROR, errMsg, report);
+    return false;
+}
+
 napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert manager dialog enter");
@@ -70,11 +84,7 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
     size_t argc = PARAM_SIZE_TWO;
     napi_value argv[PARAM_SIZE_TWO] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-    if (argc != PARAM_SIZE_TWO) {
-        CM_LOG_E("params number mismatch");
-        std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_TWO)
-            + ", given " + std::to_string(argc);
-        ThrowError(env, PARAM_ERROR, errMsg, &report);
+    if (!CheckCertManagerDialogArgc(env, argc, &report)) {
         return result;
     }
 

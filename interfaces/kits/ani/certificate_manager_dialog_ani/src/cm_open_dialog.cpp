@@ -55,6 +55,35 @@ ani_object CmAniUIExtensionCallback::GetDefaultResult(ani_env *env)
     return reinterpret_cast<ani_object>(nullRef);
 }
 
+// Build the BusinessError object to forward back to JS. Returns true on success.
+static bool BuildInvokeBusinessError(ani_env *env, int32_t code, ani_object &businessError)
+{
+    if (code != CM_SUCCESS) {
+        CM_LOG_E("invokeCallback with error, code: %d", code);
+        businessError = GetDialogAniErrorResult(env, code);
+        return businessError != nullptr;
+    }
+    int32_t ret = AniUtils::GenerateBusinessError(env, CM_SUCCESS, "", businessError);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("generate businessError failed.");
+        return false;
+    }
+    return true;
+}
+
+// Release the callback resources: global ref + detach env. Logs but does not propagate.
+static void ReleaseInvokeResources(ani_env *env)
+{
+    ani_status status = env->GlobalReference_Delete(this->aniCallback);
+    if (status != ANI_OK) {
+        CM_LOG_E("delete global reference failed. status = %d", static_cast<int32_t>(status));
+    }
+    status = DetachCurrentThreadEnv(this->vm);
+    if (status != ANI_OK) {
+        CM_LOG_E("DetachCurrentThreadEnv failed. status = %d", static_cast<int32_t>(status));
+    }
+}
+
 void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, ani_object result)
 {
     CM_LOG_D("CmAniUIExtensionCallback::invokeCallback");
@@ -80,21 +109,9 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
         }
     }
 
-    int32_t ret;
     ani_object businessError{};
-    if (code != CM_SUCCESS) {
-        CM_LOG_E("invokeCallback with error, code: %d", code);
-        businessError = GetDialogAniErrorResult(env, code);
-        if (businessError == nullptr) {
-            CM_LOG_E("get businessError failed.");
-            return;
-        }
-    } else {
-        ret = AniUtils::GenerateBusinessError(env, CM_SUCCESS, "", businessError);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("generate businessError failed.");
-            return;
-        }
+    if (!BuildInvokeBusinessError(env, code, businessError)) {
+        return;
     }
 
     ani_status status = env->Object_CallMethodByName_Void(reinterpret_cast<ani_object>(this->aniCallback), "invoke",
@@ -103,14 +120,7 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
         CM_LOG_E("invoke callback failed. status = %d", static_cast<int32_t>(status));
         return;
     }
-    if ((status = env->GlobalReference_Delete(this->aniCallback)) != ANI_OK) {
-        CM_LOG_E("delete global reference failed. status = %d", static_cast<int32_t>(status));
-    }
-    if ((status = DetachCurrentThreadEnv(this->vm)) != ANI_OK) {
-        CM_LOG_E("DetachCurrentThreadEnv failed. status = %d", static_cast<int32_t>(status));
-        return;
-    }
-    return;
+    ReleaseInvokeResources(env);
 }
 
 void CmAniUIExtensionCallback::OnRelease(const int32_t releaseCode)
