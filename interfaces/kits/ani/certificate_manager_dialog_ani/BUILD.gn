@@ -1,4 +1,4 @@
-# Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+# Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,7 +15,7 @@ import("//build/config/components/ets_frontend/ets2abc_config.gni")
 import("//base/security/certificate_manager/cert_manager.gni")
 import("//build/ohos.gni")
 
-# metrics 相关宏和 api_metrics 依赖由 libcm_metrics_static 内部处理,此处不重复声明
+# metrics 相关宏和 api_metrics 依赖�?libcm_metrics_static 内部处理,此处不重复声�?
 ohos_shared_library("certmanager_dialog_ani") {
   branch_protector_ret = "pac_ret"
   sanitize = {

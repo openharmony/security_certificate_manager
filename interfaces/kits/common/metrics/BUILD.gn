@@ -1,4 +1,4 @@
-# Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+# Copyright (c) 2025-2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -19,11 +19,11 @@ config("cm_metrics_config") {
 }
 
 # libcm_metrics_static:histogram 打点工具,独立模块
-# - 不依赖 cm_api_common.h / cm_dialog_api_common.h
-# - 调用方在构造 CmMetricsReport 时传入 boundary(通常取 ERROR_CODE_COUNT 或
-#   DIALOG_ERROR_CODE_COUNT),Finish 直接使用传入的 errorCode 不做映射
+# - 不依�?cm_api_common.h / cm_dialog_api_common.h
+# - 调用方在构�?CmMetricsReport 时传�?boundary(通常�?ERROR_CODE_COUNT �?
+#   DIALOG_ERROR_CODE_COUNT),Finish 直接使用传入�?errorCode 不做映射
 # - CM_API_METRICS_ENABLE 宏和 api_metrics:histogrammanager 依赖只在 libcm_metrics_static 内部使用,
-#   静态库链接到消费方后,消费方调用类方法即可,不需要在消费方的 BUILD.gn 中重复声明
+#   静态库链接到消费方�?消费方调用类方法即可,不需要在消费方的 BUILD.gn 中重复声�?
 ohos_static_library("libcm_metrics_static") {
   branch_protector_ret = "pac_ret"
   sanitize = {
