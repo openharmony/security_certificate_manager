@@ -247,6 +247,9 @@ static void InstallAppCertComplete(napi_env env, napi_status status, void *data)
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         result[1] = InstallAppCertWriteResult(env, context);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
         result[0] = GenAppCertBusinessError(env, context->result, context->store, context->metricsReport);
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));

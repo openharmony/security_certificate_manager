@@ -117,6 +117,9 @@ static void GetAppCertListComplete(napi_env env, napi_status status, void *data)
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         result[1] = GetAppCertListWriteResult(env, context);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
         result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
@@ -178,6 +181,9 @@ static void GetCallingAppCertListComplete(napi_env env, napi_status status, void
     if (mcontext->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &res[0]));
         res[1] = GetAppCertListWriteResult(env, mcontext);
+        if (mcontext->metricsReport != nullptr) {
+            mcontext->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
         res[0] = GenerateBusinessError(env, mcontext->result, mcontext->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &res[1]));
