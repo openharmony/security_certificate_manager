@@ -396,7 +396,8 @@ int32_t TranformErrorCode(int32_t errorCode)
     return DIALOG_ERROR_GENERIC;
 }
 
-napi_value GenerateBusinessError(napi_env env, int32_t errorCode)
+napi_value GenerateBusinessError(napi_env env, int32_t errorCode,
+    OHOS::Security::CertManager::CmMetricsReport *metricsReport)
 {
     const char *errorMessage = GetJsErrorMsg(errorCode);
     if (errorMessage == nullptr) {
@@ -412,6 +413,11 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode)
     napi_value businessErrorMsg = nullptr;
     NAPI_CALL(env, napi_create_error(env, nullptr, message, &businessErrorMsg));
     NAPI_CALL(env, napi_set_named_property(env, businessErrorMsg, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
+    // 异常分支自动补打点:传入 metricsReport 时直接 Finish,
+    // 不依赖调用方在返回后再显式 recordFinish
+    if (metricsReport != nullptr) {
+        metricsReport->Finish(errorCode);
+    }
     return businessErrorMsg;
 }
 

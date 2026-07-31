@@ -44,7 +44,7 @@ void CmUIExtensionVoidCallback::ProcessCallback(napi_env env, const CommonAsyncC
     if (asyncContext->errCode == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_get_null(env, &args));
     } else {
-        args = GenerateBusinessError(env, asyncContext->errCode);
+        args = GenerateBusinessError(env, asyncContext->errCode, asyncContext->metricsReport.get());
     }
 
     if (asyncContext->deferred != nullptr) {

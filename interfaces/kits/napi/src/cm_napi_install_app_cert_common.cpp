@@ -207,12 +207,13 @@ static napi_value InstallAppCertWriteResult(napi_env env, InstallAppCertAsyncCon
     return result;
 }
 
-static napi_value GenAppCertBusinessError(napi_env env, int32_t errorCode, uint32_t store)
+static napi_value GenAppCertBusinessError(napi_env env, int32_t errorCode, uint32_t store,
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport)
 {
     if ((errorCode == CMR_ERROR_PASSWORD_IS_ERR) && (store == APPLICATION_PRIVATE_CERTIFICATE_STORE)) {
         errorCode = CMR_ERROR_INVALID_CERT_FORMAT;
     }
-    return GenerateBusinessError(env, errorCode);
+    return GenerateBusinessError(env, errorCode, metricsReport.get());
 }
 
 static void InstallAppCertExecute(napi_env env, void *data)
@@ -247,16 +248,13 @@ static void InstallAppCertComplete(napi_env env, napi_status status, void *data)
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         result[1] = InstallAppCertWriteResult(env, context);
     } else {
-        result[0] = GenAppCertBusinessError(env, context->result, context->store);
+        result[0] = GenAppCertBusinessError(env, context->result, context->store, context->metricsReport);
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     if (context->deferred != nullptr) {
         GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
-    }
-    if (context->metricsReport != nullptr) {
-        context->metricsReport->Finish(context->result);
     }
     DeleteInstallAppCertAsyncContext(env, context);
 }

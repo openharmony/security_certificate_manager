@@ -97,7 +97,8 @@ void ThrowError(napi_env env, int32_t errorCode, std::string errMsg,
     OHOS::Security::CertManager::CmMetricsReport *metricsReport = nullptr);
 // ukey
 void GenerateUkeyCertList(struct CredentialDetailList *certificateList);
-napi_value GenerateBusinessError(napi_env env, int32_t errorCode);
+napi_value GenerateBusinessError(napi_env env, int32_t errorCode,
+    OHOS::Security::CertManager::CmMetricsReport *metricsReport = nullptr);
 
 void DeleteNapiContext(napi_env env, napi_async_work &asyncWork, napi_ref &callback);
 

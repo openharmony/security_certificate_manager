@@ -214,13 +214,10 @@ static void GetUkeyCertComplete(napi_env env, napi_status status, void *data)
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         result[1] = GetUkeyCertWriteResult(env, context);
     } else {
-        result[0] = GenerateBusinessError(env, context->result);
+        result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
-    if (context->metricsReport != nullptr) {
-        context->metricsReport->Finish(context->result);
-    }
     DeleteGetUkeyCertAsyncContext(env, context);
 }
 

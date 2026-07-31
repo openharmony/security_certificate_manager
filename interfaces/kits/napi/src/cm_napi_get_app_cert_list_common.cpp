@@ -118,16 +118,13 @@ static void GetAppCertListComplete(napi_env env, napi_status status, void *data)
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         result[1] = GetAppCertListWriteResult(env, context);
     } else {
-        result[0] = GenerateBusinessError(env, context->result);
+        result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     if (context->deferred != nullptr) {
         GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
-    }
-    if (context->metricsReport != nullptr) {
-        context->metricsReport->Finish(context->result);
     }
     DeleteGetAppCertListAsyncContext(env, context);
     CM_LOG_D("get app cert list end");
@@ -182,13 +179,10 @@ static void GetCallingAppCertListComplete(napi_env env, napi_status status, void
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &res[0]));
         res[1] = GetAppCertListWriteResult(env, mcontext);
     } else {
-        res[0] = GenerateBusinessError(env, mcontext->result);
+        res[0] = GenerateBusinessError(env, mcontext->result, mcontext->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &res[1]));
     }
     GeneratePromise(env, mcontext->deferred, mcontext->result, res, CM_ARRAY_SIZE(res));
-    if (mcontext->metricsReport != nullptr) {
-        mcontext->metricsReport->Finish(mcontext->result);
-    }
     DeleteGetAppCertListAsyncContext(env, mcontext);
     CM_LOG_D("get calling app cert list end");
 }

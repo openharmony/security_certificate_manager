@@ -184,7 +184,7 @@ static void GrantUidComplete(napi_env env, napi_status status, void *data)
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultAuthUri(env, context->authUri);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode);
+        result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 
@@ -211,7 +211,7 @@ static void RemoveUidComplete(napi_env env, napi_status status, void *data)
         napi_create_uint32(env, 0, &result[0]);
         context->errCode = CM_SUCCESS;
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode);
+        result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
     }
     napi_get_undefined(env, &result[1]);
 
@@ -234,7 +234,7 @@ static void IsAuthedComplete(napi_env env, napi_status status, void *data)
         napi_get_boolean(env, false, &result[1]);
         context->errCode = CM_SUCCESS;
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode);
+        result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 
@@ -307,7 +307,7 @@ static void GetUidListComplete(napi_env env, napi_status status, void *data)
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultAuthList(env, context->uidList);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode);
+        result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 

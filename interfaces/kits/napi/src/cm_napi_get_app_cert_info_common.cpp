@@ -157,16 +157,13 @@ napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext &asy
                 NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
                 result[1] = GetAppCertInfoWriteResult(env, context);
             } else {
-                result[0] = GenerateBusinessError(env, context->result);
+                result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
             if (context->deferred != nullptr) {
                 GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
             } else {
                 GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
-            }
-            if (context->metricsReport != nullptr) {
-                context->metricsReport->Finish(context->result);
             }
             DeleteGetAppCertInfoAsyncContext(env, context);
         },

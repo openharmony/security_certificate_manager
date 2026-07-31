@@ -622,7 +622,7 @@ static void InitComplete(napi_env env, napi_status status, void *data)
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultHandle(env, context->handle);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode);
+        result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 
@@ -648,7 +648,7 @@ static void UpdateOrAbortComplete(napi_env env, napi_status status, void *data)
         napi_create_uint32(env, 0, &result[0]);
         napi_get_undefined(env, &result[1]);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode);
+        result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 
@@ -702,7 +702,7 @@ static void FinishComplete(napi_env env, napi_status status, void *data)
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultSignature(env, context->isSign, context->signature);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode);
+        result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 

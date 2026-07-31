@@ -45,7 +45,7 @@ void CmUIExtensionStringCallback::ProcessCallback(napi_env env, const CommonAsyn
         NAPI_CALL_RETURN_VOID(env,
             napi_create_string_utf8(env, asyncContext->uri.c_str(), NAPI_AUTO_LENGTH, &args));
     } else {
-        args = GenerateBusinessError(env, asyncContext->errCode);
+        args = GenerateBusinessError(env, asyncContext->errCode, asyncContext->metricsReport.get());
     }
 
     if (asyncContext->deferred != nullptr) {

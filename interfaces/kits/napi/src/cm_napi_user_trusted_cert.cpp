@@ -432,7 +432,7 @@ static void InstallUserCertComplete(napi_env env, napi_status status, void *data
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertInstallCertResult(env, context);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode);
+        result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 
@@ -474,7 +474,7 @@ static void UninstallAllUserCertComplete(napi_env env, napi_status status, void 
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode);
+        result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
     }
     napi_get_undefined(env, &result[1]);
 
@@ -604,8 +604,7 @@ napi_value CMNapiInstallUserTrustedCertSync(napi_env env, napi_callback_info inf
     FreeCmBlob(userCert);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("install user cert sync failed, ret = %d", ret);
-        napi_throw(env, GenerateBusinessError(env, ret));
-        report.Finish(ret);
+        napi_throw(env, GenerateBusinessError(env, ret, &report));
         return nullptr;
     }
 
@@ -673,8 +672,7 @@ napi_value CMNapiUninstallUserCertSync(napi_env env, napi_callback_info info)
 
     if (ret != CM_SUCCESS) {
         CM_LOG_E("uninstall user cert sync failed, ret = %d", ret);
-        napi_throw(env, GenerateBusinessError(env, ret));
-        report.Finish(ret);
+        napi_throw(env, GenerateBusinessError(env, ret, &report));
     } else {
         report.Finish(CM_SUCCESS);
     }

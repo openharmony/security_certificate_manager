@@ -54,7 +54,7 @@ void CmUIExtensionCertReferenceCallback::ProcessCallback(napi_env env, const Com
             certificateType));
         NAPI_CALL_RETURN_VOID(env, napi_set_named_property(env, args, CERT_MANAGER_CERT_KEY_URI.c_str(), keyUri));
     } else {
-        args = GenerateBusinessError(env, asyncContext->errCode);
+        args = GenerateBusinessError(env, asyncContext->errCode, asyncContext->metricsReport.get());
     }
 
     if (asyncContext->deferred != nullptr) {

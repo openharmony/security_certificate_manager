@@ -50,7 +50,8 @@ napi_value GetCertTypeArray(napi_env env, napi_value object, std::vector<int32_t
 
 void ThrowError(napi_env env, int32_t errorCode, const std::string errMsg,
     OHOS::Security::CertManager::CmMetricsReport *metricsReport = nullptr);
-napi_value GenerateBusinessError(napi_env env, int32_t errorCode);
+napi_value GenerateBusinessError(napi_env env, int32_t errorCode,
+    OHOS::Security::CertManager::CmMetricsReport *metricsReport = nullptr);
 
 void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
     napi_value *result, int32_t length);

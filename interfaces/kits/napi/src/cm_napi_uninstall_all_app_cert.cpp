@@ -100,13 +100,10 @@ static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCert
                 NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
                 NAPI_CALL_RETURN_VOID(env, napi_get_boolean(env, true, &result[1]));
             } else {
-                result[0] = GenerateBusinessError(env, context->result);
+                result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
             GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
-            if (context->metricsReport != nullptr) {
-                context->metricsReport->Finish(context->result);
-            }
             DeleteUninstallAllAppCertAsyncContext(env, context);
         },
         static_cast<void *>(asyncContext),
