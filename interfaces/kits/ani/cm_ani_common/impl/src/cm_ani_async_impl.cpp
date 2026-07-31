@@ -41,9 +41,10 @@ void CertManagerAsyncImpl::OnInvokeEnd(int32_t errorCode)
     // 同步失败:立即上报结束打点
     // 同步成功(CM_SUCCESS):Ability 已拉起,实际结果在 UIExtension 回调中,
     // 由 CmAniUIExtensionCallback::invokeCallback() 负责调用 metricsReport->Finish()
+    // CertManagerAsyncImpl 总是 dialog 类型(CmMetricsKind::DIALOG),所以用 Dialog 转换
     if (errorCode != CM_SUCCESS) {
         if (this->metricsReport_ != nullptr) {
-            this->metricsReport_->Finish(errorCode);
+            this->metricsReport_->Finish(TransformDialogErrorCode(errorCode));
         }
     }
 }

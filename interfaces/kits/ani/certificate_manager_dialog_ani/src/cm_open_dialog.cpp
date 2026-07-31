@@ -67,8 +67,9 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
         this->isReleased = true;
     }
     // 异步场景下,打点上报在回调结束时执行
+    // dialog 场景:使用 Dialog 转换,与 JS 侧错误码契约一致
     if (this->metricsReport != nullptr) {
-        this->metricsReport->Finish(code);
+        this->metricsReport->Finish(TransformDialogErrorCode(code));
     }
     if (this->context != nullptr && this->sessionId != 0) {
         auto uiContent = this->context->GetUIContent();

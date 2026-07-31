@@ -22,7 +22,7 @@
 namespace OHOS::Security::CertManager::Ani {
 using namespace OHOS::Security::CertManager;
 
-static int32_t TransformErrorCode(int32_t errorCode)
+int32_t TransformErrorCode(int32_t errorCode)
 {
     auto iter = NATIVE_CODE_TO_JS_CODE_MAP.find(errorCode);
     if (iter != NATIVE_CODE_TO_JS_CODE_MAP.end()) {
@@ -31,7 +31,7 @@ static int32_t TransformErrorCode(int32_t errorCode)
     return INNER_FAILURE;
 }
 
-static int32_t TransformDialogErrorCode(int32_t errorCode)
+int32_t TransformDialogErrorCode(int32_t errorCode)
 {
     auto iter = Dialog::DIALOG_CODE_TO_JS_CODE_MAP.find(errorCode);
     if (iter != Dialog::DIALOG_CODE_TO_JS_CODE_MAP.end()) {

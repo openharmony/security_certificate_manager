@@ -60,9 +60,14 @@ void CertManagerAniImpl::OnInvokeStart()
 
 void CertManagerAniImpl::OnInvokeEnd(int32_t errorCode)
 {
-    if (this->metricsReport_ != nullptr) {
-        this->metricsReport_->Finish(errorCode);
+    if (this->metricsReport_ == nullptr) {
+        return;
     }
+    // 上报使用转换后的 JS ErrorCode 值,与 JS 侧错误码契约一致
+    int32_t jsCode = (this->metricsKind_ == CmMetricsKind::DIALOG)
+        ? TransformDialogErrorCode(errorCode)
+        : TransformErrorCode(errorCode);
+    this->metricsReport_->Finish(jsCode);
 }
 
 ani_object CertManagerAniImpl::Invoke()
