@@ -460,7 +460,8 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode)
     return businessError;
 }
 
-void ThrowError(napi_env env, int32_t errorCode, std::string errMsg)
+void ThrowError(napi_env env, int32_t errorCode, std::string errMsg,
+    OHOS::Security::CertManager::CmMetricsReport *metricsReport)
 {
     napi_value paramsError = nullptr;
     napi_value code = nullptr;
@@ -470,6 +471,11 @@ void ThrowError(napi_env env, int32_t errorCode, std::string errMsg)
     NAPI_CALL_RETURN_VOID(env, napi_create_error(env, nullptr, message, &paramsError));
     NAPI_CALL_RETURN_VOID(env, napi_set_named_property(env, paramsError, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
     NAPI_CALL_RETURN_VOID(env, napi_throw(env, paramsError));
+    // 异常分支自动补打点:传入 metricsReport 时直接 Finish,
+    // 不依赖调用方在 return nullptr 后再显式 recordFinish
+    if (metricsReport != nullptr) {
+        metricsReport->Finish(errorCode);
+    }
 }
 
 napi_value GenerateAppCertInfo(napi_env env, const struct Credential *credential)

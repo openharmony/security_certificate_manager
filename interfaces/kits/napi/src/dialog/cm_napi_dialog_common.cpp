@@ -71,7 +71,8 @@ void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncC
      */
     if (!CheckBasicPermission()) {
         CM_LOG_E("not has basic permission");
-        ThrowError(asyncContext->env, HAS_NO_PERMISSION, DIALOG_NO_PERMISSION_MSG);
+        ThrowError(asyncContext->env, HAS_NO_PERMISSION, DIALOG_NO_PERMISSION_MSG,
+            asyncContext->metricsReport.get());
         return;
     }
 
@@ -79,13 +80,15 @@ void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncC
     auto abilityContext = asyncContext->context;
     if (abilityContext == nullptr) {
         CM_LOG_E("abilityContext is null");
-        ThrowError(asyncContext->env, PARAM_ERROR, "abilityContext is null");
+        ThrowError(asyncContext->env, PARAM_ERROR, "abilityContext is null",
+            asyncContext->metricsReport.get());
         return;
     }
     auto uiContent = abilityContext->GetUIContent();
     if (uiContent == nullptr) {
         CM_LOG_E("uiContent is null");
-        ThrowError(asyncContext->env, PARAM_ERROR, "uiContent is null");
+        ThrowError(asyncContext->env, PARAM_ERROR, "uiContent is null",
+            asyncContext->metricsReport.get());
         return;
     }
 
@@ -107,7 +110,8 @@ void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncC
     CM_LOG_I("end CreateModalUIExtension");
     if (sessionId == 0) {
         CM_LOG_E("CreateModalUIExtension failed");
-        ThrowError(asyncContext->env, PARAM_ERROR, "CreateModalUIExtension failed");
+        ThrowError(asyncContext->env, PARAM_ERROR, "CreateModalUIExtension failed",
+            asyncContext->metricsReport.get());
     }
     uiExtCallback->SetSessionId(sessionId);
     return;
@@ -118,7 +122,8 @@ void StartUIAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
 {
     if (!CheckBasicPermission()) {
         CM_LOG_E("not has basic permission");
-        ThrowError(asyncContext->env, HAS_NO_PERMISSION, DIALOG_NO_PERMISSION_MSG);
+        ThrowError(asyncContext->env, HAS_NO_PERMISSION, DIALOG_NO_PERMISSION_MSG,
+            asyncContext->metricsReport.get());
         return;
     }
     CM_LOG_I("begin StartUIAbility");
@@ -136,7 +141,8 @@ void StartUIAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
         int32_t ret = abilityContext->StartAbilityForResult(want, g_requestCode++, std::move(task));
         if (ret != CM_SUCCESS) {
             CM_LOG_I("StartUIAbility error, code: %d", ret);
-            ThrowError(asyncContext->env, DIALOG_ERROR_INSTALL_FAILED, "Start uiAbility failed");
+            ThrowError(asyncContext->env, DIALOG_ERROR_INSTALL_FAILED, "Start uiAbility failed",
+                asyncContext->metricsReport.get());
         }
     }
     return;

@@ -22,6 +22,7 @@
 #include "napi/native_node_api.h"
 
 #include "cm_mem.h"
+#include "cm_metrics.h"
 #include "cm_type.h"
 #include "cm_api_common.h"
 
@@ -92,7 +93,8 @@ napi_value GenerateCredentialArray(napi_env env,
 
 napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo);
 napi_value GenerateAppCertInfo(napi_env env, const struct Credential *credential);
-void ThrowError(napi_env env, int32_t errorCode, std::string errMsg);
+void ThrowError(napi_env env, int32_t errorCode, std::string errMsg,
+    OHOS::Security::CertManager::CmMetricsReport *metricsReport = nullptr);
 // ukey
 void GenerateUkeyCertList(struct CredentialDetailList *certificateList);
 napi_value GenerateBusinessError(napi_env env, int32_t errorCode);
