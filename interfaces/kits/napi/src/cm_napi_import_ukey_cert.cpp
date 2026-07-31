@@ -140,7 +140,8 @@ static napi_value ParseUkeyInfo(napi_env env, napi_value object, ImportUkeyCertA
     return GetInt32(env, 0);
 }
 
-static napi_value ParseKeyUri(napi_env env, napi_value object, CmBlob *&stringBlob)
+static napi_value ParseKeyUri(napi_env env, napi_value object, CmBlob *&stringBlob,
+    ImportUkeyCertAsyncContext context)
 {
     napi_valuetype valueType = napi_undefined;
     NAPI_CALL(env, napi_typeof(env, object, &valueType));
@@ -164,7 +165,8 @@ static napi_value ParseKeyUri(napi_env env, napi_value object, CmBlob *&stringBl
     return GetInt32(env, 0);
 }
 
-static napi_value ParseCert(napi_env env, napi_value object, CmBlob &arrayBlob)
+static napi_value ParseCert(napi_env env, napi_value object, CmBlob &arrayBlob,
+    ImportUkeyCertAsyncContext context)
 {
     napi_valuetype valueType = napi_undefined;
     NAPI_CALL(env, napi_typeof(env, object, &valueType));
@@ -202,15 +204,15 @@ static napi_value ParseImportParams(
     }
 
     size_t index = 0;
-    napi_value result = ParseKeyUri(env, argv[index], context->keyUri);
+    napi_value result = ParseKeyUri(env, argv[index], context->keyUri, context);
     if (result == nullptr) {
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get keyUri.", context->metricsReport.get());
+        // ParseKeyUri already invoked ThrowError; just propagate.
         CM_LOG_E("parse keyUri failed");
         return nullptr;
     }
 
     ++index;
-    result = ParseCert(env, argv[index], context->cert);
+    result = ParseCert(env, argv[index], context->cert, context);
     if (result == nullptr) {
         CM_LOG_E("could not get cert");
         return nullptr;
