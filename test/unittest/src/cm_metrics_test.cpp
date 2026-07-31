@@ -20,6 +20,8 @@
 
 #include "cm_metrics.h"
 
+using namespace testing::ext;
+using namespace OHOS::Security::CertManager;
 namespace {
 // Mirror the ErrorCode values from cm_api_common.h. Inlined here so the test
 // only depends on cm_metrics and does not pull in unrelated translation units.
