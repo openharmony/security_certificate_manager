@@ -237,12 +237,14 @@ static int32_t GetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestContext> 
 static int32_t CheckAndGetAuthorizeRequest(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
 {
     if (IsParamNull(asyncContext->env, arg)) {
-        ThrowError(asyncContext->env, PARAM_ERROR, "AuthorizeRequest is null");
+        ThrowError(asyncContext->env, PARAM_ERROR, "AuthorizeRequest is null",
+            asyncContext->metricsReport.get());
         return PARAM_ERROR;
     }
     if (GetAuthorizeRequest(asyncContext, arg) != CM_SUCCESS) {
         CM_LOG_E("parse AuthorizeRequest failed");
-        ThrowError(asyncContext->env, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, "parse AuthorizeRequest failed");
+        ThrowError(asyncContext->env, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, "parse AuthorizeRequest failed",
+            asyncContext->metricsReport.get());
         return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     return CM_SUCCESS;
@@ -272,29 +274,30 @@ napi_value CMNapiOpenAuthorizeDialog(napi_env env, napi_callback_info info)
         return result;
     }
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    asyncContext->metricsReport = reportHolder;
     size_t index = 0;
     if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[index], asyncContext->context)) {
         CM_LOG_E("parse abilityContext failed");
-        ThrowError(env, PARAM_ERROR, "parse abilityContext failed", &report);
+        ThrowError(env, PARAM_ERROR, "parse abilityContext failed", reportHolder.get());
         return nullptr;
     }
     ++index;
     if (index < argc) {
         if (CheckAndGetAuthorizeRequest(asyncContext, argv[index]) != CM_SUCCESS) {
+            // CheckAndGetAuthorizeRequest already invoked ThrowError with the
+            // precise error code; metric is already recorded via reportHolder.
             CM_LOG_E("parse AuthorizeRequest failed");
-            report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_PARAMETER_VALIDATION_FAILED);
             return nullptr;
         }
     }
     if (GetCallerLabelName(asyncContext) != CM_SUCCESS) {
         CM_LOG_E("get caller labelName faild");
-        ThrowError(env, DIALOG_ERROR_GENERIC, "get caller labelName faild", &report);
+        ThrowError(env, DIALOG_ERROR_GENERIC, "get caller labelName faild", reportHolder.get());
         return nullptr;
     }
     asyncContext->appUid = static_cast<int32_t>(getuid());
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
-    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
-    asyncContext->metricsReport = reportHolder;
     auto want = CMGetAuthCertWant(asyncContext);
     if (argc == PARAM_SIZE_ONE) {
         auto uiExtCallback = std::make_shared<CmUIExtensionStringCallback>(asyncContext);
