@@ -27,8 +27,8 @@ namespace {
  * Histogram-key prefixes, selected by `kind`. Callers append a suffix
  * (".CALL" / ".Time" / ".errcode") at the call site to form the final key.
  */
-constexpr const char *kPrefixDialog = "DeviceCertificateKit.certificateManagerDialog.";
-constexpr const char *kPrefixNonDialog = "DeviceCertificateKit.certificateManager.";
+constexpr const char *K_PREFIX_DIALOG = "DeviceCertificateKit.certificateManagerDialog.";
+constexpr const char *K_PREFIX_NON_DIALOG = "DeviceCertificateKit.certificateManager.";
 
 }  // namespace
 
@@ -36,7 +36,7 @@ CmMetricsReport::CmMetricsReport(const std::string &interfaceName,
     int32_t boundary, CmMetricsKind kind)
     : boundary_(boundary)
 {
-    const char *prefix = (kind == CmMetricsKind::DIALOG) ? kPrefixDialog : kPrefixNonDialog;
+    const char *prefix = (kind == CmMetricsKind::DIALOG) ? K_PREFIX_DIALOG : K_PREFIX_NON_DIALOG;
     keyPrefix_ = std::string(prefix) + interfaceName;
 }
 
