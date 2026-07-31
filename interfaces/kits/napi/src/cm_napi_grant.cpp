@@ -127,7 +127,8 @@ static napi_value ParseIsAuthedParams(napi_env env, napi_callback_info info, Gra
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keyUri is not a string or length is 0 or too long.", context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "keyUri is not a string or length is 0 or too long.",
+            context->metricsReport.get());
         CM_LOG_E("get uri failed when using isAuthed");
         return nullptr;
     }

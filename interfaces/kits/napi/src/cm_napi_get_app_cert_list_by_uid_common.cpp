@@ -65,7 +65,8 @@ napi_value GetAppCertListByUidParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc != CM_NAPI_GET_APP_CERT_BY_UID_MIN_ARGS) {
-        ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need between 0 and 1.", context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need between 0 and 1.",
+            context->metricsReport.get());
         CM_LOG_E("Missing parameter");
         return nullptr;
     }

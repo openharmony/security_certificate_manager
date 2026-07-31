@@ -110,7 +110,8 @@ static int32_t GetSysCaStorePath(napi_env env, const enum CmCertAlg certAlg, str
     }
     if (!IsDirExist(SYSTEM_CA_STORE_GM)) {
         CM_LOG_E("system gm ca store path not exist");
-        ThrowError(env, STORE_PATH_NOT_SUPPORTED, "the device does not support specified certificate store path", report);
+        ThrowError(env, STORE_PATH_NOT_SUPPORTED,
+            "the device does not support specified certificate store path", report);
         return STORE_PATH_NOT_SUPPORTED;
     } else {
         path = CA_STORE_PATH_SYSTEM_SM;

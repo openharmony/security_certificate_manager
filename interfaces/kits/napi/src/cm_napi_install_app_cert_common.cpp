@@ -94,7 +94,8 @@ static napi_value GetLevelOrCallback(napi_env env, InstallAppCertAsyncContext co
     } else {
         int32_t ret = GetCallback(env, napiObject, context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.", context->metricsReport.get());
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.",
+                context->metricsReport.get());
             CM_LOG_E("get callback function faild when install application cert");
             return nullptr;
         }
@@ -107,7 +108,8 @@ static napi_value ParsePrivateCertParams(napi_env env, napi_value *argv, size_t 
 {
     index++;
     if (GetCredAlias(env, argv[index], context->keyAlias, APPLICATION_PRIVATE_CERTIFICATE_STORE) == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keyAlias is not a string or length is 0 or too long.", context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "keyAlias is not a string or length is 0 or too long.",
+            context->metricsReport.get());
         CM_LOG_E("could not get keyAlias");
         return nullptr;
     }
@@ -150,7 +152,8 @@ napi_value InstallAppCertParseParams(
     (void)memset_s(context->keystore, sizeof(CmBlob), 0, sizeof(CmBlob));
     napi_value result = GetUint8Array(env, argv[index], *context->keystore);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keystore is not a uint8Array or length is 0 or too long.", context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "keystore is not a uint8Array or length is 0 or too long.",
+            context->metricsReport.get());
         CM_LOG_E("could not get keystore");
         return nullptr;
     }
@@ -158,7 +161,8 @@ napi_value InstallAppCertParseParams(
     index++;
     result = ParsePasswd(env, argv[index], context->keystorePwd);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keystore Pwd is not a string or length is 0 or too long.", context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "keystore Pwd is not a string or length is 0 or too long.",
+            context->metricsReport.get());
         CM_LOG_E("could not get keystore Pwd");
         return nullptr;
     }

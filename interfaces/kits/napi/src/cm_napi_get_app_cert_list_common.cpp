@@ -73,7 +73,8 @@ napi_value GetAppCertListParseParams(
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.", context->metricsReport.get());
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.",
+                context->metricsReport.get());
             CM_LOG_E("get callback function faild when getting application certificate list");
             return nullptr;
         }

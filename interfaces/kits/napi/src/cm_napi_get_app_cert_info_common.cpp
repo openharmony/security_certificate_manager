@@ -86,7 +86,8 @@ napi_value GetAppCertInfoParseParams(
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keyUri is not a string or the length is 0 or too long.", context->metricsReport.get());
+        ThrowError(env, PARAM_ERROR, "keyUri is not a string or the length is 0 or too long.",
+            context->metricsReport.get());
         CM_LOG_E("could not get key uri");
         return nullptr;
     }
@@ -95,7 +96,8 @@ napi_value GetAppCertInfoParseParams(
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.", context->metricsReport.get());
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.",
+                context->metricsReport.get());
             CM_LOG_E("get callback function faild when getting application cert info");
             return nullptr;
         }
