@@ -62,6 +62,7 @@ ohos_shared_library("certmanager") {
     "napi:ace_napi",
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
+    "node:node_header_notice",
   ]
   cflags_cc = [
     "-Wall",
@@ -130,6 +131,7 @@ ohos_shared_library("certmanagerdialog") {
     "napi:ace_napi",
     "samgr:samgr_proxy",
     "huks:libhukssdk",
+    "node:node_header_notice",
   ]
   cflags_cc = [
     "-Wall",

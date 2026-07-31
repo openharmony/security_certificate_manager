@@ -59,6 +59,7 @@ ohos_shared_library("certmanager_ani") {
     "bundle_framework:appexecfwk_core",
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
+    "node:node_header_notice",
   ]
   cflags_cc = [
     "-Wall",
