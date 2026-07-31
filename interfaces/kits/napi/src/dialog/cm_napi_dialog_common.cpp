@@ -415,8 +415,9 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode,
     NAPI_CALL(env, napi_set_named_property(env, businessErrorMsg, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
     // 异常分支自动补打点:传入 metricsReport 时直接 Finish,
     // 不依赖调用方在返回后再显式 recordFinish
+    // 上报使用转换后的 JS ErrorCode 值,与 JS 侧错误码契约一致
     if (metricsReport != nullptr) {
-        metricsReport->Finish(errorCode);
+        metricsReport->Finish(outputCode);
     }
     return businessErrorMsg;
 }
