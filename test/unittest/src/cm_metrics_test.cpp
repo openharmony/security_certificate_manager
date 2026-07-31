@@ -20,10 +20,9 @@
 
 #include "cm_metrics.h"
 
-namespace CertmanagerTest {
+namespace {
 // Mirror the ErrorCode values from cm_api_common.h. Inlined here so the test
 // only depends on cm_metrics and does not pull in unrelated translation units.
-namespace {
 constexpr int32_t CM_SUCCESS = 0;
 constexpr int32_t PARAM_ERROR = 401;
 constexpr int32_t NOT_FOUND = 17500002;
@@ -116,4 +115,4 @@ public:
         EXPECT_EQ(report.GetElapsedMs(), 0);
     }
 };
-} // namespace CertmanagerTest
+} // namespace
