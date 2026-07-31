@@ -103,7 +103,7 @@ static napi_value ParseCertFormat(napi_env env, napi_value object, UserCertAsync
     napi_status status = napi_has_named_property(env, object, "certFormat", &hasProperty);
     if (status != napi_ok) {
         CM_LOG_E("Failed to check certFormat");
-        ThrowError(env, PARAM_ERROR, "Failed to get certFormat.");
+        ThrowError(env, PARAM_ERROR, "Failed to get certFormat.", context->metricsReport.get());
         return nullptr;
     }
     if (!hasProperty) {
@@ -148,7 +148,7 @@ static napi_value ParseCertScope(napi_env env, napi_value object, UserCertAsyncC
     napi_status status = napi_has_named_property(env, object, "certScope", &hasProperty);
     if (status != napi_ok) {
         CM_LOG_E("Failed to check certScope");
-        ThrowError(env, PARAM_ERROR, "Failed to get certScope.");
+        ThrowError(env, PARAM_ERROR, "Failed to get certScope.", context->metricsReport.get());
         return nullptr;
     }
     if (!hasProperty) {
@@ -232,14 +232,14 @@ static napi_value ParseInstallUserCertParams(napi_env env, napi_callback_info in
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc != CM_NAPI_USER_INSTALL_ARGS_CNT) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid when installing user cert");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid when installing user cert", context->metricsReport.get());
         CM_LOG_E("arguments count is not expected when installing user cert");
         return nullptr;
     }
 
     napi_value result = ParseCertInfo(env, argv[0], context);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "get context type error");
+        ThrowError(env, PARAM_ERROR, "get context type error", context->metricsReport.get());
         CM_LOG_E("get CertBlob failed when installing user cert");
         return nullptr;
     }
@@ -460,7 +460,7 @@ static napi_value InstallUserCertAsyncWork(napi_env env, UserCertAsyncContext co
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowError(env, PARAM_ERROR, "queue async work error");
+        ThrowError(env, PARAM_ERROR, "queue async work error", context->metricsReport.get());
         CM_LOG_E("queue async work failed when installing user cert");
         return nullptr;
     }
@@ -508,7 +508,7 @@ static napi_value UninstallAllUserCertAsyncWork(napi_env env, UserCertAsyncConte
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowError(env, PARAM_ERROR, "queue async work error");
+        ThrowError(env, PARAM_ERROR, "queue async work error", context->metricsReport.get());
         CM_LOG_E("queue async work failed uninstall all user cert");
         return nullptr;
     }
@@ -559,7 +559,6 @@ napi_value CMNapiInstallUserTrustedCert(napi_env env, napi_callback_info info)
     napi_value result = ParseInstallUserCertParams(env, info, context);
     if (result == nullptr) {
         CM_LOG_E("parse install user cert params failed");
-        reportHolder->Finish(OHOS::Security::CertManager::PARAM_ERROR);
         FreeUserCertAsyncContext(env, context);
         return nullptr;
     }
@@ -567,7 +566,6 @@ napi_value CMNapiInstallUserTrustedCert(napi_env env, napi_callback_info info)
     result = InstallUserCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("start install user cert async work failed");
-        reportHolder->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         FreeUserCertAsyncContext(env, context);
         return nullptr;
     }
@@ -636,7 +634,6 @@ napi_value CMNapiUninstallAllUserTrustedCert(napi_env env, napi_callback_info in
     napi_value result = UninstallAllUserCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("start uninstall all user cert async work failed");
-        reportHolder->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         FreeUserCertAsyncContext(env, context);
         return nullptr;
     }

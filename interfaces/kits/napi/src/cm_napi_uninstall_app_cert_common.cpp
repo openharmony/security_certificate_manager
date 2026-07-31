@@ -66,14 +66,15 @@ napi_value UninstallAppCertParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (context->store != APPLICATION_PRIVATE_CERTIFICATE_STORE && argc != CM_NAPI_UNINSTALL_APP_CERT_ARGS) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 1.");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 1.", context->metricsReport.get());
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
     }
 
     if (context->store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
         if (argc != CM_NAPI_UNINSTALL_APP_CERT_ARGS && argc != CM_NAPI_UNINSTALL_APP_CERT_ARGS_CALLBACK) {
-            ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need between 1 and 2");
+            ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need between 1 and 2",
+                context->metricsReport.get());
             CM_LOG_E("arguments count invalid. argc = %d", argc);
             return nullptr;
         }
@@ -82,7 +83,7 @@ napi_value UninstallAppCertParseParams(
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keyUri is not a string or length is 0 or too long.");
+        ThrowError(env, PARAM_ERROR, "keyUri is not a string or length is 0 or too long.", context->metricsReport.get());
         CM_LOG_E("could not get cert uri");
         return nullptr;
     }
@@ -91,7 +92,7 @@ napi_value UninstallAppCertParseParams(
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.", context->metricsReport.get());
             CM_LOG_E("get callback function faild when uninstall applicaiton cert");
             return nullptr;
         }

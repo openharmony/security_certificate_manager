@@ -69,7 +69,7 @@ static napi_value UninstallAllAppCertParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr));
 
     if (argc != 0) {
-        ThrowError(env, PARAM_ERROR, "Missing parameter");
+        ThrowError(env, PARAM_ERROR, "Missing parameter", context->metricsReport.get());
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
@@ -141,7 +141,6 @@ napi_value CMNapiUninstallAllAppCert(napi_env env, napi_callback_info info)
     napi_value result = UninstallAllAppCertParseParams(env, info, context);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
-        reportHolder->Finish(OHOS::Security::CertManager::PARAM_ERROR);
         DeleteUninstallAllAppCertAsyncContext(env, context);
         return nullptr;
     }

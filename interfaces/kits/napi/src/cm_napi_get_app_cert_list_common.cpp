@@ -64,7 +64,7 @@ napi_value GetAppCertListParseParams(
 
     if ((context->store != APPLICATION_PRIVATE_CERTIFICATE_STORE && argc != 0) ||
         (context->store == APPLICATION_PRIVATE_CERTIFICATE_STORE && argc > 1)) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 0.");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 0.", context->metricsReport.get());
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
@@ -73,7 +73,7 @@ napi_value GetAppCertListParseParams(
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.", context->metricsReport.get());
             CM_LOG_E("get callback function faild when getting application certificate list");
             return nullptr;
         }

@@ -100,7 +100,8 @@ static napi_value GetCertListParseParams(napi_env env, napi_callback_info info,
     /* get system ca list */
     if (store == CM_SYSTEM_TRUSTED_STORE) {
         if (argc != CM_NAPI_GET_CERT_LIST_MIN_ARGS) { /* no args when get system ca list */
-            ThrowError(env, PARAM_ERROR, "arguments count invalid when getting system trusted certificate list");
+            ThrowError(env, PARAM_ERROR, "arguments count invalid when getting system trusted certificate list",
+                context->metricsReport.get());
             CM_LOG_E("arguments count is not expected when getting system trusted certificate list");
             return nullptr;
         }
@@ -111,7 +112,8 @@ static napi_value GetCertListParseParams(napi_env env, napi_callback_info info,
     /* get user ca list */
     if ((argc != CM_NAPI_GET_CERT_LIST_MIN_ARGS) &&
         (argc != CM_NAPI_GET_CERT_LIST_MAX_ARGS)) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid when getting user trusted certificate list");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid when getting user trusted certificate list",
+            context->metricsReport.get());
         CM_LOG_E("arguments count is not expected when getting trusted certificate list");
         return nullptr;
     }
@@ -119,7 +121,7 @@ static napi_value GetCertListParseParams(napi_env env, napi_callback_info info,
     if (argc == CM_NAPI_GET_CERT_LIST_MAX_ARGS) {
         int32_t ret = GetAndCheckScope(env, argv[0], context->scope);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Failed to get scope");
+            ThrowError(env, PARAM_ERROR, "Failed to get scope", context->metricsReport.get());
             CM_LOG_E("Failed to get scope when get certlist function");
             return nullptr;
         }
@@ -245,7 +247,6 @@ napi_value CMNapiGetSystemCertList(napi_env env, napi_callback_info info)
     napi_value result = GetCertListParseParams(env, info, context, CM_SYSTEM_TRUSTED_STORE);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
-        reportHolder->Finish(OHOS::Security::CertManager::PARAM_ERROR);
         DeleteGetCertListAsyncContext(env, context);
         return nullptr;
     }
@@ -277,7 +278,6 @@ napi_value CMNapiGetAllUserTrustedCertList(napi_env env, napi_callback_info info
     napi_value result = GetCertListParseParams(env, info, context, CM_USER_TRUSTED_STORE);
     if (result == nullptr) {
         CM_LOG_E("could not parse user trusted cert list params");
-        reportHolder->Finish(OHOS::Security::CertManager::PARAM_ERROR);
         DeleteGetCertListAsyncContext(env, context);
         return nullptr;
     }

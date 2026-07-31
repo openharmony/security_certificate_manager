@@ -80,7 +80,7 @@ static napi_value SetCertStatusParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc != CM_NAPI_SET_CERT_STATUS_ARGS) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid.");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid.", context->metricsReport.get());
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
     }
@@ -88,7 +88,7 @@ static napi_value SetCertStatusParseParams(
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "get certUri type error");
+        ThrowError(env, PARAM_ERROR, "get certUri type error", context->metricsReport.get());
         CM_LOG_E("could not get cert uri when set cert status");
         return nullptr;
     }
@@ -96,14 +96,14 @@ static napi_value SetCertStatusParseParams(
     index++;
     result = ParseUint32(env, argv[index], context->certType);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "get store type error");
+        ThrowError(env, PARAM_ERROR, "get store type error", context->metricsReport.get());
         CM_LOG_E("could not get store");
         return nullptr;
     }
     if (context->certType == CM_CA_CERT_USER) {
         context->store = CM_USER_TRUSTED_STORE;
     } else {
-        ThrowError(env, PARAM_ERROR, "certType invalid.");
+        ThrowError(env, PARAM_ERROR, "certType invalid.", context->metricsReport.get());
         CM_LOG_E("check certType invalid");
         return nullptr;
     }
@@ -111,7 +111,7 @@ static napi_value SetCertStatusParseParams(
     index++;
     result = ParseBoolean(env, argv[index], context->status);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "get status type error");
+        ThrowError(env, PARAM_ERROR, "get status type error", context->metricsReport.get());
         CM_LOG_E("could not get status");
         return nullptr;
     }
@@ -196,7 +196,6 @@ napi_value CMNapiSetCertStatus(napi_env env, napi_callback_info info)
     napi_value result = SetCertStatusParseParams(env, info, context);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
-        reportHolder->Finish(OHOS::Security::CertManager::PARAM_ERROR);
         DeleteSetCertStatusAsyncContext(env, context);
         return nullptr;
     }

@@ -83,7 +83,8 @@ static napi_value GetCertInfoParseParams(napi_env env, napi_callback_info info,
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc != CM_NAPI_GET_CERT_INFO_ARGS) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid when getting trusted certificate info");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid when getting trusted certificate info",
+            context->metricsReport.get());
         CM_LOG_E("arguments count invalid when getting trusted certificate info");
         return nullptr;
     }
@@ -91,7 +92,7 @@ static napi_value GetCertInfoParseParams(napi_env env, napi_callback_info info,
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->certUri);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "certUri type error");
+        ThrowError(env, PARAM_ERROR, "certUri type error", context->metricsReport.get());
         CM_LOG_E("get cert uri failed when getting CA certificate info");
         return nullptr;
     }
@@ -207,7 +208,6 @@ napi_value CMNapiGetSystemCertInfo(napi_env env, napi_callback_info info)
     napi_value result = GetCertInfoParseParams(env, info, context, CM_SYSTEM_TRUSTED_STORE);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
-        reportHolder->Finish(OHOS::Security::CertManager::PARAM_ERROR);
         DeleteGetCertInfoAsyncContext(env, context);
         return nullptr;
     }
@@ -241,7 +241,6 @@ napi_value CMNapiGetUserTrustedCertInfo(napi_env env, napi_callback_info info)
     napi_value result = GetCertInfoParseParams(env, info, context, CM_USER_TRUSTED_STORE);
     if (result == nullptr) {
         CM_LOG_E("parse get cert info params failed");
-        reportHolder->Finish(OHOS::Security::CertManager::PARAM_ERROR);
         DeleteGetCertInfoAsyncContext(env, context);
         return nullptr;
     }

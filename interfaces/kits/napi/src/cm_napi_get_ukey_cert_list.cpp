@@ -168,20 +168,20 @@ static napi_value GetUkeyCertListParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc != CM_NAPI_GET_UKEY_CERT_LIST_ARGS) {
-        ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need 2.");
+        ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need 2.", context->metricsReport.get());
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
     if (!CheckUkeyParamsType(env, argv, argc)) {
-        ThrowError(env, PARAM_ERROR, "The parameter type is invalid.");
+        ThrowError(env, PARAM_ERROR, "The parameter type is invalid.", context->metricsReport.get());
         CM_LOG_E("Invalid parameter type");
         return nullptr;
     }
-    
+
     size_t index = 0;
     napi_value result = ParseStringOrEmpty(env, argv[index], context->ukeyProvider);
     if (result == nullptr) {
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get ukey provider.");
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get ukey provider.", context->metricsReport.get());
         CM_LOG_E("could not get ukey provider");
         return nullptr;
     }
@@ -193,7 +193,7 @@ static napi_value GetUkeyCertListParseParams(
     }
     result = ParseUkeyInfo(env, argv[index], context);
     if (result == nullptr) {
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get ukey info.");
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get ukey info.", context->metricsReport.get());
         CM_LOG_E("could not get ukey info");
         return nullptr;
     }
@@ -278,7 +278,6 @@ napi_value CMNapiGetUkeyCertList(napi_env env, napi_callback_info info)
     napi_value result = GetUkeyCertListParseParams(env, info, context);
     if (result == nullptr) {
         CM_LOG_E("could not parse params");
-        reportHolder->Finish(OHOS::Security::CertManager::PARAM_ERROR);
         DeleteGetUkeyCertListAsyncContext(env, context);
         return nullptr;
     }

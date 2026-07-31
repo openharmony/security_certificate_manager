@@ -65,7 +65,7 @@ napi_value GetAppCertListByUidParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc != CM_NAPI_GET_APP_CERT_BY_UID_MIN_ARGS) {
-        ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need between 0 and 1.");
+        ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need between 0 and 1.", context->metricsReport.get());
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
@@ -73,7 +73,7 @@ napi_value GetAppCertListByUidParseParams(
     size_t index = 0;
     napi_value result = ParseUint32(env, argv[index], context->appUid);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "parse appUid failed.");
+        ThrowError(env, PARAM_ERROR, "parse appUid failed.", context->metricsReport.get());
         CM_LOG_E("could not get key appUid");
         return nullptr;
     }
