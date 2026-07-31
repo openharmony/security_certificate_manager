@@ -18,13 +18,21 @@
 #include <chrono>
 #include <thread>
 
-#include "cm_api_common.h"
-#include "cm_dialog_api_common.h"
-
-using namespace testing;
-using namespace OHOS::Security::CertManager;
+#include "cm_metrics.h"
 
 namespace CertmanagerTest {
+// Mirror the ErrorCode values from cm_api_common.h. Inlined here so the test
+// only depends on cm_metrics and does not pull in unrelated translation units.
+namespace {
+constexpr int32_t CM_SUCCESS = 0;
+constexpr int32_t PARAM_ERROR = 401;
+constexpr int32_t NOT_FOUND = 17500002;
+constexpr int32_t INNER_FAILURE = 17500001;
+constexpr int32_t ERROR_CODE_COUNT = 15;
+}  // namespace
+
+using namespace testing;
+
 HWTEST_F(CmMetricsTest, ReportGuard_StartRecordsCalled, TestSize.Level1)
 {
     CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
