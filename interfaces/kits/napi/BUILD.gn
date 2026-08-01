@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+# Copyright (c) 2022-2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -26,7 +26,10 @@ ohos_shared_library("certmanager") {
     stack_protector_ret = true
   }
 
-  include_dirs = [ "include" ]
+  include_dirs = [
+    "include",
+    "../common/include",
+  ]
 
   sources = [
     "src/cm_napi.cpp",
@@ -71,6 +74,7 @@ ohos_shared_library("certmanager") {
   deps = [
     "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
     "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+    "${cert_manager_root_dir}/interfaces/kits/common/metrics:libcm_metrics_static",
   ]
 
   relative_install_dir = "module/security"
@@ -94,6 +98,7 @@ ohos_shared_library("certmanagerdialog") {
     "include/dialog",
     "include/dialog/dialog_callback",
     "../common/include",
+    "../common/metrics/include",
   ]
 
   sources = [
@@ -140,6 +145,7 @@ ohos_shared_library("certmanagerdialog") {
   deps = [
     "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
     "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+    "${cert_manager_root_dir}/interfaces/kits/common/metrics:libcm_metrics_static",
   ]
 
   relative_install_dir = "module/security"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,12 +17,15 @@
 
 #include "securec.h"
 
+#include <memory>
+
 #include "cert_manager_api.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "cm_napi_common.h"
 #include "cm_util.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -44,6 +47,7 @@ struct GrantAsyncContextT {
     struct CmBlob *keyUri = nullptr;
     struct CmBlob *authUri = nullptr;
     struct CmAppUidList *uidList = nullptr;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 using GrantAsyncContext = GrantAsyncContextT *;
 
@@ -79,7 +83,7 @@ static napi_value ParseGrantUidParams(napi_env env, napi_callback_info info, Gra
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc != CM_NAPI_GRANT_ARGS_CNT) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid when grant or remove uid");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid when grant or remove uid", context->metricsReport.get());
         CM_LOG_E("arguments count is not expected when grant or remove uid");
         return nullptr;
     }
@@ -87,7 +91,7 @@ static napi_value ParseGrantUidParams(napi_env env, napi_callback_info info, Gra
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keyUri type error");
+        ThrowError(env, PARAM_ERROR, "keyUri type error", context->metricsReport.get());
         CM_LOG_E("get uri failed when grant or remove uid");
         return nullptr;
     }
@@ -95,7 +99,7 @@ static napi_value ParseGrantUidParams(napi_env env, napi_callback_info info, Gra
     index++;
     result = ParseUint32(env, argv[index], context->appUid);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "appUid type error");
+        ThrowError(env, PARAM_ERROR, "appUid type error", context->metricsReport.get());
         CM_LOG_E("get app uid failed when grant or remove uid ");
         return nullptr;
     }
@@ -115,7 +119,7 @@ static napi_value ParseIsAuthedParams(napi_env env, napi_callback_info info, Gra
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc != CM_NAPI_IS_AUTHED_ARGS_CNT) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 1.");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 1.", context->metricsReport.get());
         CM_LOG_E("arguments count is not expected when using isAuthed");
         return nullptr;
     }
@@ -123,7 +127,8 @@ static napi_value ParseIsAuthedParams(napi_env env, napi_callback_info info, Gra
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keyUri is not a string or length is 0 or too long.");
+        ThrowError(env, PARAM_ERROR, "keyUri is not a string or length is 0 or too long.",
+            context->metricsReport.get());
         CM_LOG_E("get uri failed when using isAuthed");
         return nullptr;
     }
@@ -179,8 +184,11 @@ static void GrantUidComplete(napi_env env, napi_status status, void *data)
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultAuthUri(env, context->authUri);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode);
+        result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 
@@ -200,11 +208,16 @@ static void RemoveUidComplete(napi_env env, napi_status status, void *data)
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else if (context->errCode == CMR_ERROR_AUTH_CHECK_FAILED) {
         napi_create_uint32(env, 0, &result[0]);
-        context->errCode = CM_SUCCESS;
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode);
+        result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
     }
     napi_get_undefined(env, &result[1]);
 
@@ -219,12 +232,17 @@ static void IsAuthedComplete(napi_env env, napi_status status, void *data)
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         napi_get_boolean(env, true, &result[1]);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else if (context->errCode == CMR_ERROR_AUTH_CHECK_FAILED) {
         napi_create_uint32(env, 0, &result[0]);
         napi_get_boolean(env, false, &result[1]);
-        context->errCode = CM_SUCCESS;
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode);
+        result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 
@@ -293,8 +311,11 @@ static void GetUidListComplete(napi_env env, napi_status status, void *data)
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
         result[1] = ConvertResultAuthList(env, context->uidList);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
-        result[0] = GenerateBusinessError(env, context->errCode);
+        result[0] = GenerateBusinessError(env, context->errCode, context->metricsReport.get());
         napi_get_undefined(env, &result[1]);
     }
 
@@ -319,7 +340,7 @@ static napi_value GrantUidAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowError(env, INNER_FAILURE, GENERIC_MSG);
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG, context->metricsReport.get());
         CM_LOG_E("get async work failed when granting uid");
         return nullptr;
     }
@@ -343,7 +364,7 @@ static napi_value RemoveUidAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowError(env, INNER_FAILURE, GENERIC_MSG);
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG, context->metricsReport.get());
         CM_LOG_E("queue async work failed when removing uid");
         return nullptr;
     }
@@ -367,7 +388,7 @@ static napi_value IsAuthedAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowError(env, INNER_FAILURE, GENERIC_MSG);
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG, context->metricsReport.get());
         CM_LOG_E("queue async work failed when using isAuthed");
         return nullptr;
     }
@@ -391,7 +412,7 @@ static napi_value GetUidListAsyncWork(napi_env env, GrantAsyncContext context)
 
     napi_status status = napi_queue_async_work(env, context->asyncWork);
     if (status != napi_ok) {
-        ThrowError(env, INNER_FAILURE, GENERIC_MSG);
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG, context->metricsReport.get());
         CM_LOG_E("queue async work failed when getting authed uid list");
         return nullptr;
     }
@@ -401,12 +422,18 @@ static napi_value GetUidListAsyncWork(napi_env env, GrantAsyncContext context)
 napi_value CMNapiGrantPublicCertificate(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("grant publice cert enter");
+    OHOS::Security::CertManager::CmMetricsReport report("grantPublicCertificate",
+        OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    report.Start();
 
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init grant uid context failed");
+        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = ParseGrantUidParams(env, info, context);
     if (result == nullptr) {
@@ -429,12 +456,18 @@ napi_value CMNapiGrantPublicCertificate(napi_env env, napi_callback_info info)
 napi_value CMNapiIsAuthorizedApp(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("is authed app enter");
+    OHOS::Security::CertManager::CmMetricsReport report("isAuthorizedApp",
+        OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    report.Start();
 
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init is authed uid context failed");
+        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = ParseIsAuthedParams(env, info, context);
     if (result == nullptr) {
@@ -457,12 +490,18 @@ napi_value CMNapiIsAuthorizedApp(napi_env env, napi_callback_info info)
 napi_value CMNapiGetAuthorizedAppList(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get auth app list enter");
+    OHOS::Security::CertManager::CmMetricsReport report("getAuthorizedAppList",
+        OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    report.Start();
 
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init get authed uid list context failed");
+        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = ParseGetUidListParams(env, info, context);
     if (result == nullptr) {
@@ -485,12 +524,18 @@ napi_value CMNapiGetAuthorizedAppList(napi_env env, napi_callback_info info)
 napi_value CMNapiRemoveGrantedPublic(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("remove granted app enter");
+    OHOS::Security::CertManager::CmMetricsReport report("removeGrantedPublicCertificate",
+        OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    report.Start();
 
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init remove uid context failed");
+        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = ParseRemoveUidParams(env, info, context);
     if (result == nullptr) {

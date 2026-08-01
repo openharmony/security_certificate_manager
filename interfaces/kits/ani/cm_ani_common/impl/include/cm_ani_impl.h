@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,10 @@
 #ifndef CM_ANI_IMPL_H
 #define CM_ANI_IMPL_H
 
+#include <memory>
+
 #include "ani.h"
+#include "cm_metrics.h"
 #include "cm_type.h"
 
 namespace OHOS::Security::CertManager::Ani {
@@ -27,7 +30,8 @@ public:
     ani_object result = nullptr;
 
 public:
-    CertManagerAniImpl(ani_env *env);
+    CertManagerAniImpl(ani_env *env, const char *interfaceName,
+        CmMetricsKind kind = CmMetricsKind::NON_DIALOG);
     virtual ~CertManagerAniImpl();
 
     virtual int32_t Init() = 0;
@@ -36,7 +40,23 @@ public:
     virtual int32_t UnpackResult() = 0;
     virtual void OnFinish() = 0;
     virtual ani_object GenerateResult();
+
+    const char *GetInterfaceName() const { return interfaceName_; }
+
     ani_object Invoke();
+
+    // Begin histogram reporting (virtual; subclasses may override).
+    virtual void OnInvokeStart();
+    // End histogram reporting (virtual; subclasses may override, e.g. to defer
+    // emission until the asynchronous callback fires).
+    virtual void OnInvokeEnd(int32_t errorCode);
+
+protected:
+    std::shared_ptr<CmMetricsReport> metricsReport_ = nullptr;
+    CmMetricsKind metricsKind_ = CmMetricsKind::NON_DIALOG;
+
+private:
+    const char *interfaceName_ = "CmAniUnknown";
 };
 } // OHOS::Security::CertManager::Ani
 

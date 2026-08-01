@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,6 +23,7 @@
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "cm_napi_common.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -63,7 +64,7 @@ napi_value GetAppCertListParseParams(
 
     if ((context->store != APPLICATION_PRIVATE_CERTIFICATE_STORE && argc != 0) ||
         (context->store == APPLICATION_PRIVATE_CERTIFICATE_STORE && argc > 1)) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 0.");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 0.", context->metricsReport.get());
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
@@ -72,7 +73,8 @@ napi_value GetAppCertListParseParams(
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.",
+                context->metricsReport.get());
             CM_LOG_E("get callback function faild when getting application certificate list");
             return nullptr;
         }
@@ -116,8 +118,11 @@ static void GetAppCertListComplete(napi_env env, napi_status status, void *data)
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         result[1] = GetAppCertListWriteResult(env, context);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
-        result[0] = GenerateBusinessError(env, context->result);
+        result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     if (context->deferred != nullptr) {
@@ -177,8 +182,11 @@ static void GetCallingAppCertListComplete(napi_env env, napi_status status, void
     if (mcontext->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &res[0]));
         res[1] = GetAppCertListWriteResult(env, mcontext);
+        if (mcontext->metricsReport != nullptr) {
+            mcontext->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
-        res[0] = GenerateBusinessError(env, mcontext->result);
+        res[0] = GenerateBusinessError(env, mcontext->result, mcontext->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &res[1]));
     }
     GeneratePromise(env, mcontext->deferred, mcontext->result, res, CM_ARRAY_SIZE(res));
@@ -230,9 +238,25 @@ napi_value CMNapiGetAppCertListCommon(napi_env env, napi_callback_info info, uin
         DeleteGetAppCertListAsyncContext(env, context);
         return nullptr;
     }
+
+    // Pick the JS interface name based on the store, then start the histogram.
+    const char *jsName = "getAllAppCertificates";
+    if (store == APPLICATION_CERTIFICATE_STORE) {
+        jsName = "getAllPublicCertificates";
+    } else if (store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
+        jsName = "getAllAppPrivateCertificates";
+    } else if (store == APPLICATION_SYSTEM_CERTIFICATE_STORE) {
+        jsName = "getAllSystemAppCertificates";
+    }
+    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
+        jsName, OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    report->Start();
+    context->metricsReport = report;
+
     result = GetAppCertListAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        report->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteGetAppCertListAsyncContext(env, context);
         return nullptr;
     }
@@ -259,9 +283,18 @@ napi_value CMNapiGetCallingAppCertListCommon(napi_env env, napi_callback_info in
         DeleteGetAppCertListAsyncContext(env, context);
         return nullptr;
     }
+
+    // getCallingAppCertListCommon maps to the fixed JS interface name
+    // getPrivateCertificates.
+    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
+        "getPrivateCertificates", OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    report->Start();
+    context->metricsReport = report;
+
     result = GetCallingAppCertListAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        report->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteGetAppCertListAsyncContext(env, context);
         return nullptr;
     }

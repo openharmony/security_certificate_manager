@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,6 +34,12 @@ ani_object GetAniErrorResult(ani_env *env, int32_t resultCode);
 ani_object GetDialogAniErrorResult(ani_env *env, int32_t resultCode);
 
 ani_object GetAniDialogNativeResult(ani_env *env, int32_t resultCode);
+
+// Convert a native error code to its JS-side ErrorCode value for histogram
+// reporting. Callers must pick the variant that matches whether the API is a
+// dialog interface.
+int32_t TransformErrorCode(int32_t errorCode);
+int32_t TransformDialogErrorCode(int32_t errorCode);
 
 ani_env *GetCurrentThreadEnv(ani_vm *vm);
 

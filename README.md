@@ -40,6 +40,26 @@ base/security/certificate_manager/
 ### 接口说明<a name="section1551164914237"></a>
 证书管理相关JS接口将在后续API版本中体现，具体参见证书管理使用指南。
 
+## API 打点
+
+cert_manager 的 NAPI/ANI 接口在 `CM_API_METRICS_ENABLE` 宏开启时会向
+`api_metrics:histogrammanager` 上报三项直方图:
+
+| 宏 | 含义 | 触发时机 |
+|----|------|----------|
+| `HISTOGRAM_BOOLEAN(InterfaceName, true)` | 接口被调用 | 每个 NAPI/ANI 入口 |
+| `HISTOGRAM_ENUMERATION(InterfaceName, MetricErrorCode, 20)` | 错误码分布 | 接口返回前 |
+| `HISTOGRAM_TIMES(InterfaceName, elapsedMs)` | 接口耗时(ms) | 接口返回前 |
+
+宏的开关由 `cert_manager.gni::cm_api_metrics_enable` 控制:当
+`global_parts_info.hiviewdfx_api_metrics_ext` 存在时自动开启,否则关闭,
+关闭时所有打点代码被预处理器消除,无运行时开销。
+
+错误码的映射关系:原生错误码(`PARAM_ERROR`=401, `INNER_FAILURE`=17500001 等,
+定义于 `interfaces/kits/common/include/cm_api_common.h`)在打点前由
+`CmGetMetricErrorCode()` 翻译为紧凑的 `CM_METRIC_*` 枚举(0..19),
+boundary = 20 = 枚举数量。
+
 ## 相关仓<a name="section1371113476307"></a>
 
 **安全子系统**

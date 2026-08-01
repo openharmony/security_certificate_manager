@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -39,6 +39,7 @@ enum ErrorCode {
     DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY = 29700005,
     DIALOG_ERROR_PARAMETER_VALIDATION_FAILED = 29700006,
     DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE = 29700007,
+    DIALOG_ERROR_CODE_COUNT = 12,
 };
 static const std::string DIALOG_NO_PERMISSION_MSG = "the caller has no permission";
 static const std::string DIALOG_INVALID_PARAMS_MSG = "the input parameters is invalid";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,12 +17,17 @@
 #include "cm_log.h"
 #include "cm_ani_utils.h"
 #include "cm_ani_common.h"
+#include "cm_api_common.h"
+#include "cm_dialog_api_common.h"
+#include "cm_metrics.h"
 
 namespace OHOS::Security::CertManager::Ani {
 
-CertManagerAniImpl::CertManagerAniImpl(ani_env *env)
+CertManagerAniImpl::CertManagerAniImpl(ani_env *env, const char *interfaceName, CmMetricsKind kind)
 {
     this->env = env;
+    this->interfaceName_ = interfaceName;
+    this->metricsKind_ = kind;
 }
 
 CertManagerAniImpl::~CertManagerAniImpl() {}
@@ -42,6 +47,30 @@ ani_object CertManagerAniImpl::GenerateResult()
     return nativeResult;
 }
 
+void CertManagerAniImpl::OnInvokeStart()
+{
+    // Select the histogram upper bound based on metricsKind_ (number of enum
+    // entries in the corresponding ErrorCode).
+    int32_t boundary = (this->metricsKind_ == CmMetricsKind::DIALOG)
+        ? Dialog::DIALOG_ERROR_CODE_COUNT
+        : OHOS::Security::CertManager::ERROR_CODE_COUNT;
+    this->metricsReport_ = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
+        this->GetInterfaceName(), boundary, this->metricsKind_);
+    this->metricsReport_->Start();
+}
+
+void CertManagerAniImpl::OnInvokeEnd(int32_t errorCode)
+{
+    if (this->metricsReport_ == nullptr) {
+        return;
+    }
+    // Report the value transformed to the JS-side ErrorCode contract.
+    int32_t jsCode = (this->metricsKind_ == CmMetricsKind::DIALOG)
+        ? TransformDialogErrorCode(errorCode)
+        : TransformErrorCode(errorCode);
+    this->metricsReport_->Finish(jsCode);
+}
+
 ani_object CertManagerAniImpl::Invoke()
 {
     CM_LOG_I("ani invoke start.");
@@ -49,6 +78,8 @@ ani_object CertManagerAniImpl::Invoke()
         CM_LOG_E("ani invoke failed.");
         return nullptr;
     }
+
+    this->OnInvokeStart();
 
     int32_t ret = CM_SUCCESS;
     do {
@@ -75,6 +106,7 @@ ani_object CertManagerAniImpl::Invoke()
     } while (0);
     this->OnFinish();
     this->resultCode = ret;
+    this->OnInvokeEnd(this->resultCode);
     CM_LOG_I("ani invoke end. ret = %d", this->resultCode);
     return this->GenerateResult();
 }

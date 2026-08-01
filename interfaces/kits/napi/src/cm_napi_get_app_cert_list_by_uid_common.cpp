@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,6 +24,7 @@
 #include "cm_type.h"
 #include "cm_util.h"
 #include "cm_napi_common.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -64,7 +65,8 @@ napi_value GetAppCertListByUidParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc != CM_NAPI_GET_APP_CERT_BY_UID_MIN_ARGS) {
-        ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need between 0 and 1.");
+        ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need between 0 and 1.",
+            context->metricsReport.get());
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
@@ -72,7 +74,7 @@ napi_value GetAppCertListByUidParseParams(
     size_t index = 0;
     napi_value result = ParseUint32(env, argv[index], context->appUid);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "parse appUid failed.");
+        ThrowError(env, PARAM_ERROR, "parse appUid failed.", context->metricsReport.get());
         CM_LOG_E("could not get key appUid");
         return nullptr;
     }
@@ -115,8 +117,11 @@ static void GetAppCertListByUidComplete(napi_env env, napi_status status, void *
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         result[1] = GetAppCertListByUidWriteResult(env, context);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
-        result[0] = GenerateBusinessError(env, context->result);
+        result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
@@ -168,9 +173,18 @@ napi_value CMNapiGetAppCertListByUidCommon(napi_env env, napi_callback_info info
         DeleteGetAppCertListByUidAsyncContext(env, context);
         return nullptr;
     }
+
+    // getAppCertListByUidCommon maps to the fixed JS interface name
+    // getAllAppPrivateCertificatesByUid.
+    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
+        "getAllAppPrivateCertificatesByUid", OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    report->Start();
+    context->metricsReport = report;
+
     result = GetAppCertListByUidAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        report->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteGetAppCertListByUidAsyncContext(env, context);
         return nullptr;
     }

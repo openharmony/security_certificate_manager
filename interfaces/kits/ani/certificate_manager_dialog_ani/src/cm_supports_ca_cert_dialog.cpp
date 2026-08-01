@@ -17,6 +17,7 @@
 #include "cm_log.h"
 #include "cm_dialog_api_common.h"
 #include "cm_ani_utils.h"
+#include "cm_metrics.h"
 
 namespace OHOS::Security::CertManager::Ani {
 using namespace OHOS::Security::CertManager::Dialog;
@@ -24,21 +25,34 @@ using namespace OHOS::Security::CertManager::Dialog;
 ani_object SupportsCACertDialog(ani_env *env)
 {
     CM_LOG_I("supportsCACertDialog enter");
+    OHOS::Security::CertManager::CmMetricsReport report("supportsCACertDialog",
+        Dialog::DIALOG_ERROR_CODE_COUNT,
+        OHOS::Security::CertManager::CmMetricsKind::DIALOG);
+    report.Start();
+
     bool isSupport = IsEnableCACertDialog();
     ani_object nativeResult{};
     ani_object result{};
+
     auto ret = AniUtils::CreateBooleanObject(env, isSupport, result);
+    int32_t jsCode = CM_SUCCESS;
     if (ret != CM_SUCCESS) {
         CM_LOG_E("CreateBooleanObject failed, ret = %d", ret);
+        jsCode = CMR_DIALOG_ERROR_INTERNAL;
         ret = AniUtils::GenerateNativeResult(env, CMR_DIALOG_ERROR_INTERNAL, DIALOG_GENERIC_MSG.c_str(), result,
             nativeResult);
     } else {
+        jsCode = CM_SUCCESS;
         ret = AniUtils::GenerateNativeResult(env, CM_SUCCESS, nullptr, result, nativeResult);
     }
+
     if (ret != CM_SUCCESS) {
         CM_LOG_E("generate native result failed, ret = %d", ret);
+        report.Finish(CMR_DIALOG_ERROR_INTERNAL);
         return nullptr;
     }
+    report.Finish(jsCode);
+
     CM_LOG_I("supportsCACertDialog end, isSupport = %d", isSupport);
     return nativeResult;
 }

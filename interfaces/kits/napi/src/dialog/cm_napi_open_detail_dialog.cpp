@@ -15,7 +15,10 @@
 
 #include "cm_napi_open_uninstall_dialog.h"
 
+#include <memory>
+
 #include "cm_log.h"
+#include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_napi_dialog_callback_void.h"
 
@@ -85,14 +88,19 @@ static OHOS::AAFwk::Want CMGetCertDetailWant(std::shared_ptr<CmUIExtensionReques
 napi_value CMNapiOpenDetailDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert open detail dialog enter");
+    OHOS::Security::CertManager::CmMetricsReport report("openCertificateDetailDialog",
+        OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CODE_COUNT,
+        OHOS::Security::CertManager::CmMetricsKind::DIALOG);
+    report.Start();
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
     if (CheckSyscapReturnVoid(env, &result) != CM_SUCCESS) {
+        report.Finish(DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED);
         return result;
     }
     if (!IsEnableCACertDialog()) {
         CM_LOG_E("check not support ca cert dialog");
-        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, "DeviceType Error. deviceType is not support.");
+        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, "DeviceType Error. deviceType is not support.", &report);
         return nullptr;
     }
 
@@ -101,7 +109,7 @@ napi_value CMNapiOpenDetailDialog(napi_env env, napi_callback_info info)
     napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     if (status != napi_ok || argc != PARAM_SIZE_THREE) {
         CM_LOG_E("params number mismatch");
-        ThrowError(env, PARAM_ERROR, "Parameter Error. Params number mismatch.");
+        ThrowError(env, PARAM_ERROR, "Parameter Error. Params number mismatch.", &report);
         return nullptr;
     }
 
@@ -112,17 +120,19 @@ napi_value CMNapiOpenDetailDialog(napi_env env, napi_callback_info info)
     int32_t ret = CheckDetailParamsAndInitContext(asyncContext, argv, argc);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("failed to check params and init.");
-        ThrowError(env, PARAM_ERROR, "failed to check params and init.");
+        ThrowError(env, PARAM_ERROR, "failed to check params and init.", &report);
         return nullptr;
     }
 
     status = napi_create_promise(env, &asyncContext->deferred, &result);
     if (status != napi_ok) {
         CM_LOG_E("failed to create promise.");
-        ThrowError(env, DIALOG_ERROR_GENERIC, "failed to create promise.");
+        ThrowError(env, DIALOG_ERROR_GENERIC, "failed to create promise.", &report);
         return nullptr;
     }
 
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    asyncContext->metricsReport = reportHolder;
     auto uiExtCallback = std::make_shared<CmUIExtensionVoidCallback>(asyncContext);
     auto want = CMGetCertDetailWant(asyncContext);
     StartUIExtensionAbility(asyncContext, want, uiExtCallback);

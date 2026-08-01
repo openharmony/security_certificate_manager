@@ -15,6 +15,7 @@
 
 #include "cm_napi_dialog_callback.h"
 
+#include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_log.h"
 #include "napi/native_api.h"
@@ -48,6 +49,9 @@ bool CmUIExtensionCallback::SetErrorCode(int32_t code)
     }
     this->alreadyCallback_ = true;
     this->reqContext_->errCode = code;
+    if (this->reqContext_->metricsReport != nullptr) {
+        this->reqContext_->metricsReport->Finish(code);
+    }
     return true;
 }
 

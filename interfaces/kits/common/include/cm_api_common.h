@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -36,6 +36,7 @@ enum ErrorCode {
     STORE_PATH_NOT_SUPPORTED = 17500009,
     ACCESS_UKEY_SERVICE_FAILED = 17500010,
     PARAMETER_VALIDATION_FAILED = 17500011,
+    ERROR_CODE_COUNT = 15,
 };
 
 constexpr int CM_MAX_DATA_LEN = 0x6400000; // The maximum length is 100M

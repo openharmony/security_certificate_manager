@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,7 +23,7 @@
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
 CmOpenUkeyAuthDialog::CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_string aniKeyUri,
-    ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback)
+    ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback, "openUkeyAuthDialog")
 {
     this->aniKeyUri = aniKeyUri;
 }
@@ -66,7 +66,7 @@ int32_t CmOpenUkeyAuthDialog::InvokeAsyncWork()
     }
 
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallback>(this->vm, this->abilityContext,
-        this->globalCallback);
+        this->globalCallback, this->metricsReport_);
 
     return this->StartUkeyPinAbility(this->abilityContext, want, uiExtensionCallback);
 }

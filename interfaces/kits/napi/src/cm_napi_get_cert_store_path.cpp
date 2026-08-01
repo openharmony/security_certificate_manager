@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +20,7 @@
 #include "cm_log.h"
 #include "cm_napi_common.h"
 #include "cm_type.h"
+#include "cm_metrics.h"
 
 #include "bundle_mgr_proxy.h"
 #include "iservice_registry.h"
@@ -51,7 +52,8 @@ static sptr<IBundleMgr> GetBundleMgrProxy()
     return iface_cast<IBundleMgr>(remoteObject);
 }
 
-static int32_t GetUserCaStorePath(const enum CmCertScope certScope, string &path)
+static int32_t GetUserCaStorePath(napi_env env, const enum CmCertScope certScope, string &path,
+    OHOS::Security::CertManager::CmMetricsReport *report)
 {
     path += CA_STORE_PATH_USER_SANDBOX_BASE;
     if (certScope == CM_GLOBAL_USER) {
@@ -63,6 +65,7 @@ static int32_t GetUserCaStorePath(const enum CmCertScope certScope, string &path
     sptr<IBundleMgr> bundleMgrProxy = GetBundleMgrProxy();
     if (bundleMgrProxy == nullptr) {
         CM_LOG_E("Failed to get bundle manager proxy.");
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG, report);
         return CM_FAILURE;
     }
 
@@ -72,12 +75,14 @@ static int32_t GetUserCaStorePath(const enum CmCertScope certScope, string &path
     int32_t ret = bundleMgrProxy->GetBundleInfoForSelf(flags, bundleInfo);
     if (ret != 0) {
         CM_LOG_E("Failed to get bundle info for self");
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG, report);
         return CM_FAILURE;
     }
 
     ret = AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(bundleInfo.applicationInfo.uid, userId);
     if (ret != 0) {
         CM_LOG_E("Failed to get userid from uid[%d]", bundleInfo.applicationInfo.uid);
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG, report);
         return CM_FAILURE;
     }
 
@@ -96,7 +101,8 @@ static bool IsDirExist(const char *fileName)
     return false;
 }
 
-static int32_t GetSysCaStorePath(napi_env env, const enum CmCertAlg certAlg, string &path)
+static int32_t GetSysCaStorePath(napi_env env, const enum CmCertAlg certAlg, string &path,
+    OHOS::Security::CertManager::CmMetricsReport *report)
 {
     if (certAlg == CM_ALG_INTERNATIONAL) {
         path = CA_STORE_PATH_SYSTEM;
@@ -104,7 +110,8 @@ static int32_t GetSysCaStorePath(napi_env env, const enum CmCertAlg certAlg, str
     }
     if (!IsDirExist(SYSTEM_CA_STORE_GM)) {
         CM_LOG_E("system gm ca store path not exist");
-        ThrowError(env, STORE_PATH_NOT_SUPPORTED, "the device does not support specified certificate store path");
+        ThrowError(env, STORE_PATH_NOT_SUPPORTED,
+            "the device does not support specified certificate store path", report);
         return STORE_PATH_NOT_SUPPORTED;
     } else {
         path = CA_STORE_PATH_SYSTEM_SM;
@@ -113,20 +120,20 @@ static int32_t GetSysCaStorePath(napi_env env, const enum CmCertAlg certAlg, str
 }
 
 static napi_value GetCertStorePath(napi_env env, const enum CmCertType certType, const enum CmCertScope certScope,
-    const enum CmCertAlg certAlg)
+    const enum CmCertAlg certAlg, OHOS::Security::CertManager::CmMetricsReport *report)
 {
     string path = "";
     if (certType == CM_CA_CERT_SYSTEM) {
-        int32_t ret = GetSysCaStorePath(env, certAlg, path);
+        int32_t ret = GetSysCaStorePath(env, certAlg, path, report);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get system ca path, ret = %d", ret);
             return nullptr;
         }
     } else {
-        int32_t ret = GetUserCaStorePath(certScope, path);
+        int32_t ret = GetUserCaStorePath(env, certScope, path, report);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Failed to get user ca path.");
-            ThrowError(env, INNER_FAILURE, GENERIC_MSG);
+            ThrowError(env, INNER_FAILURE, GENERIC_MSG, report);
             return nullptr;
         }
     }
@@ -135,7 +142,7 @@ static napi_value GetCertStorePath(napi_env env, const enum CmCertType certType,
     napi_status status = napi_create_string_utf8(env, path.c_str(), path.length(), &result);
     if (status != napi_ok) {
         CM_LOG_E("Failed to creat string out.");
-        ThrowError(env, INNER_FAILURE, GENERIC_MSG);
+        ThrowError(env, INNER_FAILURE, GENERIC_MSG, report);
         return nullptr;
     }
     return result;
@@ -253,18 +260,21 @@ static int32_t GetAndCheckCertAlg(napi_env env, napi_value arg, uint32_t &algori
 napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get cert store path enter");
+    OHOS::Security::CertManager::CmMetricsReport report("getCertificateStorePath",
+        OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    report.Start();
     // get params
     size_t argc = CM_NAPI_GET_CERT_STORE_PATH_ARGS;
     napi_value argv[CM_NAPI_GET_CERT_STORE_PATH_ARGS] = { nullptr };
     napi_status status = napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     if (status != napi_ok) {
-        ThrowError(env, PARAM_ERROR, "Failed to get params");
+        ThrowError(env, PARAM_ERROR, "Failed to get params", &report);
         return nullptr;
     }
 
     // check param count should be 1.
     if (argc != CM_NAPI_GET_CERT_STORE_PATH_ARGS) {
-        ThrowError(env, PARAM_ERROR, "param count invalid, should be 1.");
+        ThrowError(env, PARAM_ERROR, "param count invalid, should be 1.", &report);
         CM_LOG_E("args count[%zu] invalid, should be 1.", argc);
         return nullptr;
     }
@@ -272,26 +282,32 @@ napi_value CMNapiGetCertStorePath(napi_env env, napi_callback_info info)
     uint32_t type;
     int32_t ret = GetAndCheckCertType(env, argv[0], type);
     if (ret != CM_SUCCESS) {
-        ThrowError(env, PARAM_ERROR, "Failed to get param certType");
+        ThrowError(env, PARAM_ERROR, "Failed to get param certType", &report);
         return nullptr;
     }
 
     uint32_t scope = INIT_INVALID_VALUE;
     ret = GetAndCheckCertScope(env, argv[0], static_cast<CmCertType>(type), scope);
     if (ret != CM_SUCCESS) {
-        ThrowError(env, PARAM_ERROR, "Failed to get param certScope");
+        ThrowError(env, PARAM_ERROR, "Failed to get param certScope", &report);
         return nullptr;
     }
 
     uint32_t algorithm;
     ret = GetAndCheckCertAlg(env, argv[0], algorithm);
     if (ret != CM_SUCCESS) {
-        ThrowError(env, PARAM_ERROR, "Failed to get param certAlg");
+        ThrowError(env, PARAM_ERROR, "Failed to get param certAlg", &report);
         return nullptr;
     }
 
     napi_value res = GetCertStorePath(env, static_cast<CmCertType>(type), static_cast<CmCertScope>(scope),
-        static_cast<CmCertAlg>(algorithm));
+        static_cast<CmCertAlg>(algorithm), &report);
+    if (res == nullptr) {
+        // GetCertStorePath already invoked ThrowError with the precise error
+        // code; only record the success case here.
+        return nullptr;
+    }
+    report.Finish(CM_SUCCESS);
     CM_LOG_I("get cert store path end");
     return res;
 }

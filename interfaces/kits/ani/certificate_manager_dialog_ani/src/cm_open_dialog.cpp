@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,11 +29,12 @@ static int32_t g_requestCode = 1;
 static std::mutex g_requestCodeLock;
 
 CmAniUIExtensionCallback::CmAniUIExtensionCallback(ani_vm *vm, std::shared_ptr<AbilityContext> context,
-    ani_ref aniCallback)
+    ani_ref aniCallback, std::shared_ptr<CmMetricsReport> metricsReport)
 {
     this->vm = vm;
     this->context = context;
     this->aniCallback = aniCallback;
+    this->metricsReport = metricsReport;
 }
 
 CmAniUIExtensionCallback::~CmAniUIExtensionCallback() {}
@@ -54,6 +55,35 @@ ani_object CmAniUIExtensionCallback::GetDefaultResult(ani_env *env)
     return reinterpret_cast<ani_object>(nullRef);
 }
 
+// Build the BusinessError object to forward back to JS. Returns true on success.
+static bool BuildInvokeBusinessError(ani_env *env, int32_t code, ani_object &businessError)
+{
+    if (code != CM_SUCCESS) {
+        CM_LOG_E("invokeCallback with error, code: %d", code);
+        businessError = GetDialogAniErrorResult(env, code);
+        return businessError != nullptr;
+    }
+    int32_t ret = AniUtils::GenerateBusinessError(env, CM_SUCCESS, "", businessError);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("generate businessError failed.");
+        return false;
+    }
+    return true;
+}
+
+// Release the callback resources: global ref + detach env. Logs but does not propagate.
+static void ReleaseInvokeResources(ani_env *env, ani_ref aniCallback, ani_vm *vm)
+{
+    ani_status status = env->GlobalReference_Delete(aniCallback);
+    if (status != ANI_OK) {
+        CM_LOG_E("delete global reference failed. status = %d", static_cast<int32_t>(status));
+    }
+    status = DetachCurrentThreadEnv(vm);
+    if (status != ANI_OK) {
+        CM_LOG_E("DetachCurrentThreadEnv failed. status = %d", static_cast<int32_t>(status));
+    }
+}
+
 void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, ani_object result)
 {
     CM_LOG_D("CmAniUIExtensionCallback::invokeCallback");
@@ -65,6 +95,12 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
         }
         this->isReleased = true;
     }
+    // In async scenarios, the histogram report fires when the callback completes.
+    // Dialog context: convert via TransformDialogErrorCode to match the JS-side
+    // ErrorCode contract.
+    if (this->metricsReport != nullptr) {
+        this->metricsReport->Finish(TransformDialogErrorCode(code));
+    }
     if (this->context != nullptr && this->sessionId != 0) {
         auto uiContent = this->context->GetUIContent();
         if (uiContent != nullptr) {
@@ -73,21 +109,9 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
         }
     }
 
-    int32_t ret;
     ani_object businessError{};
-    if (code != CM_SUCCESS) {
-        CM_LOG_E("invokeCallback with error, code: %d", code);
-        businessError = GetDialogAniErrorResult(env, code);
-        if (businessError == nullptr) {
-            CM_LOG_E("get businessError failed.");
-            return;
-        }
-    } else {
-        ret = AniUtils::GenerateBusinessError(env, CM_SUCCESS, "", businessError);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("generate businessError failed.");
-            return;
-        }
+    if (!BuildInvokeBusinessError(env, code, businessError)) {
+        return;
     }
 
     ani_status status = env->Object_CallMethodByName_Void(reinterpret_cast<ani_object>(this->aniCallback), "invoke",
@@ -96,14 +120,7 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
         CM_LOG_E("invoke callback failed. status = %d", static_cast<int32_t>(status));
         return;
     }
-    if ((status = env->GlobalReference_Delete(this->aniCallback)) != ANI_OK) {
-        CM_LOG_E("delete global reference failed. status = %d", static_cast<int32_t>(status));
-    }
-    if ((status = DetachCurrentThreadEnv(this->vm)) != ANI_OK) {
-        CM_LOG_E("DetachCurrentThreadEnv failed. status = %d", static_cast<int32_t>(status));
-        return;
-    }
-    return;
+    ReleaseInvokeResources(env, this->aniCallback, this->vm);
 }
 
 void CmAniUIExtensionCallback::OnRelease(const int32_t releaseCode)
@@ -169,8 +186,9 @@ void CmAniUIExtensionCallback::OnDestroy()
 CmAniUIExtensionCallbackString::CmAniUIExtensionCallbackString(
     ani_vm *vm,
     std::shared_ptr<AbilityContext> context,
-    ani_ref aniCallback
-) : CmAniUIExtensionCallback(vm, context, aniCallback) {}
+    ani_ref aniCallback,
+    std::shared_ptr<CmMetricsReport> metricsReport
+) : CmAniUIExtensionCallback(vm, context, aniCallback, metricsReport) {}
 
 ani_object CmAniUIExtensionCallbackString::GetDefaultResult(ani_env *env)
 {
@@ -197,8 +215,9 @@ void CmAniUIExtensionCallbackString::OnReceive(const OHOS::AAFwk::WantParams &re
 CmAniUIExtensionCallbackCertReference::CmAniUIExtensionCallbackCertReference(
     ani_vm *vm,
     std::shared_ptr<AbilityContext> context,
-    ani_ref aniCallback
-) : CmAniUIExtensionCallback(vm, context, aniCallback) {}
+    ani_ref aniCallback,
+    std::shared_ptr<CmMetricsReport> metricsReport
+) : CmAniUIExtensionCallback(vm, context, aniCallback, metricsReport) {}
 
 ani_object CmAniUIExtensionCallbackCertReference::GetDefaultResult(ani_env *env)
 {

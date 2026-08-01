@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,7 +15,10 @@
 
 #include "cm_napi_open_install_dialog.h"
 
+#include <memory>
+
 #include "cm_log.h"
+#include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_napi_dialog_callback_string.h"
 
@@ -114,7 +117,12 @@ static uint32_t GetCertificateType(napi_env env, napi_value argv[], size_t lengt
 napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert install dialog enter");
+    OHOS::Security::CertManager::CmMetricsReport report("openInstallCertificateDialog",
+        OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CODE_COUNT,
+        OHOS::Security::CertManager::CmMetricsKind::DIALOG);
+    report.Start();
     if (CheckSyscapThrowError(env) != CM_SUCCESS) {
+        report.Finish(OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED);
         return nullptr;
     }
     napi_value result = nullptr;
@@ -130,7 +138,7 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
 
     if (asyncContext->certificateType == CA_CERT && !IsEnableCACertDialog()) {
         CM_LOG_E("check not support ca cert dialog");
-        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, "DeviceType Error. deviceType is not support.");
+        ThrowError(env, DIALOG_ERROR_NOT_SUPPORTED, "DeviceType Error. deviceType is not support.", &report);
         return result;
     }
 
@@ -138,24 +146,26 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
         CM_LOG_E("params number mismatch");
         std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_FOUR)
             + ", given " + std::to_string(argc);
-        ThrowError(env, PARAM_ERROR, errMsg);
+        ThrowError(env, PARAM_ERROR, errMsg, &report);
         return result;
     }
 
     asyncContext->opType = static_cast<int32_t>(DIALOG_OPERATION_INSTALL);
     if (CMCheckArgvAndInitContext(asyncContext, argv, sizeof(argv) / sizeof(argv[0])) == nullptr) {
         CM_LOG_E("check argv vaild and init faild");
-        ThrowError(env, PARAM_ERROR, "check argv vaild and init faild");
+        ThrowError(env, PARAM_ERROR, "check argv vaild and init faild", &report);
         return nullptr;
     }
 
     if (GetCallerLabelName(asyncContext) != CM_SUCCESS) {
         CM_LOG_E("get caller labelName faild");
-        ThrowError(env, DIALOG_ERROR_GENERIC, "get caller labelName faild");
+        ThrowError(env, DIALOG_ERROR_GENERIC, "get caller labelName faild", &report);
         return nullptr;
     }
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
 
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    asyncContext->metricsReport = reportHolder;
     auto uiExtCallback = std::make_shared<CmUIExtensionStringCallback>(asyncContext);
     auto want = CMGetInstallCertWant(asyncContext);
     StartUIExtensionAbility(asyncContext, want, uiExtCallback);

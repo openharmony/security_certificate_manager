@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -850,7 +850,7 @@ int32_t SetObjStringProperty(ani_env *env, ani_object obj, const std::map<std::s
         }
         status = env->Object_SetPropertyByName_Ref(obj, it->first.c_str(), strObj);
         if (status != ANI_OK) {
-            CM_LOG_E("set propterty %s failed。", it->first.c_str());
+            CM_LOG_E("set property %s failed.", it->first.c_str());
             return CMR_ERROR_INVALID_ARGUMENT;
         }
     }

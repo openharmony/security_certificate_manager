@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +17,8 @@
 
 #include "securec.h"
 
+#include <memory>
+
 #include "cert_manager_api.h"
 #include "cm_log.h"
 #include "cm_mem.h"
@@ -24,6 +26,7 @@
 #include "cm_util.h"
 #include "cm_napi_common.h"
 #include "cm_type_free.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -39,6 +42,7 @@ struct GetUkeyCertAsyncContextT {
     struct UkeyInfo *ukeyInfo = nullptr;
     struct CredentialDetailList *credentialDetailList = nullptr;
     int32_t result = 0;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 using GetUkeyCertAsyncContext = GetUkeyCertAsyncContextT *;
 
@@ -162,20 +166,20 @@ static napi_value GetUkeyCertParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc != CM_NAPI_GET_UKEY_CERT_LIST_ARGS) {
-        ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need 2.");
+        ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need 2.", context->metricsReport.get());
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
     if (!CheckUkeyParamsType(env, argv, argc)) {
-        ThrowError(env, PARAM_ERROR, "The parameter type is invalid.");
+        ThrowError(env, PARAM_ERROR, "The parameter type is invalid.", context->metricsReport.get());
         CM_LOG_E("Invalid parameter type");
         return nullptr;
     }
-    
+
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get keyUri.");
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get keyUri.", context->metricsReport.get());
         CM_LOG_E("could not get keyUri");
         return nullptr;
     }
@@ -187,7 +191,7 @@ static napi_value GetUkeyCertParseParams(
     }
     result = ParseUkeyInfo(env, argv[index], context);
     if (result == nullptr) {
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get ukey info.");
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get ukey info.", context->metricsReport.get());
         CM_LOG_E("could not get ukey info");
         return nullptr;
     }
@@ -209,8 +213,11 @@ static void GetUkeyCertComplete(napi_env env, napi_status status, void *data)
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         result[1] = GetUkeyCertWriteResult(env, context);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
-        result[0] = GenerateBusinessError(env, context->result);
+        result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
@@ -253,12 +260,18 @@ static napi_value GetUkeyCertAsyncWork(napi_env env, GetUkeyCertAsyncContext &as
 napi_value CMNapiGetUkeyCert(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get ukey cert enter");
+    OHOS::Security::CertManager::CmMetricsReport report("getUkeyCertificate",
+        OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    report.Start();
 
     GetUkeyCertAsyncContext context = CreateGetUkeyCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
+        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = GetUkeyCertParseParams(env, info, context);
     if (result == nullptr) {
@@ -269,6 +282,7 @@ napi_value CMNapiGetUkeyCert(napi_env env, napi_callback_info info)
     result = GetUkeyCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        reportHolder->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteGetUkeyCertAsyncContext(env, context);
         return nullptr;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,8 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmOpenCertManagerDialog::CmOpenCertManagerDialog(ani_env *env, ani_object aniContext,
-    ani_enum_item aniPageType, ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback)
+    ani_enum_item aniPageType, ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback,
+    "openCertificateManagerDialog")
 {
     this->aniPageType = aniPageType;
 }
@@ -52,7 +53,7 @@ int32_t CmOpenCertManagerDialog::InvokeAsyncWork()
     want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
 
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallback>(this->vm, this->abilityContext,
-        this->globalCallback);
+        this->globalCallback, this->metricsReport_);
 
     return StartUIExtensionAbility(this->abilityContext, want, uiExtensionCallback);
 }

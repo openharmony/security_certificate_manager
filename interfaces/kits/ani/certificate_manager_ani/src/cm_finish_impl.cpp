@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,7 +23,7 @@
 
 namespace OHOS::Security::CertManager::Ani {
 // CmFinishImpl
-CmFinishImpl::CmFinishImpl(ani_env *env) : CertManagerAniImpl(env) {}
+CmFinishImpl::CmFinishImpl(ani_env *env) : CertManagerAniImpl(env, "finish") {}
 
 int32_t CmFinishImpl::GetParamsFromEnv()
 {
@@ -40,7 +40,8 @@ int32_t CmFinishImpl::GetParamsFromEnv()
 }
 
 // CmSignatureFinishImpl
-CmSignatureFinishImpl::CmSignatureFinishImpl(ani_env *env, ani_arraybuffer aniHandle) : CmFinishImpl(env)
+CmSignatureFinishImpl::CmSignatureFinishImpl(ani_env *env, ani_arraybuffer aniHandle)
+    : CmFinishImpl(env)
 {
     this->aniHandle = aniHandle;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,8 @@
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
 CmOpenUninstallDialog::CmOpenUninstallDialog(ani_env *env, ani_object aniContext, ani_enum_item aniCertType,
-    ani_string aniCertUri, ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback)
+    ani_string aniCertUri, ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback,
+    "openUninstallCertificateDialog")
 {
     this->aniCertType = aniCertType;
     this->aniCertUri = aniCertUri;
@@ -84,7 +85,7 @@ int32_t CmOpenUninstallDialog::InvokeAsyncWork()
     want.SetParam(CERT_MANAGER_OPERATION_TYPE, DIALOG_OPERATION_UNINSTALL);
 
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallback>(this->vm, this->abilityContext,
-        this->globalCallback);
+        this->globalCallback, this->metricsReport_);
 
     return StartUIExtensionAbility(this->abilityContext, want, uiExtensionCallback);
 }

@@ -16,6 +16,7 @@
 #include "cm_napi_supports_ca_cert_dialog.h"
 
 #include "cm_log.h"
+#include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
 
 namespace CMNapi {
@@ -24,13 +25,18 @@ using namespace OHOS::Security::CertManager::Dialog;
 napi_value CMNapiSupportsCACertDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("supportsCACertDialog enter");
+    OHOS::Security::CertManager::CmMetricsReport report("supportsCACertDialog",
+        OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CODE_COUNT,
+        OHOS::Security::CertManager::CmMetricsKind::DIALOG);
+    report.Start();
     napi_value result = nullptr;
     bool isSupport = IsEnableCACertDialog();
     if (napi_get_boolean(env, isSupport, &result) != napi_ok) {
-        ThrowError(env, DIALOG_ERROR_GENERIC, "napi get boolean result error.");
+        ThrowError(env, DIALOG_ERROR_GENERIC, "napi get boolean result error.", &report);
         return nullptr;
     }
     CM_LOG_I("supportsCACertDialog end, isSupport = %d", isSupport);
+    report.Finish(CM_SUCCESS);
     return result;
 }
 }  // namespace CMNapi

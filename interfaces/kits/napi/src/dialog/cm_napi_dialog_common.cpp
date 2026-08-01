@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -71,7 +71,8 @@ void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncC
      */
     if (!CheckBasicPermission()) {
         CM_LOG_E("not has basic permission");
-        ThrowError(asyncContext->env, HAS_NO_PERMISSION, DIALOG_NO_PERMISSION_MSG);
+        ThrowError(asyncContext->env, HAS_NO_PERMISSION, DIALOG_NO_PERMISSION_MSG,
+            asyncContext->metricsReport.get());
         return;
     }
 
@@ -79,13 +80,15 @@ void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncC
     auto abilityContext = asyncContext->context;
     if (abilityContext == nullptr) {
         CM_LOG_E("abilityContext is null");
-        ThrowError(asyncContext->env, PARAM_ERROR, "abilityContext is null");
+        ThrowError(asyncContext->env, PARAM_ERROR, "abilityContext is null",
+            asyncContext->metricsReport.get());
         return;
     }
     auto uiContent = abilityContext->GetUIContent();
     if (uiContent == nullptr) {
         CM_LOG_E("uiContent is null");
-        ThrowError(asyncContext->env, PARAM_ERROR, "uiContent is null");
+        ThrowError(asyncContext->env, PARAM_ERROR, "uiContent is null",
+            asyncContext->metricsReport.get());
         return;
     }
 
@@ -107,7 +110,8 @@ void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncC
     CM_LOG_I("end CreateModalUIExtension");
     if (sessionId == 0) {
         CM_LOG_E("CreateModalUIExtension failed");
-        ThrowError(asyncContext->env, PARAM_ERROR, "CreateModalUIExtension failed");
+        ThrowError(asyncContext->env, PARAM_ERROR, "CreateModalUIExtension failed",
+            asyncContext->metricsReport.get());
     }
     uiExtCallback->SetSessionId(sessionId);
     return;
@@ -118,7 +122,8 @@ void StartUIAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
 {
     if (!CheckBasicPermission()) {
         CM_LOG_E("not has basic permission");
-        ThrowError(asyncContext->env, HAS_NO_PERMISSION, DIALOG_NO_PERMISSION_MSG);
+        ThrowError(asyncContext->env, HAS_NO_PERMISSION, DIALOG_NO_PERMISSION_MSG,
+            asyncContext->metricsReport.get());
         return;
     }
     CM_LOG_I("begin StartUIAbility");
@@ -136,7 +141,8 @@ void StartUIAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
         int32_t ret = abilityContext->StartAbilityForResult(want, g_requestCode++, std::move(task));
         if (ret != CM_SUCCESS) {
             CM_LOG_I("StartUIAbility error, code: %d", ret);
-            ThrowError(asyncContext->env, DIALOG_ERROR_INSTALL_FAILED, "Start uiAbility failed");
+            ThrowError(asyncContext->env, DIALOG_ERROR_INSTALL_FAILED, "Start uiAbility failed",
+                asyncContext->metricsReport.get());
         }
     }
     return;
@@ -390,7 +396,8 @@ int32_t TranformErrorCode(int32_t errorCode)
     return DIALOG_ERROR_GENERIC;
 }
 
-napi_value GenerateBusinessError(napi_env env, int32_t errorCode)
+napi_value GenerateBusinessError(napi_env env, int32_t errorCode,
+    OHOS::Security::CertManager::CmMetricsReport *metricsReport)
 {
     const char *errorMessage = GetJsErrorMsg(errorCode);
     if (errorMessage == nullptr) {
@@ -406,10 +413,18 @@ napi_value GenerateBusinessError(napi_env env, int32_t errorCode)
     napi_value businessErrorMsg = nullptr;
     NAPI_CALL(env, napi_create_error(env, nullptr, message, &businessErrorMsg));
     NAPI_CALL(env, napi_set_named_property(env, businessErrorMsg, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
+    // Auto-record the histogram on the error path: when metricsReport is provided,
+    // emit Finish immediately so callers do not need to repeat the work after
+    // returning nullptr. The reported value is the JS-side ErrorCode, matching
+    // the JS contract.
+    if (metricsReport != nullptr) {
+        metricsReport->Finish(outputCode);
+    }
     return businessErrorMsg;
 }
 
-void ThrowError(napi_env env, int32_t errorCode, const std::string errMsg)
+void ThrowError(napi_env env, int32_t errorCode, const std::string errMsg,
+    OHOS::Security::CertManager::CmMetricsReport *metricsReport)
 {
     napi_value paramsError = nullptr;
     napi_value outCode = nullptr;
@@ -420,6 +435,12 @@ void ThrowError(napi_env env, int32_t errorCode, const std::string errMsg)
     NAPI_CALL_RETURN_VOID(env, napi_set_named_property(env, paramsError,
         BUSINESS_ERROR_PROPERTY_CODE.c_str(), outCode));
     NAPI_CALL_RETURN_VOID(env, napi_throw(env, paramsError));
+    // Auto-record the histogram on the error path: when metricsReport is provided,
+    // emit Finish immediately so callers do not need to repeat the work after
+    // returning nullptr.
+    if (metricsReport != nullptr) {
+        metricsReport->Finish(errorCode);
+    }
 }
 
 void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,

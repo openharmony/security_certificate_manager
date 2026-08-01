@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,6 +28,8 @@
 #include "cm_dialog_api_common.h"
 #include "cm_ani_common.h"
 #include "cm_ani_utils.h"
+#include "cm_api_common.h"
+#include "cm_metrics.h"
 
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
@@ -90,7 +92,8 @@ ani_object openInstallCertificateDialogNative(ani_env *env, ani_object context, 
     }
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
-        return GenerateResult(env, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED, CAPABILITY_NOT_SUPPORTED_MSG.c_str());
+        return GenerateResult(env, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED,
+            Dialog::CAPABILITY_NOT_SUPPORTED_MSG.c_str());
     }
     auto openInstallDialogImpl = std::make_shared<CmOpenInstallDialog>(env, context, callback, params);
     return openInstallDialogImpl->Invoke();
@@ -134,7 +137,8 @@ ani_object openAuthorizeDialogNative(ani_env *env, ani_object context, ani_objec
     }
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
-        return GenerateResult(env, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED, CAPABILITY_NOT_SUPPORTED_MSG.c_str());
+        return GenerateResult(env, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED,
+            Dialog::CAPABILITY_NOT_SUPPORTED_MSG.c_str());
     }
     auto openAuthDialogImpl = std::make_shared<CmOpenAuthDialog>(env, context, callback);
     return openAuthDialogImpl->Invoke();
@@ -148,7 +152,8 @@ ani_object openAuthorizeDialogWithReqNative(ani_env *env, ani_object context, an
     }
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
-        return GenerateResult(env, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED, CAPABILITY_NOT_SUPPORTED_MSG.c_str());
+        return GenerateResult(env, DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED,
+            Dialog::CAPABILITY_NOT_SUPPORTED_MSG.c_str());
     }
     auto openAuthDialogWithReqImpl = std::make_shared<CmOpenAuthDialogWithReq>(
         env, context, params, callback);
@@ -175,7 +180,8 @@ ani_object supportsCACertDialogNative(ani_env *env)
         CM_LOG_E("check env is nullptr.");
         return nullptr;
     }
-    return OHOS::Security::CertManager::Ani::SupportsCACertDialog(env);
+    auto result = OHOS::Security::CertManager::Ani::SupportsCACertDialog(env);
+    return result;
 }
 }
 

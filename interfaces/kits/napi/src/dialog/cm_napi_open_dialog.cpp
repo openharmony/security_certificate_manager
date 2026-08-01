@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,8 +17,11 @@
 
 #include "securec.h"
 
+#include <memory>
+
 #include "cert_manager_api.h"
 #include "cm_log.h"
+#include "cm_metrics.h"
 
 #include "cm_napi_dialog_callback_int_bool.h"
 #include "cm_napi_dialog_common.h"
@@ -51,22 +54,37 @@ static bool IsCmDialogPageTypeEnum(const uint32_t value)
     }
 }
 
+// Validate that argc equals the expected PARAM_SIZE_TWO and emit ThrowError if not.
+static bool CheckCertManagerDialogArgc(napi_env env, size_t argc,
+    OHOS::Security::CertManager::CmMetricsReport *report)
+{
+    if (argc == PARAM_SIZE_TWO) {
+        return true;
+    }
+    CM_LOG_E("params number mismatch");
+    std::string errMsg = "Parameter Error. Params number mismatch, need " +
+        std::to_string(PARAM_SIZE_TWO) + ", given " + std::to_string(argc);
+    ThrowError(env, PARAM_ERROR, errMsg, report);
+    return false;
+}
+
 napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert manager dialog enter");
+    OHOS::Security::CertManager::CmMetricsReport report("openCertificateManagerDialog",
+        OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CODE_COUNT,
+        OHOS::Security::CertManager::CmMetricsKind::DIALOG);
+    report.Start();
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
     if (CheckSyscapReturnVoid(env, &result) != CM_SUCCESS) {
+        report.Finish(DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED);
         return result;
     }
     size_t argc = PARAM_SIZE_TWO;
     napi_value argv[PARAM_SIZE_TWO] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-    if (argc != PARAM_SIZE_TWO) {
-        CM_LOG_E("params number mismatch");
-        std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_TWO)
-            + ", given " + std::to_string(argc);
-        ThrowError(env, PARAM_ERROR, errMsg);
+    if (!CheckCertManagerDialogArgc(env, argc, &report)) {
         return result;
     }
 
@@ -74,7 +92,7 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
     if (!ParseCmUIAbilityContextReq(env, argv[PARAM0], asyncContext->context)) {
         CM_LOG_E("ParseUIAbilityContextReq failed");
-        ThrowError(env, PARAM_ERROR, "Get context failed.");
+        ThrowError(env, PARAM_ERROR, "Get context failed.", &report);
         return result;
     }
 
@@ -82,13 +100,13 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
     result = ParseUint32(env, argv[PARAM1], asyncContext->pageType);
     if (result == nullptr) {
         CM_LOG_E("parse type failed");
-        ThrowError(env, PARAM_ERROR, "parse type failed");
+        ThrowError(env, PARAM_ERROR, "parse type failed", &report);
         return result;
     }
 
     if (!IsCmDialogPageTypeEnum(asyncContext->pageType)) {
         CM_LOG_E("pageType invalid");
-        ThrowError(env, PARAM_ERROR, "pageType invalid");
+        ThrowError(env, PARAM_ERROR, "pageType invalid", &report);
         return nullptr;
     }
 
@@ -99,6 +117,8 @@ napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info)
     want.SetParam(PARAM_UI_EXTENSION_TYPE, SYS_COMMON_UI);
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
 
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    asyncContext->metricsReport = reportHolder;
     auto uiExtCallback = std::make_shared<CmUIExtensionIntBoolCallback>(asyncContext);
     // Start ui extension by context.
     StartUIExtensionAbility(asyncContext, want, uiExtCallback);

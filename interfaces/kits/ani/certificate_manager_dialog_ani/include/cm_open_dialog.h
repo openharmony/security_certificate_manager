@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,8 +16,11 @@
 #ifndef CM_OPEN_DIALOG_H
 #define CM_OPEN_DIALOG_H
 
+#include <memory>
+
 #include "ani.h"
 #include "cm_type.h"
+#include "cm_metrics.h"
 #include "ability_context.h"
 #include "ui_content.h"
 #include "iservice_registry.h"
@@ -39,7 +42,8 @@ struct CmOpeonInstallDialogParams {
 
 class CmAniUIExtensionCallback {
 public:
-    CmAniUIExtensionCallback(ani_vm *vm, std::shared_ptr<AbilityContext> context, ani_ref aniCallback);
+    CmAniUIExtensionCallback(ani_vm *vm, std::shared_ptr<AbilityContext> context, ani_ref aniCallback,
+        std::shared_ptr<CmMetricsReport> metricsReport);
     virtual ~CmAniUIExtensionCallback();
     void SetSessionId(const int32_t sessionId);
     void OnRelease(const int32_t releaseCode);
@@ -57,12 +61,14 @@ protected:
     bool isReleased = false;
     int32_t sessionId = 0;
     std::shared_ptr<AbilityContext> context = nullptr;
+    std::shared_ptr<CmMetricsReport> metricsReport = nullptr;
     std::mutex lockIsReleased;
 };
 
 class CmAniUIExtensionCallbackString : public CmAniUIExtensionCallback {
 public:
-    CmAniUIExtensionCallbackString(ani_vm *vm, std::shared_ptr<AbilityContext> context, ani_ref aniCallback);
+    CmAniUIExtensionCallbackString(ani_vm *vm, std::shared_ptr<AbilityContext> context, ani_ref aniCallback,
+        std::shared_ptr<CmMetricsReport> metricsReport);
     ~CmAniUIExtensionCallbackString() {}
     void OnReceive(const OHOS::AAFwk::WantParams &request) override;
     ani_object GetDefaultResult(ani_env *env) override;
@@ -70,7 +76,8 @@ public:
 
 class CmAniUIExtensionCallbackCertReference : public CmAniUIExtensionCallback {
 public:
-    CmAniUIExtensionCallbackCertReference(ani_vm *vm, std::shared_ptr<AbilityContext> context, ani_ref aniCallback);
+    CmAniUIExtensionCallbackCertReference(ani_vm *vm, std::shared_ptr<AbilityContext> context, ani_ref aniCallback,
+        std::shared_ptr<CmMetricsReport> metricsReport);
     ~CmAniUIExtensionCallbackCertReference() {}
     void OnReceive(const OHOS::AAFwk::WantParams &request) override;
     ani_object GetDefaultResult(ani_env *env) override;

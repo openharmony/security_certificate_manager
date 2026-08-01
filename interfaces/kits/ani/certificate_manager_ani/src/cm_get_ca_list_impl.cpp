@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,7 @@
 #include "cm_result_builder.h"
 
 namespace OHOS::Security::CertManager::Ani {
-CmGetCaListImpl::CmGetCaListImpl(ani_env *env) : CertManagerAniImpl(env) {}
+CmGetCaListImpl::CmGetCaListImpl(ani_env *env) : CertManagerAniImpl(env, "getAllUserTrustedCertificates") {}
 
 int32_t CmGetCaListImpl::Init()
 {
@@ -61,7 +61,8 @@ void CmGetCaListImpl::OnFinish()
     return;
 }
 
-CmGetAllUserCaByScopeImpl::CmGetAllUserCaByScopeImpl(ani_env *env, ani_enum_item aniScope) : CmGetCaListImpl(env)
+CmGetAllUserCaByScopeImpl::CmGetAllUserCaByScopeImpl(ani_env *env, ani_enum_item aniScope)
+    : CmGetCaListImpl(env)
 {
     this->aniScope = aniScope;
 }

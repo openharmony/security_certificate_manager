@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,7 +15,10 @@
 
 #include "cm_napi_open_ukey_auth_dialog.h"
 
+#include <memory>
+
 #include "cm_log.h"
+#include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_napi_dialog_callback_void.h"
 
@@ -64,49 +67,64 @@ static void StartUkeyPinAbility(std::shared_ptr<CmUIExtensionRequestContext> asy
     }
 }
 
+// Validate that argc equals the expected PARAM_SIZE_TWO and emit ThrowError if not.
+static bool CheckUkeyAuthDialogArgc(napi_env env, size_t argc,
+    OHOS::Security::CertManager::CmMetricsReport *report)
+{
+    if (argc == PARAM_SIZE_TWO) {
+        return true;
+    }
+    CM_LOG_E("params number mismatch");
+    std::string errMsg = "Parameter Error. Params number mismatch, need " +
+        std::to_string(PARAM_SIZE_TWO) + ", given " + std::to_string(argc);
+    ThrowError(env, PARAM_ERROR, errMsg, report);
+    return false;
+}
+
 napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert ukey authorize dialog enter");
+    OHOS::Security::CertManager::CmMetricsReport report("openUkeyAuthDialog",
+        OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CODE_COUNT,
+        OHOS::Security::CertManager::CmMetricsKind::DIALOG);
+    report.Start();
     napi_value result = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &result));
     if (CheckSyscapReturnVoid(env, &result) != CM_SUCCESS) {
+        report.Finish(DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED);
         return result;
     }
 
     size_t argc = PARAM_SIZE_TWO;
     napi_value argv[PARAM_SIZE_TWO] = { nullptr };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-    if (argc != PARAM_SIZE_TWO) {
-        CM_LOG_E("params number mismatch");
-        std::string errMsg = "Parameter Error. Params number mismatch, need " + std::to_string(PARAM_SIZE_TWO)
-            + ", given " + std::to_string(argc);
-        ThrowError(env, PARAM_ERROR, errMsg);
+    if (!CheckUkeyAuthDialogArgc(env, argc, &report)) {
         return result;
     }
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
-    size_t index = 0;
-    if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[index], asyncContext->context)) {
+    if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[0], asyncContext->context)) {
         CM_LOG_E("parse abilityContext failed");
-        ThrowError(env, PARAM_ERROR, "parse abilityContext failed");
+        ThrowError(env, PARAM_ERROR, "parse abilityContext failed", &report);
         return nullptr;
     }
-    ++index;
-    if (IsParamNull(asyncContext->env, argv[index])) {
-        ThrowError(env, PARAM_ERROR, "UkeyAuthRequest is null");
+    if (IsParamNull(asyncContext->env, argv[1])) {
+        ThrowError(env, PARAM_ERROR, "UkeyAuthRequest is null", &report);
         return nullptr;
     }
-    if (GetUkeyAuthRequest(asyncContext, argv[index]) == nullptr) {
+    if (GetUkeyAuthRequest(asyncContext, argv[1]) == nullptr) {
         CM_LOG_E("parse UkeyAuthRequest failed");
-        ThrowError(env, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, "parse UkeyAuthRequest failed");
+        ThrowError(env, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, "parse UkeyAuthRequest failed", &report);
         return nullptr;
     }
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    asyncContext->metricsReport = reportHolder;
     auto uiExtCallback = std::make_shared<CmUIExtensionVoidCallback>(asyncContext);
     OHOS::AAFwk::Want want{};
     int32_t ret = GetCustomerAuthCertWant(asyncContext->certUri, want);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get customer auth cert want failed. ret = %d", ret);
-        ThrowError(env, DIALOG_ERROR_GENERIC, "get customer auth cert want failed.");
+        ThrowError(env, DIALOG_ERROR_GENERIC, "get customer auth cert want failed.", reportHolder.get());
         return nullptr;
     }
     StartUkeyPinAbility(asyncContext, want, uiExtCallback);

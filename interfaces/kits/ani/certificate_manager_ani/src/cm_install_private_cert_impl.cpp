@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,7 +23,7 @@
 
 namespace OHOS::Security::CertManager::Ani {
 CmInstallPrivateCertImpl::CmInstallPrivateCertImpl(ani_env *env, ani_arraybuffer aniKeystore,
-    ani_string aniKeystorePwd, ani_string aniCertAlias) : CertManagerAniImpl(env)
+    ani_string aniKeystorePwd, ani_string aniCertAlias) : CertManagerAniImpl(env, "installPrivateCertificate")
 {
     this->aniKeystore = aniKeystore;
     this->aniKeystorePwd = aniKeystorePwd;

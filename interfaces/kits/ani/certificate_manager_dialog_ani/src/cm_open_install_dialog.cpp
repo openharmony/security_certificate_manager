@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,7 +23,7 @@
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
 CmOpenInstallDialog::CmOpenInstallDialog(ani_env *env, ani_object aniContext, ani_object callback,
-    ani_object params) : CertManagerAsyncImpl(env, aniContext, callback)
+    ani_object params) : CertManagerAsyncImpl(env, aniContext, callback, "openInstallCertificateDialog")
 {
     if (env == nullptr) {
         return;
@@ -114,7 +114,7 @@ int32_t CmOpenInstallDialog::InvokeAsyncWork()
     want.SetParam(CERT_MANAGER_OPERATION_TYPE, static_cast<int32_t>(DIALOG_OPERATION_INSTALL));
 
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallbackString>(this->vm, this->abilityContext,
-        this->globalCallback);
+        this->globalCallback, this->metricsReport_);
 
     return StartUIExtensionAbility(this->abilityContext, want, uiExtensionCallback);
 }

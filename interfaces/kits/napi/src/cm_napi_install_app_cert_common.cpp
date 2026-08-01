@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,6 +23,7 @@
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "cm_napi_common.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -85,7 +86,7 @@ static napi_value GetLevelOrCallback(napi_env env, InstallAppCertAsyncContext co
         uint32_t level = CM_AUTH_STORAGE_LEVEL_EL1;
         napi_value result = ParseUint32(env, napiObject, level);
         if (result == nullptr || CM_LEVEL_CHECK(level)) {
-            ThrowError(env, PARAM_ERROR, "level is not a uint32 or level is invalid.");
+            ThrowError(env, PARAM_ERROR, "level is not a uint32 or level is invalid.", context->metricsReport.get());
             CM_LOG_E("could not get level");
             return nullptr;
         }
@@ -93,7 +94,8 @@ static napi_value GetLevelOrCallback(napi_env env, InstallAppCertAsyncContext co
     } else {
         int32_t ret = GetCallback(env, napiObject, context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.",
+                context->metricsReport.get());
             CM_LOG_E("get callback function faild when install application cert");
             return nullptr;
         }
@@ -106,7 +108,8 @@ static napi_value ParsePrivateCertParams(napi_env env, napi_value *argv, size_t 
 {
     index++;
     if (GetCredAlias(env, argv[index], context->keyAlias, APPLICATION_PRIVATE_CERTIFICATE_STORE) == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keyAlias is not a string or length is 0 or too long.");
+        ThrowError(env, PARAM_ERROR, "keyAlias is not a string or length is 0 or too long.",
+            context->metricsReport.get());
         CM_LOG_E("could not get keyAlias");
         return nullptr;
     }
@@ -129,27 +132,28 @@ napi_value InstallAppCertParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
     if (store == APPLICATION_PRIVATE_CERTIFICATE_STORE && argc != CM_NAPI_INSTALL_APP_CERT_CALLBACK_ARGS &&
         argc != CM_NAPI_INSTALL_APP_CERT_ARGS_PRIVATE) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid.");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid.", context->metricsReport.get());
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
     }
 
     if (store != APPLICATION_PRIVATE_CERTIFICATE_STORE && argc != CM_NAPI_INSTALL_APP_CERT_ARGS) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid.");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid.", context->metricsReport.get());
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
     }
     size_t index = 0;
     context->keystore = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
     if (context->keystore == nullptr) {
-        ThrowError(env, INNER_FAILURE, "could not alloc memory");
+        ThrowError(env, INNER_FAILURE, "could not alloc memory", context->metricsReport.get());
         CM_LOG_E("could not alloc memory");
         return nullptr;
     }
     (void)memset_s(context->keystore, sizeof(CmBlob), 0, sizeof(CmBlob));
     napi_value result = GetUint8Array(env, argv[index], *context->keystore);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keystore is not a uint8Array or length is 0 or too long.");
+        ThrowError(env, PARAM_ERROR, "keystore is not a uint8Array or length is 0 or too long.",
+            context->metricsReport.get());
         CM_LOG_E("could not get keystore");
         return nullptr;
     }
@@ -157,7 +161,8 @@ napi_value InstallAppCertParseParams(
     index++;
     result = ParsePasswd(env, argv[index], context->keystorePwd);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keystore Pwd is not a string or length is 0 or too long.");
+        ThrowError(env, PARAM_ERROR, "keystore Pwd is not a string or length is 0 or too long.",
+            context->metricsReport.get());
         CM_LOG_E("could not get keystore Pwd");
         return nullptr;
     }
@@ -206,12 +211,13 @@ static napi_value InstallAppCertWriteResult(napi_env env, InstallAppCertAsyncCon
     return result;
 }
 
-static napi_value GenAppCertBusinessError(napi_env env, int32_t errorCode, uint32_t store)
+static napi_value GenAppCertBusinessError(napi_env env, int32_t errorCode, uint32_t store,
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport)
 {
     if ((errorCode == CMR_ERROR_PASSWORD_IS_ERR) && (store == APPLICATION_PRIVATE_CERTIFICATE_STORE)) {
         errorCode = CMR_ERROR_INVALID_CERT_FORMAT;
     }
-    return GenerateBusinessError(env, errorCode);
+    return GenerateBusinessError(env, errorCode, metricsReport.get());
 }
 
 static void InstallAppCertExecute(napi_env env, void *data)
@@ -245,8 +251,11 @@ static void InstallAppCertComplete(napi_env env, napi_status status, void *data)
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         result[1] = InstallAppCertWriteResult(env, context);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
-        result[0] = GenAppCertBusinessError(env, context->result, context->store);
+        result[0] = GenAppCertBusinessError(env, context->result, context->store, context->metricsReport);
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     if (context->deferred != nullptr) {
@@ -303,9 +312,25 @@ napi_value CMNapiInstallAppCertCommon(napi_env env, napi_callback_info info, uin
         DeleteInstallAppCertAsyncContext(env, context);
         return nullptr;
     }
+
+    // Pick the JS interface name based on the store, then start the histogram.
+    const char *jsName = "installAppCertificate";
+    if (store == APPLICATION_CERTIFICATE_STORE) {
+        jsName = "installPublicCertificate";
+    } else if (store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
+        jsName = "installPrivateCertificate";
+    } else if (store == APPLICATION_SYSTEM_CERTIFICATE_STORE) {
+        jsName = "installSystemAppCertificate";
+    }
+    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
+        jsName, OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    report->Start();
+    context->metricsReport = report;
+
     result = InstallAppCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        report->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteInstallAppCertAsyncContext(env, context);
         return nullptr;
     }

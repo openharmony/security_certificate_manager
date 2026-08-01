@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,6 +23,7 @@
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "cm_napi_common.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -65,14 +66,15 @@ napi_value UninstallAppCertParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (context->store != APPLICATION_PRIVATE_CERTIFICATE_STORE && argc != CM_NAPI_UNINSTALL_APP_CERT_ARGS) {
-        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 1.");
+        ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need 1.", context->metricsReport.get());
         CM_LOG_E("arguments count invalid. argc = %d", argc);
         return nullptr;
     }
 
     if (context->store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
         if (argc != CM_NAPI_UNINSTALL_APP_CERT_ARGS && argc != CM_NAPI_UNINSTALL_APP_CERT_ARGS_CALLBACK) {
-            ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need between 1 and 2");
+            ThrowError(env, PARAM_ERROR, "arguments count invalid, arguments count need between 1 and 2",
+                context->metricsReport.get());
             CM_LOG_E("arguments count invalid. argc = %d", argc);
             return nullptr;
         }
@@ -81,7 +83,8 @@ napi_value UninstallAppCertParseParams(
     size_t index = 0;
     napi_value result = ParseString(env, argv[index], context->keyUri);
     if (result == nullptr) {
-        ThrowError(env, PARAM_ERROR, "keyUri is not a string or length is 0 or too long.");
+        ThrowError(env, PARAM_ERROR, "keyUri is not a string or length is 0 or too long.",
+            context->metricsReport.get());
         CM_LOG_E("could not get cert uri");
         return nullptr;
     }
@@ -90,7 +93,8 @@ napi_value UninstallAppCertParseParams(
     if (index < argc) {
         int32_t ret = GetCallback(env, argv[index], context->callback);
         if (ret != CM_SUCCESS) {
-            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.");
+            ThrowError(env, PARAM_ERROR, "Get callback failed, callback must be a function.",
+                context->metricsReport.get());
             CM_LOG_E("get callback function faild when uninstall applicaiton cert");
             return nullptr;
         }
@@ -124,8 +128,11 @@ napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext 
             if (context->result == CM_SUCCESS) {
                 NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
+                if (context->metricsReport != nullptr) {
+                    context->metricsReport->Finish(CM_SUCCESS);
+                }
             } else {
-                result[0] = GenerateBusinessError(env, context->result);
+                result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
             if (context->deferred != nullptr) {
@@ -166,9 +173,25 @@ napi_value CMNapiUninstallAppCertCommon(napi_env env, napi_callback_info info, u
         DeleteUninstallAppCertAsyncContext(env, context);
         return nullptr;
     }
+
+    // Pick the JS interface name based on the store, then start the histogram.
+    const char *jsName = "uninstallAppCertificate";
+    if (store == APPLICATION_CERTIFICATE_STORE) {
+        jsName = "uninstallPublicCertificate";
+    } else if (store == APPLICATION_PRIVATE_CERTIFICATE_STORE) {
+        jsName = "uninstallPrivateCertificate";
+    } else if (store == APPLICATION_SYSTEM_CERTIFICATE_STORE) {
+        jsName = "uninstallSystemAppCertificate";
+    }
+    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
+        jsName, OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    report->Start();
+    context->metricsReport = report;
+
     result = UninstallAppCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        report->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteUninstallAppCertAsyncContext(env, context);
         return nullptr;
     }

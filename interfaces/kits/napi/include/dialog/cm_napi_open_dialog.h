@@ -16,12 +16,15 @@
 #ifndef CM_NAPI_OPEN_DIALOG_H
 #define CM_NAPI_OPEN_DIALOG_H
 
+#include <memory>
+
 #include "ability_context.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 #include "napi_base_context.h"
 #include "napi_common_want.h"
 #include "ui_content.h"
+#include "cm_metrics.h"
 #include "cm_type.h"
 
 namespace CMNapi {
@@ -37,6 +40,7 @@ struct CommonAsyncContext {
     std::string uri = "";
     int32_t opType = 0;
     uint32_t certificateType = 0;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 
 struct CmUIExtensionRequestContext : public CommonAsyncContext {

@@ -17,6 +17,8 @@
 
 #include "securec.h"
 
+#include <memory>
+
 #include "cert_manager_api.h"
 #include "cm_log.h"
 #include "cm_mem.h"
@@ -24,6 +26,7 @@
 #include "cm_util.h"
 #include "cm_napi_common.h"
 #include "cm_type_free.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 namespace {
@@ -39,6 +42,7 @@ struct ImportUkeyCertAsyncContextT {
     struct CmBlob cert = { 0 };
     struct UkeyInfo ukeyInfo = { CM_CERT_PURPOSE_DEFAULT };
     int32_t result = 0;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 using ImportUkeyCertAsyncContext = ImportUkeyCertAsyncContextT *;
 
@@ -89,7 +93,7 @@ static napi_value ParseUkeyInfo(napi_env env, napi_value object, ImportUkeyCertA
     napi_valuetype valueType = napi_undefined;
     NAPI_CALL(env, napi_typeof(env, object, &valueType));
     if (valueType != napi_object) {
-        ThrowError(env, PARAM_ERROR, "parameter type invalid.");
+        ThrowError(env, PARAM_ERROR, "parameter type invalid.", context->metricsReport.get());
         CM_LOG_E("parameter type invalid");
         return nullptr;
     }
@@ -97,7 +101,7 @@ static napi_value ParseUkeyInfo(napi_env env, napi_value object, ImportUkeyCertA
     napi_status status = napi_has_named_property(env, object, CM_CERT_PURPOSE.c_str(), &hasProperty);
     if (status != napi_ok) {
         CM_LOG_E("Failed to check certPurpose");
-        ThrowError(env, PARAM_ERROR, "Failed to get certPurpose.");
+        ThrowError(env, PARAM_ERROR, "Failed to get certPurpose.", context->metricsReport.get());
         return nullptr;
     }
     if (!hasProperty) {
@@ -108,7 +112,7 @@ static napi_value ParseUkeyInfo(napi_env env, napi_value object, ImportUkeyCertA
     status = napi_get_named_property(env, object, CM_CERT_PURPOSE.c_str(), &certPurposeValue);
     if (status != napi_ok || certPurposeValue == nullptr) {
         CM_LOG_E("Failed to get certPurpose");
-        ThrowError(env, PARAM_ERROR, "Failed to get certPurpose.");
+        ThrowError(env, PARAM_ERROR, "Failed to get certPurpose.", context->metricsReport.get());
         return nullptr;
     }
     napi_valuetype type = napi_undefined;
@@ -119,29 +123,30 @@ static napi_value ParseUkeyInfo(napi_env env, napi_value object, ImportUkeyCertA
     }
     if (type != napi_number) {
         CM_LOG_E("arguments invalid, type of cert purpose is not number.");
-        ThrowError(env, PARAM_ERROR, "cert purpose is not number.");
+        ThrowError(env, PARAM_ERROR, "cert purpose is not number.", context->metricsReport.get());
         return nullptr;
     }
     uint32_t certPurpose = CM_CERT_PURPOSE_DEFAULT;
     if (ParseUint32(env, certPurposeValue, certPurpose) == nullptr) {
         CM_LOG_E("parse uint32 failed");
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "parse cert purpose failed.");
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "parse cert purpose failed.", context->metricsReport.get());
         return nullptr;
     }
     if (!CheckCertPurpose(certPurpose)) {
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "invalid cert purpose.");
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "invalid cert purpose.", context->metricsReport.get());
         return nullptr;
     }
     context->ukeyInfo.certPurpose = static_cast<enum CmCertificatePurpose>(certPurpose);
     return GetInt32(env, 0);
 }
 
-static napi_value ParseKeyUri(napi_env env, napi_value object, CmBlob *&stringBlob)
+static napi_value ParseKeyUri(napi_env env, napi_value object, CmBlob *&stringBlob,
+    ImportUkeyCertAsyncContext context)
 {
     napi_valuetype valueType = napi_undefined;
     NAPI_CALL(env, napi_typeof(env, object, &valueType));
     if (valueType != napi_string) {
-        ThrowError(env, PARAM_ERROR, "parameter type invalid.");
+        ThrowError(env, PARAM_ERROR, "parameter type invalid.", context->metricsReport.get());
         CM_LOG_E("parameter type invalid");
         return nullptr;
     }
@@ -149,35 +154,37 @@ static napi_value ParseKeyUri(napi_env env, napi_value object, CmBlob *&stringBl
     napi_value result = ParseString(env, object, stringBlob);
     if (result == nullptr) {
         CM_LOG_E("could not get keyUri");
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get cert.");
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get cert.", context->metricsReport.get());
         return nullptr;
     }
     if (stringBlob->size == 0) {
         CM_LOG_E("keyUri is empty");
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "keyUri is empty.");
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "keyUri is empty.", context->metricsReport.get());
         return nullptr;
     }
     return GetInt32(env, 0);
 }
 
-static napi_value ParseCert(napi_env env, napi_value object, CmBlob &arrayBlob)
+static napi_value ParseCert(napi_env env, napi_value object, CmBlob &arrayBlob,
+    ImportUkeyCertAsyncContext context)
 {
     napi_valuetype valueType = napi_undefined;
     NAPI_CALL(env, napi_typeof(env, object, &valueType));
     if (valueType != napi_object) {
-        ThrowError(env, PARAM_ERROR, "parameter type invalid.");
+        ThrowError(env, PARAM_ERROR, "parameter type invalid.", context->metricsReport.get());
         CM_LOG_E("parameter type invalid");
         return nullptr;
     }
 
     napi_value result = GetUint8Array(env, object, arrayBlob);
     if (result == nullptr) {
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get cert.");
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get cert.", context->metricsReport.get());
         CM_LOG_E("could not get cert");
         return nullptr;
     }
     if (arrayBlob.size == 0 || arrayBlob.size > MAX_LEN_UKEY_CERT_IMPORT) {
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "cert data is empty or exceeds limit length.");
+        ThrowError(env, PARAMETER_VALIDATION_FAILED, "cert data is empty or exceeds limit length.",
+            context->metricsReport.get());
         CM_LOG_E("cert is empty");
         return nullptr;
     }
@@ -192,21 +199,21 @@ static napi_value ParseImportParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
 
     if (argc != CM_NAPI_IMPORT_UKEY_CERT_ARGS) {
-        ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need 3.");
+        ThrowError(env, PARAM_ERROR, "Missing parameter, arguments count need 3.", context->metricsReport.get());
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
 
     size_t index = 0;
-    napi_value result = ParseKeyUri(env, argv[index], context->keyUri);
+    napi_value result = ParseKeyUri(env, argv[index], context->keyUri, context);
     if (result == nullptr) {
-        ThrowError(env, PARAMETER_VALIDATION_FAILED, "failed to get keyUri.");
+        // ParseKeyUri already invoked ThrowError; just propagate.
         CM_LOG_E("parse keyUri failed");
         return nullptr;
     }
 
     ++index;
-    result = ParseCert(env, argv[index], context->cert);
+    result = ParseCert(env, argv[index], context->cert, context);
     if (result == nullptr) {
         CM_LOG_E("could not get cert");
         return nullptr;
@@ -236,8 +243,11 @@ static void ImportUkeyCertComplete(napi_env env, napi_status status, void *data)
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
     } else {
-        result[0] = GenerateBusinessError(env, context->result);
+        result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
@@ -272,12 +282,18 @@ static napi_value ImportUkeyCertAsyncWork(napi_env env, ImportUkeyCertAsyncConte
 napi_value CMNapiImportUkeyCert(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("import ukey cert enter");
+    OHOS::Security::CertManager::CmMetricsReport report("importUkeyCertificate",
+        OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    report.Start();
 
     ImportUkeyCertAsyncContext context = CreateImportUkeyCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
+        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = ParseImportParams(env, info, context);
     if (result == nullptr) {
@@ -288,6 +304,7 @@ napi_value CMNapiImportUkeyCert(napi_env env, napi_callback_info info)
     result = ImportUkeyCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        reportHolder->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteImportUkeyCertAsyncContext(env, context);
         return nullptr;
     }

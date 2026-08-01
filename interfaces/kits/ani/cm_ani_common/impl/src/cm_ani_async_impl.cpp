@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,7 +23,8 @@ namespace OHOS::Security::CertManager::Ani {
 using namespace OHOS::AbilityRuntime;
 
 CertManagerAsyncImpl::CertManagerAsyncImpl(ani_env *env, ani_object aniContext,
-    ani_object callback) : CertManagerAniImpl(env)
+    ani_object callback, const char *interfaceName) : CertManagerAniImpl(env, interfaceName,
+    CmMetricsKind::DIALOG)
 {
     this->env = env;
     if (env->GetVM(&this->vm) != ANI_OK) {
@@ -34,6 +35,21 @@ CertManagerAsyncImpl::CertManagerAsyncImpl(ani_env *env, ani_object aniContext,
 }
 
 CertManagerAsyncImpl::~CertManagerAsyncImpl() {}
+
+void CertManagerAsyncImpl::OnInvokeEnd(int32_t errorCode)
+{
+    // Synchronous failure: emit the finish histogram immediately.
+// Synchronous success (CM_SUCCESS): the Ability has been launched and the
+// real outcome arrives via the UIExtension callback; the finish histogram is
+// emitted by CmAniUIExtensionCallback::invokeCallback().
+// CertManagerAsyncImpl is always a dialog interface (CmMetricsKind::DIALOG),
+// so use the Dialog-side transform.
+    if (errorCode != CM_SUCCESS) {
+        if (this->metricsReport_ != nullptr) {
+            this->metricsReport_->Finish(TransformDialogErrorCode(errorCode));
+        }
+    }
+}
 
 int32_t CertManagerAsyncImpl::Init()
 {

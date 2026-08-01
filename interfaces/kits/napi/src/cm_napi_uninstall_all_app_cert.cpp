@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2022-2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,11 +17,14 @@
 
 #include "securec.h"
 
+#include <memory>
+
 #include "cert_manager_api.h"
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_type.h"
 #include "cm_napi_common.h"
+#include "cm_metrics.h"
 
 namespace CMNapi {
 
@@ -30,6 +33,7 @@ struct UninstallAllAppCertAsyncContextT {
     napi_deferred deferred = nullptr;
 
     int32_t result = 0;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 using UninstallAllAppCertAsyncContext = UninstallAllAppCertAsyncContextT *;
 
@@ -65,7 +69,7 @@ static napi_value UninstallAllAppCertParseParams(
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, nullptr, nullptr, nullptr));
 
     if (argc != 0) {
-        ThrowError(env, PARAM_ERROR, "Missing parameter");
+        ThrowError(env, PARAM_ERROR, "Missing parameter", context->metricsReport.get());
         CM_LOG_E("Missing parameter");
         return nullptr;
     }
@@ -95,8 +99,11 @@ static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCert
             if (context->result == CM_SUCCESS) {
                 NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
                 NAPI_CALL_RETURN_VOID(env, napi_get_boolean(env, true, &result[1]));
+                if (context->metricsReport != nullptr) {
+                    context->metricsReport->Finish(CM_SUCCESS);
+                }
             } else {
-                result[0] = GenerateBusinessError(env, context->result);
+                result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
                 NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
             }
             GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
@@ -118,12 +125,18 @@ static napi_value UninstallAllAppCertAsyncWork(napi_env env, UninstallAllAppCert
 napi_value CMNapiUninstallAllAppCert(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("uninstall all app cert enter");
+    OHOS::Security::CertManager::CmMetricsReport report("uninstallAllAppCertificate",
+        OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    report.Start();
 
     UninstallAllAppCertAsyncContext context = CreateUninstallAllAppCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
+        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
         return nullptr;
     }
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    context->metricsReport = reportHolder;
 
     napi_value result = UninstallAllAppCertParseParams(env, info, context);
     if (result == nullptr) {
@@ -134,6 +147,7 @@ napi_value CMNapiUninstallAllAppCert(napi_env env, napi_callback_info info)
     result = UninstallAllAppCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
+        reportHolder->Finish(OHOS::Security::CertManager::INNER_FAILURE);
         DeleteUninstallAllAppCertAsyncContext(env, context);
         return nullptr;
     }

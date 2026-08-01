@@ -48,8 +48,10 @@ napi_value GetUint8ArrayToBase64Str(napi_env env, napi_value object, std::string
 int32_t ParseListUint8Array(napi_env env, napi_value object, std::vector<std::string> &base64Vector);
 napi_value GetCertTypeArray(napi_env env, napi_value object, std::vector<int32_t> &certTypes);
 
-void ThrowError(napi_env env, int32_t errorCode, const std::string errMsg);
-napi_value GenerateBusinessError(napi_env env, int32_t errorCode);
+void ThrowError(napi_env env, int32_t errorCode, const std::string errMsg,
+    OHOS::Security::CertManager::CmMetricsReport *metricsReport = nullptr);
+napi_value GenerateBusinessError(napi_env env, int32_t errorCode,
+    OHOS::Security::CertManager::CmMetricsReport *metricsReport = nullptr);
 
 void GeneratePromise(napi_env env, napi_deferred deferred, int32_t resultCode,
     napi_value *result, int32_t length);
