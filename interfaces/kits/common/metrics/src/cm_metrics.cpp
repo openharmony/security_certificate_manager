@@ -58,7 +58,7 @@ void CmMetricsReport::Start()
 #endif
 }
 
-void CmMetricsReport::Finish(int32_t errorCode)
+void CmMetricsReport::Finish([[maybe_unused]] int32_t errorCode)
 {
     if (finished_) {
         return;  // Double-Finish: idempotent, no-op.
