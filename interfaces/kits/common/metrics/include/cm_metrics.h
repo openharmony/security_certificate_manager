@@ -82,7 +82,7 @@ private:
      */
     std::string keyPrefix_;
 
-    int32_t boundary_ = 0;
+    [[maybe_unused]] int32_t boundary_ = 0;
     std::chrono::steady_clock::time_point startTime_;
     bool started_ = false;
     bool finished_ = false;
