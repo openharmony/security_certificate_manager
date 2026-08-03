@@ -111,9 +111,9 @@ const std::vector<int32_t> DIALOG_ERROR_CODE_LIST = {
 constexpr int32_t NON_DIALOG_DEFAULT_INDEX = 5;
 constexpr int32_t DIALOG_DEFAULT_INDEX = 5;
 
-constexpr int32_t CM_SUCCESS = 0;
+[[maybe_unused]] constexpr int32_t CM_SUCCESS = 0;
 
-int32_t MapErrorCode(CmMetricsKind kind, int32_t errorCode)
+[[maybe_unused]] int32_t MapErrorCode(CmMetricsKind kind, int32_t errorCode)
 {
     const auto &list = (kind == CmMetricsKind::DIALOG) ? DIALOG_ERROR_CODE_LIST
                                                         : NON_DIALOG_ERROR_CODE_LIST;
