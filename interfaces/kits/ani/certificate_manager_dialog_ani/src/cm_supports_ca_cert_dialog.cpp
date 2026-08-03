@@ -26,7 +26,6 @@ ani_object SupportsCACertDialog(ani_env *env)
 {
     CM_LOG_I("supportsCACertDialog enter");
     OHOS::Security::CertManager::CmMetricsReport report("supportsCACertDialog",
-        Dialog::DIALOG_ERROR_CODE_COUNT,
         OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
 

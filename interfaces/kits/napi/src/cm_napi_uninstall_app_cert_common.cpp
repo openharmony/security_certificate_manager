@@ -183,8 +183,7 @@ napi_value CMNapiUninstallAppCertCommon(napi_env env, napi_callback_info info, u
     } else if (store == APPLICATION_SYSTEM_CERTIFICATE_STORE) {
         jsName = "uninstallSystemAppCertificate";
     }
-    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
-        jsName, OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(jsName);
     report->Start();
     context->metricsReport = report;
 

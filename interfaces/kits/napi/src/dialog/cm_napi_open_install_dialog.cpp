@@ -118,7 +118,6 @@ napi_value CMNapiOpenInstallCertDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert install dialog enter");
     OHOS::Security::CertManager::CmMetricsReport report("openInstallCertificateDialog",
-        OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CODE_COUNT,
         OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
     if (CheckSyscapThrowError(env) != CM_SUCCESS) {

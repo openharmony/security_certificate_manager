@@ -248,8 +248,7 @@ napi_value CMNapiGetAppCertListCommon(napi_env env, napi_callback_info info, uin
     } else if (store == APPLICATION_SYSTEM_CERTIFICATE_STORE) {
         jsName = "getAllSystemAppCertificates";
     }
-    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
-        jsName, OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(jsName);
     report->Start();
     context->metricsReport = report;
 
@@ -287,7 +286,7 @@ napi_value CMNapiGetCallingAppCertListCommon(napi_env env, napi_callback_info in
     // getCallingAppCertListCommon maps to the fixed JS interface name
     // getPrivateCertificates.
     auto report = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
-        "getPrivateCertificates", OHOS::Security::CertManager::ERROR_CODE_COUNT);
+        "getPrivateCertificates");
     report->Start();
     context->metricsReport = report;
 

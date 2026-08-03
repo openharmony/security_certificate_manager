@@ -29,7 +29,6 @@ constexpr int32_t CM_SUCCESS = 0;
 constexpr int32_t PARAM_ERROR = 401;
 constexpr int32_t NOT_FOUND = 17500002;
 constexpr int32_t INNER_FAILURE = 17500001;
-constexpr int32_t ERROR_CODE_COUNT = 15;
 
 class CmMetricsTest : public testing::Test {
 public:
@@ -51,7 +50,7 @@ public:
  */
 HWTEST_F(CmMetricsTest, ReportGuard_StartRecordsCalled, TestSize.Level1)
 {
-    CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
+    CmMetricsReport report("UnitTestApi");
     report.Start();
     // With the metrics macro disabled, Start is a no-op; this only verifies
     // that construction/destruction do not crash.
@@ -66,7 +65,7 @@ HWTEST_F(CmMetricsTest, ReportGuard_StartRecordsCalled, TestSize.Level1)
  */
 HWTEST_F(CmMetricsTest, ReportGuard_FinishComputesElapsedMs, TestSize.Level1)
 {
-    CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
+    CmMetricsReport report("UnitTestApi");
     report.Start();
     // Sleep at least 1 ms so elapsed time would be non-zero if the macro were on.
     std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -83,7 +82,7 @@ HWTEST_F(CmMetricsTest, ReportGuard_FinishComputesElapsedMs, TestSize.Level1)
  */
 HWTEST_F(CmMetricsTest, ReportGuard_FinishWithoutStart_IsSafe, TestSize.Level1)
 {
-    CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
+    CmMetricsReport report("UnitTestApi");
     // Skip Start and call Finish directly: Finish internally auto-Starts.
     report.Finish(INNER_FAILURE);
     // GetElapsedMs should return 0 once finished_ is true.
@@ -100,7 +99,7 @@ HWTEST_F(CmMetricsTest, ReportGuard_FinishAutoStart_BoundaryValue, TestSize.Leve
 {
     // Edge case: Start is never called; Finish auto-Starts. Verifies that
     // finished_ is set after Finish and that a second Finish is a no-op.
-    CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
+    CmMetricsReport report("UnitTestApi");
     report.Finish(CM_SUCCESS);
     // The second Finish must be intercepted by the finished_ flag and not
     // emit a duplicate histogram.
@@ -115,7 +114,7 @@ HWTEST_F(CmMetricsTest, ReportGuard_FinishAutoStart_BoundaryValue, TestSize.Leve
  */
 HWTEST_F(CmMetricsTest, ReportGuard_DoubleFinish_IsSafe, TestSize.Level1)
 {
-    CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
+    CmMetricsReport report("UnitTestApi");
     report.Start();
     report.Finish(CM_SUCCESS);
     // A repeated Finish must be ignored by the internal finished_ flag.
@@ -123,34 +122,33 @@ HWTEST_F(CmMetricsTest, ReportGuard_DoubleFinish_IsSafe, TestSize.Level1)
 }
 
 /**
- * @tc.name: ReportGuard_FinishWithBoundaryValue
- * @tc.desc: Verify that Finish accepts errorCode values at and around the
- *           histogram boundary (ERROR_CODE_COUNT) without crashing.
+ * @tc.name: ReportGuard_FinishWithEdgeCodeValues
+ * @tc.desc: Verify that Finish accepts extreme error-code values without
+ *           crashing. The histogram boundary is now derived from the
+ *           per-kind error-code list, so the constructor no longer accepts it.
  * @tc.type: FUNC
  */
-HWTEST_F(CmMetricsTest, ReportGuard_FinishWithBoundaryValue, TestSize.Level1)
+HWTEST_F(CmMetricsTest, ReportGuard_FinishWithEdgeCodeValues, TestSize.Level1)
 {
-    CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
+    CmMetricsReport report("UnitTestApi");
     report.Start();
-    // Boundary stress: drive Finish with values below, at, and above the
-    // histogram boundary (ERROR_CODE_COUNT).
-    int32_t boundary = ERROR_CODE_COUNT;
-    report.Finish(boundary - 1);
-    report.Finish(boundary);
-    report.Finish(boundary + 1);
+    // Edge-value stress: drive Finish with INT32_MIN, 0 and INT32_MAX.
+    report.Finish(INT32_MIN);
+    report.Finish(0);
+    report.Finish(INT32_MAX);
 }
 
 /**
- * @tc.name: ReportGuard_FinishPassesErrorCodeThrough
- * @tc.desc: Verify Finish passes the errorCode through verbatim to the
- *           histogram; no mapping is applied any more.
+ * @tc.name: ReportGuard_FinishMapsErrorCode
+ * @tc.desc: Verify Finish remaps the error code through the kind-specific
+ *           list before reaching the histogram. With the list empty, every
+ *           input collapses to the kind-specific default index, so the call
+ *           must still complete without crashing.
  * @tc.type: FUNC
  */
-HWTEST_F(CmMetricsTest, ReportGuard_FinishPassesErrorCodeThrough, TestSize.Level1)
+HWTEST_F(CmMetricsTest, ReportGuard_FinishMapsErrorCode, TestSize.Level1)
 {
-    // Finish passes the errorCode through verbatim to the histogram; no
-    // mapping is applied any more.
-    CmMetricsReport report("UnitTestApi", ERROR_CODE_COUNT);
+    CmMetricsReport report("UnitTestApi");
     report.Start();
     report.Finish(PARAM_ERROR);
     report.Finish(NOT_FOUND);

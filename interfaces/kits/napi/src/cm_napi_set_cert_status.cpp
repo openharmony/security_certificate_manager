@@ -180,8 +180,7 @@ static napi_value SetCertStatusAsyncWork(napi_env env, SetCertStatusAsyncContext
 napi_value CMNapiSetCertStatus(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("set cert status enter");
-    OHOS::Security::CertManager::CmMetricsReport report("setCertificateStatus",
-        OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    OHOS::Security::CertManager::CmMetricsReport report("setCertificateStatus");
     report.Start();
 
     SetCertStatusAsyncContext context = CreateSetCertStatusAsyncContext();

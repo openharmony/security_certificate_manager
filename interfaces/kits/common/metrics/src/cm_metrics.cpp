@@ -65,8 +65,8 @@ int32_t MapErrorCode(CmMetricsKind kind, int32_t errorCode)
 }  // namespace
 
 CmMetricsReport::CmMetricsReport(const std::string &interfaceName,
-    int32_t boundary, CmMetricsKind kind)
-    : boundary_(boundary), kind_(kind)
+    CmMetricsKind kind)
+    : kind_(kind)
 {
     const char *prefix = (kind == CmMetricsKind::DIALOG) ? K_PREFIX_DIALOG : K_PREFIX_NON_DIALOG;
     keyPrefix_ = std::string(prefix) + interfaceName;
@@ -114,7 +114,14 @@ void CmMetricsReport::Finish([[maybe_unused]] int32_t errorCode)
      */
     int32_t elapsed = (elapsedMs > INT32_MAX) ? INT32_MAX : static_cast<int32_t>(elapsedMs);
     int32_t mappedErrorCode = MapErrorCode(kind_, errorCode);
-    HISTOGRAM_ENUMERATION((keyPrefix_ + ".errcode").c_str(), mappedErrorCode, boundary_);
+    /**
+     * The histogram upper bound is the size of the kind-specific error-code
+     * list, so the bucket set always matches the mapped index range exactly.
+     */
+    int32_t boundary = (kind_ == CmMetricsKind::DIALOG)
+        ? static_cast<int32_t>(DIALOG_ERROR_CODE_LIST.size())
+        : static_cast<int32_t>(NON_DIALOG_ERROR_CODE_LIST.size());
+    HISTOGRAM_ENUMERATION((keyPrefix_ + ".errcode").c_str(), mappedErrorCode, boundary);
     HISTOGRAM_TIMES((keyPrefix_ + ".Time").c_str(), elapsed);
 #endif
 }

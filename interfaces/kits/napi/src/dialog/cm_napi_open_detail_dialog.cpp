@@ -89,7 +89,6 @@ napi_value CMNapiOpenDetailDialog(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("cert open detail dialog enter");
     OHOS::Security::CertManager::CmMetricsReport report("openCertificateDetailDialog",
-        OHOS::Security::CertManager::Dialog::DIALOG_ERROR_CODE_COUNT,
         OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
     napi_value result = nullptr;

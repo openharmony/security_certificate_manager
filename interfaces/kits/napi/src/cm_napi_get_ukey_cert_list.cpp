@@ -262,8 +262,7 @@ static napi_value GetUkeyCertListAsyncWork(napi_env env, GetUkeyCertListAsyncCon
 napi_value CMNapiGetUkeyCertList(napi_env env, napi_callback_info info)
 {
     CM_LOG_I("get ukey cert list enter");
-    OHOS::Security::CertManager::CmMetricsReport report("getUkeyCertificateList",
-        OHOS::Security::CertManager::ERROR_CODE_COUNT);
+    OHOS::Security::CertManager::CmMetricsReport report("getUkeyCertificateList");
     report.Start();
 
     GetUkeyCertListAsyncContext context = CreateGetUkeyCertListAsyncContext();

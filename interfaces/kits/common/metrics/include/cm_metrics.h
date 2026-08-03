@@ -36,15 +36,11 @@ class CmMetricsReport {
 public:
     /**
      * @param interfaceName JS interface name
-     * @param boundary      upper bound (exclusive) for the error-code
-     *                      enumeration histogram. Callers pass `ERROR_CODE_COUNT`
-     *                      from `cm_api_common.h` or `DIALOG_ERROR_CODE_COUNT`
-     *                      from `cm_dialog_api_common.h` so the histogram
-     *                      matches the JS-side ErrorCode enum exactly.
      * @param kind          selects histogram-key prefix (dialog vs non-dialog)
+     *                      and the per-kind error-code list that drives the
+     *                      HISTOGRAM_ENUMERATION bucket count and mapping.
      */
     explicit CmMetricsReport(const std::string &interfaceName,
-        int32_t boundary,
         CmMetricsKind kind = CmMetricsKind::NON_DIALOG);
     ~CmMetricsReport();
 
@@ -62,8 +58,8 @@ public:
     /**
      * @brief Call before returning from the entry function. Idempotent. No-op if
      *        Start was never called or Finish was already called.
-     * @param errorCode the JS-side ErrorCode value to record; passed through to
-     *        the enumeration histogram verbatim (no mapping).
+     * @param errorCode the JS-side ErrorCode value to record; remapped through
+     *        the kind-specific list before being reported.
      */
     void Finish(int32_t errorCode);
 
@@ -82,7 +78,6 @@ private:
      */
     std::string keyPrefix_;
 
-    [[maybe_unused]] int32_t boundary_ = 0;
     CmMetricsKind kind_ = CmMetricsKind::NON_DIALOG;
     std::chrono::steady_clock::time_point startTime_;
     bool started_ = false;
