@@ -176,7 +176,7 @@ void CmMetricsReport::Finish([[maybe_unused]] int32_t errorCode)
     int32_t boundary = (kind_ == CmMetricsKind::DIALOG)
         ? static_cast<int32_t>(DIALOG_ERROR_CODE_LIST.size())
         : static_cast<int32_t>(NON_DIALOG_ERROR_CODE_LIST.size());
-    HISTOGRAM_BOOLEAN((keyPrefix_ + ".CALL").c_str(), errcode == CM_SUCCESS);
+    HISTOGRAM_BOOLEAN((keyPrefix_ + ".CALL").c_str(), errorCode == CM_SUCCESS);
     HISTOGRAM_ENUMERATION((keyPrefix_ + ".errcode").c_str(), mappedErrorCode, boundary);
     HISTOGRAM_TIMES((keyPrefix_ + ".Time").c_str(), elapsed);
 #endif
