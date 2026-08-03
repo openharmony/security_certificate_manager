@@ -83,6 +83,7 @@ private:
     std::string keyPrefix_;
 
     [[maybe_unused]] int32_t boundary_ = 0;
+    CmMetricsKind kind_ = CmMetricsKind::NON_DIALOG;
     std::chrono::steady_clock::time_point startTime_;
     bool started_ = false;
     bool finished_ = false;

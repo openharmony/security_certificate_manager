@@ -15,6 +15,9 @@
 
 #include "cm_metrics.h"
 
+#include <algorithm>
+#include <vector>
+
 #ifdef CM_API_METRICS_ENABLE
 #include "histogram_plugin_macros.h"
 #endif
@@ -30,11 +33,40 @@ namespace {
 constexpr const char *K_PREFIX_DIALOG = "DeviceCertificateKit.certificateManagerDialog.";
 constexpr const char *K_PREFIX_NON_DIALOG = "DeviceCertificateKit.certificateManager.";
 
+/**
+ * Ordered error-code lists per kind. An input error code is translated to the
+ * index of its matching entry in the kind-specific list, so HiView sees a
+ * dense, normalised bucket set rather than the sparse raw ErrorCode enum.
+ * Leave empty until the bucket policy is finalised; while empty, every
+ * Finish() falls through to the kind-specific default index below.
+ */
+const std::vector<int32_t> NON_DIALOG_ERROR_CODE_LIST = {};
+const std::vector<int32_t> DIALOG_ERROR_CODE_LIST = {};
+
+/**
+ * Indices returned by MapErrorCode when the error code is not present in the
+ * kind-specific list. Tune once the bucket policy is finalised; both must
+ * stay within [0, boundary_) so HISTOGRAM_ENUMERATION keeps the sample.
+ */
+constexpr int32_t NON_DIALOG_DEFAULT_INDEX = 0;
+constexpr int32_t DIALOG_DEFAULT_INDEX = 0;
+
+int32_t MapErrorCode(CmMetricsKind kind, int32_t errorCode)
+{
+    const auto &list = (kind == CmMetricsKind::DIALOG) ? DIALOG_ERROR_CODE_LIST
+                                                        : NON_DIALOG_ERROR_CODE_LIST;
+    auto it = std::find(list.begin(), list.end(), errorCode);
+    if (it != list.end()) {
+        return static_cast<int32_t>(std::distance(list.begin(), it));
+    }
+    return (kind == CmMetricsKind::DIALOG) ? DIALOG_DEFAULT_INDEX : NON_DIALOG_DEFAULT_INDEX;
+}
+
 }  // namespace
 
 CmMetricsReport::CmMetricsReport(const std::string &interfaceName,
     int32_t boundary, CmMetricsKind kind)
-    : boundary_(boundary)
+    : boundary_(boundary), kind_(kind)
 {
     const char *prefix = (kind == CmMetricsKind::DIALOG) ? K_PREFIX_DIALOG : K_PREFIX_NON_DIALOG;
     keyPrefix_ = std::string(prefix) + interfaceName;
@@ -81,7 +113,8 @@ void CmMetricsReport::Finish([[maybe_unused]] int32_t errorCode)
      * exceed INT32_MAX ms, but a defensive clamp keeps us safe).
      */
     int32_t elapsed = (elapsedMs > INT32_MAX) ? INT32_MAX : static_cast<int32_t>(elapsedMs);
-    HISTOGRAM_ENUMERATION((keyPrefix_ + ".errcode").c_str(), errorCode, boundary_);
+    int32_t mappedErrorCode = MapErrorCode(kind_, errorCode);
+    HISTOGRAM_ENUMERATION((keyPrefix_ + ".errcode").c_str(), mappedErrorCode, boundary_);
     HISTOGRAM_TIMES((keyPrefix_ + ".Time").c_str(), elapsed);
 #endif
 }
