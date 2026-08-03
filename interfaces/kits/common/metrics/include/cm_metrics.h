@@ -78,7 +78,7 @@ private:
      */
     std::string keyPrefix_;
 
-    CmMetricsKind kind_ = CmMetricsKind::NON_DIALOG;
+    [[maybe_unused]]CmMetricsKind kind_ = CmMetricsKind::NON_DIALOG;
     std::chrono::steady_clock::time_point startTime_;
     bool started_ = false;
     bool finished_ = false;
