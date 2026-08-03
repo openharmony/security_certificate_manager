@@ -25,13 +25,44 @@
 namespace OHOS::Security::CertManager {
 
 namespace {
-
 /**
  * Histogram-key prefixes, selected by `kind`. Callers append a suffix
  * (".CALL" / ".Time" / ".errcode") at the call site to form the final key.
  */
 constexpr const char *K_PREFIX_DIALOG = "DeviceCertificateKit.certificateManagerDialog.";
 constexpr const char *K_PREFIX_NON_DIALOG = "DeviceCertificateKit.certificateManager.";
+
+enum class JSErrorCode {
+    SUCCESS = 0,
+    HAS_NO_PERMISSION = 201,
+    NOT_SYSTEM_APP = 202,
+    PARAM_ERROR = 401,
+    CAPABILITY_NOT_SUPPORTED = 801,
+    INNER_FAILURE = 17500001,
+    NOT_FOUND = 17500002,
+    INVALID_CERT_FORMAT = 17500003,
+    MAX_CERT_COUNT_REACHED = 17500004,
+    NO_AUTHORIZATION = 17500005,
+    DEVICE_ENTER_ADVSECMODE = 17500007,
+    PASSWORD_IS_ERROR = 17500008,
+    STORE_PATH_NOT_SUPPORTED = 17500009,
+    ACCESS_UKEY_SERVICE_FAILED = 17500010,
+    PARAMETER_VALIDATION_FAILED = 17500011
+};
+enum class JSDialogErrorCode {
+    SUCCESS = 0,
+    HAS_NO_PERMISSION = 201,
+    NOT_SYSTEM_APP = 202,
+    PARAM_ERROR = 401,
+    DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED = 801,
+    DIALOG_ERROR_GENERIC = 29700001,
+    DIALOG_ERROR_OPERATION_CANCELED = 29700002,
+    DIALOG_ERROR_INSTALL_FAILED = 29700003,
+    DIALOG_ERROR_NOT_SUPPORTED = 29700004,
+    DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY = 29700005,
+    DIALOG_ERROR_PARAMETER_VALIDATION_FAILED = 29700006,
+    DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE = 29700007
+};
 
 /**
  * Ordered error-code lists per kind. An input error code is translated to the
@@ -40,16 +71,47 @@ constexpr const char *K_PREFIX_NON_DIALOG = "DeviceCertificateKit.certificateMan
  * Leave empty until the bucket policy is finalised; while empty, every
  * Finish() falls through to the kind-specific default index below.
  */
-const std::vector<int32_t> NON_DIALOG_ERROR_CODE_LIST = {};
-const std::vector<int32_t> DIALOG_ERROR_CODE_LIST = {};
+const std::vector<int32_t> NON_DIALOG_ERROR_CODE_LIST = {
+    static_cast<int32_t>(JSErrorCode::SUCCESS),
+    static_cast<int32_t>(JSErrorCode::HAS_NO_PERMISSION),
+    static_cast<int32_t>(JSErrorCode::NOT_SYSTEM_APP),
+    static_cast<int32_t>(JSErrorCode::PARAM_ERROR),
+    static_cast<int32_t>(JSErrorCode::CAPABILITY_NOT_SUPPORTED),
+    static_cast<int32_t>(JSErrorCode::INNER_FAILURE),
+    static_cast<int32_t>(JSErrorCode::NOT_FOUND),
+    static_cast<int32_t>(JSErrorCode::INVALID_CERT_FORMAT),
+    static_cast<int32_t>(JSErrorCode::MAX_CERT_COUNT_REACHED),
+    static_cast<int32_t>(JSErrorCode::NO_AUTHORIZATION),
+    static_cast<int32_t>(JSErrorCode::DEVICE_ENTER_ADVSECMODE),
+    static_cast<int32_t>(JSErrorCode::PASSWORD_IS_ERROR),
+    static_cast<int32_t>(JSErrorCode::STORE_PATH_NOT_SUPPORTED),
+    static_cast<int32_t>(JSErrorCode::ACCESS_UKEY_SERVICE_FAILED),
+    static_cast<int32_t>(JSErrorCode::PARAMETER_VALIDATION_FAILED)
+};
+const std::vector<int32_t> DIALOG_ERROR_CODE_LIST = {
+    static_cast<int32_t>(JSDialogErrorCode::SUCCESS),
+    static_cast<int32_t>(JSDialogErrorCode::HAS_NO_PERMISSION),
+    static_cast<int32_t>(JSDialogErrorCode::NOT_SYSTEM_APP),
+    static_cast<int32_t>(JSDialogErrorCode::PARAM_ERROR),
+    static_cast<int32_t>(JSDialogErrorCode::DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED),
+    static_cast<int32_t>(JSDialogErrorCode::DIALOG_ERROR_GENERIC),
+    static_cast<int32_t>(JSDialogErrorCode::DIALOG_ERROR_OPERATION_CANCELED),
+    static_cast<int32_t>(JSDialogErrorCode::DIALOG_ERROR_INSTALL_FAILED),
+    static_cast<int32_t>(JSDialogErrorCode::DIALOG_ERROR_NOT_SUPPORTED),
+    static_cast<int32_t>(JSDialogErrorCode::DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY),
+    static_cast<int32_t>(JSDialogErrorCode::DIALOG_ERROR_PARAMETER_VALIDATION_FAILED),
+    static_cast<int32_t>(JSDialogErrorCode::DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE)
+};
 
 /**
  * Indices returned by MapErrorCode when the error code is not present in the
  * kind-specific list. Tune once the bucket policy is finalised; both must
  * stay within [0, boundary_) so HISTOGRAM_ENUMERATION keeps the sample.
  */
-constexpr int32_t NON_DIALOG_DEFAULT_INDEX = 0;
-constexpr int32_t DIALOG_DEFAULT_INDEX = 0;
+constexpr int32_t NON_DIALOG_DEFAULT_INDEX = 5;
+constexpr int32_t DIALOG_DEFAULT_INDEX = 5;
+
+constexpr int32_t CM_SUCCESS = 0;
 
 int32_t MapErrorCode(CmMetricsKind kind, int32_t errorCode)
 {
@@ -81,13 +143,6 @@ void CmMetricsReport::Start()
     }
     started_ = true;
     startTime_ = std::chrono::steady_clock::now();
-#ifdef CM_API_METRICS_ENABLE
-    /**
-     * `finished_` is intentionally NOT set here. If HISTOGRAM_BOOLEAN() throws,
-     * the caller can retry via Finish() because `finished_` is still false.
-     */
-    HISTOGRAM_BOOLEAN((keyPrefix_ + ".CALL").c_str(), true);
-#endif
 }
 
 void CmMetricsReport::Finish([[maybe_unused]] int32_t errorCode)
@@ -121,6 +176,7 @@ void CmMetricsReport::Finish([[maybe_unused]] int32_t errorCode)
     int32_t boundary = (kind_ == CmMetricsKind::DIALOG)
         ? static_cast<int32_t>(DIALOG_ERROR_CODE_LIST.size())
         : static_cast<int32_t>(NON_DIALOG_ERROR_CODE_LIST.size());
+    HISTOGRAM_BOOLEAN((keyPrefix_ + ".CALL").c_str(), errcode == CM_SUCCESS);
     HISTOGRAM_ENUMERATION((keyPrefix_ + ".errcode").c_str(), mappedErrorCode, boundary);
     HISTOGRAM_TIMES((keyPrefix_ + ".Time").c_str(), elapsed);
 #endif
