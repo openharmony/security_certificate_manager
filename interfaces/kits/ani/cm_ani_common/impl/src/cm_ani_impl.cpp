@@ -49,13 +49,8 @@ ani_object CertManagerAniImpl::GenerateResult()
 
 void CertManagerAniImpl::OnInvokeStart()
 {
-    // Select the histogram upper bound based on metricsKind_ (number of enum
-    // entries in the corresponding ErrorCode).
-    int32_t boundary = (this->metricsKind_ == CmMetricsKind::DIALOG)
-        ? Dialog::DIALOG_ERROR_CODE_COUNT
-        : OHOS::Security::CertManager::ERROR_CODE_COUNT;
     this->metricsReport_ = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(
-        this->GetInterfaceName(), boundary, this->metricsKind_);
+        this->GetInterfaceName(), this->metricsKind_);
     this->metricsReport_->Start();
 }
 
