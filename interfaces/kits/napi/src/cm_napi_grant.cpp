@@ -177,9 +177,8 @@ static napi_value ConvertResultAuthUri(napi_env env, const CmBlob *authUri)
     return result;
 }
 
-static void GrantUidComplete(napi_env env, napi_status status, void *data)
+static void GrantUidResolve(napi_env env, GrantAsyncContext context)
 {
-    GrantAsyncContext context = static_cast<GrantAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
@@ -193,6 +192,12 @@ static void GrantUidComplete(napi_env env, napi_status status, void *data)
     }
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
+}
+
+static void GrantUidComplete(napi_env env, napi_status status, void *data)
+{
+    GrantAsyncContext context = static_cast<GrantAsyncContext>(data);
+    GrantUidResolve(env, context);
     FreeGrantAsyncContext(env, context);
 }
 
@@ -202,9 +207,8 @@ static void RemoveUidExecute(napi_env env, void *data)
     context->errCode = CmRemoveGrantedApp(context->keyUri, context->appUid);
 }
 
-static void RemoveUidComplete(napi_env env, napi_status status, void *data)
+static void RemoveUidResove(napi_env env, GrantAsyncContext context)
 {
-    GrantAsyncContext context = static_cast<GrantAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
@@ -222,12 +226,17 @@ static void RemoveUidComplete(napi_env env, napi_status status, void *data)
     napi_get_undefined(env, &result[1]);
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
+}
+
+static void RemoveUidComplete(napi_env env, napi_status status, void *data)
+{
+    GrantAsyncContext context = static_cast<GrantAsyncContext>(data);
+    RemoveUidResove(env, context);
     FreeGrantAsyncContext(env, context);
 }
 
-static void IsAuthedComplete(napi_env env, napi_status status, void *data)
+static void IsAuthedResolve(napi_env env, GrantAsyncContext context)
 {
-    GrantAsyncContext context = static_cast<GrantAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
@@ -247,6 +256,12 @@ static void IsAuthedComplete(napi_env env, napi_status status, void *data)
     }
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
+}
+
+static void IsAuthedComplete(napi_env env, napi_status status, void *data)
+{
+    GrantAsyncContext context = static_cast<GrantAsyncContext>(data);
+    IsAuthedResolve(env, context);
     FreeGrantAsyncContext(env, context);
 }
 
@@ -304,9 +319,8 @@ static napi_value ConvertResultAuthList(napi_env env, const CmAppUidList *appUid
     return result;
 }
 
-static void GetUidListComplete(napi_env env, napi_status status, void *data)
+static void GetUidListResolve(napi_env env, GrantAsyncContext context)
 {
-    GrantAsyncContext context = static_cast<GrantAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
@@ -320,6 +334,12 @@ static void GetUidListComplete(napi_env env, napi_status status, void *data)
     }
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
+}
+
+static void GetUidListComplete(napi_env env, napi_status status, void *data)
+{
+    GrantAsyncContext context = static_cast<GrantAsyncContext>(data);
+    GetUidListResolve(env, context);
     FreeGrantAsyncContext(env, context);
 }
 
@@ -342,6 +362,7 @@ static napi_value GrantUidAsyncWork(napi_env env, GrantAsyncContext context)
     if (status != napi_ok) {
         ThrowError(env, INNER_FAILURE, GENERIC_MSG, context->metricsReport.get());
         CM_LOG_E("get async work failed when granting uid");
+        DeferredResolveUndefined(env, context->deferred);
         return nullptr;
     }
     return promise;
@@ -366,6 +387,7 @@ static napi_value RemoveUidAsyncWork(napi_env env, GrantAsyncContext context)
     if (status != napi_ok) {
         ThrowError(env, INNER_FAILURE, GENERIC_MSG, context->metricsReport.get());
         CM_LOG_E("queue async work failed when removing uid");
+        DeferredResolveUndefined(env, context->deferred);
         return nullptr;
     }
     return promise;
@@ -390,6 +412,7 @@ static napi_value IsAuthedAsyncWork(napi_env env, GrantAsyncContext context)
     if (status != napi_ok) {
         ThrowError(env, INNER_FAILURE, GENERIC_MSG, context->metricsReport.get());
         CM_LOG_E("queue async work failed when using isAuthed");
+        DeferredResolveUndefined(env, context->deferred);
         return nullptr;
     }
     return promise;
@@ -414,6 +437,7 @@ static napi_value GetUidListAsyncWork(napi_env env, GrantAsyncContext context)
     if (status != napi_ok) {
         ThrowError(env, INNER_FAILURE, GENERIC_MSG, context->metricsReport.get());
         CM_LOG_E("queue async work failed when getting authed uid list");
+        DeferredResolveUndefined(env, context->deferred);
         return nullptr;
     }
     return promise;

@@ -80,7 +80,7 @@ static int32_t CmReadRequestReply(MessageParcel &reply, struct CmBlob *outBlob)
     }
 
     if (outBlob->size < outLen) {
-        CM_LOG_E("outBlob size[%u] smaller than outLen[%u]", outBlob->size, outLen);
+        CM_LOG_E("outBlob size[%u] smaller than outLen[%zu]", outBlob->size, outLen);
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
 

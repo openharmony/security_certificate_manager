@@ -21,6 +21,8 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
+#include "securec.h"
+
 #include "cm_mem.h"
 #include "cm_metrics.h"
 #include "cm_type.h"
@@ -109,6 +111,8 @@ void GenerateNapiPromise(napi_env env, napi_ref callback, napi_deferred *deferre
 napi_value GenerateUkeyCertInfo(napi_env env, const struct Credential *credential);
 bool CheckUkeyParamsType(napi_env env, napi_value* argv, size_t argc);
 
+void DeferredResulveUndefined(napi_env env, napi_deferred deffered);
+
 bool IsValidCertType(const uint32_t certType);
 bool IsValidCertScope(const uint32_t scope);
 bool IsValidCertAlg(const uint32_t certAlg);
@@ -134,6 +138,7 @@ inline void FreeCmBlob(CmBlob *&blob)
     }
 
     if (blob->data != nullptr) {
+        (void)memset_s(blob->data, blob->size, 0, blob->size);
         CmFree(blob->data);
         blob->data = nullptr;
     }

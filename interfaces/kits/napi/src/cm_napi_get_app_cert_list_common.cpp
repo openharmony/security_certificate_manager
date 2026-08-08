@@ -111,9 +111,8 @@ static void GetAppCertListExecute(napi_env env, void *data)
     context->result = CmGetAppCertList(context->store, context->credentialList);
 }
 
-static void GetAppCertListComplete(napi_env env, napi_status status, void *data)
+static void GetAppCertListComplete(napi_env env, GetAppCertListAsyncContext context)
 {
-    GetAppCertListAsyncContext context = static_cast<GetAppCertListAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
@@ -130,6 +129,12 @@ static void GetAppCertListComplete(napi_env env, napi_status status, void *data)
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
     }
+}
+
+static void GetAppCertListComplete(napi_env env, napi_status status, void *data)
+{
+    GetAppCertListAsyncContext context = static_cast<GetAppCertListAsyncContext>(data);
+    GetAppCertListComplete(env, context);
     DeleteGetAppCertListAsyncContext(env, context);
     CM_LOG_D("get app cert list end");
 }
@@ -155,6 +160,7 @@ napi_value GetAppCertListAsyncWork(napi_env env, GetAppCertListAsyncContext &asy
     if (napiStatus != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("get app cert list could not queue async work");
+        DeferredResolveUndefined(env, asyncContext->deferred);
         return nullptr;
     }
     return promise;
@@ -175,9 +181,8 @@ static void GetCallingAppCertListExecute(napi_env env, void *data)
     mcontext->result = CmCallingGetAppCertList(mcontext->store, mcontext->credentialList);
 }
 
-static void GetCallingAppCertListComplete(napi_env env, napi_status status, void *data)
+static void GetCallingAppCertListComplete(napi_env env, GetAppCertListAsyncContext mcontext)
 {
-    GetAppCertListAsyncContext mcontext = static_cast<GetAppCertListAsyncContext>(data);
     napi_value res[RESULT_NUMBER] = { nullptr };
     if (mcontext->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &res[0]));
@@ -190,6 +195,12 @@ static void GetCallingAppCertListComplete(napi_env env, napi_status status, void
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &res[1]));
     }
     GeneratePromise(env, mcontext->deferred, mcontext->result, res, CM_ARRAY_SIZE(res));
+}
+
+static void GetCallingAppCertListComplete(napi_env env, napi_status status, void *data)
+{
+    GetAppCertListAsyncContext mcontext = static_cast<GetAppCertListAsyncContext>(data);
+    GetCallingAppCertListComplete(env, mcontext);
     DeleteGetAppCertListAsyncContext(env, mcontext);
     CM_LOG_D("get calling app cert list end");
 }
@@ -215,6 +226,7 @@ napi_value GetCallingAppCertListAsyncWork(napi_env env, GetAppCertListAsyncConte
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("get calling app cert list could not queue async work");
+        DeferredResulveUndefined(env, asyncContext->deferred);
         return nullptr;
     }
     return promise;

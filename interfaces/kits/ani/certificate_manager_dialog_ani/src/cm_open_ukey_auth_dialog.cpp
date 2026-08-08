@@ -78,6 +78,7 @@ int32_t CmOpenUkeyAuthDialog::UnpackResult()
 
 void CmOpenUkeyAuthDialog::OnFinish()
 {
+    CM_FREE_BLOB(this->keyUri);
     return;
 }
 }

@@ -110,21 +110,26 @@ static void GetAppCertListByUidExecute(napi_env env, void *data)
     context->result = CmGetAppCertListByUid(context->store, context->appUid, context->credentialList);
 }
 
-static void GetAppCertListByUidComplete(napi_env env, napi_status status, void *data)
+static void GetAppCertListByUidResolve(napi_env env, napi_status status, GetAppCertListByUidAsyncContext context)
 {
-    GetAppCertListByUidAsyncContext context = static_cast<GetAppCertListByUidAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         result[1] = GetAppCertListByUidWriteResult(env, context);
         if (context->metricsReport != nullptr) {
-            context->metricsReport->Finish(CM_SUCCESS);
+            context->metricsReport->Finish(CM_SUCCESS);L
         }
     } else {
         result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+}
+
+static void GetAppCertListByUidComplete(napi_env env, napi_status status, void *data)
+{
+    GetAppCertListByUidAsyncContext context = static_cast<GetAppCertListByUidAsyncContext>(data);
+    GetAppCertListByUidResolve(env, context);
     DeleteGetAppCertListByUidAsyncContext(env, context);
     CM_LOG_D("get app cert list end");
 }
@@ -150,6 +155,7 @@ napi_value GetAppCertListByUidAsyncWork(napi_env env, GetAppCertListByUidAsyncCo
     if (napiStatus != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("get app cert list could not queue async work");
+        DeferredResolveUndefined(env, asyncContext->deferred);
         return nullptr;
     }
     return promise;

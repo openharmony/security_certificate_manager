@@ -626,9 +626,8 @@ static napi_value ConvertResultHandle(napi_env env, const CmBlob *handle)
     return result;
 }
 
-static void InitComplete(napi_env env, napi_status status, void *data)
+static void InitResolve(napi_env env, SignVerifyAsyncContext context)
 {
-    SignVerifyAsyncContext context = static_cast<SignVerifyAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
@@ -646,6 +645,12 @@ static void InitComplete(napi_env env, napi_status status, void *data)
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
     }
+}
+
+static void InitComplete(napi_env env, napi_status status, void *data)
+{
+    SignVerifyAsyncContext context = static_cast<SignVerifyAsyncContext>(data);
+    InitResolve(env, context);
     FreeSignVerifyAsyncContext(env, context);
 }
 
@@ -655,9 +660,8 @@ static void UpdateExecute(napi_env env, void *data)
     context->errCode = CmUpdate(context->handle, context->inData);
 }
 
-static void UpdateOrAbortComplete(napi_env env, napi_status status, void *data)
+static void UpdateOrAbortResolve(napi_env env, SignVerifyAsyncContext context)
 {
-    SignVerifyAsyncContext context = static_cast<SignVerifyAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
@@ -675,6 +679,12 @@ static void UpdateOrAbortComplete(napi_env env, napi_status status, void *data)
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
     }
+}
+
+static void UpdateOrAbortComplete(napi_env env, napi_status status, void *data)
+{
+    SignVerifyAsyncContext context = static_cast<SignVerifyAsyncContext>(data);
+    UpdateOrAbortResolve(env, context);
     FreeSignVerifyAsyncContext(env, context);
 }
 
@@ -712,9 +722,8 @@ static napi_value ConvertResultSignature(napi_env env, bool isSign, const CmBlob
     return result;
 }
 
-static void FinishComplete(napi_env env, napi_status status, void *data)
+static void FinishResolve(napi_env env, SignVerifyAsyncContext context)
 {
-    SignVerifyAsyncContext context = static_cast<SignVerifyAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
@@ -732,6 +741,12 @@ static void FinishComplete(napi_env env, napi_status status, void *data)
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->errCode);
     }
+}
+
+static void FinishComplete(napi_env env, napi_status status, void *data)
+{
+    SignVerifyAsyncContext context = static_cast<SignVerifyAsyncContext>(data);
+    FinishResolve(env, context);
     FreeSignVerifyAsyncContext(env, context);
 }
 
@@ -760,6 +775,7 @@ static napi_value CMInitAsyncWork(napi_env env, SignVerifyAsyncContext context)
     if (status != napi_ok) {
         ThrowError(env, PARAM_ERROR, "queue async work error", context->metricsReport.get());
         CM_LOG_E("queue async work failed when using init function");
+        DeferredResolveUndefined(env, context->deferred);
         return nullptr;
     }
     return promise;
@@ -784,6 +800,7 @@ static napi_value CMUpdateAsyncWork(napi_env env, SignVerifyAsyncContext context
     if (status != napi_ok) {
         ThrowError(env, PARAM_ERROR, "queue async work error", context->metricsReport.get());
         CM_LOG_E("queue async work failed when using update function");
+        DeferredResolveUndefined(env, context->deferred);
         return nullptr;
     }
     return promise;
@@ -808,6 +825,7 @@ static napi_value CMFinishAsyncWork(napi_env env, SignVerifyAsyncContext context
     if (status != napi_ok) {
         ThrowError(env, PARAM_ERROR, "queue async work error", context->metricsReport.get());
         CM_LOG_E("queue async work failed when using finish function");
+        DeferredResolveUndefined(env, context->deferred);
         return nullptr;
     }
     return promise;
@@ -832,6 +850,7 @@ static napi_value CMAbortAsyncWork(napi_env env, SignVerifyAsyncContext context)
     if (status != napi_ok) {
         ThrowError(env, PARAM_ERROR, "queue async work error", context->metricsReport.get());
         CM_LOG_E("queue async work failed when using abort function");
+        DeferredResolveUndefined(env, context->deferred);
         return nullptr;
     }
     return promise;

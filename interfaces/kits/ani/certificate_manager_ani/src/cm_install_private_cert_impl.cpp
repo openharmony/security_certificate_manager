@@ -106,6 +106,8 @@ void CmInstallPrivateCertImpl::OnFinish()
     CM_FREE_BLOB(this->keystorePwd);
     CM_FREE_BLOB(this->certAlias);
     CM_FREE_BLOB(this->retUri);
+    (void)memset_s(this->keystore->data, this->keystore->size, 0, this->keystore->size);
+    CM_FREE_BLOB(this->keystore);
 }
 
 int32_t CmInstallPrivateCertImpl::SetLevel(ani_enum_item aniLevel)

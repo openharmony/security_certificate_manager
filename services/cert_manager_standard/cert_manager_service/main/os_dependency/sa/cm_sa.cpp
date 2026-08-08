@@ -120,9 +120,15 @@ static void SubscribEvent()
 static void CmSubscribeSystemEvent()
 {
     pthread_t subscribeThread;
-    if ((pthread_create(&subscribeThread, nullptr, (void *(*)(void *))SubscribEvent, nullptr)) == -1) {
-        CM_LOG_E("create thread failed");
+    int32_t ret = pthread_create(&subscribeThread, nullptr, (void *(*)(void *))SubscribEvent, nullptr);
+    if (ret != 0) {
+        CM_LOG_E("create thread failed, ret = %d", ret);
         return;
+    }
+
+    ret = pthread_detach(subcribeThread);
+    if (ret != 0) {
+        CM_LOG_E("pthread_detach failed, ret = %d", ret);
     }
 
     CM_LOG_D("create thread success");
@@ -190,6 +196,10 @@ int32_t CertManagerService::Init()
     if (!registerToService_) {
         if (unloadHandler == nullptr) {
             auto runner = AppExecFwk::EventRunner::Create("unload");
+            if (runner = nullptr) {
+                CM_LOG_E("EventRunner create failed");
+                return CMR_ERROR_SA_START_PUBLISH_FAILED;
+            }
             unloadHandler = std::make_shared<AppExecFwk::EventHandler>(runner);
         }
 

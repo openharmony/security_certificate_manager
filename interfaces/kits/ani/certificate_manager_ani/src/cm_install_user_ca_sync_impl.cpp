@@ -89,6 +89,8 @@ int32_t CmInstallUserCaSyncImpl::UnpackResult()
 void CmInstallUserCaSyncImpl::OnFinish()
 {
     CM_FREE_BLOB(certUri);
+    (void)memset_s(this->certData->data, this->certData->size, 0, this->certData->size);
+    CM_FREE_BLOB(this->certData);
     return;
 }
 }

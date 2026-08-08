@@ -130,6 +130,42 @@ static void InitAppCert(struct Credential *credential)
     credential->credData.size = MAX_LEN_CERTIFICATE_CHAIN;
 }
 
+static void GetAppCertInfoExecute(napi_env env, void *data) {
+    GetAppCertInfoAsyncContext context = static_cast<GetAppCertInfoAsyncContext>(data);
+
+    context->credential = static_cast<struct Credential *>(CmMalloc(sizeof(struct Credential)));
+    if (context->credential != nullptr) {
+        (void)memset_s(context->credential, sizeof(struct Credential), 0, sizeof(struct Credential));
+        InitAppCert(context->credential);
+    }
+    context->result = CmGetAppCert(context->keyUri, context->store, context->credential);
+}
+
+static void GetAppCertInfoResolve(napi_env env, GetAppCertInfoAsyncContext context) {
+    napi_value result[RESULT_NUMBER] = { nullptr };
+    if (context->result == CM_SUCCESS) {
+        NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
+        result[1] = GetAppCertInfoWriteResult(env, context);
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
+    } else {
+        result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
+        NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
+    }
+    if (context->deferred != nullptr) {
+        GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+    } else {
+        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
+    }
+}
+
+static void GetAppCertInfoComplete(napi_env env, napi_status status, void *data) {
+    GetAppCertInfoAsyncContext context = static_cast<GetAppCertInfoAsyncContext>(data);
+    GetAppCertInfoResolve(env, context);
+    DeleteGetAppCertInfoAsyncContext(env, context);
+}
+
 napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext &asyncContext)
 {
     napi_value promise = nullptr;
@@ -142,36 +178,8 @@ napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext &asy
         env,
         nullptr,
         resourceName,
-        [](napi_env env, void *data) {
-            GetAppCertInfoAsyncContext context = static_cast<GetAppCertInfoAsyncContext>(data);
-
-            context->credential = static_cast<struct Credential *>(CmMalloc(sizeof(struct Credential)));
-            if (context->credential != nullptr) {
-                (void)memset_s(context->credential, sizeof(struct Credential), 0, sizeof(struct Credential));
-                InitAppCert(context->credential);
-            }
-            context->result = CmGetAppCert(context->keyUri, context->store, context->credential);
-        },
-        [](napi_env env, napi_status status, void *data) {
-            GetAppCertInfoAsyncContext context = static_cast<GetAppCertInfoAsyncContext>(data);
-            napi_value result[RESULT_NUMBER] = { nullptr };
-            if (context->result == CM_SUCCESS) {
-                NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
-                result[1] = GetAppCertInfoWriteResult(env, context);
-                if (context->metricsReport != nullptr) {
-                    context->metricsReport->Finish(CM_SUCCESS);
-                }
-            } else {
-                result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
-                NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
-            }
-            if (context->deferred != nullptr) {
-                GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
-            } else {
-                GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
-            }
-            DeleteGetAppCertInfoAsyncContext(env, context);
-        },
+        GetAppCertInfoExecute,
+        GetAppCertInfoComplete,
         static_cast<void *>(asyncContext),
         &asyncContext->asyncWork));
 
@@ -179,6 +187,7 @@ napi_value GetAppCertInfoAsyncWork(napi_env env, GetAppCertInfoAsyncContext &asy
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("could not queue async work");
+        DeferredResolveUndefined(env, asyncContext->deferred);
         return nullptr;
     }
 

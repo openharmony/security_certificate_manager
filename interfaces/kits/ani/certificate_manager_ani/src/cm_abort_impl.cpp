@@ -56,6 +56,8 @@ int32_t CmAbortImpl::UnpackResult()
 
 void CmAbortImpl::OnFinish()
 {
+    (void)memset_s(this->handle->data, this->handle->size, 0, this->handle->size);
+    CM_FREE_BLOB(this->handle);
     return;
 }
 }

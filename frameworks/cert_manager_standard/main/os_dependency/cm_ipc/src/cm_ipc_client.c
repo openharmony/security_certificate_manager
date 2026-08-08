@@ -313,6 +313,11 @@ static int32_t CmAppCertListGetCertCount(const struct CmBlob *outData,
         CM_LOG_D("App cert list is null");
     }
 
+    if (credCount > MAX_COUNT_CERTIFICATE_ALL) {
+        CM_LOG_E("credCount %u exceeds MAX_COUNT_CERTIFICATE_ALL %u", credCount, MAX_COUNT_CERTIFICATE_ALL);
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+
     certificateList->credentialCount = credCount;
 
     return CM_SUCCESS;
@@ -320,7 +325,16 @@ static int32_t CmAppCertListGetCertCount(const struct CmBlob *outData,
 
 static int32_t InitAppCertList(const uint32_t credCount, struct CredentialList *credentialList)
 {
+    if (credCount > MAX_COUNT_CERTIFICATE_ALL) {
+        CM_LOG_E("credCount %u exceeds MAX_COUNT_CERTIFICATE_ALL %u", credCount, MAX_COUNT_CERTIFICATE_ALL);
+        return CMR_ERROR_INVALID_OPERATION;
+    }
+
     uint32_t buffSize = credCount * sizeof(struct CredentialAbstract);
+    if (buffSize == 0) {
+        CM_LOG_I("credCount is 0, no allocation needed");
+        return CM_SUCCESS;
+    }
     credentialList->credentialAbstract = (struct CredentialAbstract *)CmMalloc(buffSize);
     if (credentialList->credentialAbstract == NULL) {
         CM_LOG_E("malloc file buffer failed");
@@ -474,8 +488,7 @@ static int32_t CmAppPermissionUnpackFromService(const struct CmBlob *outData,
     struct CmBlob blob = { 0, NULL };
 
     uint32_t offset = 0;
-    if ((outData == NULL) || (huksAlias == NULL) ||
-        (outData->data == NULL) || (huksAlias->data == NULL)) {
+    if ((outData == NULL) || (huksAlias == NULL) || (outData->data == NULL) || (huksAlias->data == NULL)) {
         CM_LOG_E("CmAppPermissionUnpackFromService arguments invalid");
         return CMR_ERROR_NULL_POINTER;
     }

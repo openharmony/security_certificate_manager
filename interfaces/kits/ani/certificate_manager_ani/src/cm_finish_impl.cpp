@@ -132,6 +132,10 @@ int32_t CmVerifyFinishImpl::UnpackResult()
 
 void CmVerifyFinishImpl::OnFinish()
 {
+    (void)memset_s(this->handle->data, this->handle->size, 0, this->handle->size);
+    CM_FREE_BLOB(this->handle);
+    (void)memset_s(this->signature->data, this->signature->size, 0, this->signature->size);
+    CM_FREE_BLOB(this->signature);
     return;
 }
 }

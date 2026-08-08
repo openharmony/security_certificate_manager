@@ -244,9 +244,8 @@ static void InstallAppCertExecute(napi_env env, void *data)
     }
 }
 
-static void InstallAppCertComplete(napi_env env, napi_status status, void *data)
+static void InstallAppCertResolve(napi_env env, InstallAppCertAsyncContext context)
 {
-    InstallAppCertAsyncContext context = static_cast<InstallAppCertAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
@@ -263,6 +262,12 @@ static void InstallAppCertComplete(napi_env env, napi_status status, void *data)
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
     }
+}
+
+static void InstallAppCertComplete(napi_env env, napi_status status, void *data)
+{
+    InstallAppCertAsyncContext context = static_cast<InstallAppCertAsyncContext>(data);
+    InstallAppCertResolve(env, context);
     DeleteInstallAppCertAsyncContext(env, context);
 }
 
@@ -289,6 +294,7 @@ napi_value InstallAppCertAsyncWork(napi_env env, InstallAppCertAsyncContext &asy
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("could not queue async work");
+        DeferredResolveUndefined(env, asyncContext->deferred);
         return nullptr;
     }
     return promise;

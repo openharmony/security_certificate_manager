@@ -98,7 +98,29 @@ int32_t ParseUint8Array(ani_env *env, ani_arraybuffer uint8Array, CmBlob &outBlo
         CM_LOG_E("get ani uint8Array buffer failed, ret = %d", static_cast<int32_t>(ret));
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    outBlob.data = static_cast<uint8_t *>(resultData);
+
+    if (resultSize > CM_MAX_DATA_LEN) {
+        CM_LOG_E("uint8Array size too large, size = %u", static_cast<unsigned long>(resultSize));
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if (resultData == nullptr && resultSize > 0) {
+        CM_LOG_E("uint8Array data is null with non-zero size");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    uint8_t *copyData = static_cast<uint8_t>(CmMalloc(resultSize));
+    if (copyData == nullptr) {
+        CM_LOG_E("memory operation failed.");
+        return CM_ERROR_MALLOC_FAIL;
+    }
+    if (resultSize > 0) {
+        if (memcpy_s(copyData, resultSize, resultData, resultSize) != EOK) {
+            CM_LOG_E("uint8Array buffer memcpy failed.");
+            CmFree(copyData);
+            return CMR_ERROR_INVALID_ARGUMENT;
+        }
+    }
+    outBlob.data = copyData;
     outBlob.size = resultSize;
     return CM_SUCCESS;
 }
@@ -244,6 +266,10 @@ ani_string GenerateCharStr(ani_env *env, const char *strData, uint32_t length)
         CM_LOG_E("env is nullptr.");
         return nullptr;
     }
+    if (strData == nullptr) {
+        CM_LOG_E("strData is nullptr.");
+        return nullptr;
+    }
     ani_string aniString{};
     ani_status ret = env->String_NewUTF8(strData, length, &aniString);
     if (ret != ANI_OK) {
@@ -255,7 +281,21 @@ ani_string GenerateCharStr(ani_env *env, const char *strData, uint32_t length)
 
 ani_string GenerateString(ani_env *env, CmBlob &outBlob)
 {
-    return GenerateCharStr(env, (char *)outBlob.data, outBlob.size - 1);
+    if (outBlob.data == nullptr) {
+        CM_LOG_E("outBlob data is nullptr");
+        return nullptr;
+    }
+    if (outBlob.size == 0) {
+        return GenerateCharStr(env, static_cast<char *>(outBlob.data), 0);
+    }
+
+    size_t length = 0;
+    if (outBlob.size > 0 && outBlob.data[outBlob.size - 1] == '\0') {
+        length = outBlob.size - 1;
+    } else {
+        length = outBlob.size;
+    }
+    return GenerateCharStr(env, (char *)outBlob.data, length);
 }
 
 static ani_size MapCertificateTypeIndex(ani_size value)
@@ -577,8 +617,8 @@ int32_t GenerateCredentialObj(ani_env *env, ani_object &resultObjOut)
 
 int32_t GenerateUint8Array(ani_env *env, const CmBlob *data, ani_object &resultObjOut)
 {
-    if (env == nullptr || data == nullptr) {
-        CM_LOG_E("env is nullptr.");
+    if (env == nullptr || data == nullptr || data->data == nullptr) {
+        CM_LOG_E("check params has nullptr.");
         return CMR_ERROR_NULL_POINTER;
     }
     ani_class uint8ArrayClass;

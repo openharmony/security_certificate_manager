@@ -43,6 +43,10 @@ static OHOS::sptr<OHOS::AppExecFwk::IBundleMgr> GetBundleMgrProxy()
 int32_t GetCallerLabelName(std::shared_ptr<OHOS::AbilityRuntime::AbilityContext> abilityContext,
     std::string &labelName)
 {
+    if (abilityContext == nullptr) {
+        CM_LOG_E("abilitContext is nullptr.");
+        return CM_FAILURE
+    }
     OHOS::sptr<OHOS::AppExecFwk::IBundleMgr> bundleMgrProxy = GetBundleMgrProxy();
     if (bundleMgrProxy == nullptr) {
         CM_LOG_E("Failed to get bundle manager proxy.");

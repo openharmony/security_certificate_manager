@@ -26,6 +26,7 @@
 #include "ui_content.h"
 #include "cm_metrics.h"
 #include "cm_type.h"
+#include "cm_mem.h"
 
 namespace CMNapi {
 napi_value CMNapiOpenCertManagerDialog(napi_env env, napi_callback_info info);
@@ -45,6 +46,14 @@ struct CommonAsyncContext {
 
 struct CmUIExtensionRequestContext : public CommonAsyncContext {
     explicit CmUIExtensionRequestContext(napi_env env) : CommonAsyncContext(env) {};
+    ~CmUIExtensionRequestContext() override
+    {
+        if (certUri != nullptr) {
+            CM_FREE_PTR(certUri->data);
+            CM_FREE_PTR(certUri);
+        }
+    }
+
     std::shared_ptr<OHOS::AbilityRuntime::AbilityContext> context = nullptr;
     uint32_t pageType = 0;
     uint32_t certificateScope = 0;

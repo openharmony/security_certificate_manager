@@ -320,6 +320,12 @@ int32_t StartUIAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Wan
         CM_LOG_E("not has basic permission");
         return CMR_DIALOG_ERROR_PERMISSION_DENIED;
     }
+
+    if (context == nullptr) {
+        CM_LOG_E("check context is nullptr");
+        return CMR_DIALOG_ERROR_PARAM_INVALID;
+    }
+
     CM_LOG_I("begin StartUIAbility");
 
     OHOS::AbilityRuntime::RuntimeTask task = [uiExtCallback](

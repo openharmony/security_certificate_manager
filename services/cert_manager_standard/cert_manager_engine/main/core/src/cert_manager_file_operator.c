@@ -429,6 +429,7 @@ static int32_t CmUidLayerGetFileNames(const char *filePath, struct CmBlob *credF
     (void)memset_s(credFilePaths[count].data, filePathLen + 1, 0, filePathLen + 1);
     if (memcpy_s(credFilePaths[count].data, filePathLen + 1, filePath, filePathLen) != EOK) {
         /* credFilePaths memory free in top layer function */
+        CM_FREE_PTR(credFilePaths[count].data);
         return CMR_ERROR_BUFFER_TOO_SMALL;
     }
     credFilePaths[count].size = filePathLen + 1; /* include '\0' at end */
@@ -612,7 +613,10 @@ static int32_t DirRemove(const char *path)
             CM_LOG_E("Dir is not empty");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
-        rmdir(filePath);
+        if (rmdir(filePath) != 0) {
+            CM_LOG_E("failed  to remove dir, errno = 0x%x", errno);
+            return CMR_ERROR_REMOVE_FILE_FAIL;
+        }
         return CMR_OK;
     }
     return CMR_ERROR_INVALID_ARGUMENT;
