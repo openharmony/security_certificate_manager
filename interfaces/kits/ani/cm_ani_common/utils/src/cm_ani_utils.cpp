@@ -108,10 +108,10 @@ int32_t ParseUint8Array(ani_env *env, ani_arraybuffer uint8Array, CmBlob &outBlo
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    uint8_t *copyData = static_cast<uint8_t>(CmMalloc(resultSize));
+    uint8_t *copyData = static_cast<uint8_t *>(CmMalloc(resultSize));
     if (copyData == nullptr) {
         CM_LOG_E("memory operation failed.");
-        return CM_ERROR_MALLOC_FAIL;
+        return CMR_ERROR_MALLOC_FAIL;
     }
     if (resultSize > 0) {
         if (memcpy_s(copyData, resultSize, resultData, resultSize) != EOK) {
@@ -286,7 +286,7 @@ ani_string GenerateString(ani_env *env, CmBlob &outBlob)
         return nullptr;
     }
     if (outBlob.size == 0) {
-        return GenerateCharStr(env, static_cast<char *>(outBlob.data), 0);
+        return GenerateCharStr(env, reinterpret_cast<char *>(outBlob.data), 0);
     }
 
     size_t length = 0;

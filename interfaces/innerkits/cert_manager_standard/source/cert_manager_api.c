@@ -480,7 +480,7 @@ static int32_t UnpackCertUriList(struct CertUriList *certUriList, uint8_t *inDat
 
     if (memcpy_s(uriData, MAX_LEN_URI * certCount, data, MAX_LEN_URI * certCount) != EOK) {
         CM_LOG_E("memory copy failed");
-        CM_FREE_PTR(uriListSize);
+        CM_FREE_PTR(uriList);
         return CMR_ERROR_MEM_OPERATION_COPY;
     }
     for (uint32_t i = 0; i < certCount; ++i) {

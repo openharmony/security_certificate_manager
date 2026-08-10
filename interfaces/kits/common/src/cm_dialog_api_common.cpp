@@ -45,7 +45,7 @@ int32_t GetCallerLabelName(std::shared_ptr<OHOS::AbilityRuntime::AbilityContext>
 {
     if (abilityContext == nullptr) {
         CM_LOG_E("abilitContext is nullptr.");
-        return CM_FAILURE
+        return CM_FAILURE;
     }
     OHOS::sptr<OHOS::AppExecFwk::IBundleMgr> bundleMgrProxy = GetBundleMgrProxy();
     if (bundleMgrProxy == nullptr) {

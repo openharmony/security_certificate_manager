@@ -20,6 +20,7 @@
 #include "cert_manager_api.h"
 #include "cm_result_builder.h"
 #include "cm_mem.h"
+#include "securec.h"
 
 namespace OHOS::Security::CertManager::Ani {
 CmInstallPrivateCertImpl::CmInstallPrivateCertImpl(ani_env *env, ani_arraybuffer aniKeystore,
@@ -103,10 +104,11 @@ int32_t CmInstallPrivateCertImpl::UnpackResult()
 
 void CmInstallPrivateCertImpl::OnFinish()
 {
+    (void)memset_s(this->keystorePwd.data, this->keystorePwd.size, 0, this->keystorePwd.size);
     CM_FREE_BLOB(this->keystorePwd);
     CM_FREE_BLOB(this->certAlias);
     CM_FREE_BLOB(this->retUri);
-    (void)memset_s(this->keystore->data, this->keystore->size, 0, this->keystore->size);
+    (void)memset_s(this->keystore.data, this->keystore.size, 0, this->keystore.size);
     CM_FREE_BLOB(this->keystore);
 }
 

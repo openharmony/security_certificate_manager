@@ -111,7 +111,7 @@ void GenerateNapiPromise(napi_env env, napi_ref callback, napi_deferred *deferre
 napi_value GenerateUkeyCertInfo(napi_env env, const struct Credential *credential);
 bool CheckUkeyParamsType(napi_env env, napi_value* argv, size_t argc);
 
-void DeferredResulveUndefined(napi_env env, napi_deferred deffered);
+void DeferredResolveUndefined(napi_env env, napi_deferred deffered);
 
 bool IsValidCertType(const uint32_t certType);
 bool IsValidCertScope(const uint32_t scope);

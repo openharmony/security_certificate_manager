@@ -110,14 +110,14 @@ static void GetAppCertListByUidExecute(napi_env env, void *data)
     context->result = CmGetAppCertListByUid(context->store, context->appUid, context->credentialList);
 }
 
-static void GetAppCertListByUidResolve(napi_env env, napi_status status, GetAppCertListByUidAsyncContext context)
+static void GetAppCertListByUidResolve(napi_env env, GetAppCertListByUidAsyncContext context)
 {
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
         result[1] = GetAppCertListByUidWriteResult(env, context);
         if (context->metricsReport != nullptr) {
-            context->metricsReport->Finish(CM_SUCCESS);L
+            context->metricsReport->Finish(CM_SUCCESS);
         }
     } else {
         result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());

@@ -126,7 +126,7 @@ void CmInstallUserCaImpl::OnFinish()
         CM_FREE_PTR(certUriList->uriList);
         CM_FREE_PTR(certUriList);
     }
-    (void)memset_s(this->certData->data, this->certData->size, 0, this->certData->size);
+    (void)memset_s(this->certData.data, this->certData.size, 0, this->certData.size);
     CM_FREE_BLOB(this->certData);
     return;
 }

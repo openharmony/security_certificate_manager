@@ -148,7 +148,7 @@ void CmFreeParamSet(struct CmParamSet **paramSet)
         CM_LOG_E("invalid free paramset!");
         return;
     }
-    (void)memset_s(*paramSet, *paramSet->paramSetSize, 0, *paramSet->paramSetSize);
+    (void)memset_s(*paramSet, (*paramSet)->paramSetSize, 0, (*paramSet)->paramSetSize);
     CM_FREE_PTR(*paramSet);
 }
 

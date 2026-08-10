@@ -226,7 +226,7 @@ napi_value GetCallingAppCertListAsyncWork(napi_env env, GetAppCertListAsyncConte
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("get calling app cert list could not queue async work");
-        DeferredResulveUndefined(env, asyncContext->deferred);
+        DeferredResolveUndefined(env, asyncContext->deferred);
         return nullptr;
     }
     return promise;

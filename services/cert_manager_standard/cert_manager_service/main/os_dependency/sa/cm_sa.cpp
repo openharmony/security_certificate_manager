@@ -126,7 +126,7 @@ static void CmSubscribeSystemEvent()
         return;
     }
 
-    ret = pthread_detach(subcribeThread);
+    ret = pthread_detach(subscribeThread);
     if (ret != 0) {
         CM_LOG_E("pthread_detach failed, ret = %d", ret);
     }
@@ -196,7 +196,7 @@ int32_t CertManagerService::Init()
     if (!registerToService_) {
         if (unloadHandler == nullptr) {
             auto runner = AppExecFwk::EventRunner::Create("unload");
-            if (runner = nullptr) {
+            if (runner == nullptr) {
                 CM_LOG_E("EventRunner create failed");
                 return CMR_ERROR_SA_START_PUBLISH_FAILED;
             }

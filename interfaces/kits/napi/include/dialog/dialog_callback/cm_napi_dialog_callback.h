@@ -42,7 +42,7 @@ public:
     OHOS::AAFwk::Want resultWant_;
     std::shared_ptr<CmUIExtensionRequestContext> reqContext_ = nullptr;
     
-private
+private:
     bool alreadyCallback_ = false;
     std::mutex callbackMutex_;
 };
