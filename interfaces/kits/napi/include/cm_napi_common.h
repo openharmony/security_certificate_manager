@@ -131,22 +131,7 @@ inline napi_value GetInt32(napi_env env, int32_t value)
     return result;
 }
 
-void FreeCmBlob(CmBlob *&blob)
-{
-    if (blob == nullptr) {
-        return;
-    }
-
-    if (blob->data != nullptr) {
-        (void)memset_s(blob->data, blob->size, 0, blob->size);
-        CmFree(blob->data);
-        blob->data = nullptr;
-    }
-    blob->size = 0;
-
-    CmFree(blob);
-    blob = nullptr;
-}
+void FreeCmBlob(CmBlob *&blob);
 
 void FreeCmContext(CmContext *&context);
 

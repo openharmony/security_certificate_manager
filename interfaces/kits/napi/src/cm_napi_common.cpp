@@ -656,6 +656,23 @@ void DeferredResolveUndefined(napi_env env, napi_deferred deferred)
     napi_resolve_deferred(env, deferred, result);
 }
 
+void FreeCmBlob(CmBlob *&blob)
+{
+    if (blob == nullptr) {
+        return;
+    }
+
+    if (blob->data != nullptr) {
+        (void)memset_s(blob->data, blob->size, 0, blob->size);
+        CmFree(blob->data);
+        blob->data = nullptr;
+    }
+    blob->size = 0;
+
+    CmFree(blob);
+    blob = nullptr;
+}
+
 void FreeCmContext(CmContext *&context)
 {
     if (context == nullptr) {
