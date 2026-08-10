@@ -103,7 +103,8 @@ napi_value UninstallAppCertParseParams(
     return GetInt32(env, 0);
 }
 
-static void UninstallAppCertExecute(napi_env env, void *data) {
+static void UninstallAppCertExecute(napi_env env, void *data)
+{
     UninstallAppCertAsyncContext context = static_cast<UninstallAppCertAsyncContext>(data);
     context->result = CmUninstallAppCert(context->keyUri, context->store);
     if (context->store == APPLICATION_PRIVATE_CERTIFICATE_STORE && context->result == CMR_ERROR_NOT_EXIST) {
@@ -111,7 +112,8 @@ static void UninstallAppCertExecute(napi_env env, void *data) {
     }
 }
 
-static void UninstallAppCertComplete(napi_env env, UninstallAppCertAsyncContext context) {
+static void UninstallAppCertComplete(napi_env env, UninstallAppCertAsyncContext context)
+{
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
@@ -130,7 +132,8 @@ static void UninstallAppCertComplete(napi_env env, UninstallAppCertAsyncContext 
     }
 }
 
-static void UninstallAppCertComplete(napi_env env, napi_status status, void *data) {
+static void UninstallAppCertComplete(napi_env env, napi_status status, void *data)
+{
     UninstallAppCertAsyncContext context = static_cast<UninstallAppCertAsyncContext>(data);
     UninstallAppCertComplete(env, context);
     DeleteUninstallAppCertAsyncContext(env, context);

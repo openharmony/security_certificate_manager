@@ -130,7 +130,8 @@ static void InitAppCert(struct Credential *credential)
     credential->credData.size = MAX_LEN_CERTIFICATE_CHAIN;
 }
 
-static void GetAppCertInfoExecute(napi_env env, void *data) {
+static void GetAppCertInfoExecute(napi_env env, void *data)
+{
     GetAppCertInfoAsyncContext context = static_cast<GetAppCertInfoAsyncContext>(data);
 
     context->credential = static_cast<struct Credential *>(CmMalloc(sizeof(struct Credential)));
@@ -141,7 +142,8 @@ static void GetAppCertInfoExecute(napi_env env, void *data) {
     context->result = CmGetAppCert(context->keyUri, context->store, context->credential);
 }
 
-static void GetAppCertInfoResolve(napi_env env, GetAppCertInfoAsyncContext context) {
+static void GetAppCertInfoResolve(napi_env env, GetAppCertInfoAsyncContext context)
+{
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
@@ -160,7 +162,8 @@ static void GetAppCertInfoResolve(napi_env env, GetAppCertInfoAsyncContext conte
     }
 }
 
-static void GetAppCertInfoComplete(napi_env env, napi_status status, void *data) {
+static void GetAppCertInfoComplete(napi_env env, napi_status status, void *data)
+{
     GetAppCertInfoAsyncContext context = static_cast<GetAppCertInfoAsyncContext>(data);
     GetAppCertInfoResolve(env, context);
     DeleteGetAppCertInfoAsyncContext(env, context);

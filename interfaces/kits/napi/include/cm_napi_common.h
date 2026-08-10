@@ -131,7 +131,7 @@ inline napi_value GetInt32(napi_env env, int32_t value)
     return result;
 }
 
-inline void FreeCmBlob(CmBlob *&blob)
+void FreeCmBlob(CmBlob *&blob)
 {
     if (blob == nullptr) {
         return;

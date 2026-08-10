@@ -314,7 +314,7 @@ static void InitCertInfoPropertyMap(std::map<std::string, std::string> &property
     propertyMap["uri"] = std::string(certInfo->uri,
         strnlen(certInfo->uri, MAX_LEN_URI));
     propertyMap["certAlias"] = std::string(certInfo->certAlias,
-        strnlen(certInfo->certAlias,MAX_LEN_CERT_ALIAS));
+        strnlen(certInfo->certAlias, MAX_LEN_CERT_ALIAS));
     propertyMap["issuerName"] = std::string(certInfo->issuerName,
         strnlen(certInfo->issuerName, MAX_LEN_ISSUER_NAME));
     propertyMap["subjectName"] = std::string(certInfo->subjectName,

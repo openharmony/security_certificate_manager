@@ -77,12 +77,14 @@ static napi_value UninstallAllAppCertParseParams(
     return GetInt32(env, 0);
 }
 
-static void UninstallAllAppCertExecute(napi_env env, void *data) {
+static void UninstallAllAppCertExecute(napi_env env, void *data)
+{
     UninstallAllAppCertAsyncContext context = static_cast<UninstallAllAppCertAsyncContext>(data);
     context->result = CmUninstallAllAppCert();
 }
 
-static void UninstallAppCertResolve(napi_env env, UninstallAllAppCertAsyncContext context) {
+static void UninstallAppCertResolve(napi_env env, UninstallAllAppCertAsyncContext context)
+{
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
@@ -97,7 +99,8 @@ static void UninstallAppCertResolve(napi_env env, UninstallAllAppCertAsyncContex
     GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
 }
 
-static void UninstallAppCertComplete(napi_env env, napi_status status, void *data) {
+static void UninstallAppCertComplete(napi_env env, napi_status status, void *data)
+{
     UninstallAllAppCertAsyncContext context = static_cast<UninstallAllAppCertAsyncContext>(data);
     UninstallAppCertResolve(env, context);
     DeleteUninstallAllAppCertAsyncContext(env, context);
