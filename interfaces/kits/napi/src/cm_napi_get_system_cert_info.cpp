@@ -108,7 +108,7 @@ static napi_value GetCertInfoWriteResult(napi_env env, GetCertInfoAsyncContext c
     napi_value certInfo = GenerateCertInfo(env, context->certificate);
     if (certInfo != nullptr) {
         napi_set_named_property(env, result, CM_RESULT_PRPPERTY_CERTINFO.c_str(), certInfo);
-    } else if (context->scope == CM_SYSTEM_TRUSTED_STORE) {
+    } else if (context->store == CM_SYSTEM_TRUSTED_STORE) {
         NAPI_CALL(env, napi_get_undefined(env, &certInfo));
         napi_set_named_property(env, result, CM_RESULT_PRPPERTY_CERTINFO.c_str(), certInfo);
     } else {
