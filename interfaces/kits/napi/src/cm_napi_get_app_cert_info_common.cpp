@@ -116,7 +116,7 @@ napi_value GetAppCertInfoWriteResult(napi_env env, GetAppCertInfoAsyncContext co
     } else if (context->store == APPLICATION_SYSTEM_CERTIFICATE_STORE) {
         NAPI_CALL(env, napi_get_undefined(env, &certInfo));
         napi_set_named_property(env, result, CM_RESULT_PRPPERTY_CREDENTIAL.c_str(), certInfo);
-    }else {
+    } else {
         NAPI_CALL(env, napi_get_undefined(env, &result));
     }
     return result;
