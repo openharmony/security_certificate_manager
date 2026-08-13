@@ -91,7 +91,8 @@ napi_value GetAppCertListByUidWriteResult(napi_env env, GetAppCertListByUidAsync
     if (credentail != nullptr) {
         napi_set_named_property(env, result, CM_RESULT_PRPPERTY_CREDENTIAL_LIST.c_str(), credentail);
     } else {
-        NAPI_CALL(env, napi_get_undefined(env, &result));
+        NAPI_CALL(env, napi_create_array(env, &credentail));
+        napi_set_named_property(env, result, CM_RESULT_PRPPERTY_CREDENTIAL_LIST.c_str(), credentail);
     }
     return result;
 }
