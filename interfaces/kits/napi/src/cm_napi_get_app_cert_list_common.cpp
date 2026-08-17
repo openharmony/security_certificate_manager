@@ -91,6 +91,9 @@ napi_value GetAppCertListWriteResult(napi_env env, GetAppCertListAsyncContext co
         context->credentialList->credentialAbstract, context->credentialList->credentialCount);
     if (credentail != nullptr) {
         napi_set_named_property(env, result, CM_RESULT_PRPPERTY_CREDENTIAL_LIST.c_str(), credentail);
+    } else if (context->store == APPLICATION_CERTIFICATE_STORE) {
+        NAPI_CALL(env, napi_create_array(env, &credentail));
+        napi_set_named_property(env, result, CM_RESULT_PRPPERTY_CREDENTIAL_LIST.c_str(), credentail);
     } else {
         NAPI_CALL(env, napi_get_undefined(env, &result));
     }

@@ -205,6 +205,9 @@ static napi_value InstallAppCertWriteResult(napi_env env, InstallAppCertAsyncCon
         NAPI_AUTO_LENGTH, &keyUri));
     if (keyUri != nullptr) {
         napi_set_named_property(env, result, CM_CERT_PROPERTY_URI.c_str(), keyUri);
+    } else if (context->store == APPLICATION_SYSTEM_CERTIFICATE_STORE) {
+        NAPI_CALL(env, napi_get_undefined(env, &keyUri));
+        napi_set_named_property(env, result, CM_CERT_PROPERTY_URI.c_str(), keyUri);
     } else {
         NAPI_CALL(env, napi_get_undefined(env, &result));
     }

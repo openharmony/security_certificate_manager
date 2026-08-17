@@ -139,6 +139,9 @@ static napi_value GetCertListWriteResult(napi_env env, GetCertListAsyncContext c
         context->certificateList->certAbstract, context->certificateList->certsCount);
     if (certChains != nullptr) {
         napi_set_named_property(env, result, CM_RESULT_PRPPERTY_CERTLIST.c_str(), certChains);
+    } else if (context->store == CM_SYSTEM_TRUSTED_STORE) {
+        NAPI_CALL(env, napi_create_array(env, &certChains));
+        napi_set_named_property(env, result, CM_RESULT_PRPPERTY_CERTLIST.c_str(), certChains);
     } else {
         NAPI_CALL(env, napi_get_undefined(env, &result));
     }
