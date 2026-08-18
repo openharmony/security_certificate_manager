@@ -416,6 +416,7 @@ int32_t GetX509IssueNameLongFormat(const X509 *x509cert, char *outBuf, uint32_t 
     for (uint32_t j = 0; j < sizeList; ++j) {
         if (offset >= outBufMaxSize) {
             CM_LOG_E("offset exeeded outBufMaxSize");
+            return CMR_ERROR_BUFFER_TOO_SMALL;
         }
         char issueName[NAME_MAX_SIZE] = {0};
         int32_t length = GetX509IssueName(x509cert, issueNameList[j], issueName, NAME_MAX_SIZE);

@@ -275,7 +275,7 @@ int32_t StartUIExtensionAbility(std::shared_ptr<AbilityContext> context, OHOS::A
      */
     CM_LOG_D("begin StartUIExtensionAbility");
     if (!CheckBasicPermission()) {
-        CM_LOG_E("not has basic permission");
+        CM_LOG_E("lacks basic permission");
         return CMR_DIALOG_ERROR_PERMISSION_DENIED;
     }
 
@@ -317,7 +317,7 @@ int32_t StartUIAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Wan
     std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback)
 {
     if (!CheckBasicPermission()) {
-        CM_LOG_E("not has basic permission");
+        CM_LOG_E("lacks basic permission");
         return CMR_DIALOG_ERROR_PERMISSION_DENIED;
     }
 

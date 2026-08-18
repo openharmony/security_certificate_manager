@@ -117,11 +117,16 @@ static void SubscribEvent()
     return;
 }
 
+static void *SubscribEventAdapter(void *)
+{
+    SubscribEvent();
+    return nullptr;
+}
+
 static void CmSubscribeSystemEvent()
 {
     pthread_t subscribeThread;
-    int32_t ret = pthread_create(&subscribeThread, nullptr,
-        reinterpret_cast<void *(*)(void *)>(SubscribEvent), nullptr);
+    int32_t ret = pthread_create(&subscribeThread, nullptr, SubscribEventAdapter, nullptr);
     if (ret != 0) {
         CM_LOG_E("create thread failed, ret = %d", ret);
         return;

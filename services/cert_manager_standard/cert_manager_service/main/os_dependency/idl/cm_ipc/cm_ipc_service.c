@@ -767,6 +767,7 @@ static int32_t CmAppCertificateInfoPack(struct CmBlob *certificateInfo,
         return CMR_ERROR_MALLOC_FAIL;
     }
     certificateInfo->size = buffSize;
+    (void)memset_s(certificateInfo->data, buffSize, 0, buffSize);
 
     uint32_t offset = 0;
     if (CopyCertSize(certBlob, certificateInfo, &offset) != CM_SUCCESS) {
@@ -806,6 +807,7 @@ static int32_t CmAppCertificateInfoPack(struct CmBlob *certificateInfo,
         return ret;
     }
 
+    certificateInfo->size = offset;
     return ret;
 }
 

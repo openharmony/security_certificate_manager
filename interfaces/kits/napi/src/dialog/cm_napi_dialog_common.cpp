@@ -131,6 +131,7 @@ void StartUIAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
     if (abilityContext == nullptr) {
         CM_LOG_E("get abilityContext failed");
         ThrowError(asyncContext->env, PARAM_ERROR, "abilityContext is null", asyncContext->metricsReport.get());
+        return;
     }
 
     OHOS::AbilityRuntime::RuntimeTask task = [uiExtCallback](

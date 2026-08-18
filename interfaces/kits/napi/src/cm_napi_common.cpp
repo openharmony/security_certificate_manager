@@ -364,7 +364,11 @@ napi_value GenerateCredentialArray(napi_env env,
     NAPI_CALL(env, napi_create_array(env, &array));
     for (uint32_t i = 0; i < credentialCount; i++) {
         napi_value element = GenerateUkeyCertInfo(env, &credential[i]);
-        napi_set_element(env, array, i, element);
+        if (element == nullptr) {
+            CM_LOG_E("gen ukey info failed, element is nullptr, i = %u", i);
+        } else {
+            napi_set_element(env, array, i, element);
+        }
     }
     return array;
 }
