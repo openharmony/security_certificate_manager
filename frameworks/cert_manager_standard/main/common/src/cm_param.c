@@ -144,7 +144,7 @@ int32_t CmBuildParamSet(struct CmParamSet **paramSet)
 
 void CmFreeParamSet(struct CmParamSet **paramSet)
 {
-    if (paramSet == NULL) {
+    if (paramSet == NULL || *paramSet == NULL) {
         CM_LOG_E("invalid free paramset!");
         return;
     }
