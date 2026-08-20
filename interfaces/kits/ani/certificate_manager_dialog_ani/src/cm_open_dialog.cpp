@@ -111,6 +111,7 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
 
     ani_object businessError{};
     if (!BuildInvokeBusinessError(env, code, businessError)) {
+        ReleaseInvokeResources(env, this->aniCallback, this->vm);
         return;
     }
 
@@ -118,6 +119,7 @@ void CmAniUIExtensionCallback::invokeCallback(ani_env *env, const int32_t code, 
         "C{@ohos.base.BusinessError}Y:", businessError, result);
     if (status != ANI_OK) {
         CM_LOG_E("invoke callback failed. status = %d", static_cast<int32_t>(status));
+        ReleaseInvokeResources(env, this->aniCallback, this->vm);
         return;
     }
     ReleaseInvokeResources(env, this->aniCallback, this->vm);

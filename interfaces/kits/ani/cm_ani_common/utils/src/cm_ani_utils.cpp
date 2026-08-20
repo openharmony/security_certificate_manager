@@ -657,11 +657,6 @@ int32_t GenerateUint8Array(ani_env *env, const CmBlob *data, ani_object &resultO
 
 static int32_t GetPurposeEnumValue(ani_env *env, ani_object aniSpec, uint32_t *value)
 {
-    ani_enum purposeEnum;
-    if (env->FindEnum(KEY_PURPOSE_ENUM, &purposeEnum) != ANI_OK) {
-        CM_LOG_E("find KEY_PURPOSE_ENUM failed.");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
     ani_enum_item purpose;
     if (env->Object_GetPropertyByName_Ref(aniSpec, "purpose", (ani_ref *)&purpose) != ANI_OK) {
         CM_LOG_E("get purpose enumItem failed.");
@@ -676,11 +671,6 @@ static int32_t GetPurposeEnumValue(ani_env *env, ani_object aniSpec, uint32_t *v
 
 static int32_t GetPaddingEnumValue(ani_env *env, ani_object aniSpec, uint32_t *value)
 {
-    ani_enum paddingEnum;
-    if (env->FindEnum(KEY_PADDING_ENUM, &paddingEnum) != ANI_OK) {
-        CM_LOG_E("find KEY_PADDING_ENUM error. status.");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
     ani_enum_item padding;
     if (env->Object_GetPropertyByName_Ref(aniSpec, "padding", (ani_ref *)&padding) != ANI_OK) {
         CM_LOG_E("get padding prop failed.");
@@ -707,11 +697,6 @@ static int32_t GetPaddingEnumValue(ani_env *env, ani_object aniSpec, uint32_t *v
 
 static int32_t GetDigestEnumValue(ani_env *env, ani_object aniSpec, uint32_t *value)
 {
-    ani_enum digestEnum;
-    if (env->FindEnum(KEY_DIGEST_ENUM, &digestEnum) != ANI_OK) {
-        CM_LOG_E("find KEY_DIGEST_ENUM error.");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
     ani_enum_item digest;
     if (env->Object_GetPropertyByName_Ref(aniSpec, "digest", (ani_ref *)&digest) != ANI_OK) {
         CM_LOG_E("get digest prop failed.");
