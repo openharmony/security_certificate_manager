@@ -636,7 +636,7 @@ void CmFreeCertBlob(struct CertBlob *certBlob)
         return;
     }
 
-    for (uint32_t i = 0; i < MAX_COUNT_CERTIFICATE; i++) {
+    for (uint32_t i = 0; i < MAX_COUNT_CERTIFICATE_ALL; i++) {
         CM_FREE_BLOB(certBlob->uri[i]);
         CM_FREE_BLOB(certBlob->subjectName[i]);
         CM_FREE_BLOB(certBlob->certAlias[i]);
@@ -659,7 +659,7 @@ uint32_t CmGetMatchedCertIndex(const struct CmMutableBlob *certFileList, const s
             continue;
         }
 
-        if ((certUri->size <= cFileList[i].fileName.size) &&
+        if ((certUri->size == cFileList[i].fileName.size) &&
             (memcmp(certUri->data, cFileList[i].fileName.data, certUri->size) == 0)) {
             matchIndex = i;
             break;

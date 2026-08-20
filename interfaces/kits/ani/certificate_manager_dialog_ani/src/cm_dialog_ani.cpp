@@ -46,6 +46,11 @@ static ani_object GenerateResult(ani_env *env, int32_t code, const char *message
 
 static ani_object InvokeCallbackVoid(ani_env *env, ani_object callback)
 {
+    if (callback == nullptr) {
+        CM_LOG_E("callback is null");
+        return nullptr;
+    }
+
     ani_object businessError{};
     if (AniUtils::GenerateBusinessError(env, CM_SUCCESS, "", businessError) != CM_SUCCESS) {
         CM_LOG_E("generate businessError failed.");

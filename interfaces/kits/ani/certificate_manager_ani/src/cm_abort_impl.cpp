@@ -56,6 +56,7 @@ int32_t CmAbortImpl::UnpackResult()
 
 void CmAbortImpl::OnFinish()
 {
+    CM_FREE_BLOB(this->handle);
     return;
 }
 }

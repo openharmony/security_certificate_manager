@@ -475,12 +475,12 @@ static int32_t UnpackCertUriList(struct CertUriList *certUriList, uint8_t *inDat
         return CMR_ERROR_MALLOC_FAIL;
     }
     (void)memset_s(uriList, uriListSize, 0, uriListSize);
-    certUriList->uriList = uriList;
 
     uint8_t *uriData = (uint8_t *)uriList + (sizeof(struct CmBlob) * certCount);
 
     if (memcpy_s(uriData, MAX_LEN_URI * certCount, data, MAX_LEN_URI * certCount) != EOK) {
         CM_LOG_E("memory copy failed");
+        CM_FREE_PTR(uriList);
         return CMR_ERROR_MEM_OPERATION_COPY;
     }
     for (uint32_t i = 0; i < certCount; ++i) {
@@ -488,6 +488,7 @@ static int32_t UnpackCertUriList(struct CertUriList *certUriList, uint8_t *inDat
         uriList[i].size = MAX_LEN_URI;
         uriData += MAX_LEN_URI;
     }
+    certUriList->uriList = uriList;
     return CM_SUCCESS;
 }
 
@@ -512,7 +513,7 @@ CM_API_EXPORT int32_t CmInstallUserTrustedP7BCert(const struct CmInstallCertInfo
         CM_FREE_PTR(outData);
         return ret;
     }
-    ret = UnpackCertUriList(certUriList, outData, outDataSize);
+    ret = UnpackCertUriList(certUriList, outData, certUriListBlob.size);
     CM_FREE_PTR(outData);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("unpack certUriList failed, ret = %d", ret);
@@ -600,7 +601,7 @@ CM_API_EXPORT int32_t CmCheckAppPermission(const struct CmBlob *keyUri, uint32_t
     enum CmPermissionState *hasPermission, struct CmBlob *huksAlias)
 {
     CM_LOG_D("enter check app permission");
-    if (keyUri == NULL) {
+    if (keyUri == NULL || hasPermission == NULL) {
         CM_LOG_E("CmCheckAppPermission params is invalid");
         return CMR_ERROR_NULL_POINTER;
     }

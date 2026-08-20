@@ -187,7 +187,7 @@ napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob)
 
     napi_status status = napi_get_typedarray_info(
         env, object, &arrayType, &length, static_cast<void **>(&rawData), &arrayBuffer, &offset);
-    if (status != napi_ok) {
+    if (status != napi_ok || arrayType != napi_uint8_array) {
         CM_LOG_E("the type of param is not uint8_array");
         return nullptr;
     }
@@ -209,6 +209,7 @@ napi_value GetUint8Array(napi_env env, napi_value object, CmBlob &arrayBlob)
     (void)memset_s(arrayBlob.data, length, 0, length);
     if (memcpy_s(arrayBlob.data, length, rawData, length) != EOK) {
         CM_LOG_E("memcpy_s fail, length = %x", length);
+        CM_FREE_PTR(arrayBlob.data);
         return nullptr;
     }
     arrayBlob.size = static_cast<uint32_t>(length);
@@ -312,11 +313,11 @@ napi_value GenerateCertAbstractArray(napi_env env, const struct CertAbstract *ce
 
         napi_value element = nullptr;
         napi_create_object(env, &element);
-        napi_set_named_property (env, element, CM_CERT_PROPERTY_URI.c_str(), uri);
-        napi_set_named_property (env, element, CM_CERT_PROPERTY_CERTALIAS.c_str(), certAlias);
-        napi_set_named_property (env, element, CM_CERT_PROPERTY_STATUS.c_str(), status);
-        napi_set_named_property (env, element, CM_CERT_PROPERTY_STATE.c_str(), status);
-        napi_set_named_property (env, element, CM_CERT_PROPERTY_SUBJECTNAME.c_str(), subjectName);
+        napi_set_named_property(env, element, CM_CERT_PROPERTY_URI.c_str(), uri);
+        napi_set_named_property(env, element, CM_CERT_PROPERTY_CERTALIAS.c_str(), certAlias);
+        napi_set_named_property(env, element, CM_CERT_PROPERTY_STATUS.c_str(), status);
+        napi_set_named_property(env, element, CM_CERT_PROPERTY_STATE.c_str(), status);
+        napi_set_named_property(env, element, CM_CERT_PROPERTY_SUBJECTNAME.c_str(), subjectName);
 
         napi_set_element(env, array, i, element);
     }
@@ -344,9 +345,9 @@ napi_value GenerateCredentialAbstractArray(napi_env env,
 
         napi_value element = nullptr;
         napi_create_object(env, &element);
-        napi_set_named_property (env, element, CM_CERT_PROPERTY_TYPE.c_str(), type);
-        napi_set_named_property (env, element, CM_CERT_PROPERTY_CREDENTIAL_ALIAS.c_str(), alias);
-        napi_set_named_property (env, element, CM_CERT_PROPERTY_KEY_URI.c_str(), keyUri);
+        napi_set_named_property(env, element, CM_CERT_PROPERTY_TYPE.c_str(), type);
+        napi_set_named_property(env, element, CM_CERT_PROPERTY_CREDENTIAL_ALIAS.c_str(), alias);
+        napi_set_named_property(env, element, CM_CERT_PROPERTY_KEY_URI.c_str(), keyUri);
 
         napi_set_element(env, array, i, element);
     }
@@ -362,10 +363,12 @@ napi_value GenerateCredentialArray(napi_env env,
     napi_value array = nullptr;
     NAPI_CALL(env, napi_create_array(env, &array));
     for (uint32_t i = 0; i < credentialCount; i++) {
-        napi_value element = nullptr;
-        napi_create_object(env, &element);
-        element = GenerateUkeyCertInfo(env, &credential[i]);
-        napi_set_element(env, array, i, element);
+        napi_value element = GenerateUkeyCertInfo(env, &credential[i]);
+        if (element == nullptr) {
+            CM_LOG_E("gen ukey info failed, element is nullptr, i = %u", i);
+        } else {
+            napi_set_element(env, array, i, element);
+        }
     }
     return array;
 }
@@ -408,7 +411,7 @@ napi_value GenerateCertInfo(napi_env env, const struct CertInfo *certInfo)
     NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_URI.c_str(), cInfVal.uri));
     NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_CERTALIAS.c_str(), cInfVal.certAlias));
     NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_STATUS.c_str(), cInfVal.status));
-    NAPI_CALL(env, napi_set_named_property (env, elem, CM_CERT_PROPERTY_STATE.c_str(), cInfVal.status));
+    NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_STATE.c_str(), cInfVal.status));
 
     NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_ISSUERNAME.c_str(), cInfVal.issuerName));
     NAPI_CALL(env, napi_set_named_property(env, elem, CM_CERT_PROPERTY_SUBJECTNAME.c_str(), cInfVal.subjectName));
@@ -647,6 +650,33 @@ void DeleteNapiContext(napi_env env, napi_async_work &asyncWork, napi_ref &callb
     }
 }
 
+void DeferredResolveUndefined(napi_env env, napi_deferred deferred)
+{
+    if (env == nullptr || deferred == nullptr) {
+        return;
+    }
+    napi_value result = nullptr;
+    napi_get_undefined(env, &result);
+    napi_resolve_deferred(env, deferred, result);
+}
+
+void FreeCmBlob(CmBlob *&blob)
+{
+    if (blob == nullptr) {
+        return;
+    }
+
+    if (blob->data != nullptr) {
+        (void)memset_s(blob->data, blob->size, 0, blob->size);
+        CmFree(blob->data);
+        blob->data = nullptr;
+    }
+    blob->size = 0;
+
+    CmFree(blob);
+    blob = nullptr;
+}
+
 void FreeCmContext(CmContext *&context)
 {
     if (context == nullptr) {
@@ -662,7 +692,13 @@ void FreeCmContext(CmContext *&context)
 
 void FreeCertList(CertList *&certList)
 {
-    if (certList == nullptr || certList->certAbstract == nullptr) {
+    if (certList == nullptr) {
+        return;
+    }
+
+    if (certList->certAbstract == nullptr) {
+        CmFree(certList);
+        certList = nullptr;
         return;
     }
 

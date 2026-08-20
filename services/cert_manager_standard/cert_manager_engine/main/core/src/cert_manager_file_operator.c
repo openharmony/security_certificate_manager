@@ -612,7 +612,10 @@ static int32_t DirRemove(const char *path)
             CM_LOG_E("Dir is not empty");
             return CMR_ERROR_INVALID_ARGUMENT;
         }
-        rmdir(filePath);
+        if (rmdir(filePath) != 0) {
+            CM_LOG_E("failed  to remove dir, errno = 0x%x", errno);
+            return CMR_ERROR_REMOVE_FILE_FAIL;
+        }
         return CMR_OK;
     }
     return CMR_ERROR_INVALID_ARGUMENT;

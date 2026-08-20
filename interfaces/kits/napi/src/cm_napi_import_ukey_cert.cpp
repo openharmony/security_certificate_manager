@@ -236,9 +236,8 @@ static void ImportUkeyCertExecute(napi_env env, void *data)
     context->result = CmImportUkeyCert(context->keyUri, &context->cert, &context->ukeyInfo);
 }
 
-static void ImportUkeyCertComplete(napi_env env, napi_status status, void *data)
+static void ImportUkeyCertResolve(napi_env env, ImportUkeyCertAsyncContext context)
 {
-    ImportUkeyCertAsyncContext context = static_cast<ImportUkeyCertAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
@@ -251,6 +250,12 @@ static void ImportUkeyCertComplete(napi_env env, napi_status status, void *data)
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
     }
     GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+}
+
+static void ImportUkeyCertComplete(napi_env env, napi_status status, void *data)
+{
+    ImportUkeyCertAsyncContext context = static_cast<ImportUkeyCertAsyncContext>(data);
+    ImportUkeyCertResolve(env, context);
     DeleteImportUkeyCertAsyncContext(env, context);
 }
 
@@ -274,6 +279,7 @@ static napi_value ImportUkeyCertAsyncWork(napi_env env, ImportUkeyCertAsyncConte
     if (napiStatus != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("import ukey cert could not queue async work");
+        DeferredResolveUndefined(env, asyncContext->deferred);
         return nullptr;
     }
     return promise;

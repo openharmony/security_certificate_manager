@@ -370,6 +370,7 @@ void CmFreeFileNames(struct CmBlob *fileNames, const uint32_t fileSize)
     for (uint32_t i = 0; i < fileSize; i++) {
         if (fileNames[i].data != NULL) {
             CMFree(fileNames[i].data);
+            fileNames[i].data = NULL;
             fileNames[i].size = 0;
         }
     }
@@ -746,6 +747,10 @@ int32_t CmGetDisplayNameByURI(const struct CmBlob *uri, const char *object, stru
     if ((CmCheckBlob(uri) != CM_SUCCESS) || (object == NULL) ||
         (CmCheckBlob(displayName) != CM_SUCCESS)) {
         CM_LOG_E("input param is invalid");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if (uri->data[uri->size - 1] != '\0') {
+        CM_LOG_E("uri is not null-terminated");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     int32_t ret = CM_SUCCESS;

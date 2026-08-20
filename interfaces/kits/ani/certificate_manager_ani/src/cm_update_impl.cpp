@@ -62,6 +62,7 @@ int32_t CmUpdateImpl::UnpackResult()
 
 void CmUpdateImpl::OnFinish()
 {
+    CM_FREE_BLOB(this->handle);
     return;
 }
 }

@@ -15,6 +15,8 @@
 
 #include "cm_napi_dialog_callback.h"
 
+#include <mutex>
+
 #include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_log.h"
@@ -43,6 +45,7 @@ bool CmUIExtensionCallback::SetErrorCode(int32_t code)
         CM_LOG_E("OnError reqContext is nullptr");
         return false;
     }
+    std::lock_guard<std::mutex> lock(this->callbackMutex_);
     if (this->alreadyCallback_) {
         CM_LOG_I("alreadyCallback");
         return false;

@@ -89,6 +89,7 @@ static int32_t GetUserCertData(napi_env env, napi_value object, CmBlob **outCert
     napi_value result = GetUint8Array(env, object, *(userCert));
     if (result == nullptr) {
         CM_LOG_E("could not get userCert data");
+        CM_FREE_BLOB(*userCert);
         CM_FREE_PTR(userCert);
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -424,9 +425,8 @@ static napi_value ConvertInstallCertResult(napi_env env, const UserCertAsyncCont
     return ConvertResultCertUri(env, context->certUri);
 }
 
-static void InstallUserCertComplete(napi_env env, napi_status status, void *data)
+static void InstallUserCertResolve(napi_env env, UserCertAsyncContext context)
 {
-    UserCertAsyncContext context = static_cast<UserCertAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
@@ -440,6 +440,12 @@ static void InstallUserCertComplete(napi_env env, napi_status status, void *data
     }
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
+}
+
+static void InstallUserCertComplete(napi_env env, napi_status status, void *data)
+{
+    UserCertAsyncContext context = static_cast<UserCertAsyncContext>(data);
+    InstallUserCertResolve(env, context);
     FreeUserCertAsyncContext(env, context);
 }
 
@@ -462,14 +468,14 @@ static napi_value InstallUserCertAsyncWork(napi_env env, UserCertAsyncContext co
     if (status != napi_ok) {
         ThrowError(env, PARAM_ERROR, "queue async work error", context->metricsReport.get());
         CM_LOG_E("queue async work failed when installing user cert");
+        DeferredResolveUndefined(env, context->deferred);
         return nullptr;
     }
     return promise;
 }
 
-static void UninstallAllUserCertComplete(napi_env env, napi_status status, void *data)
+static void UninstallAllUserCertResolve(napi_env env, UserCertAsyncContext context)
 {
-    UserCertAsyncContext context = static_cast<UserCertAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->errCode == CM_SUCCESS) {
         napi_create_uint32(env, 0, &result[0]);
@@ -482,6 +488,12 @@ static void UninstallAllUserCertComplete(napi_env env, napi_status status, void 
     napi_get_undefined(env, &result[1]);
 
     GeneratePromise(env, context->deferred, context->errCode, result, CM_ARRAY_SIZE(result));
+}
+
+static void UninstallAllUserCertComplete(napi_env env, napi_status status, void *data)
+{
+    UserCertAsyncContext context = static_cast<UserCertAsyncContext>(data);
+    UninstallAllUserCertResolve(env, context);
     FreeUserCertAsyncContext(env, context);
 }
 
@@ -510,6 +522,7 @@ static napi_value UninstallAllUserCertAsyncWork(napi_env env, UserCertAsyncConte
     if (status != napi_ok) {
         ThrowError(env, PARAM_ERROR, "queue async work error", context->metricsReport.get());
         CM_LOG_E("queue async work failed uninstall all user cert");
+        DeferredResolveUndefined(env, context->deferred);
         return nullptr;
     }
     return promise;

@@ -19,6 +19,7 @@
 #include "cert_manager_api.h"
 #include "cm_ani_common.h"
 #include "cm_result_builder.h"
+#include "securec.h"
 
 namespace OHOS::Security::CertManager::Ani {
 CmInstallUserCaSyncImpl::CmInstallUserCaSyncImpl(ani_env *env, ani_arraybuffer aniCertData,
@@ -89,6 +90,8 @@ int32_t CmInstallUserCaSyncImpl::UnpackResult()
 void CmInstallUserCaSyncImpl::OnFinish()
 {
     CM_FREE_BLOB(certUri);
+    (void)memset_s(this->certData.data, this->certData.size, 0, this->certData.size);
+    CM_FREE_BLOB(this->certData);
     return;
 }
 }

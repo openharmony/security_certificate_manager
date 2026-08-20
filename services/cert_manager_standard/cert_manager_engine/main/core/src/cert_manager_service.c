@@ -365,12 +365,20 @@ int32_t CmServiceAbort(const struct CmContext *context, const struct CmBlob *han
 
 static int32_t DeepCopyPath(const uint8_t *srcData, uint32_t srcLen, struct CmMutableBlob *dest)
 {
+    if (srcData == NULL) {
+        CM_LOG_E("srcData is NULL");
+        return CMR_ERROR_NULL_POINTER;
+    }
     uint8_t *data = (uint8_t *)CMMalloc(srcLen);
     if (data == NULL) {
         CM_LOG_E("malloc failed");
         return CMR_ERROR_MALLOC_FAIL;
     }
-    (void)memcpy_s(data, srcLen, srcData, srcLen);
+    if (memcpy_s(data, srcLen, srcData, srcLen) != EOK) {
+        CM_LOG_E("memcpy_s failed");
+        CM_FREE_PTR(data);
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
 
     dest->data = data;
     dest->size = srcLen;

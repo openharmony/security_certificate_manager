@@ -103,6 +103,42 @@ napi_value UninstallAppCertParseParams(
     return GetInt32(env, 0);
 }
 
+static void UninstallAppCertExecute(napi_env env, void *data)
+{
+    UninstallAppCertAsyncContext context = static_cast<UninstallAppCertAsyncContext>(data);
+    context->result = CmUninstallAppCert(context->keyUri, context->store);
+    if (context->store == APPLICATION_PRIVATE_CERTIFICATE_STORE && context->result == CMR_ERROR_NOT_EXIST) {
+        context->result = CM_SUCCESS;
+    }
+}
+
+static void UninstallAppCertComplete(napi_env env, UninstallAppCertAsyncContext context)
+{
+    napi_value result[RESULT_NUMBER] = { nullptr };
+    if (context->result == CM_SUCCESS) {
+        NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
+        NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
+        if (context->metricsReport != nullptr) {
+            context->metricsReport->Finish(CM_SUCCESS);
+        }
+    } else {
+        result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
+        NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
+    }
+    if (context->deferred != nullptr) {
+        GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
+    } else {
+        GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
+    }
+}
+
+static void UninstallAppCertComplete(napi_env env, napi_status status, void *data)
+{
+    UninstallAppCertAsyncContext context = static_cast<UninstallAppCertAsyncContext>(data);
+    UninstallAppCertComplete(env, context);
+    DeleteUninstallAppCertAsyncContext(env, context);
+}
+
 napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext &asyncContext)
 {
     napi_value promise = nullptr;
@@ -115,33 +151,8 @@ napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext 
         env,
         nullptr,
         resourceName,
-        [](napi_env env, void *data) {
-            UninstallAppCertAsyncContext context = static_cast<UninstallAppCertAsyncContext>(data);
-            context->result = CmUninstallAppCert(context->keyUri, context->store);
-            if (context->store == APPLICATION_PRIVATE_CERTIFICATE_STORE && context->result == CMR_ERROR_NOT_EXIST) {
-                context->result = CM_SUCCESS;
-            }
-        },
-        [](napi_env env, napi_status status, void *data) {
-            UninstallAppCertAsyncContext context = static_cast<UninstallAppCertAsyncContext>(data);
-            napi_value result[RESULT_NUMBER] = { nullptr };
-            if (context->result == CM_SUCCESS) {
-                NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
-                NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
-                if (context->metricsReport != nullptr) {
-                    context->metricsReport->Finish(CM_SUCCESS);
-                }
-            } else {
-                result[0] = GenerateBusinessError(env, context->result, context->metricsReport.get());
-                NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &result[1]));
-            }
-            if (context->deferred != nullptr) {
-                GeneratePromise(env, context->deferred, context->result, result, CM_ARRAY_SIZE(result));
-            } else {
-                GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
-            }
-            DeleteUninstallAppCertAsyncContext(env, context);
-        },
+        UninstallAppCertExecute,
+        UninstallAppCertComplete,
         static_cast<void *>(asyncContext),
         &asyncContext->asyncWork));
 
@@ -149,6 +160,7 @@ napi_value UninstallAppCertAsyncWork(napi_env env, UninstallAppCertAsyncContext 
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("could not queue async work");
+        DeferredResolveUndefined(env, asyncContext->deferred);
         return nullptr;
     }
 

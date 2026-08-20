@@ -309,6 +309,26 @@ CMResultBuilder *CMResultBuilder::setCertInfo(CertInfo *certInfo)
     return this;
 }
 
+static void InitCertInfoPropertyMap(std::map<std::string, std::string> &propertyMap, CertInfo *certInfo)
+{
+    propertyMap["uri"] = std::string(certInfo->uri,
+        strnlen(certInfo->uri, MAX_LEN_URI));
+    propertyMap["certAlias"] = std::string(certInfo->certAlias,
+        strnlen(certInfo->certAlias, MAX_LEN_CERT_ALIAS));
+    propertyMap["issuerName"] = std::string(certInfo->issuerName,
+        strnlen(certInfo->issuerName, MAX_LEN_ISSUER_NAME));
+    propertyMap["subjectName"] = std::string(certInfo->subjectName,
+        strnlen(certInfo->subjectName, MAX_LEN_SUBJECT_NAME));
+    propertyMap["serial"] = std::string(certInfo->serial,
+        strnlen(certInfo->serial, MAX_LEN_SERIAL));
+    propertyMap["notBefore"] = std::string(certInfo->notBefore,
+        strnlen(certInfo->notBefore, MAX_LEN_NOT_BEFORE));
+    propertyMap["notAfter"] = std::string(certInfo->notAfter,
+        strnlen(certInfo->notAfter, MAX_LEN_NOT_AFTER));
+    propertyMap["fingerprintSha256"] = std::string(certInfo->fingerprintSha256,
+        strnlen(certInfo->fingerprintSha256, MAX_LEN_FINGER_PRINT_SHA256));
+}
+
 int32_t CMResultBuilder::buildCertInfo()
 {
     if (this->certInfo == nullptr) {
@@ -322,14 +342,8 @@ int32_t CMResultBuilder::buildCertInfo()
         return ret;
     }
     std::map<std::string, std::string> propertyMap;
-    propertyMap["uri"] = std::string(this->certInfo->uri);
-    propertyMap["certAlias"] = std::string(this->certInfo->certAlias);
-    propertyMap["issuerName"] = std::string(this->certInfo->issuerName);
-    propertyMap["subjectName"] = std::string(this->certInfo->subjectName);
-    propertyMap["serial"] = std::string(this->certInfo->serial);
-    propertyMap["notBefore"] = std::string(this->certInfo->notBefore);
-    propertyMap["notAfter"] = std::string(this->certInfo->notAfter);
-    propertyMap["fingerprintSha256"] = std::string(this->certInfo->fingerprintSha256);
+    InitCertInfoPropertyMap(propertyMap, this->certInfo);
+
     ret = AniUtils::SetObjStringProperty(env, certInfoObj, propertyMap);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("set certInfo property failed.");

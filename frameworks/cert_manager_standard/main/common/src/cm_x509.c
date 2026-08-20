@@ -28,6 +28,7 @@
 #include "securec.h"
 
 #include "cm_log.h"
+#include "cm_mem.h"
 
 typedef X509_NAME *(FUNC)(const X509 *);
 typedef ASN1_TIME *(TIME_FUNC)(const X509 *);
@@ -413,6 +414,10 @@ int32_t GetX509IssueNameLongFormat(const X509 *x509cert, char *outBuf, uint32_t 
     const char *issueNameList[] = {CM_COMMON_NAME, CM_ORGANIZATION_UNIT_NAME, CM_ORGANIZATION_NAME};
     uint32_t sizeList = sizeof(issueNameList) / sizeof(issueNameList[0]);
     for (uint32_t j = 0; j < sizeList; ++j) {
+        if (offset >= outBufMaxSize) {
+            CM_LOG_E("offset exeeded outBufMaxSize");
+            return CMR_ERROR_BUFFER_TOO_SMALL;
+        }
         char issueName[NAME_MAX_SIZE] = {0};
         int32_t length = GetX509IssueName(x509cert, issueNameList[j], issueName, NAME_MAX_SIZE);
         if (length < 0) {
@@ -435,7 +440,8 @@ static struct tm *GetLocalTime(ASN1_TIME *asn1Time)
         return NULL;
     }
 
-    struct tm *gmTime = gmtime(&curLocalTimeSec);
+    struct tm gmTimeResult;
+    struct tm *gmTime = gmtime_r(&curLocalTimeSec, &gmTimeResult);
     if (gmTime == NULL) {
         CM_LOG_E("Failed to convert current local time to utc time");
         return NULL;
@@ -459,8 +465,15 @@ static struct tm *GetLocalTime(ASN1_TIME *asn1Time)
         CM_LOG_E("Failed to get utc time");
         return NULL;
     }
+
     time_t localTimeSec = utcTimeSec + curLocalTimeSec - curUtcTimeSec;
-    return localtime(&localTimeSec);
+    struct tm *localTimeResult = CmMalloc(sizeof(struct tm));
+    struct tm *retLocalTime = localtime_r(&localTimeSec, localTimeResult);
+    if (retLocalTime == NULL) {
+        CM_LOG_E("Failed to get local time.");
+        CM_FREE_PTR(localTimeResult);
+    }
+    return retLocalTime;
 }
 
 static int32_t GetX509Time(TIME_FUNC fuc, const X509 *x509cert, struct DataTime *pDataTime)
@@ -490,6 +503,8 @@ static int32_t GetX509Time(TIME_FUNC fuc, const X509 *x509cert, struct DataTime 
     pDataTime->hour = (uint32_t)localTime->tm_hour;
     pDataTime->min = (uint32_t)localTime->tm_min;
     pDataTime->second = (uint32_t)localTime->tm_sec;
+
+    CM_FREE_PTR(localTime);
     return CM_SUCCESS;
 }
 

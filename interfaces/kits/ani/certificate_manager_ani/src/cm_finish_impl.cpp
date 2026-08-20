@@ -132,6 +132,8 @@ int32_t CmVerifyFinishImpl::UnpackResult()
 
 void CmVerifyFinishImpl::OnFinish()
 {
+    CM_FREE_BLOB(this->handle);
+    CM_FREE_BLOB(this->signature);
     return;
 }
 }

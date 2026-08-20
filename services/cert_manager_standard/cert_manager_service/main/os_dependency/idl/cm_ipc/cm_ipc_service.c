@@ -424,6 +424,7 @@ static int32_t CmServiceGetAppCertListPack(struct CmBlob *credentialList, const 
         return CMR_ERROR_MALLOC_FAIL;
     }
     credentialList->size = buffSize;
+    (void)memset_s(credentialList->data, buffSize, 0, buffSize);
 
     uint32_t offset = 0;
     int32_t ret = CopyUint32ToBuffer(fileCount, credentialList, &offset);
@@ -465,6 +466,7 @@ static int32_t CmServiceGetAppCertListPack(struct CmBlob *credentialList, const 
         }
     }
 
+    credentialList->size = offset;
     return ret;
 }
 
@@ -765,6 +767,7 @@ static int32_t CmAppCertificateInfoPack(struct CmBlob *certificateInfo,
         return CMR_ERROR_MALLOC_FAIL;
     }
     certificateInfo->size = buffSize;
+    (void)memset_s(certificateInfo->data, buffSize, 0, buffSize);
 
     uint32_t offset = 0;
     if (CopyCertSize(certBlob, certificateInfo, &offset) != CM_SUCCESS) {
@@ -804,6 +807,7 @@ static int32_t CmAppCertificateInfoPack(struct CmBlob *certificateInfo,
         return ret;
     }
 
+    certificateInfo->size = offset;
     return ret;
 }
 

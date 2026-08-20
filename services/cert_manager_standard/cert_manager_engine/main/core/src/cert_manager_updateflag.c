@@ -393,6 +393,7 @@ static int32_t UpdateUserCerts(uint32_t userId, const char *userIdPath)
         ret = CmUidLayerGetFileCountAndNames(uidPath, fileNames, MAX_COUNT_CERTIFICATE, &fileCounts);
         if (ret != CM_SUCCESS) {
             CM_LOG_E("Get file count and names from path of userId layer failed");
+            CmFreeFileNames(fileNames, fileCounts);
             continue;
         }
 

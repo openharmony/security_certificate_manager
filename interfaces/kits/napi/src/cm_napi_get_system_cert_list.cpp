@@ -184,9 +184,8 @@ static void GetCertListExecute(napi_env env, void *data)
     }
 }
 
-static void GetCertListComplete(napi_env env, napi_status status, void *data)
+static void GetCertListResolve(napi_env env, GetCertListAsyncContext context)
 {
-    GetCertListAsyncContext context = static_cast<GetCertListAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
@@ -203,6 +202,12 @@ static void GetCertListComplete(napi_env env, napi_status status, void *data)
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
     }
+}
+
+static void GetCertListComplete(napi_env env, napi_status status, void *data)
+{
+    GetCertListAsyncContext context = static_cast<GetCertListAsyncContext>(data);
+    GetCertListResolve(env, context);
     DeleteGetCertListAsyncContext(env, context);
 }
 
@@ -227,6 +232,7 @@ static napi_value GetCertListAsyncWork(napi_env env, GetCertListAsyncContext &co
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("could not queue async work");
+        DeferredResolveUndefined(env, context->deferred);
         return nullptr;
     }
     return promise;

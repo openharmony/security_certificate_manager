@@ -128,6 +128,11 @@ void StartUIAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
     }
     CM_LOG_I("begin StartUIAbility");
     auto abilityContext = asyncContext->context;
+    if (abilityContext == nullptr) {
+        CM_LOG_E("get abilityContext failed");
+        ThrowError(asyncContext->env, PARAM_ERROR, "abilityContext is null", asyncContext->metricsReport.get());
+        return;
+    }
 
     OHOS::AbilityRuntime::RuntimeTask task = [uiExtCallback](
         const int32_t resultCode, const OHOS::AAFwk::Want& result, bool isInner) {
@@ -519,12 +524,13 @@ int32_t GetCallerLabelName(std::shared_ptr<CmUIExtensionRequestContext> asyncCon
         return CM_FAILURE;
     }
 
-    if (asyncContext->context->GetResourceManager() == nullptr) {
+    auto resMgr = asyncContext->context->GetResourceManager();
+    if (resMgr == nullptr) {
         CM_LOG_E("context get resourcemanager faild");
         return CMR_ERROR_NULL_POINTER;
     }
 
-    int32_t resCode = asyncContext->context->GetResourceManager()->GetStringById(bundleInfo.applicationInfo.labelId,
+    int32_t resCode = resMgr->GetStringById(bundleInfo.applicationInfo.labelId,
         asyncContext->labelName);
     if (resCode != CM_SUCCESS) {
         CM_LOG_E("getStringById is faild, resCode is %d", resCode);

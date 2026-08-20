@@ -92,5 +92,7 @@ int32_t CmImportUkeyCertImpl::UnpackResult()
 void CmImportUkeyCertImpl::OnFinish()
 {
     CM_FREE_BLOB(this->keyUri_);
+    (void)memset_s(this->cert_.data, this->cert_.size, 0, this->cert_.size);
+    CM_FREE_BLOB(this->cert_);
 }
 }  // namespace OHOS::Security::CertManager::Ani

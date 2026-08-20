@@ -584,6 +584,7 @@ int32_t CmInstallAppCertPro(
         }
     } while (0);
 
+    (void)memset_s(&appCert, sizeof(struct AppCert), 0, sizeof(struct AppCert));
     EVP_PKEY_free(priKey);
     return ret;
 }

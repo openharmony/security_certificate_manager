@@ -16,6 +16,8 @@
 #ifndef CM_NAPI_DIALOG_CALLBACK_H
 #define CM_NAPI_DIALOG_CALLBACK_H
 
+#include <mutex>
+
 #include "cm_napi_open_dialog.h"
 
 namespace CMNapi {
@@ -39,7 +41,10 @@ public:
     int32_t resultCode_ = 0;
     OHOS::AAFwk::Want resultWant_;
     std::shared_ptr<CmUIExtensionRequestContext> reqContext_ = nullptr;
+    
+private:
     bool alreadyCallback_ = false;
+    std::mutex callbackMutex_;
 };
 } // namespace CMNapi
 

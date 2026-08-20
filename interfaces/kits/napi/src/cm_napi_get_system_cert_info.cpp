@@ -145,9 +145,8 @@ static void GetCertInfoExecute(napi_env env, void *data)
     }
 }
 
-static void GetCertInfoComplete(napi_env env, napi_status status, void *data)
+static void GetCertInfoResolve(napi_env env, GetCertInfoAsyncContext context)
 {
-    GetCertInfoAsyncContext context = static_cast<GetCertInfoAsyncContext>(data);
     napi_value result[RESULT_NUMBER] = { nullptr };
     if (context->result == CM_SUCCESS) {
         NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, 0, &result[0]));
@@ -164,6 +163,12 @@ static void GetCertInfoComplete(napi_env env, napi_status status, void *data)
     } else {
         GenerateCallback(env, context->callback, result, CM_ARRAY_SIZE(result), context->result);
     }
+}
+
+static void GetCertInfoComplete(napi_env env, napi_status status, void *data)
+{
+    GetCertInfoAsyncContext context = static_cast<GetCertInfoAsyncContext>(data);
+    GetCertInfoResolve(env, context);
     DeleteGetCertInfoAsyncContext(env, context);
     CM_LOG_D("get system cert info end");
 }
@@ -188,6 +193,7 @@ static napi_value GetCertInfoAsyncWork(napi_env env, GetCertInfoAsyncContext &co
     if (status != napi_ok) {
         GET_AND_THROW_LAST_ERROR((env));
         CM_LOG_E("get system cert info could not queue async work");
+        DeferredResolveUndefined(env, context->deferred);
         return nullptr;
     }
     return promise;
