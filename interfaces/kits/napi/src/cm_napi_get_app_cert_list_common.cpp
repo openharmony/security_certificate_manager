@@ -270,7 +270,7 @@ napi_value CMNapiGetAppCertListCommon(napi_env env, napi_callback_info info, uin
     result = GetAppCertListAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
-        report->Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report->Finish(INNER_FAILURE);
         DeleteGetAppCertListAsyncContext(env, context);
         return nullptr;
     }
@@ -308,7 +308,7 @@ napi_value CMNapiGetCallingAppCertListCommon(napi_env env, napi_callback_info in
     result = GetCallingAppCertListAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
-        report->Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report->Finish(INNER_FAILURE);
         DeleteGetAppCertListAsyncContext(env, context);
         return nullptr;
     }

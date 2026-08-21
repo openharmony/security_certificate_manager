@@ -175,9 +175,9 @@ CMResultBuilder *CMResultBuilder::setCredential(Credential *credential)
 
 int32_t CMResultBuilder::credentialSetStringProperty(ani_object credentialObj)
 {
-    CmBlob typeBlob = { strlen(credential->type), (uint8_t *)credential->type };
-    CmBlob aliasBlob = { strlen(credential->alias), (uint8_t *)credential->alias };
-    CmBlob keyUriBlob = { strlen(credential->keyUri), (uint8_t *)credential->keyUri };
+    CmBlob typeBlob = { strnlen(credential->type, MAX_LEN_SUBJECT_NAME), (uint8_t *)credential->type };
+    CmBlob aliasBlob = { strnlen(credential->alias, MAX_LEN_CERT_ALIAS), (uint8_t *)credential->alias };
+    CmBlob keyUriBlob = { strnlen(credential->keyUri, MAX_LEN_URI), (uint8_t *)credential->keyUri };
     ani_string typeString = AniUtils::GenerateString(env, typeBlob);
     ani_string aliasString = AniUtils::GenerateString(env, aliasBlob);
     ani_string keyUriString = AniUtils::GenerateString(env, keyUriBlob);

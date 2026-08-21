@@ -20,6 +20,7 @@
 
 #include "cm_log.h"
 #include "cm_type.h"
+#include "cm_api_common.h"
 
 namespace CMNapi {
 

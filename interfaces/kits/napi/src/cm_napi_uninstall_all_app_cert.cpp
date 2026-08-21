@@ -143,7 +143,7 @@ napi_value CMNapiUninstallAllAppCert(napi_env env, napi_callback_info info)
     UninstallAllAppCertAsyncContext context = CreateUninstallAllAppCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
-        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report.Finish(INNER_FAILURE);
         return nullptr;
     }
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
@@ -158,7 +158,7 @@ napi_value CMNapiUninstallAllAppCert(napi_env env, napi_callback_info info)
     result = UninstallAllAppCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
-        reportHolder->Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        reportHolder->Finish(INNER_FAILURE);
         DeleteUninstallAllAppCertAsyncContext(env, context);
         return nullptr;
     }

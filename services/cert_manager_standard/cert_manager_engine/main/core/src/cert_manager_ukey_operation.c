@@ -328,7 +328,7 @@ int32_t CmServiceImportUkeyCert(struct CmBlob *keyUri, struct CmBlob *cert, uint
 {
     CM_LOG_I("CmServiceImportUkeyCert enter");
 
-    if (keyUri == NULL || cert == NULL) {
+    if (keyUri == NULL || keyUri->size > MAX_LEN_URI || cert == NULL) {
         CM_LOG_E("CmServiceImportUkeyCert params invalid");
         return CMR_ERROR_INVALID_ARGUMENT;
     }

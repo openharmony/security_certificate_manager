@@ -865,7 +865,7 @@ napi_value CMNapiInit(napi_env env, napi_callback_info info)
     SignVerifyAsyncContext context = InitSignVerifyAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init cm init context failed");
-        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report.Finish(INNER_FAILURE);
         return nullptr;
     }
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
@@ -897,7 +897,7 @@ napi_value CMNapiUpdate(napi_env env, napi_callback_info info)
     SignVerifyAsyncContext context = InitSignVerifyAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init cm update context failed");
-        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report.Finish(INNER_FAILURE);
         return nullptr;
     }
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
@@ -929,7 +929,7 @@ napi_value CMNapiFinish(napi_env env, napi_callback_info info)
     SignVerifyAsyncContext context = InitSignVerifyAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init cm finish context failed");
-        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report.Finish(INNER_FAILURE);
         return nullptr;
     }
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
@@ -961,7 +961,7 @@ napi_value CMNapiAbort(napi_env env, napi_callback_info info)
     SignVerifyAsyncContext context = InitSignVerifyAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init cm abort context failed");
-        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report.Finish(INNER_FAILURE);
         return nullptr;
     }
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));

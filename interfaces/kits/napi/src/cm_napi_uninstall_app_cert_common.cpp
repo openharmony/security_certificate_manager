@@ -202,7 +202,7 @@ napi_value CMNapiUninstallAppCertCommon(napi_env env, napi_callback_info info, u
     result = UninstallAppCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
-        report->Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report->Finish(INNER_FAILURE);
         DeleteUninstallAppCertAsyncContext(env, context);
         return nullptr;
     }

@@ -112,6 +112,7 @@ void StartUIExtensionAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncC
         CM_LOG_E("CreateModalUIExtension failed");
         ThrowError(asyncContext->env, PARAM_ERROR, "CreateModalUIExtension failed",
             asyncContext->metricsReport.get());
+        return;
     }
     uiExtCallback->SetSessionId(sessionId);
     return;
