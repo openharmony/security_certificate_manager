@@ -452,7 +452,7 @@ napi_value CMNapiGrantPublicCertificate(napi_env env, napi_callback_info info)
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init grant uid context failed");
-        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report.Finish(INNER_FAILURE);
         return nullptr;
     }
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
@@ -485,7 +485,7 @@ napi_value CMNapiIsAuthorizedApp(napi_env env, napi_callback_info info)
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init is authed uid context failed");
-        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report.Finish(INNER_FAILURE);
         return nullptr;
     }
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
@@ -518,7 +518,7 @@ napi_value CMNapiGetAuthorizedAppList(napi_env env, napi_callback_info info)
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init get authed uid list context failed");
-        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report.Finish(INNER_FAILURE);
         return nullptr;
     }
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
@@ -551,7 +551,7 @@ napi_value CMNapiRemoveGrantedPublic(napi_env env, napi_callback_info info)
     GrantAsyncContext context = InitGrantAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init remove uid context failed");
-        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report.Finish(INNER_FAILURE);
         return nullptr;
     }
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));

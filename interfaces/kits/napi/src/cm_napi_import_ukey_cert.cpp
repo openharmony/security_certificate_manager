@@ -294,7 +294,7 @@ napi_value CMNapiImportUkeyCert(napi_env env, napi_callback_info info)
     ImportUkeyCertAsyncContext context = CreateImportUkeyCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("could not create context");
-        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report.Finish(INNER_FAILURE);
         return nullptr;
     }
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
@@ -309,7 +309,7 @@ napi_value CMNapiImportUkeyCert(napi_env env, napi_callback_info info)
     result = ImportUkeyCertAsyncWork(env, context);
     if (result == nullptr) {
         CM_LOG_E("could not start async work");
-        reportHolder->Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        reportHolder->Finish(INNER_FAILURE);
         DeleteImportUkeyCertAsyncContext(env, context);
         return nullptr;
     }

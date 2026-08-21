@@ -562,7 +562,7 @@ napi_value CMNapiInstallUserTrustedCert(napi_env env, napi_callback_info info)
     UserCertAsyncContext context = InitUserCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init install user cert context failed");
-        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report.Finish(INNER_FAILURE);
         return nullptr;
     }
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
@@ -634,7 +634,7 @@ napi_value CMNapiUninstallAllUserTrustedCert(napi_env env, napi_callback_info in
     UserCertAsyncContext context = InitUserCertAsyncContext();
     if (context == nullptr) {
         CM_LOG_E("init uninstall all user cert context failed");
-        report.Finish(OHOS::Security::CertManager::INNER_FAILURE);
+        report.Finish(INNER_FAILURE);
         return nullptr;
     }
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
