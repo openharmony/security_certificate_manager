@@ -22,6 +22,7 @@
 #include "cm_cert_data_chain_key.h"
 #include "cm_mem.h"
 #include "cm_test_common.h"
+#include "cm_cert_property_rdb.h"
 
 #include "accesstoken_kit.h"
 #include "token_setproc.h"
@@ -758,6 +759,14 @@ HWTEST_F(CmAppCertTest, AppCertUnInstallAbnormalTest005, TestSize.Level0)
     ret = CmUninstallAppCert(&retUri, CM_PRI_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CMR_ERROR_NOT_EXIST) << "AppCertUnInstallAbnormalTest005 mismatch failed, retcode:" << ret;
 
+    /* rdb record must still exist (mismatched uninstall must not delete rdb data) */
+    (void)CreateCertPropertyRdb();
+    struct CertProperty certProp;
+    (void)memset_s(&certProp, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
+    ret = QueryCertProperty((char *)uriBuf, &certProp);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest005 query rdb failed, retcode:" << ret;
+    EXPECT_TRUE(strlen(certProp.uri) != 0) << "AppCertUnInstallAbnormalTest005 rdb record was deleted by mismatched uninstall";
+
     /* credential must still exist in list (rdb record not deleted by mistake) */
     struct CredentialList certificateList = { 0, nullptr };
     uint32_t buffSize = MAX_COUNT_CERTIFICATE * sizeof(struct CredentialAbstract);
@@ -802,6 +811,14 @@ HWTEST_F(CmAppCertTest, AppCertUnInstallAbnormalTest006, TestSize.Level0)
     /* mismatched store: private cert uninstalled with CREDENTIAL store must fail */
     ret = CmUninstallAppCert(&retUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CMR_ERROR_NOT_EXIST) << "AppCertUnInstallAbnormalTest006 mismatch failed, retcode:" << ret;
+
+    /* rdb record must still exist (mismatched uninstall must not delete rdb data) */
+    (void)CreateCertPropertyRdb();
+    struct CertProperty certProp;
+    (void)memset_s(&certProp, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
+    ret = QueryCertProperty((char *)uriBuf, &certProp);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest006 query rdb failed, retcode:" << ret;
+    EXPECT_TRUE(strlen(certProp.uri) != 0) << "AppCertUnInstallAbnormalTest006 rdb record was deleted by mismatched uninstall";
 
     /* private credential must still exist in list (rdb record not deleted by mistake) */
     struct CredentialList certificateList = { 0, nullptr };
