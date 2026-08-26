@@ -248,6 +248,7 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
 
     enum CmAuthStorageLevel level;
     struct CertProperty certProp;
+    (void)memset_s(&certProp, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
     certProp.level = ERROR_LEVEL;
     int32_t ret = QueryCertProperty((char *)keyUri->data, &certProp);
     if (ret != CM_SUCCESS) {
