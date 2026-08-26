@@ -247,14 +247,22 @@ int32_t CmRemoveAppCert(const struct CmContext *context, const struct CmBlob *ke
     ASSERT_ARGS(context && keyUri && keyUri->data && keyUri->size);
 
     enum CmAuthStorageLevel level;
-    int32_t ret = GetRdbAuthStorageLevel(keyUri, &level);
+    struct CertProperty certProp;
+    certProp.level = ERROR_LEVEL;
+    int32_t ret = QueryCertProperty((char *)keyUri->data, &certProp);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("get rdb auth storage level failed, ret = %d", ret);
+        CM_LOG_E("query cert property failed, ret = %d", ret);
         return ret;
     }
-    if (level == ERROR_LEVEL) {
+    if (certProp.level == ERROR_LEVEL) { /* no rdb record, compatible with legacy certs */
         level = CM_AUTH_STORAGE_LEVEL_EL1;
         CM_LOG_I("Remove cred level is ERROR_LEVEL, change to default level el1");
+    } else {
+        if ((uint32_t)certProp.certStore != store) {
+            CM_LOG_E("cert store %u mismatch input store %u", (uint32_t)certProp.certStore, store);
+            return CMR_ERROR_NOT_EXIST;
+        }
+        level = certProp.level;
     }
 
     if (store == CM_CREDENTIAL_STORE) {
