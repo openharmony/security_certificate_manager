@@ -765,7 +765,8 @@ HWTEST_F(CmAppCertTest, AppCertUnInstallAbnormalTest005, TestSize.Level0)
     (void)memset_s(&certProp, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
     ret = QueryCertProperty((char *)uriBuf, &certProp);
     EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest005 query rdb failed, retcode:" << ret;
-    EXPECT_TRUE(strlen(certProp.uri) != 0) << "AppCertUnInstallAbnormalTest005 rdb record was deleted by mismatched uninstall";
+    EXPECT_TRUE(strlen(certProp.uri) != 0)
+        << "AppCertUnInstallAbnormalTest005 rdb record was deleted by mismatched uninstall";
 
     /* credential must still exist in list (rdb record not deleted by mistake) */
     struct CredentialList certificateList = { 0, nullptr };
@@ -819,7 +820,8 @@ HWTEST_F(CmAppCertTest, AppCertUnInstallAbnormalTest006, TestSize.Level0)
     (void)memset_s(&certProp, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
     ret = QueryCertProperty((char *)uriBuf, &certProp);
     EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest006 query rdb failed, retcode:" << ret;
-    EXPECT_TRUE(strlen(certProp.uri) != 0) << "AppCertUnInstallAbnormalTest006 rdb record was deleted by mismatched uninstall";
+    EXPECT_TRUE(strlen(certProp.uri) != 0)
+        << "AppCertUnInstallAbnormalTest006 rdb record was deleted by mismatched uninstall";
 
     /* private credential must still exist in list (rdb record not deleted by mistake) */
     struct CredentialList certificateList = { 0, nullptr };
