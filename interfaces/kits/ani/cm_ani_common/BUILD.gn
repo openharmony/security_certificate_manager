@@ -61,6 +61,7 @@ ohos_static_library("cm_ani_common_static") {
     "ability_runtime:abilitykit_native",
     "ability_runtime:app_context",
     "node:node_header_notice",
+    "samgr:samgr_proxy",
   ]
   cflags_cc = [
     "-Wall",
