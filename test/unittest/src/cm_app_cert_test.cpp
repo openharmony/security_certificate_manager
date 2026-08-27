@@ -22,6 +22,7 @@
 #include "cm_cert_data_chain_key.h"
 #include "cm_mem.h"
 #include "cm_test_common.h"
+#include "cm_cert_property_rdb.h"
 
 #include "accesstoken_kit.h"
 #include "token_setproc.h"
@@ -735,6 +736,116 @@ HWTEST_F(CmAppCertTest, AppCertUnInstallAbnormalTest004, TestSize.Level0)
 
     int32_t ret = CmUninstallAppCert(&keyUri, CM_CREDENTIAL_STORE);
     EXPECT_EQ(ret, CMR_ERROR_NOT_EXIST) << "AppCertUnInstallAbnormalTest004 test failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: AppCertUnInstallAbnormalTest005
+ * @tc.desc: Test uninstall credential with mismatched store, rdb data must not be deleted
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmAppCertTest, AppCertUnInstallAbnormalTest005, TestSize.Level0)
+{
+    uint8_t certAliasBuf[] = "keyA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    uint8_t uriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob retUri = { sizeof(uriBuf), uriBuf };
+
+    int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_CREDENTIAL_STORE, &retUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest005 install failed, retcode:" << ret;
+
+    /* mismatched store: credential cert uninstalled with PRI store must fail */
+    ret = CmUninstallAppCert(&retUri, CM_PRI_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CMR_ERROR_NOT_EXIST) << "AppCertUnInstallAbnormalTest005 mismatch failed, retcode:" << ret;
+
+    /* rdb record must still exist (mismatched uninstall must not delete rdb data) */
+    (void)CreateCertPropertyRdb();
+    struct CertProperty certProp;
+    (void)memset_s(&certProp, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
+    ret = QueryCertProperty((char *)uriBuf, &certProp);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest005 query rdb failed, retcode:" << ret;
+    EXPECT_TRUE(strlen(certProp.uri) != 0)
+        << "AppCertUnInstallAbnormalTest005 rdb record was deleted by mismatched uninstall";
+
+    /* credential must still exist in list (rdb record not deleted by mistake) */
+    struct CredentialList certificateList = { 0, nullptr };
+    uint32_t buffSize = MAX_COUNT_CERTIFICATE * sizeof(struct CredentialAbstract);
+    certificateList.credentialAbstract = static_cast<struct CredentialAbstract *>(CmMalloc(buffSize));
+    ASSERT_TRUE(certificateList.credentialAbstract != nullptr);
+    certificateList.credentialCount = MAX_COUNT_CERTIFICATE;
+    (void)memset_s(certificateList.credentialAbstract, buffSize, 0, buffSize);
+
+    ret = CmGetAppCertList(CM_CREDENTIAL_STORE, &certificateList);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest005 get list failed, retcode:" << ret;
+
+    struct CredentialAbstract expectAbstract = { .type = "ak", .alias = "keyA" };
+    (void)memcpy_s(expectAbstract.keyUri, MAX_LEN_URI, uriBuf, MAX_LEN_URI);
+    bool bFind = FindCredentialAbstract(&expectAbstract, &certificateList);
+    EXPECT_TRUE(bFind) << "AppCertUnInstallAbnormalTest005 cert was deleted by mismatched uninstall";
+
+    if (certificateList.credentialAbstract != nullptr) {
+        CmFree(certificateList.credentialAbstract);
+    }
+
+    /* cleanup with correct store */
+    ret = CmUninstallAppCert(&retUri, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest005 cleanup failed, retcode:" << ret;
+}
+
+/**
+ * @tc.name: AppCertUnInstallAbnormalTest006
+ * @tc.desc: Test uninstall private credential with mismatched store, rdb data must not be deleted
+ * @tc.type: FUNC
+ * @tc.require: AR000H0MI8 /SR000H09N9
+ */
+HWTEST_F(CmAppCertTest, AppCertUnInstallAbnormalTest006, TestSize.Level0)
+{
+    uint8_t certAliasBuf[] = "keyA";
+    struct CmBlob certAlias = { sizeof(certAliasBuf), certAliasBuf };
+
+    uint8_t uriBuf[MAX_LEN_URI] = {0};
+    struct CmBlob retUri = { sizeof(uriBuf), uriBuf };
+
+    int32_t ret = CmInstallAppCert(&g_appCert, &g_appCertPwd, &certAlias, CM_PRI_CREDENTIAL_STORE, &retUri);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest006 install failed, retcode:" << ret;
+
+    /* mismatched store: private cert uninstalled with CREDENTIAL store must fail */
+    ret = CmUninstallAppCert(&retUri, CM_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CMR_ERROR_NOT_EXIST) << "AppCertUnInstallAbnormalTest006 mismatch failed, retcode:" << ret;
+
+    /* rdb record must still exist (mismatched uninstall must not delete rdb data) */
+    (void)CreateCertPropertyRdb();
+    struct CertProperty certProp;
+    (void)memset_s(&certProp, sizeof(struct CertProperty), 0, sizeof(struct CertProperty));
+    ret = QueryCertProperty((char *)uriBuf, &certProp);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest006 query rdb failed, retcode:" << ret;
+    EXPECT_TRUE(strlen(certProp.uri) != 0)
+        << "AppCertUnInstallAbnormalTest006 rdb record was deleted by mismatched uninstall";
+
+    /* private credential must still exist in list (rdb record not deleted by mistake) */
+    struct CredentialList certificateList = { 0, nullptr };
+    uint32_t buffSize = MAX_COUNT_CERTIFICATE * sizeof(struct CredentialAbstract);
+    certificateList.credentialAbstract = static_cast<struct CredentialAbstract *>(CmMalloc(buffSize));
+    ASSERT_TRUE(certificateList.credentialAbstract != nullptr);
+    certificateList.credentialCount = MAX_COUNT_CERTIFICATE;
+    (void)memset_s(certificateList.credentialAbstract, buffSize, 0, buffSize);
+
+    ret = CmGetAppCertList(CM_PRI_CREDENTIAL_STORE, &certificateList);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest006 get list failed, retcode:" << ret;
+
+    struct CredentialAbstract expectAbstract = { .type = "ak", .alias = "keyA" };
+    (void)memcpy_s(expectAbstract.keyUri, MAX_LEN_URI, uriBuf, MAX_LEN_URI);
+    bool bFind = FindCredentialAbstract(&expectAbstract, &certificateList);
+    EXPECT_TRUE(bFind) << "AppCertUnInstallAbnormalTest006 cert was deleted by mismatched uninstall";
+
+    if (certificateList.credentialAbstract != nullptr) {
+        CmFree(certificateList.credentialAbstract);
+    }
+
+    /* cleanup with correct store */
+    ret = CmUninstallAppCert(&retUri, CM_PRI_CREDENTIAL_STORE);
+    EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest006 cleanup failed, retcode:" << ret;
 }
 
 /**
