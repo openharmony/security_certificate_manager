@@ -780,7 +780,7 @@ HWTEST_F(CmAppCertTest, AppCertUnInstallAbnormalTest005, TestSize.Level0)
     EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest005 get list failed, retcode:" << ret;
 
     struct CredentialAbstract expectAbstract = { .type = "ak", .alias = "keyA" };
-    (void)memcpy_s(expectAbstract.uri, MAX_LEN_URI, uriBuf, MAX_LEN_URI);
+    (void)memcpy_s(expectAbstract.keyUri, MAX_LEN_URI, uriBuf, MAX_LEN_URI);
     bool bFind = FindCredentialAbstract(&expectAbstract, &certificateList);
     EXPECT_TRUE(bFind) << "AppCertUnInstallAbnormalTest005 cert was deleted by mismatched uninstall";
 
@@ -835,7 +835,7 @@ HWTEST_F(CmAppCertTest, AppCertUnInstallAbnormalTest006, TestSize.Level0)
     EXPECT_EQ(ret, CM_SUCCESS) << "AppCertUnInstallAbnormalTest006 get list failed, retcode:" << ret;
 
     struct CredentialAbstract expectAbstract = { .type = "ak", .alias = "keyA" };
-    (void)memcpy_s(expectAbstract.uri, MAX_LEN_URI, uriBuf, MAX_LEN_URI);
+    (void)memcpy_s(expectAbstract.keyUri, MAX_LEN_URI, uriBuf, MAX_LEN_URI);
     bool bFind = FindCredentialAbstract(&expectAbstract, &certificateList);
     EXPECT_TRUE(bFind) << "AppCertUnInstallAbnormalTest006 cert was deleted by mismatched uninstall";
 
