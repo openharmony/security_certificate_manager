@@ -75,6 +75,7 @@ ohos_static_library("cert_manager_engine_core_standard") {
     "ipc:ipc_core",
     "openssl:libcrypto_shared",
     "bundle_framework:appexecfwk_core",
+    "samgr:samgr_proxy",
   ]
 
   complete_static_lib = true
