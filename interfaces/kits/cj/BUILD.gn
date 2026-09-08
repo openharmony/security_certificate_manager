@@ -40,6 +40,8 @@ ohos_shared_library("cj_cert_manager_ffi") {
     "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
   ]
 
+  version_script = "libcj_cert_manager_ffi.map"
+
   innerapi_tags = [ "platformsdk" ]
   subsystem_name = "security"
   part_name = "certificate_manager"
