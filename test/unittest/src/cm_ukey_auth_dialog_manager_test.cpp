@@ -14,10 +14,15 @@
  */
 
 #include <chrono>
+#include <string>
 #include <thread>
+#include <vector>
 
 #include <gtest/gtest.h>
 
+#include "string_ex.h"
+
+#include "cm_system_dialog_connection.h"
 #include "cm_ukey_auth_dialog_manager.h"
 
 namespace OHOS::Security::CertManager {
@@ -159,5 +164,40 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, LateReportAfterDoneIgnored, testing::ext::
     manager_->OnReport(reqId, driverBundle_, 0);
     ASSERT_EQ(manager_->OnReport(reqId, driverBundle_, 0), CMR_DIALOG_ERROR_INTERNAL);
     EXPECT_EQ(client_->called_, 1); // exactly once
+}
+
+/* Fake system dialog service stub recording the START_DIALOG parcel
+ * (key/value pairs of the ON_ABILITY_CONNECT_DONE command). */
+class FakeDialogService : public IRemoteStub<CmTestBroker> {
+public:
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
+        MessageOption &option) override
+    {
+        if (code == IAbilityConnection::ON_ABILITY_CONNECT_DONE) {
+            int32_t size = data.ReadInt32();
+            for (int32_t i = 0; i < size; ++i) {
+                keys_.push_back(Str16ToStr8(data.ReadString16()));
+                values_.push_back(Str16ToStr8(data.ReadString16()));
+            }
+        }
+        return 0;
+    }
+    std::vector<std::string> keys_;
+    std::vector<std::string> values_;
+};
+
+HWTEST_F(CmUkeyAuthDialogManagerTest, ConnectionParcelFormat, testing::ext::TestSize.Level0)
+{
+    sptr<FakeDialogService> svc = sptr<FakeDialogService>(new FakeDialogService());
+    CmSystemDialogConnection conn("req123", "com.example.ukeydrv", "DrvUIExtAbility",
+        R"({"keyUri":"u1","requestId":"req123"})");
+    conn.OnAbilityConnectDone(AppExecFwk::ElementName(), svc, 0);
+    ASSERT_EQ(svc->keys_.size(), 3u);
+    EXPECT_EQ(svc->keys_[0], "bundleName");
+    EXPECT_EQ(svc->values_[0], "com.example.ukeydrv");
+    EXPECT_EQ(svc->keys_[1], "abilityName");
+    EXPECT_EQ(svc->values_[1], "DrvUIExtAbility");
+    EXPECT_EQ(svc->keys_[2], "parameters");
+    EXPECT_EQ(svc->values_[2], R"({"keyUri":"u1","requestId":"req123"})");
 }
 }

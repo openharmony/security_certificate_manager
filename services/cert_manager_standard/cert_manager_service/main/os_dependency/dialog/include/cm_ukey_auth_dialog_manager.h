@@ -32,6 +32,8 @@
 namespace OHOS::Security::CertManager {
 using OHOS::AAFwk::IAbilityConnection;
 
+class CmSystemDialogConnection; // 生产装配的真实连接对象（T3）
+
 constexpr uint32_t CM_UKEY_DIALOG_TOTAL_TIMEOUT_MS = 300000; // 5min, spec D5
 constexpr uint32_t CM_UKEY_DIALOG_GRACE_TIMEOUT_MS = 10000;  // 10s, spec D5
 
@@ -57,6 +59,9 @@ public:
     void SetLauncher(std::shared_ptr<SystemDialogLauncher> launcher);
     void SetAbilityQuerier(AbilityQuerier querier);
     void SetTimeoutForTest(uint32_t totalMs, uint32_t graceMs);
+    /* 生产装配入口（幂等懒初始化）：RealSystemDialogLauncher + HUKS ability
+     * 查询适配；由 SA OnStart/处理器首次调用时触发（T4）。 */
+    void InitRealDependencies();
     // 同步返回校验码（CM_SUCCESS / -1016 / -1017 / -1018 / CMR_DIALOG_ERROR_INTERNAL）
     int32_t OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid,
         const sptr<IRemoteObject> &clientCallback);
@@ -78,6 +83,7 @@ private:
         std::string driverBundleName;          // 来自 HksQueryAbilityInfo，上报身份校验用
         uint32_t callerUid = 0;                // 原客户端 uid（弹框参数 appUid 用）
         sptr<IRemoteObject> clientCallback;    // 客户端回调 stub
+        sptr<CmSystemDialogConnection> connection; // 系统弹窗服务连接
         State state = LAUNCHING;
     };
 
@@ -92,6 +98,7 @@ private:
     std::mutex mutex_;
     std::shared_ptr<SystemDialogLauncher> launcher_;
     AbilityQuerier querier_;
+    bool realDepsInited_ = false;          // InitRealDependencies 幂等标记
     uint32_t totalTimeoutMs_ = CM_UKEY_DIALOG_TOTAL_TIMEOUT_MS;
     uint32_t graceTimeoutMs_ = CM_UKEY_DIALOG_GRACE_TIMEOUT_MS;
     std::shared_ptr<AppExecFwk::EventHandler> timerHandler_; // "cm_ukey_dialog" 专用线程
