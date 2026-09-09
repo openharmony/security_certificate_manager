@@ -1,7 +1,7 @@
 # openUkeyAuthDialog 支持 UKey 驱动自定义 UIExtensionAbility Pin 码认证弹框 — 详细设计
 
 - 日期：2026-09-03
-- 状态：已评审定稿（待实现）
+- 状态：已实现（待真机联调）
 - 需求来源：`cm_ukey_pin_design.txt`（工作区根目录）
 - 涉及仓库：`base/security/certificate_manager`（主交付）、`interface/sdk-js`（SDK d.ts）；`base/security/huks`、`applications/standard/systemui` 为外部依赖，**不在本次交付范围**
 
@@ -481,3 +481,19 @@ CMNapiReportUkeyAuthResult(env, info)：
 | 测试 | test/unittest、test/fuzz_test、XTS 用例 | 见 §13 |
 
 **外部对齐项（非本次交付）**：HUKS ability 类型查询与驱动文档（§6.1、§6.3）。
+
+## 17. 实现状态
+
+- **代码分支**：`cm-ukey-pin-impl`（`base/security/certificate_manager`，T1–T7/T9 共
+  10 个提交：16f38da → cc34116 → a9504a3 → f0a62d0 → 579be08 → af8d0d9 → 62b7562 →
+  cb669ce → 305bbbd → 4bc5e53）。
+- **SDK d.ts**：`interface/sdk-js` @ `ukey-auth` 分支（9048c49ac，基于既有的
+  UkeyAuthUIExtensionAbility 基类 / CONNECT_UKEY_AUTH_EXTENSION 权限提交 8061d1cab）。
+- **待真机联调清单**（对应 §13）：
+  - 驱动 demo 注册 UkeyAuthUIExtensionAbility 类型 ability；
+  - 成功 / 取消 / 失败 / 超时四场景 + 伪造上报（requestId/bundleName 不匹配）安全用例；
+  - 断连先于上报的竞态用例；
+  - 老接口（UIAbility 类型驱动）回归；
+  - R9 关注点：systemui `UIExtensionComponent` 装载 UkeyAuthUIExtensionAbility 类型
+    extension 的兼容性；`CONNECT_UKEY_AUTH_EXTENSION` 权限校验方确认。
+- **XTS 用例**：随 XTS 仓节奏单独交付（本仓不含）。
