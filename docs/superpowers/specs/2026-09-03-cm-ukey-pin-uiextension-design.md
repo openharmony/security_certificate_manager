@@ -42,6 +42,7 @@
 | D5 | 超时参数 | 总超时 **5 分钟**（暂定）；断连后上报宽限期 **10 秒** | 评审暂定值，常量化便于调整 |
 | D6 | 并发约束 | SA 侧全局单飞：同一时刻仅允许一个挂起会话 | 系统弹窗 remote object 按连接方（pid+tokenId）维度共享，多会话无法区分；模态全屏弹窗本身互斥（与 USB 弹窗单弹框约束一致） |
 | D7 | report API 权限 | 不加权限，安全由 requestId 随机性 + 调用者 bundleName 双重校验保障 | 驱动为三方 HAP，通常不持有 `ACCESS_CERT_MANAGER` |
+| D8 | 错误码细分 | 提供方超时未上报（总超时 5min 到期）→ 新增 **29700009**；已有挂起会话（单飞拒绝）→ 新增 **29700010**；断连宽限超时仍归 29700002（窗口已销毁，语义为取消路径） | 专属错误码便于调用方与驱动商定位问题，不再折叠为笼统的 29700001 |
 
 ## 4. 总体架构与调用链
 
@@ -69,7 +70,7 @@
  │                │                      │ → 完成会话(停定时器/断连)   │  (随后 terminateSelf)│
  │                │<─ SendRequest(1,{code}) ─ 回调stub(TF_ASYNC)      │                      │
  │<─ resolve/reject │                    │                            │                      │
- │                │                      │ [兜底] 断连→10s宽限→取消；总超时5min→内部错误      │
+ │                │                      │ [兜底] 断连→10s宽限→取消(29700002)；总超时5min→未上报超时(29700009)│
 ```
 
 要点：
@@ -94,13 +95,16 @@
  * @param { UkeyAuthRequest } ukeyAuthRequest - Authentication request information.
  * @returns { Promise<void> } Promise that returns no value.
  * @throws { BusinessError } 201 / 401 / 801
- * @throws { BusinessError } 29700001 - Internal error (incl. timeout, launch failure,
- *     another dialog in progress).
+ * @throws { BusinessError } 29700001 - Internal error (e.g. failed to launch the dialog).
  * @throws { BusinessError } 29700002 - The user cancels the authentication operation.
  * @throws { BusinessError } 29700003 - The authentication operation failed.
  * @throws { BusinessError } 29700006 - The input parameters validation failed.
  * @throws { BusinessError } 29700008 - The UKey driver has not registered a custom PIN
  *     dialog of the UIExtensionAbility type.
+ * @throws { BusinessError } 29700009 - The USB Key driver's PIN dialog did not report
+ *     the authentication result within the timeout.
+ * @throws { BusinessError } 29700010 - Another UKey PIN authentication dialog is
+ *     already in progress.
  * @syscap SystemCapability.Security.CertificateManagerDialog
  * @stagemodelonly
  * @since 26.0.0 dynamic&static   // 以 API 治理结论为准
@@ -132,7 +136,9 @@ function reportUkeyAuthResult(requestId: string, resultCode: number): Promise<vo
 `CertificateDialogErrorCode` 枚举追加：
 
 ```ts
-ERROR_UKEY_ABILITY_NOT_SUPPORTED = 29700008
+ERROR_UKEY_ABILITY_NOT_SUPPORTED = 29700008   /* UKey 驱动未注册 UIExtensionAbility 类型的自定义 Pin 弹框 */
+ERROR_UKEY_AUTH_REPORT_TIMEOUT = 29700009     /* 提供方超时未上报认证结果（总超时到期） */
+ERROR_UKEY_DIALOG_IN_PROGRESS = 29700010      /* 已有一个 UKey Pin 码认证弹框会话挂起 */
 ```
 
 同步更新中文镜像 interface/sdk-js/zh-cn/api/@ohos.security.certManagerDialog.d.ts 与 ANI 声明
@@ -197,6 +203,8 @@ struct UkeyAuthRequest {
 
 /* 对话框内部错误码段追加（现有最大 -1015） */
 CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED = -1016  /* 查询为空或类型非 UIExtensionAbility */
+CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT = -1017         /* 提供方超时未上报认证结果（总超时到期） */
+CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS = -1018     /* 已有挂起的 UKey 认证弹框会话（单飞拒绝） */
 ```
 
 ### 7.2 `cert_manager_api.h`
@@ -293,6 +301,7 @@ LAUNCHING ──连接失败/发命令失败──> DONE(29700001)
     │ 连接成功且 START_DIALOG 已发送
     v
 WAITING_REPORT ──合法上报──> DONE(上报码)          [启动 5min 总超时]
+    │ 总超时(5min)到期 ──────────────> DONE(29700009 提供方超时未上报)
     │ OnAbilityDisconnectDone
     v
 GRACE_WAITING ──宽限内合法上报──> DONE(上报码)      [启动 10s 宽限定时]
@@ -302,8 +311,8 @@ DONE(29700002 取消)
 ```
 
 - 任意路径进入 DONE 后，迟到的上报/断连/超时一律忽略（report 返回"会话不存在"）；
-- 总超时触发：DONE(29700001)，并向弹窗服务发 `ON_REMOTE_STATE_CHANGED` 请求释放窗口后
-  `DisconnectAbility`；
+- 总超时触发：DONE(-1017/29700009 提供方超时未上报)，并向弹窗服务发
+  `ON_REMOTE_STATE_CHANGED` 请求释放窗口后 `DisconnectAbility`；
 - 结果分发：经 clientCallback
   `SendRequest(1, [int32 code], TF_ASYNC)`，随后清理（停定时器 → 断连（忽略已断连错误）
   → 删会话 → 注销死亡通知）。
@@ -322,8 +331,8 @@ DONE(29700002 取消)
 
 ### 9.4 其他横切关注点
 
-- **单飞（D6）**：已有挂起会话时，第二个 OPEN 同步回 `CMR_DIALOG_ERROR_INTERNAL`
-  （映射 29700001）；
+- **单飞（D6）**：已有挂起会话时，第二个 OPEN 同步回
+  `CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS`（映射 29700010）；
 - **客户端死亡**：在回调 stub 上注册 `DeathRecipient`，客户端进程死亡 → 中止会话并清理
   （不回调）；
 - **SA 保活**：会话挂起期间周期性续期 `DelayUnload`（复用 cm_sa.cpp 既有卸载延迟机制，
@@ -352,8 +361,10 @@ eventhandler:libeventhandler
 - `QueryAbilityInfo` 增加 ability 类型出参（消费 HUKS 新字段，经 §6.1 适配层；
   查询失败/无类型时默认 UIAbility）；
 - `GetCustomerAuthCertWant` 行为不变（仅继续服务非 UIExtension 路径）；
-- `DIALOG_CODE_TO_JS_CODE_MAP` / `DIALOG_CODE_TO_MSG_MAP` 追加
-  `{CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED, 29700008}` 及对应文案。
+- `DIALOG_CODE_TO_JS_CODE_MAP` / `DIALOG_CODE_TO_MSG_MAP` 追加三个新码映射：
+  `{CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED, 29700008}`、
+  `{CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT, 29700009}`、
+  `{CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS, 29700010}` 及对应文案。
 
 ### 10.2 NAPI `cm_napi_open_ukey_auth_dialog.cpp`
 
@@ -392,7 +403,9 @@ CMNapiReportUkeyAuthResult(env, info)：
 | 场景 | 内部码 | JS 码 |
 |---|---|---|
 | ability 查询为空 / 类型非 UIExtensionAbility（新接口，或老接口命中 UIExtension 类型前的判定） | -1016（新） | 29700008（新） |
-| 连接失败 / 发命令失败 / 总超时（5min） / 并发弹框 / 上报校验失败 / 未知上报码 | CMR_DIALOG_ERROR_INTERNAL | 29700001 |
+| 提供方超时未上报（总超时 5min 到期） | -1017（新） | 29700009（新） |
+| 已有挂起会话（单飞拒绝） | -1018（新） | 29700010（新） |
+| 连接失败 / 发命令失败 / 上报校验失败 / 未知上报码 | CMR_DIALOG_ERROR_INTERNAL | 29700001 |
 | 断连宽限（10s）超时（判定为用户取消） | CMR_DIALOG_ERROR_OPERATION_CANCELS | 29700002 |
 | 驱动上报透传 | 29700003 / 29700006 | 29700003 / 29700006 |
 | 参数校验失败 | 401 / CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED | 401 / 29700006 |
@@ -405,20 +418,20 @@ CMNapiReportUkeyAuthResult(env, info)：
 - 新 IPC 码为枚举尾部追加，不挤占既有码值；`cm_sa.cpp` 对未知码仍走
   `IPCObjectStub::OnRemoteRequest` 兜底；
 - inner API 新增符号属增量；`.map` 版本脚本仅追加，不改变既有符号可见性；
-- 老接口调用方若驱动注册了 UIExtensionAbility 类型，并发第二次调用将收到 29700001
+- 老接口调用方若驱动注册了 UIExtensionAbility 类型，并发第二次调用将收到 29700010
   （原 modal 流程可并发）——模态全屏弹窗场景下可接受（D6）。
 
 ## 13. 测试与验证
 
 - **单元测试**（`test/unittest/`，SA manager 为重点）：
-  - 状态机全路径：LAUNCHING 失败 / 正常上报 / 断连→宽限内上报 / 宽限超时→取消 /
-    总超时 / 终态防重入（迟到上报、迟到断连）；
+  - 状态机全路径：LAUNCHING 失败 / 正常上报 / 断连→宽限内上报 / 宽限超时→取消(29700002) /
+    总超时→未上报超时(29700009) / 终态防重入（迟到上报、迟到断连）；
   - 安全：requestId 不存在、非 HAP token、bundleName 不匹配、未知 resultCode 折叠；
-  - requestId 随机性与格式；单飞互斥；客户端死亡清理；回调 stub 序列化。
+  - requestId 随机性与格式；单飞互斥（29700010）；客户端死亡清理；回调 stub 序列化。
 - **Fuzz**（`test/fuzz_test/`，仿 `cmgetukeycertlist_fuzzer`）：OPEN/REPORT 两个 IPC 入口、
   两个 NAPI 函数（argc/类型混乱）。
-- **XTS**：新重载（成功/取消/29700008/401/201）、`reportUkeyAuthResult`（401/会话不存在）、
-  老接口类型分叉回归。
+- **XTS**：新重载（成功/取消/29700008/29700009/29700010/401/201）、
+  `reportUkeyAuthResult`（401/会话不存在）、老接口类型分叉回归。
 - **构建验证**：
   - `./build.sh --product-name rk3568 --build-only-gn`（BUILD.gn 变更校验）
   - `./build.sh --product-name rk3568 --build-target certificate_manager`
@@ -457,7 +470,7 @@ CMNapiReportUkeyAuthResult(env, info)：
 
 | 模块 | 文件 | 变更 |
 |---|---|---|
-| SDK | interface/sdk-js/api/@ohos.security.certManagerDialog.d.ts（及中文镜像） | 新重载、reportUkeyAuthResult、29700008 |
+| SDK | interface/sdk-js/api/@ohos.security.certManagerDialog.d.ts（及中文镜像） | 新重载、reportUkeyAuthResult、29700008/29700009/29700010 |
 | ANI | interfaces/kits/ani/certificate_manager_dialog_ani/（ets + src + include） | 两个新 API 及 native 实现 |
 | inner API | interfaces/innerkits/.../cm_type.h、cert_manager_api.h | UkeyAuthRequest、-1016、两个新函数、回调类型 |
 | IPC 码 | frameworks/.../cert_manager_service_ipc_interface_code.h | 2 个新码 |
