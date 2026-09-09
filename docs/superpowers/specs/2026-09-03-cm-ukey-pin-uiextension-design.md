@@ -37,7 +37,7 @@
 |---|---|---|---|
 | D1 | 弹框承载方式 | SA 连接系统弹窗服务拉起驱动 UIExtensionAbility（参考 useriam `widget_context.cpp`） | 调用方无 context，无法走 `CreateModalUIExtension` / `StartAbilityForResult`；系统弹窗服务是既有的无 context 模态弹窗通道 |
 | D2 | 结果回传通道 | **方案 C：驱动弹框主动上报**。SA 生成 requestId 随弹框参数下发；驱动完成认证后调用新增公开 API `reportUkeyAuthResult(requestId, resultCode)` 上报；SA 校验身份后回调客户端 | 方案 A（systemui 转发 onTerminated）被否：systemui 仓不允许修改；方案 B（断连 + PIN 状态轮询推导）被否：不采用轮询，且结果粒度粗。方案 C 结果精确、协议与现有 UIAbility 错误码契约一致 |
-| D3 | HUKS 范围 | HUKS 侧改动视为**已实现**（`HksQueryAbilityInfo` 返回 ability 类型），本次仅消费 | 需求边界明确 |
+| D3 | HUKS 范围 | **不依赖 HUKS 新增改动**（用户裁定 2026-09-09）：ability 类型不经 HUKS 查询——老接口固定默认 UIAbility（原路径），新接口固定按 UIExtensionAbility 处理；仅消费现有 `HksQueryAbilityInfo`（bundle/ability 名，本树已存在） | HUKS 上游与本源码树均无 abilityType 字段，为解除阻塞删除该依赖；新接口的注册契约（驱动注册的 ability 须为 UIExtensionAbility）由 HUKS 驱动文档约束 |
 | D4 | systemui 范围 | 系统弹窗服务**只读复用**现有 `COMMAND_START_DIALOG` 协议，仓零改动 | 需求边界明确 |
 | D5 | 超时参数 | 总超时 **5 分钟**（暂定）；断连后上报宽限期 **10 秒** | 评审暂定值，常量化便于调整 |
 | D6 | 并发约束 | SA 侧全局单飞：同一时刻仅允许一个挂起会话 | 系统弹窗 remote object 按连接方（pid+tokenId）维度共享，多会话无法区分；模态全屏弹窗本身互斥（与 USB 弹窗单弹框约束一致） |
@@ -52,8 +52,8 @@
  ├───────────────>│ IPC(keyUri+回调stub) │                            │                      │
  │                ├─────────────────────>│ 权限/单飞校验               │                      │
  │                │                      │ HksQueryAbilityInfo(keyUri)│                      │
- │                │                      │  → bundle/ability/type     │                      │
- │                │                      │  → 空 或 type≠UIExt:       │                      │
+ │                │                      │  → bundle/ability 名       │                      │
+ │                │                      │  → 查询为空:               │                      │
  │                │<─ 同步回执(-1016) ────│    同步回错,流程终止        │                      │
  │                │<─ 同步回执(0) ───────┤ 生成 requestId,建会话       │                      │
  │                │                      │ ConnectServiceExtensionAbility ─────────────────> │
@@ -75,6 +75,7 @@
 
 要点：
 
+- **老接口（argc==2）恒走原路径**（自定义 UIAbility / 统一弹窗），不做类型分叉（D3）；
 - **同步应答**仅承载即时校验结果（参数/权限/单飞/ability 查询失败）。同步回错时**不**触发异步回调。
 - **异步结果**经客户端回调 stub 回传，保证恰好一次（成功、取消、失败、超时四选一）。
 - 驱动 ability 的 `terminateSelfWithResult` 返回码**不被观测**（系统弹窗服务不转发结果），
@@ -153,13 +154,14 @@ ERROR_UKEY_DIALOG_IN_PROGRESS = 29700010      /* 已有一个 UKey Pin 码认证
 
 ## 6. 外部依赖契约（非本次交付）
 
-### 6.1 HUKS（视为已实现）
+### 6.1 HUKS（仅消费现有接口，无新增依赖）
 
-- `HksQueryAbilityInfo(resourceId, &abilityInfo)`（hks_api.h:133）返回的
-  `struct HksAbilityInfo`（hks_type.h:78）含 ability 类型信息：
-  `UIAbility`（默认，兼容存量注册）/ `UIExtensionAbility`。
-- 具体字段形态（新增 `abilityType` 成员或 blob 内 JSON 字段）由 HUKS 侧定义，
-  CM 侧以适配层隔离（见 §8.4），HUKS 落地后只需调整适配层一处。
+- 仅使用现有 `HksQueryAbilityInfo(resourceId, &abilityInfo)`（hks_api.h:133）获取驱动注册弹框的
+  `bundleName` / `abilityName`（hks_type.h:78），**不读取 ability 类型**；
+- 类型判定策略（D3）：老接口（argc==2）固定默认 UIAbility 走原路径；新接口（argc==1）
+  固定按 UIExtensionAbility 处理，SA 仅以查询结果非空为门槛（空 → -1016/29700008）；
+- 新接口的注册契约（驱动经 `registerProvider` 为 Pin 弹框注册的 ability 须为
+  UIExtensionAbility 类型）由 HUKS 驱动文档约束（§6.3 对齐项）。
 
 ### 6.2 系统弹窗服务（只读复用）
 
@@ -358,9 +360,7 @@ eventhandler:libeventhandler
 
 ### 10.1 `cm_dialog_api_common`（kits/common）
 
-- `QueryAbilityInfo` 增加 ability 类型出参（消费 HUKS 新字段，经 §6.1 适配层；
-  查询失败/无类型时默认 UIAbility）；
-- `GetCustomerAuthCertWant` 行为不变（仅继续服务非 UIExtension 路径）；
+- `GetCustomerAuthCertWant` 行为不变（仅继续服务老接口路径）；
 - `DIALOG_CODE_TO_JS_CODE_MAP` / `DIALOG_CODE_TO_MSG_MAP` 追加三个新码映射：
   `{CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED, 29700008}`、
   `{CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT, 29700009}`、
@@ -379,9 +379,8 @@ argc == 1（新接口）：
         否则 → reject(GenerateBusinessError(code))
 
 argc == 2（老接口，行为兼容）：
-    解析 context + UkeyAuthRequest（原逻辑不变）
-    ├─ QueryAbilityInfo 命中且类型 == UIExtensionAbility → 走上述新链路（不再使用 context）
-    └─ 否则 → 原 GetCustomerAuthCertWant + StartUkeyPinAbility 流程（零改动）
+    原有流程零改动（GetCustomerAuthCertWant + StartUkeyPinAbility），
+    不做类型分叉（D3：恒按默认 UIAbility 处理）
 ```
 
 - argc 校验放宽为 1 或 2，其余报 401（沿用 `CheckUkeyAuthDialogArgc` 模式）；
@@ -402,7 +401,7 @@ CMNapiReportUkeyAuthResult(env, info)：
 
 | 场景 | 内部码 | JS 码 |
 |---|---|---|
-| ability 查询为空 / 类型非 UIExtensionAbility（新接口，或老接口命中 UIExtension 类型前的判定） | -1016（新） | 29700008（新） |
+| ability 查询为空（新接口；未注册自定义 Pin 弹框） | -1016（新） | 29700008（新） |
 | 提供方超时未上报（总超时 5min 到期） | -1017（新） | 29700009（新） |
 | 已有挂起会话（单飞拒绝） | -1018（新） | 29700010（新） |
 | 连接失败 / 发命令失败 / 上报校验失败 / 未知上报码 | CMR_DIALOG_ERROR_INTERNAL | 29700001 |
@@ -413,8 +412,7 @@ CMNapiReportUkeyAuthResult(env, info)：
 
 ## 12. 兼容性
 
-- 未注册 UIExtensionAbility 类型的存量驱动走原路径，行为零变化（HksAbilityInfo 无类型
-  字段时默认 UIAbility）；
+- 老接口行为零变化（恒走原路径，不做类型分叉，D3）；
 - 新 IPC 码为枚举尾部追加，不挤占既有码值；`cm_sa.cpp` 对未知码仍走
   `IPCObjectStub::OnRemoteRequest` 兜底；
 - inner API 新增符号属增量；`.map` 版本脚本仅追加，不改变既有符号可见性；
@@ -444,7 +442,7 @@ CMNapiReportUkeyAuthResult(env, info)：
 |---|---|---|
 | R1 | `reportUkeyAuthResult` 为新增公开 API，签名/无权限设计需通过 API 评审 | 评审材料引用本设计 §5.1、§9.3 |
 | R2 | 驱动不遵守"先上报后终止"契约且超 10s 宽限 → 结果折叠为取消 | HUKS 驱动文档明确契约（§6.3，对齐项） |
-| R3 | HUKS ability 类型字段形态未定 → CM 适配层返工 | §6.1 适配层隔离，仅改一处 |
+| R3 | ~~HUKS ability 类型字段形态未定~~ 已解除（D3 用户裁定：类型不经 HUKS 查询，依赖移除） | — |
 | R4 | SA 保活续期与既有按需卸载策略的交互需确认 | 实现阶段与 SA 框架对齐 DelayUnload 暴露方式 |
 | R5 | `appUid` 为应用隔离字段，多用户/多应用并发弹框语义依赖驱动侧实现 | 契约随 §6.2 交由 HUKS 文档明确 |
 

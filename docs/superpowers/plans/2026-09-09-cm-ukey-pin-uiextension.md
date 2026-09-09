@@ -20,7 +20,7 @@
 4. **新文件**必须带 Apache-2.0 头（照抄同目录任一现有文件的头部，年份 2026）。
 5. **编码**：4 空格禁 Tab；C 主体；内存用 `CmMalloc`/`CmFree`（禁裸 malloc/free）；日志用 `CM_LOG_I/W/E/D`（禁 printf/hilog 直调）；敏感缓冲清零 `memset_s`；C++ 命名空间 `OHOS::Security::CertManager`；类 `DISALLOW_COPY_AND_MOVE`。
 6. **IPC 四件套**：消息码只追加在 `CM_MSG_MAX` 之前（`frameworks/cert_manager_standard/main/common/include/cert_manager_service_ipc_interface_code.h:56`，受 CODEOWNERS 审查）；proxy/stub/innerkit 必须同任务同步。
-7. **HUKS 外部依赖（假定已实现）**：`base/security/huks/interfaces/inner_api/huks_standard/main/include/hks_type.h` 的 `struct HksAbilityInfo` 应含 `uint32_t abilityType` 字段（`0`=UIAbility 默认 / `1`=UIExtensionAbility）。**Task 1 Step 1 先检查**；若字段不存在，停止并报告（等待 HUKS 仓合入），禁止在本仓私自修改 HUKS 头文件。CM 侧读取该字段的代码集中在 `interfaces/kits/common/src/cm_dialog_api_common.cpp` 一处（spec §6.1 适配层）。
+7. **HUKS 依赖（已解除，用户裁定 2026-09-09）**：仅消费现有 `HksQueryAbilityInfo`（返回 bundle/ability 名，`base/security/huks/interfaces/inner_api/huks_standard/main/include/hks_api.h:133`，本树已存在）；ability 类型**不经 HUKS 查询**——老接口（argc==2）恒走原路径（默认 UIAbility，现状零变化），新接口（argc==1）固定按 UIExtensionAbility 处理，SA 仅以查询结果非空为门槛（空 → `-1016`/`29700008`）。**禁止修改 base/security/huks 仓**。
 8. **错误码（spec D8，全链路统一）**：内部 `-1016`(`CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED`)→JS `29700008`；`-1017`(`CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT`)→`29700009`；`-1018`(`CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS`)→`29700010`。宽限超时→`CMR_DIALOG_ERROR_OPERATION_CANCELS`→`29700002`。
 9. **上报 resultCode 白名单**：`{0, 29700001, 29700002, 29700003, 29700006}`，未知值折叠为 29700001。
 10. **构建验证命令**（每个任务收尾必跑受影响目标）：
@@ -78,12 +78,12 @@
   - `CM_MSG_OPEN_UKEY_AUTH_DIALOG`、`CM_MSG_REPORT_UKEY_AUTH_RESULT`（枚举，`CM_MSG_MAX` 前）
   - kits/common `ErrorCode` 枚举追加 `DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED = 29700008`、`DIALOG_ERROR_UKEY_AUTH_REPORT_TIMEOUT = 29700009`、`DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS = 29700010`
 
-- [ ] **Step 1: 检查 HUKS 外部依赖（Global Constraint 7）**
+- [ ] **Step 1: 确认现有 HUKS 查询接口存在（存在性检查）**
 
 ```bash
-grep -n "abilityType\|abilityName" base/security/huks/interfaces/inner_api/huks_standard/main/include/hks_type.h
+grep -n "HksQueryAbilityInfo" base/security/huks/interfaces/inner_api/huks_standard/main/include/hks_api.h
 ```
-Expected: `struct HksAbilityInfo` 含 `uint32_t abilityType;`。若无 → **停止执行，报告阻塞**。
+Expected: 存在声明（返回 bundle/ability 名；类型不经 HUKS，见 Global Constraint 7）。
 
 - [ ] **Step 2: cm_type.h 追加类型与错误码**
 
@@ -184,7 +184,6 @@ git -C base/security/certificate_manager add -A && git -C base/security/certific
 namespace OHOS::Security::CertManager {
 constexpr uint32_t CM_UKEY_DIALOG_TOTAL_TIMEOUT_MS = 300000; // 5min, spec D5
 constexpr uint32_t CM_UKEY_DIALOG_GRACE_TIMEOUT_MS = 10000;  // 10s, spec D5
-constexpr uint32_t CM_UKEY_ABILITY_TYPE_UIEXTENSION = 1;     // 对齐 HUKS abilityType 取值
 
 // 结果回调分发命令码（SA->client 回调 stub 的 SendRequest code）
 constexpr uint32_t CM_UKEY_DIALOG_CALLBACK_CMD = 1;
@@ -196,9 +195,10 @@ public:
     virtual void Disconnect(const sptr<IAbilityConnection> &conn) = 0;
 };
 
-// ability 查询注入点（生产环境由 T4 装配为 HksQueryAbilityInfo 适配函数）
+// ability 查询注入点（生产环境由 T4 装配为 HksQueryAbilityInfo 适配函数：
+// 仅返回 bundle/ability 名，查询失败即视为"未注册自定义弹框"——类型不经 HUKS，D3）
 using AbilityQuerier = std::function<int32_t(const struct CmBlob *keyUri,
-    std::string &bundleName, std::string &abilityName, uint32_t &abilityType)>;
+    std::string &bundleName, std::string &abilityName)>;
 
 class CmUkeyAuthDialogManager {
 public:
@@ -252,8 +252,8 @@ public:
         manager_ = &CmUkeyAuthDialogManager::GetInstance();
         launcher_ = std::make_shared<FakeLauncher>();
         querier_ = [this](const struct CmBlob *keyUri, std::string &bundle,
-                      std::string &ability, uint32_t &type) -> int32_t {
-            bundle = driverBundle_; ability = driverAbility_; type = abilityType_; return querierRet_;
+                      std::string &ability) -> int32_t {
+            bundle = driverBundle_; ability = driverAbility_; return querierRet_;
         };
         manager_->SetLauncher(launcher_);
         manager_->SetAbilityQuerier(querier_);
@@ -263,7 +263,6 @@ public:
     std::shared_ptr<FakeLauncher> launcher_;
     std::string driverBundle_ = "com.example.ukeydrv";
     std::string driverAbility_ = "DrvUIExtAbility";
-    uint32_t abilityType_ = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
     int32_t querierRet_ = 0;
     sptr<FakeClientCallback> client_ = sptr<FakeClientCallback>(new FakeClientCallback());
     struct CmBlob keyUri_ = { 8, reinterpret_cast<uint8_t *>(const_cast<char *>("testuri")) };
@@ -271,15 +270,9 @@ public:
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogAbilityQueryFail, testing::ext::TestSize.Level0)
 {
-    querierRet_ = -51; // HUKS query error
+    querierRet_ = -51; // HUKS query error -> treated as not-registered
     ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED);
     EXPECT_EQ(launcher_->connectCount_, 0);
-}
-
-HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogWrongAbilityType, testing::ext::TestSize.Level0)
-{
-    abilityType_ = 0; // UIAbility
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED);
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogConnectFail, testing::ext::TestSize.Level0)
@@ -410,10 +403,9 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
     }
     std::lock_guard<std::mutex> lock(mutex_);
     if (session_ != nullptr) { return CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS; }
-    std::string bundle, ability; uint32_t type = 0;
-    if (querier_ == nullptr || querier_(keyUri, bundle, ability, type) != CM_SUCCESS ||
-        type != CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
-        return CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED;
+    std::string bundle, ability;
+    if (querier_ == nullptr || querier_(keyUri, bundle, ability) != CM_SUCCESS) {
+        return CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED; // query empty == not registered (D3)
     }
     // build session (state=LAUNCHING), requestId=GenerateRequestId()
     // conn = new CmSystemDialogConnection(...)  —— T3 提供；T2 阶段 connection 由 launcher fake 持有，
@@ -435,7 +427,7 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
 cd /home/wanghaixiang/ohos_master && ./build.sh --product-name rk3568 --build-target cm_sdk_test && \
   out/rk3568/tests/unittest/certificate_manager/certificate_manager/cm_sdk_test --gtest_filter='CmUkeyAuthDialogManagerTest.*'
 ```
-Expected: 11 个用例全部 PASS。
+Expected: 10 个用例全部 PASS。
 
 - [ ] **Step 5: Commit**
 
@@ -595,7 +587,7 @@ cd /home/wanghaixiang/ohos_master && ./build.sh --product-name rk3568 --build-ta
   ./build.sh --product-name rk3568 --build-target cert_manager_service && \
   out/rk3568/tests/unittest/certificate_manager/certificate_manager/cm_sdk_test --gtest_filter='CmUkeyAuthDialogManagerTest.*'
 ```
-Expected: 编译成功，12 个用例 PASS。
+Expected: 编译成功，11 个用例 PASS。
 
 - [ ] **Step 5: Commit**
 
@@ -826,14 +818,15 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
     if (argc == PARAM_SIZE_TWO && !ParseCmUIAbilityContextReq(asyncContext->env, argv[0], asyncContext->context)) { /* 原 401 逻辑 */ }
     // UkeyAuthRequest 解析复用 GetUkeyAuthRequest(asyncContext, argv[argc - 1])
-    if (NeedNewPath(asyncContext)) {   // argc==1 恒真；argc==2 时查询 ability 类型==UIExtensionAbility 为真
+    if (argc == PARAM_SIZE_ONE) {                 // 新接口：固定走 SA 新链路（D3，无类型判定）
         return OpenUkeyAuthDialogNoContext(asyncContext, std::move(report));  // promise + threadsafe
     }
-    // argc==2 且非 UIExtension：原 GetCustomerAuthCertWant + StartUkeyPinAbility 流程，零改动
+    // argc==2（老接口）：原有流程零改动（GetCustomerAuthCertWant + StartUkeyPinAbility），
+    // 不做类型分叉（D3：恒按默认 UIAbility 处理）
 }
 ```
 
-`NeedNewPath`：argc==1 返回 true；argc==2 调用 kits/common 的 `QueryUkeyAbilityType(certUri)`（本任务在 `cm_dialog_api_common.cpp` 新增导出：包装 `HksQueryAbilityInfo` 读 `abilityType`，查询失败默认 0/UIAbility——老路径行为不变）。
+`NeedNewPath` 已随 D3 裁定删除：argc==1 恒走新路径；argc==2 恒走原路径（零改动）。
 
 `OpenUkeyAuthDialogNoContext`：
 
@@ -1067,6 +1060,7 @@ git -C base/security/certificate_manager add -A && git -C base/security/certific
 
 ## Self-Review 记录
 
+0. **修订 R6（用户裁定 2026-09-09）**：abilityType 不经 HUKS——老接口恒走原路径、新接口固定 UIExtensionAbility（SA 仅以查询非空为门槛）。已同步修订 GC7、T1 Step 1（门禁改为现有接口存在性确认）、T2（querier 签名去 type 出参、删 OpenDialogWrongAbilityType 用例、manager 校验简化）、T6（删 NeedNewPath/QueryUkeyAbilityType，argc 分叉简化）；spec D3/§4/§6.1/§10.1/§10.2/§11/§12/§14-R3 同步修订。类型一致性复查：AbilityQuerier 新签名在 T2 Interfaces/T2 测试/T2 实现描述三处一致。
 1. **Spec coverage**：spec §5（d.ts 重载/report/枚举→T8）、§7（inner API→T1/T5）、§8（IPC 码/parcel/客户端→T1/T5、SA 路由→T4）、§9（manager/connection→T2/T3、BUILD→T3/T4）、§10（kits/common 映射→T1、NAPI argc 分叉→T6、ANI→T7）、§13（单测→T2/T3、fuzz→T9、构建验证→T10）均有对应任务。XTS 用例标注为 XTS 仓节奏交付（T10 报告事项）。**发现并补充**：spec 未覆盖的客户端 6min 兜底超时已写入 T5（防 SA 崩溃导致调用方永久挂起），并在报告事项中注明。
 2. **Placeholder scan**：T6 Step 1 中 `OpenUkeyAuthDialogNoContext` 内部为骨架注释——因其结构完全复刻本文件已有的 promise+tsfn 模式且 Step 3 有编译门槛验证，属可执行指引而非 TBD；其余任务代码块均为可直接落盘内容。T8 JSDoc 明确"逐字取自 spec §5.1"（spec 随计划执行，非占位）。
 3. **Type consistency**：`CmOpenUkeyAuthDialog(const struct UkeyAuthRequest*, CmUkeyAuthDialogResultCallback, void*)` 与回调 typedef 在 T1/T5/T6/T7 一致；manager 三接口签名在 T2 定义、T3/T4 消费处一致；parcel 协议 T4（服务端读）与 T5（客户端写）字段顺序一致（uint32 size + buffer + remote object）；错误码三元组（-1016/-1017/-1018 ↔ 29700008/09/10）全任务统一。
