@@ -651,3 +651,31 @@ CM_API_EXPORT int32_t CmImportUkeyCert(const struct CmBlob *keyUri, const struct
     CM_LOG_I("leave import ukey cert, result = %d", ret);
     return ret;
 }
+
+CM_API_EXPORT int32_t CmOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest,
+    CmUkeyAuthDialogResultCallback callback, void *userData)
+{
+    CM_LOG_I("enter open ukey auth dialog");
+    if (ukeyAuthRequest == NULL || callback == NULL ||
+        ukeyAuthRequest->keyUri.data == NULL || ukeyAuthRequest->keyUri.size == 0) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CmClientOpenUkeyAuthDialog(&ukeyAuthRequest->keyUri, callback, userData);
+    CM_LOG_I("leave open ukey auth dialog, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT int32_t CmReportUkeyAuthResult(const struct CmBlob *requestId, int32_t resultCode)
+{
+    CM_LOG_I("enter report ukey auth result");
+    if (requestId == NULL || requestId->data == NULL || requestId->size == 0) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CmClientReportUkeyAuthResult(requestId, resultCode);
+    CM_LOG_I("leave report ukey auth result, result = %d", ret);
+    return ret;
+}
