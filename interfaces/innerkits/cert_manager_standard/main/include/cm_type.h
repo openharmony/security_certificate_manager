@@ -260,7 +260,10 @@ enum CMDialogErrorCode {
     CMR_DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED = -1012, /* UIExtension will return -1012 if device check failed */
     CMR_DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE = -1013, /* UIExtension will return -1013 if no available cert to use*/
     CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED = -1014,
-    CMR_DIALOG_ERROR_START_UIABILITY_FAILED = -1015
+    CMR_DIALOG_ERROR_START_UIABILITY_FAILED = -1015,
+    CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED = -1016, /* ukey ability query empty or not UIExtensionAbility */
+    CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT = -1017, /* provider did not report result within total timeout */
+    CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS = -1018, /* another ukey pin dialog session is in progress */
 };
 
 enum CMErrorCode { /* temp use */
@@ -559,6 +562,10 @@ struct InstallUserCertParams {
 
 struct UkeyInfo {
     enum CmCertificatePurpose certPurpose;
+};
+
+struct UkeyAuthRequest {
+    struct CmBlob keyUri; /* ukey credential uri, max 256 bytes */
 };
 
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)
