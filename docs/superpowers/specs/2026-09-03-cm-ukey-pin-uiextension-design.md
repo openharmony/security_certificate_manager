@@ -496,4 +496,7 @@ CMNapiReportUkeyAuthResult(env, info)：
   - 老接口（UIAbility 类型驱动）回归；
   - R9 关注点：systemui `UIExtensionComponent` 装载 UkeyAuthUIExtensionAbility 类型
     extension 的兼容性；`CONNECT_UKEY_AUTH_EXTENSION` 权限校验方确认。
+  - cert_manager_service → samgr get ability_mgr（ExtensionManagerClient 依赖）与 →
+    com.ohos.systemui.dialog 进程 binder call 的 SELinux 规则（selinux_adapter 仓跨仓项，
+    联调前必须落实）。
 - **XTS 用例**：随 XTS 仓节奏单独交付（本仓不含）。
