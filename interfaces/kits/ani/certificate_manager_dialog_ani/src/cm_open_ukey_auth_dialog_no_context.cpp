@@ -63,6 +63,12 @@ int32_t CmOpenUkeyAuthDialogNoContext::GetParamsFromEnv()
         CM_LOG_E("keyUri is empty");
         return CMR_DIALOG_ERROR_PARAM_INVALID;
     }
+    if (this->keyUri.size > MAX_LEN_URI + 1) {
+        /* blob carries the terminating zero; reject before the SA does so the
+         * error maps to 29700006 instead of the unmapped generic error */
+        CM_LOG_E("keyUri is too long, max length: %d", MAX_LEN_URI);
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
 
     ani_status status = env->GlobalReference_Create(reinterpret_cast<ani_ref>(this->callback),
         &this->globalCallback);

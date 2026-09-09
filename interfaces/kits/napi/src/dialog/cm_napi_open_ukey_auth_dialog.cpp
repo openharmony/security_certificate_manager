@@ -65,6 +65,13 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
         CM_LOG_E("Failed to get certPurpose value");
         return nullptr;
     }
+    /* blob carries the terminating zero; SA rejects keyUri longer than
+     * MAX_LEN_URI, validate here so the caller reports 29700006 instead of
+     * the unmapped generic error */
+    if (asyncContext->certUri->size > MAX_LEN_URI + 1) {
+        CM_LOG_E("keyUri is too long, max length: %d", MAX_LEN_URI);
+        return nullptr;
+    }
     return GetInt32(asyncContext->env, 0);
 }
 
