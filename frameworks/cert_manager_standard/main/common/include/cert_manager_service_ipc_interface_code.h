@@ -59,6 +59,11 @@ enum CertManagerInterfaceCode {
     CM_MSG_MAX,
 };
 
+/* UKey auth dialog: SA -> client result callback stub command code
+ * (payload is a bare int32 result code; shared by the SA-side dialog manager
+ * and the client-side callback stub, do not renumber) */
+#define CM_UKEY_DIALOG_CALLBACK_CMD 1
+
 #ifdef __cplusplus
 }
 #endif

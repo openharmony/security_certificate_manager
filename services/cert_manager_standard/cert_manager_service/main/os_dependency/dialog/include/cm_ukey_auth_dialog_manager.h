@@ -28,6 +28,7 @@
 #include "nocopyable.h"
 
 #include "cm_type.h"
+#include "cert_manager_service_ipc_interface_code.h" // CM_UKEY_DIALOG_CALLBACK_CMD
 
 namespace OHOS::Security::CertManager {
 using OHOS::AAFwk::IAbilityConnection;
@@ -36,9 +37,9 @@ class CmSystemDialogConnection; // 生产装配的真实连接对象（T3）
 
 constexpr uint32_t CM_UKEY_DIALOG_TOTAL_TIMEOUT_MS = 300000; // 5min, spec D5
 constexpr uint32_t CM_UKEY_DIALOG_GRACE_TIMEOUT_MS = 10000;  // 10s, spec D5
-
-// 结果回调分发命令码（SA->client 回调 stub 的 SendRequest code）
-constexpr uint32_t CM_UKEY_DIALOG_CALLBACK_CMD = 1;
+/* 会话保活周期（spec §9.4）：须小于 SA 空闲卸载延时 60s（cm_sa.cpp DELAY_TIME），
+ * 会话期间无 IPC 进来，靠周期续期钩子重置空闲卸载计时。 */
+constexpr uint32_t CM_UKEY_DIALOG_KEEPALIVE_INTERVAL_MS = 30000;
 
 class SystemDialogLauncher {           // T3 提供真实实现，T2 单测注入 fake
 public:
@@ -59,6 +60,13 @@ public:
     void SetLauncher(std::shared_ptr<SystemDialogLauncher> launcher);
     void SetAbilityQuerier(AbilityQuerier querier);
     void SetTimeoutForTest(uint32_t totalMs, uint32_t graceMs);
+    /* SA 空闲卸载续期钩子（F1）：会话活跃期间由周期保活任务调用；由 SA 侧
+     * （cm_sa.cpp Init）注入 DelayUnload，弹框静态库不得依赖 cm_sa.h。 */
+    void SetUnloadRenewal(std::function<void()> renewal);
+    void SetKeepAliveIntervalForTest(uint32_t intervalMs);
+    /* PostTask 故障注入（F8 测试）：仅影响 StartTimerLocked 的投递结果，
+     * 不中止活跃会话（需在存活会话前后切换）。 */
+    void SetTimerPostFailForTest(bool fail);
     /* 生产装配入口（幂等懒初始化）：RealSystemDialogLauncher + HUKS ability
      * 查询适配；由 SA OnStart/处理器首次调用时触发（T4）。 */
     void InitRealDependencies();
@@ -69,6 +77,9 @@ public:
     int32_t OnReport(const std::string &requestId, const std::string &callerBundleName,
         int32_t resultCode);
     void OnDialogDisconnected(const std::string &requestId);
+    /* 客户端死亡回调（F2）：由会话注册的 DeathRecipient 调用；活跃会话匹配时
+     * 直接中止（不向已死客户端回投结果），未知/过期 requestId 为 no-op。 */
+    void OnClientDied(const std::string &requestId);
 
     std::string GetRequestIdForTest();
 
@@ -83,14 +94,19 @@ private:
         std::string driverBundleName;          // 来自 HksQueryAbilityInfo，上报身份校验用
         uint32_t callerUid = 0;                // 原客户端 uid（弹框参数 appUid 用）
         sptr<IRemoteObject> clientCallback;    // 客户端回调 stub
+        sptr<IRemoteObject::DeathRecipient> clientDeathRecipient; // 客户端死亡监听（F2）
         sptr<CmSystemDialogConnection> connection; // 系统弹窗服务连接
         State state = LAUNCHING;
     };
 
     void AbortActiveSessionLocked();
     bool EnsureTimerHandlerLocked();
-    void StartTimerLocked(const std::string &taskName, uint32_t delayMs,
+    bool StartTimerLocked(const std::string &taskName, uint32_t delayMs,
         const std::function<void()> &callback);
+    void RegisterClientDeathRecipientLocked(const std::shared_ptr<UkeyAuthSession> &session);
+    void RemoveClientDeathRecipientLocked(const std::shared_ptr<UkeyAuthSession> &session);
+    void StartKeepAliveLocked(const std::string &requestId);
+    void HandleKeepAlive(const std::string &requestId);
     void FinishSessionLocked(const std::string &requestId, int32_t resultCode);
     void HandleTotalTimeout(const std::string &requestId);
     void HandleGraceTimeout(const std::string &requestId);
@@ -98,9 +114,12 @@ private:
     std::mutex mutex_;
     std::shared_ptr<SystemDialogLauncher> launcher_;
     AbilityQuerier querier_;
+    std::function<void()> unloadRenewal_;  // SA 空闲卸载续期钩子（注入，F1）
     bool realDepsInited_ = false;          // InitRealDependencies 幂等标记
     uint32_t totalTimeoutMs_ = CM_UKEY_DIALOG_TOTAL_TIMEOUT_MS;
     uint32_t graceTimeoutMs_ = CM_UKEY_DIALOG_GRACE_TIMEOUT_MS;
+    uint32_t keepAliveIntervalMs_ = CM_UKEY_DIALOG_KEEPALIVE_INTERVAL_MS;
+    bool timerPostFailForTest_ = false;    // PostTask 故障注入（F8 测试）
     std::shared_ptr<AppExecFwk::EventHandler> timerHandler_; // "cm_ukey_dialog" 专用线程
     std::shared_ptr<UkeyAuthSession> session_;
 };

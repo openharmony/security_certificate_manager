@@ -41,10 +41,6 @@ constexpr int SA_ID_KEYSTORE_SERVICE = 3512;
 constexpr int32_t LOAD_ABILITY_TIME_OUT_SECONDS = 3;
 const std::u16string SA_KEYSTORE_SERVICE_DESCRIPTOR = u"ohos.security.cm.service";
 
-/* SA -> client result dispatch command; must equal CM_UKEY_DIALOG_CALLBACK_CMD
- * in the SA-side dialog manager (cm_ukey_auth_dialog_manager.h) */
-constexpr uint32_t CM_UKEY_DIALOG_CALLBACK_CMD = 1;
-
 /* client-side fallback timer (> SA 5min total timeout): guards against SA death
  * leaving the caller's callback pending forever */
 constexpr uint32_t CM_UKEY_DIALOG_CLIENT_FALLBACK_MS = 360000; /* 6 min */

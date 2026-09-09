@@ -30,6 +30,10 @@
 namespace OHOS::Security::CertManager {
 using namespace OHOS::Security::AccessToken;
 
+/* 与 cm_ipc_service.c 其他处理器不同，本文件处理器不构造 CmContext：UKey 弹框
+ * 会话不触及按用户/uid 隔离的存储数据，调用方身份经 IPCSkeleton（uid/tokenId）
+ * 获取并已完成权限与 HAP 身份校验。 */
+
 int32_t CmIpcServiceOpenUkeyAuthDialog(const struct CmBlob *paramSetBlob,
     const sptr<IRemoteObject> &clientCallback)
 {

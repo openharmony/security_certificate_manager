@@ -30,6 +30,7 @@
 #include "cm_mem.h"
 #include "cm_ipc_service.h"
 #include "cm_ukey_auth_dialog_ipc_service.h"
+#include "cm_ukey_auth_dialog_manager.h"
 #include "cert_manager_updateflag.h"
 #include "cm_report_wrapper.h"
 #include "cm_response.h"
@@ -211,6 +212,11 @@ int32_t CertManagerService::Init()
         }
 
         DelayUnload();
+        /* UKey 弹框会话期间（WAITING_REPORT）没有 IPC 进来，空闲卸载计时不会被
+         * OnRemoteRequest 重置；注入续期钩子，manager 的周期保活任务借此保住
+         * SA（spec §9.4）。弹框静态库不得依赖 cm_sa.h，故由 SA 侧注入。 */
+        CmUkeyAuthDialogManager::GetInstance().SetUnloadRenewal(
+            []() { CertManagerService::GetInstance().DelayUnload(); });
         if (!Publish(this)) {
             CM_LOG_E("CertManagerService::Init Publish Failed");
             return CMR_ERROR_SA_START_PUBLISH_FAILED;

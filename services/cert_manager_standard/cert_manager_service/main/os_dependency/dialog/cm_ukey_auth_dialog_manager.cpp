@@ -54,6 +54,7 @@ std::string GenerateRequestId() // 16 random bytes -> 32 hex chars
     }
     if (!randomOk) {
         /* fallback: loop counter + time（仅当 /dev/urandom 不可读时） */
+        CM_LOG_E("read /dev/urandom failed, fall back to time+counter request id seed");
         static uint32_t fallbackCounter = 0;
         uint64_t seed = static_cast<uint64_t>(time(nullptr)) |
             (static_cast<uint64_t>(fallbackCounter++) << 32);
@@ -98,6 +99,27 @@ std::string GraceTimeoutTaskName(const std::string &requestId)
 {
     return "ukey_grace_timeout_" + requestId;
 }
+
+std::string KeepAliveTaskName(const std::string &requestId)
+{
+    return "ukey_keepalive_" + requestId;
+}
+
+/* 客户端死亡监听（F2）：持有会话 requestId，死亡通知转入 manager 的小型可测入口 */
+class CmUkeyClientDeathRecipient : public IRemoteObject::DeathRecipient {
+public:
+    explicit CmUkeyClientDeathRecipient(const std::string &requestId) : requestId_(requestId) {}
+    ~CmUkeyClientDeathRecipient() override = default;
+
+    void OnRemoteDied(const wptr<IRemoteObject> &remoteObject) override
+    {
+        (void)remoteObject;
+        CmUkeyAuthDialogManager::GetInstance().OnClientDied(requestId_);
+    }
+
+private:
+    std::string requestId_;
+};
 
 /* 组装驱动弹框 parameters JSON（spec §6.2）：
  * {"keyUri":"<uri>","appUid":<callerUid>,"requestId":"<id>","action":"UkeyPINAuth"} */
@@ -211,6 +233,28 @@ void CmUkeyAuthDialogManager::SetTimeoutForTest(uint32_t totalMs, uint32_t grace
     graceTimeoutMs_ = graceMs;
 }
 
+void CmUkeyAuthDialogManager::SetUnloadRenewal(std::function<void()> renewal)
+{
+    /* 环境重新装配语义与 SetLauncher 一致：绑定旧钩子的挂起会话先行中止 */
+    std::lock_guard<std::mutex> lock(mutex_);
+    AbortActiveSessionLocked();
+    unloadRenewal_ = std::move(renewal);
+}
+
+void CmUkeyAuthDialogManager::SetKeepAliveIntervalForTest(uint32_t intervalMs)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AbortActiveSessionLocked();
+    keepAliveIntervalMs_ = intervalMs;
+}
+
+void CmUkeyAuthDialogManager::SetTimerPostFailForTest(bool fail)
+{
+    /* 故障注入开关：需可在存活会话前后切换，故不中止会话 */
+    std::lock_guard<std::mutex> lock(mutex_);
+    timerPostFailForTest_ = fail;
+}
+
 int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid,
     const sptr<IRemoteObject> &clientCallback)
 {
@@ -269,10 +313,18 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
     session->connection = connection;
 
     session->state = UkeyAuthSession::WAITING_REPORT;
-    session_ = session;
     std::string requestId = session->requestId;
-    StartTimerLocked(TotalTimeoutTaskName(requestId), totalTimeoutMs_,
-        [this, requestId] { HandleTotalTimeout(requestId); });
+    /* 总超时是会话唯一的安全网，投递失败时直接拒绝并回滚已建立的连接
+     * （会话不入表 -> 单飞不被占用），避免产生无超时保护的挂起会话（F8）。 */
+    if (!StartTimerLocked(TotalTimeoutTaskName(requestId), totalTimeoutMs_,
+        [this, requestId] { HandleTotalTimeout(requestId); })) {
+        connection->ReleaseWindow(nullptr);
+        launcher_->Disconnect(connection);
+        return CMR_DIALOG_ERROR_INTERNAL;
+    }
+    session_ = session;
+    RegisterClientDeathRecipientLocked(session); // best-effort，失败仅告警（F2）
+    StartKeepAliveLocked(requestId);             // best-effort，失败仅记录（F1）
     CM_LOG_I("open ukey auth dialog success, request id: %s", requestId.c_str());
     return CM_SUCCESS;
 }
@@ -308,9 +360,25 @@ void CmUkeyAuthDialogManager::OnDialogDisconnected(const std::string &requestId)
     if (timerHandler_ != nullptr) {
         timerHandler_->RemoveTask(TotalTimeoutTaskName(requestId));
     }
-    StartTimerLocked(GraceTimeoutTaskName(requestId), graceTimeoutMs_,
-        [this, requestId] { HandleGraceTimeout(requestId); });
+    if (!StartTimerLocked(GraceTimeoutTaskName(requestId), graceTimeoutMs_,
+        [this, requestId] { HandleGraceTimeout(requestId); })) {
+        /* 宽限期投递失败：已无任何超时兜底，按用户取消收尾而非悬挂会话（F8） */
+        FinishSessionLocked(requestId, CMR_DIALOG_ERROR_OPERATION_CANCELS);
+        return;
+    }
     CM_LOG_I("dialog disconnected, enter grace waiting, request id: %s", requestId.c_str());
+}
+
+void CmUkeyAuthDialogManager::OnClientDied(const std::string &requestId)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (session_ == nullptr || session_->requestId != requestId) {
+        return; // 未知/过期 requestId：no-op
+    }
+    /* 客户端已死：结果无处投递，直接按 Abort 语义收尾（不回投、释放单飞） */
+    CM_LOG_W("client died during ukey dialog session, abort without result, request id: %s",
+        requestId.c_str());
+    AbortActiveSessionLocked();
 }
 
 void CmUkeyAuthDialogManager::HandleTotalTimeout(const std::string &requestId)
@@ -357,15 +425,73 @@ bool CmUkeyAuthDialogManager::EnsureTimerHandlerLocked()
     return true;
 }
 
-void CmUkeyAuthDialogManager::StartTimerLocked(const std::string &taskName, uint32_t delayMs,
+bool CmUkeyAuthDialogManager::StartTimerLocked(const std::string &taskName, uint32_t delayMs,
     const std::function<void()> &callback)
 {
     if (!EnsureTimerHandlerLocked()) {
-        return;
+        return false;
     }
-    if (!timerHandler_->PostTask(callback, taskName, static_cast<int64_t>(delayMs))) {
+    bool posted = timerPostFailForTest_ ? false
+        : timerHandler_->PostTask(callback, taskName, static_cast<int64_t>(delayMs));
+    if (!posted) {
         CM_LOG_E("post timer task failed, task: %s", taskName.c_str());
     }
+    return posted;
+}
+
+void CmUkeyAuthDialogManager::RegisterClientDeathRecipientLocked(
+    const std::shared_ptr<UkeyAuthSession> &session)
+{
+    if (session->clientCallback == nullptr) {
+        return;
+    }
+    sptr<IRemoteObject::DeathRecipient> recipient =
+        new (std::nothrow) CmUkeyClientDeathRecipient(session->requestId);
+    if (recipient == nullptr) {
+        CM_LOG_E("create client death recipient failed, request id: %s",
+            session->requestId.c_str());
+        return;
+    }
+    if (!session->clientCallback->AddDeathRecipient(recipient)) {
+        /* 本地对象/注册失败：死亡监控尽力而为，总超时仍是安全网 */
+        CM_LOG_W("add client death recipient failed, request id: %s",
+            session->requestId.c_str());
+        return;
+    }
+    session->clientDeathRecipient = recipient;
+}
+
+void CmUkeyAuthDialogManager::RemoveClientDeathRecipientLocked(
+    const std::shared_ptr<UkeyAuthSession> &session)
+{
+    if (session->clientCallback != nullptr && session->clientDeathRecipient != nullptr) {
+        session->clientCallback->RemoveDeathRecipient(session->clientDeathRecipient);
+        session->clientDeathRecipient = nullptr;
+    }
+}
+
+void CmUkeyAuthDialogManager::StartKeepAliveLocked(const std::string &requestId)
+{
+    if (unloadRenewal_ == nullptr || !EnsureTimerHandlerLocked()) {
+        return; // 未注册续期钩子或线程不可用：无保活任务
+    }
+    if (!timerHandler_->PostTask([this, requestId] { HandleKeepAlive(requestId); },
+        KeepAliveTaskName(requestId), static_cast<int64_t>(keepAliveIntervalMs_))) {
+        /* 续期尽力而为：失败仅记录，总超时仍是安全网 */
+        CM_LOG_E("post keepalive task failed, request id: %s", requestId.c_str());
+    }
+}
+
+void CmUkeyAuthDialogManager::HandleKeepAlive(const std::string &requestId)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (session_ == nullptr || session_->requestId != requestId) {
+        return; // 会话已结束：不再续期（迟到的周期任务）
+    }
+    if (unloadRenewal_ != nullptr) {
+        unloadRenewal_(); // 重置 SA 空闲卸载计时（spec §9.4）
+    }
+    StartKeepAliveLocked(requestId); // 周期任务：会话仍活跃时重新投递
 }
 
 void CmUkeyAuthDialogManager::FinishSessionLocked(const std::string &requestId, int32_t resultCode)
@@ -395,7 +521,9 @@ void CmUkeyAuthDialogManager::FinishSessionLocked(const std::string &requestId, 
     if (timerHandler_ != nullptr) {
         timerHandler_->RemoveTask(TotalTimeoutTaskName(requestId));
         timerHandler_->RemoveTask(GraceTimeoutTaskName(requestId));
+        timerHandler_->RemoveTask(KeepAliveTaskName(requestId));
     }
+    RemoveClientDeathRecipientLocked(session_);
     sptr<CmSystemDialogConnection> connection = session_->connection;
     if (connection != nullptr) {
         connection->ReleaseWindow(nullptr); // 仅在仍持有弹窗服务代理时发送销毁命令
@@ -419,7 +547,9 @@ void CmUkeyAuthDialogManager::AbortActiveSessionLocked()
     if (timerHandler_ != nullptr) {
         timerHandler_->RemoveTask(TotalTimeoutTaskName(requestId));
         timerHandler_->RemoveTask(GraceTimeoutTaskName(requestId));
+        timerHandler_->RemoveTask(KeepAliveTaskName(requestId));
     }
+    RemoveClientDeathRecipientLocked(session_);
     sptr<CmSystemDialogConnection> connection = session_->connection;
     if (connection != nullptr) {
         connection->ReleaseWindow(nullptr);
