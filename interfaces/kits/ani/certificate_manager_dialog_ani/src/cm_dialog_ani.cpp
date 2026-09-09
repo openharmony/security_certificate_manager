@@ -24,6 +24,8 @@
 #include "cm_open_cert_detail_dialog.h"
 #include "cm_open_auth_dialog.h"
 #include "cm_open_ukey_auth_dialog.h"
+#include "cm_open_ukey_auth_dialog_no_context.h"
+#include "cm_report_ukey_auth_result.h"
 #include "cm_supports_ca_cert_dialog.h"
 #include "cm_dialog_api_common.h"
 #include "cm_ani_common.h"
@@ -179,6 +181,37 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
     return openUkeyAuthDialogImpl->Invoke();
 }
 
+ani_object openUkeyAuthDialogNoContextNative(ani_env *env, ani_string keyUri, ani_object callback)
+{
+    if (env == nullptr) {
+        CM_LOG_E("check env is nullptr.");
+        return nullptr;
+    }
+    if (!IsSupportDialogSyscap()) {
+        CM_LOG_E("check syscap is not supported.");
+        return InvokeCallbackVoid(env, callback);
+    }
+    auto openUkeyAuthDialogNoContextImpl = std::make_shared<CmOpenUkeyAuthDialogNoContext>(env, keyUri,
+        callback);
+    return openUkeyAuthDialogNoContextImpl->Invoke();
+}
+
+ani_object reportUkeyAuthResultNative(ani_env *env, ani_string requestId, ani_double resultCode,
+    ani_object callback)
+{
+    if (env == nullptr) {
+        CM_LOG_E("check env is nullptr.");
+        return nullptr;
+    }
+    if (!IsSupportDialogSyscap()) {
+        CM_LOG_E("check syscap is not supported.");
+        return InvokeCallbackVoid(env, callback);
+    }
+    auto reportUkeyAuthResultImpl = std::make_shared<CmReportUkeyAuthResult>(env, requestId, resultCode,
+        callback);
+    return reportUkeyAuthResultImpl->Invoke();
+}
+
 ani_object supportsCACertDialogNative(ani_env *env)
 {
     if (env == nullptr) {
@@ -222,6 +255,10 @@ ANI_EXPORT ani_status ANI_Constructor(ani_vm *vm, uint32_t *result)
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openAuthorizeDialogWithReqNative)},
         ani_native_function {"openUkeyAuthDialogNative", nullptr,
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openUkeyAuthDialogNative)},
+        ani_native_function {"openUkeyAuthDialogNoContextNative", nullptr,
+            reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openUkeyAuthDialogNoContextNative)},
+        ani_native_function {"reportUkeyAuthResultNative", nullptr,
+            reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::reportUkeyAuthResultNative)},
         ani_native_function {"supportsCACertDialogNative", nullptr,
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::supportsCACertDialogNative)},
     };

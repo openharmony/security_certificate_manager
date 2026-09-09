@@ -73,6 +73,17 @@ native function openUkeyAuthDialogNative(
   callback: AsyncCallbackWrapper<void>
 ): NativeResult<void>;
 
+native function openUkeyAuthDialogNoContextNative(
+  keyUri: string,
+  callback: AsyncCallbackWrapper<void>
+): NativeResult<void>;
+
+native function reportUkeyAuthResultNative(
+  requestId: string,
+  resultCode: number,
+  callback: AsyncCallbackWrapper<void>
+): NativeResult<void>;
+
 native function supportsCACertDialogNative(): NativeResult<boolean>;
 
 class NativeResult<T> {
@@ -99,6 +110,7 @@ class CertReferenceClass implements certificateManagerDialog.CertReference {
 }
 
 const CRITERIA_MAX_SIZE: int = 20;
+const MAX_REQUEST_ID_LEN: double = 64;
 
 export namespace certificateManagerDialog {
 
@@ -375,10 +387,64 @@ export namespace certificateManagerDialog {
         }
         let result: NativeResult<void> = openUkeyAuthDialogNative(context, keyUri, callback);
         if (result.code !== 0) {
-          let err = new BusinessError();
-          err.code = result.code;
-          err.message = result.message;
-          reject(err);
+            let err = new BusinessError();
+            err.code = result.code;
+            err.message = result.message;
+            reject(err);
+        }
+    });
+  }
+
+  export function openUkeyAuthDialog(ukeyAuthRequest: UkeyAuthRequest): Promise<void> {
+    return new Promise<void>((resolve, reject: (error: BusinessError) => void) => {
+        let callback = new AsyncCallbackWrapper<void>((err: BusinessError | null) => {
+            if (err?.code !== 0) {
+                reject(err as BusinessError);
+            } else {
+                resolve(undefined);
+            }
+        });
+
+        let keyUri: string = ukeyAuthRequest.keyUri;
+        if (keyUri === undefined || keyUri === '') {
+            let error = new BusinessError();
+            error.code = 401;
+            error.message = 'the input parameters is invalid.';
+            throw error;
+        }
+        let result: NativeResult<void> = openUkeyAuthDialogNoContextNative(keyUri, callback);
+        if (result.code !== 0) {
+            let err = new BusinessError();
+            err.code = result.code;
+            err.message = result.message;
+            reject(err);
+        }
+    });
+  }
+
+  export function reportUkeyAuthResult(requestId: string, resultCode: number): Promise<void> {
+    return new Promise<void>((resolve, reject: (error: BusinessError) => void) => {
+        let callback = new AsyncCallbackWrapper<void>((err: BusinessError | null) => {
+            if (err?.code !== 0) {
+                reject(err as BusinessError);
+            } else {
+                resolve(undefined);
+            }
+        });
+
+        if (requestId === undefined || resultCode === undefined) {
+            let error = new BusinessError();
+            error.code = 401;
+            error.message = 'the input parameters is invalid.';
+            throw error;
+        }
+        checkStrLen(requestId, MIN_DATA_LEN, MAX_REQUEST_ID_LEN);
+        let result: NativeResult<void> = reportUkeyAuthResultNative(requestId, resultCode, callback);
+        if (result.code !== 0) {
+            let err = new BusinessError();
+            err.code = result.code;
+            err.message = result.message;
+            reject(err);
         }
     });
   }
