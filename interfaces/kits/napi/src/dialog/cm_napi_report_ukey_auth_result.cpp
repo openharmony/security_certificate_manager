@@ -117,6 +117,7 @@ napi_value CMNapiReportUkeyAuthResult(napi_env env, napi_callback_info info)
     int32_t resultCode = 0;
     if (!ParseResultCode(env, argv[1], resultCode)) {
         CM_LOG_E("parse resultCode failed");
+        CM_FREE_PTR(requestId.data);
         ThrowError(env, PARAM_ERROR, "parse report params failed", &report);
         return nullptr;
     }
