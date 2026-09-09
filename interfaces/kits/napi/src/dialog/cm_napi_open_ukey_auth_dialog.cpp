@@ -17,12 +17,24 @@
 
 #include <memory>
 
+#include "cert_manager_api.h"
 #include "cm_log.h"
 #include "cm_metrics.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_napi_dialog_callback_void.h"
 
 namespace CMNapi {
+/* Result context kept alive from the CmOpenUkeyAuthDialog call until the
+ * promise is settled on the JS thread; ownership is handed to the threadsafe
+ * function finalizer. */
+struct CmUkeyAuthResultContext {
+    napi_env env = nullptr;
+    napi_deferred deferred = nullptr;
+    napi_threadsafe_function tsfn = nullptr;
+    int32_t resultCode = 0;
+    std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
+};
+
 static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
 {
     bool hasProperty = false;
@@ -67,18 +79,128 @@ static void StartUkeyPinAbility(std::shared_ptr<CmUIExtensionRequestContext> asy
     }
 }
 
-// Validate that argc equals the expected PARAM_SIZE_TWO and emit ThrowError if not.
+// Validate that argc equals PARAM_SIZE_ONE (new SA-path overload) or
+// PARAM_SIZE_TWO (legacy ability-context overload) and emit ThrowError if not.
 static bool CheckUkeyAuthDialogArgc(napi_env env, size_t argc,
     OHOS::Security::CertManager::CmMetricsReport *report)
 {
-    if (argc == PARAM_SIZE_TWO) {
+    if (argc == PARAM_SIZE_ONE || argc == PARAM_SIZE_TWO) {
         return true;
     }
     CM_LOG_E("params number mismatch");
     std::string errMsg = "Parameter Error. Params number mismatch, need " +
-        std::to_string(PARAM_SIZE_TWO) + ", given " + std::to_string(argc);
+        std::to_string(PARAM_SIZE_ONE) + " or " + std::to_string(PARAM_SIZE_TWO) +
+        ", given " + std::to_string(argc);
     ThrowError(env, PARAM_ERROR, errMsg, report);
     return false;
+}
+
+static void UvTsfnFinalize(napi_env env, void *finalizeData, void *finalizeHint)
+{
+    (void)env;
+    (void)finalizeHint;
+    delete static_cast<CmUkeyAuthResultContext *>(finalizeData);
+}
+
+// JS-thread callback invoked through the threadsafe function: settle the
+// promise exactly once with the dialog result delivered by the SA.
+static void UvTsfnCallback(napi_env env, napi_value jsCallback, void *context, void *data)
+{
+    (void)jsCallback;
+    (void)context;
+    auto resultContext = static_cast<CmUkeyAuthResultContext *>(data);
+    if (resultContext == nullptr || env == nullptr) {
+        // env == nullptr means the environment is tearing down: nothing left
+        // to settle, the finalizer releases the context.
+        return;
+    }
+
+    if (resultContext->resultCode == CM_SUCCESS) {
+        if (resultContext->metricsReport != nullptr) {
+            resultContext->metricsReport->Finish(CM_SUCCESS);
+        }
+        napi_value undefined = nullptr;
+        NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &undefined));
+        NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, resultContext->deferred, undefined));
+    } else {
+        napi_value error = GenerateBusinessError(env, resultContext->resultCode,
+            resultContext->metricsReport.get());
+        NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, resultContext->deferred, error));
+    }
+    // The result is delivered exactly once per open call (inner API contract),
+    // so the threadsafe function can be released right after settling.
+    napi_release_threadsafe_function(resultContext->tsfn, napi_tsfn_release);
+}
+
+// C callback running on an IPC thread: marshal the result code to the JS
+// thread through the threadsafe function.
+static void UkeyAuthDialogResultCallback(int32_t resultCode, void *userData)
+{
+    auto resultContext = static_cast<CmUkeyAuthResultContext *>(userData);
+    if (resultContext == nullptr) {
+        return;
+    }
+    resultContext->resultCode = resultCode;
+    napi_status status = napi_call_threadsafe_function(resultContext->tsfn, resultContext,
+        napi_tsfn_blocking);
+    if (status != napi_ok) {
+        CM_LOG_E("call threadsafe function failed, status = %d", static_cast<int32_t>(status));
+        napi_release_threadsafe_function(resultContext->tsfn, napi_tsfn_release);
+    }
+}
+
+// argc == PARAM_SIZE_ONE overload: no caller ability context, the dialog is
+// driven by the SA-side ukey session and the final result arrives
+// asynchronously on an IPC thread.
+static napi_value OpenUkeyAuthDialogNoContext(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::Security::CertManager::CmMetricsReport &&report)
+{
+    napi_env env = asyncContext->env;
+    napi_value result = nullptr;
+    napi_deferred deferred = nullptr;
+    NAPI_CALL(env, napi_create_promise(env, &deferred, &result));
+
+    auto resultContext = new (std::nothrow) CmUkeyAuthResultContext();
+    if (resultContext == nullptr) {
+        CM_LOG_E("alloc ukey auth result context failed");
+        napi_value error = GenerateBusinessError(env, DIALOG_ERROR_GENERIC, &report);
+        NAPI_CALL(env, napi_reject_deferred(env, deferred, error));
+        return result;
+    }
+    resultContext->env = env;
+    resultContext->deferred = deferred;
+    resultContext->metricsReport =
+        std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+
+    napi_value resourceName = nullptr;
+    NAPI_CALL(env, napi_create_string_latin1(env, "CmUkeyAuthDialogResult", NAPI_AUTO_LENGTH,
+        &resourceName));
+    napi_status status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 0, 1,
+        resultContext, UvTsfnFinalize, resultContext, UvTsfnCallback, &resultContext->tsfn);
+    if (status != napi_ok) {
+        CM_LOG_E("create threadsafe function failed, status = %d", static_cast<int32_t>(status));
+        napi_value error = GenerateBusinessError(env, DIALOG_ERROR_GENERIC,
+            resultContext->metricsReport.get());
+        NAPI_CALL(env, napi_reject_deferred(env, deferred, error));
+        delete resultContext;
+        return result;
+    }
+
+    // the keyUri blob is consumed synchronously inside CmOpenUkeyAuthDialog,
+    // so asyncContext->certUri only needs to live until the call returns
+    struct UkeyAuthRequest ukeyAuthRequest = {};
+    ukeyAuthRequest.keyUri.size = asyncContext->certUri->size;
+    ukeyAuthRequest.keyUri.data = asyncContext->certUri->data;
+    int32_t ret = CmOpenUkeyAuthDialog(&ukeyAuthRequest, UkeyAuthDialogResultCallback, resultContext);
+    if (ret != CM_SUCCESS) {
+        // sync failure: the result callback never fires (inner API contract),
+        // so settle the promise here and drop the threadsafe function
+        CM_LOG_E("open ukey auth dialog failed, ret = %d", ret);
+        napi_value error = GenerateBusinessError(env, ret, resultContext->metricsReport.get());
+        NAPI_CALL(env, napi_reject_deferred(env, deferred, error));
+        napi_release_threadsafe_function(resultContext->tsfn, napi_tsfn_release);
+    }
+    return result;
 }
 
 napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
@@ -101,20 +223,28 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
         return result;
     }
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
-    if (!ParseCmUIAbilityContextReq(asyncContext->env, argv[0], asyncContext->context)) {
+    if (argc == PARAM_SIZE_TWO && !ParseCmUIAbilityContextReq(asyncContext->env, argv[0],
+        asyncContext->context)) {
         CM_LOG_E("parse abilityContext failed");
         ThrowError(env, PARAM_ERROR, "parse abilityContext failed", &report);
         return nullptr;
     }
-    if (IsParamNull(asyncContext->env, argv[1])) {
+    napi_value requestArg = argv[argc - 1];
+    if (IsParamNull(asyncContext->env, requestArg)) {
         ThrowError(env, PARAM_ERROR, "UkeyAuthRequest is null", &report);
         return nullptr;
     }
-    if (GetUkeyAuthRequest(asyncContext, argv[1]) == nullptr) {
+    if (GetUkeyAuthRequest(asyncContext, requestArg) == nullptr) {
         CM_LOG_E("parse UkeyAuthRequest failed");
         ThrowError(env, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, "parse UkeyAuthRequest failed", &report);
         return nullptr;
     }
+    if (argc == PARAM_SIZE_ONE) {
+        // new overload: always go through the SA-side session (D3), no
+        // ability-type probing of any kind
+        return OpenUkeyAuthDialogNoContext(asyncContext, std::move(report));
+    }
+
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
     asyncContext->metricsReport = reportHolder;
