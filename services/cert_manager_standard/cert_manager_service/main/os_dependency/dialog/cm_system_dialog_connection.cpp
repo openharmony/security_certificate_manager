@@ -61,6 +61,7 @@ void CmSystemDialogConnection::OnAbilityConnectDone(const AppExecFwk::ElementNam
     data.WriteString16(Str8ToStr16(paramsJson_));
     {
         std::lock_guard<std::mutex> lock(mutex_);
+        if (released_) { return; } /* ReleaseWindow 之后不再补发启动命令 */
         dialogRemoteObject_ = remoteObject;
     }
     int32_t err = remoteObject->SendRequest(IAbilityConnection::ON_ABILITY_CONNECT_DONE, data, reply, option);
@@ -84,6 +85,7 @@ void CmSystemDialogConnection::ReleaseWindow(const sptr<IRemoteObject> &remoteOb
     sptr<IRemoteObject> target = remoteObject;
     {
         std::lock_guard<std::mutex> lock(mutex_);
+        released_ = true;
         if (target == nullptr) {
             target = dialogRemoteObject_;
         }

@@ -29,6 +29,7 @@
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_ipc_service.h"
+#include "cm_ukey_auth_dialog_ipc_service.h"
 #include "cert_manager_updateflag.h"
 #include "cm_report_wrapper.h"
 #include "cm_response.h"
@@ -276,7 +277,9 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     DelayUnload();
     uint32_t outSize = 0;
     if (code != static_cast<uint32_t>(CM_MSG_GET_UKEY_CERTIFICATE_LIST) &&
-        code != static_cast<uint32_t>(CM_MSG_GET_UKEY_CERTIFICATE)) {
+        code != static_cast<uint32_t>(CM_MSG_GET_UKEY_CERTIFICATE) &&
+        code != static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG) &&
+        code != static_cast<uint32_t>(CM_MSG_REPORT_UKEY_AUTH_RESULT)) {
         outSize = static_cast<uint32_t>(data.ReadUint32());
     }
     struct CmBlob srcData = { 0, nullptr };
@@ -285,6 +288,19 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     if (ret != CM_SUCCESS) {
         CM_LOG_E("GetSrcData failed!");
         return ret;
+    }
+    if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG) ||
+        code == static_cast<uint32_t>(CM_MSG_REPORT_UKEY_AUTH_RESULT)) {
+        if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG)) {
+            sptr<IRemoteObject> remoteCallback = data.ReadRemoteObject();
+            ret = (remoteCallback == nullptr) ? CMR_ERROR_NULL_POINTER
+                : CmIpcServiceOpenUkeyAuthDialog(&srcData, remoteCallback);
+        } else {
+            ret = CmIpcServiceReportUkeyAuthResult(&srcData);
+        }
+        reply.WriteInt32(ret);
+        CM_FREE_BLOB(srcData);
+        return NO_ERROR;
     }
     ret = ProcessMessage(code, outSize, srcData, reply);
     if (ret != CM_SUCCESS) {

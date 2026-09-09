@@ -49,6 +49,7 @@ private:
     std::string ability_;
     std::string paramsJson_;
     sptr<IRemoteObject> dialogRemoteObject_;
+    bool released_ = false; /* 会话收尾后忽略迟到的连接回调（R8） */
     std::mutex mutex_;
 };
 
