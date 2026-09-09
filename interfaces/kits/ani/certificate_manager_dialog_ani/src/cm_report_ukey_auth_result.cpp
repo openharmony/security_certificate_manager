@@ -71,13 +71,13 @@ int32_t CmReportUkeyAuthResult::GetParamsFromEnv()
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     this->requestId.size = static_cast<uint32_t>(requestIdStr.size());
-    this->resultCode = static_cast<int32_t>(this->aniResultCode);
+    this->reportedResultCode = static_cast<int32_t>(this->aniResultCode);
     return CM_SUCCESS;
 }
 
 int32_t CmReportUkeyAuthResult::InvokeInnerApi()
 {
-    return ::CmReportUkeyAuthResult(&this->requestId, this->resultCode);
+    return ::CmReportUkeyAuthResult(&this->requestId, this->reportedResultCode);
 }
 
 int32_t CmReportUkeyAuthResult::UnpackResult()

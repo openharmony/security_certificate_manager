@@ -29,7 +29,7 @@ private:
     ani_object callback = nullptr;
     /* parsed params */
     CmBlob requestId = { 0 };
-    int32_t resultCode = 0;
+    int32_t reportedResultCode = 0;
 
 public:
     CmReportUkeyAuthResult(ani_env *env, ani_string aniRequestId, ani_double aniResultCode,

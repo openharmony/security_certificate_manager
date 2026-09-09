@@ -387,10 +387,10 @@ export namespace certificateManagerDialog {
         }
         let result: NativeResult<void> = openUkeyAuthDialogNative(context, keyUri, callback);
         if (result.code !== 0) {
-            let err = new BusinessError();
-            err.code = result.code;
-            err.message = result.message;
-            reject(err);
+          let err = new BusinessError();
+          err.code = result.code;
+          err.message = result.message;
+          reject(err);
         }
     });
   }
