@@ -136,6 +136,7 @@ int32_t CmBuildParamSet(struct CmParamSet **paramSet)
     int ret = CmCheckParamSet(*paramSet, (*paramSet)->paramSetSize);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("invalid build params!");
+        (*paramSet)->paramSetSize = CM_DEFAULT_PARAM_SET_SIZE;
         return ret;
     }
 
