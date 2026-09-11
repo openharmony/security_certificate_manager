@@ -38,8 +38,11 @@ constexpr int32_t REPORT_CODE_OPERATION_CANCELED = 29700002;
 constexpr int32_t REPORT_CODE_INSTALL_FAILED = 29700003;
 constexpr int32_t REPORT_CODE_PARAM_INVALID = 29700006;
 
-/* HUKS ability 查询缓冲区长度（对齐 kits 层 cm_dialog_api_common.cpp 约定） */
+/* HUKS ability 查询缓冲区长度（对齐 kits 层 cm_dialog_api_common.cpp 约定）；
+ * 桩开启时真实查询路径不参与编译，常量随之收窄到非桩分支 */
+#ifndef CERT_MANAGER_UKEY_ABILITY_QUERY_STUB
 constexpr uint32_t HAP_INFO_MAX_LENGTH = 128;
+#endif
 /* 弹框 parameters JSON 的 action 值（spec §6.2） */
 constexpr const char *UKEY_DIALOG_ACTION = "UkeyPINAuth";
 
@@ -168,13 +171,23 @@ bool BuildUkeyDialogParams(const std::string &requestId, const struct CmBlob *ke
 }
 
 /* HUKS ability 查询适配（生产装配，模式对齐 kits 层 cm_dialog_api_common.cpp:98-127）：
- * 查询失败即视为"未注册自定义弹框"（D3）。 */
+ * 查询失败即视为"未注册自定义弹框"；abilityType 非 UIExtensionAbility 时同样
+ * 由 OpenDialog 拒绝（spec §6.1）。 */
 int32_t QueryUkeyDriverAbility(const struct CmBlob *keyUri,
-    std::string &bundleName, std::string &abilityName)
+    std::string &bundleName, std::string &abilityName, uint32_t &abilityType)
 {
     if (keyUri == nullptr || keyUri->data == nullptr || keyUri->size == 0) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
+#ifdef CERT_MANAGER_UKEY_ABILITY_QUERY_STUB
+    (void)keyUri;
+    bundleName = CM_UKEY_ABILITY_STUB_BUNDLE;
+    abilityName = CM_UKEY_ABILITY_STUB_ABILITY;
+    abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
+    CM_LOG_W("ukey ability query stub active, bundle: %s, ability: %s",
+        bundleName.c_str(), abilityName.c_str());
+    return CM_SUCCESS;
+#else
     struct HksAbilityInfo abilityInfo = {};
     abilityInfo.abilityName.data = static_cast<uint8_t *>(CmMalloc(HAP_INFO_MAX_LENGTH));
     abilityInfo.bundleName.data = static_cast<uint8_t *>(CmMalloc(HAP_INFO_MAX_LENGTH));
@@ -201,7 +214,11 @@ int32_t QueryUkeyDriverAbility(const struct CmBlob *keyUri,
     bundleName.assign(reinterpret_cast<char *>(abilityInfo.bundleName.data), abilityInfo.bundleName.size);
     CM_FREE_PTR(abilityInfo.abilityName.data);
     CM_FREE_PTR(abilityInfo.bundleName.data);
+    /* 本树 HUKS HksAbilityInfo 尚无 abilityType 字段（spec §6.1 对齐项），
+     * 非桩路径暂按默认 UIAbility 处理，HUKS 字段合入后替换为透传。 */
+    abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
     return CM_SUCCESS;
+#endif
 }
 } // namespace
 
@@ -272,9 +289,15 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
 
     std::string bundleName;
     std::string abilityName;
-    if (querier_ == nullptr || querier_(keyUri, bundleName, abilityName) != CM_SUCCESS) {
+    uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
+    int32_t queryRet = (querier_ == nullptr) ? CM_FAILURE : querier_(keyUri, bundleName, abilityName, abilityType);
+    if (queryRet != CM_SUCCESS) {
         CM_LOG_E("query ukey driver ability failed, custom pin dialog not registered");
-        return CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED; // query empty == not registered (D3)
+        return CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED; // query empty == not registered
+    }
+    if (abilityType != CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
+        CM_LOG_E("ukey driver ability type is not UIExtensionAbility, type: %u", abilityType);
+        return CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED; // wrong type == not supported
     }
 
     if (launcher_ == nullptr) {

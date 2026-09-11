@@ -20,6 +20,7 @@
 #include "cert_manager_api.h"
 #include "cm_log.h"
 #include "cm_metrics.h"
+#include "cm_ukey_ability_type.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_napi_dialog_callback_void.h"
 
@@ -247,9 +248,22 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
         return nullptr;
     }
     if (argc == PARAM_SIZE_ONE) {
-        // new overload: always go through the SA-side session (D3), no
-        // ability-type probing of any kind
+        // new overload: always go through the SA-side session
         return OpenUkeyAuthDialogNoContext(asyncContext, std::move(report));
+    }
+
+    // argc == PARAM_SIZE_TWO (legacy overload): branch by the registered ability
+    // type (spec §10.2) — UIExtensionAbility registrations take the new SA-side
+    // session path; UIAbility / unregistered keep the legacy flow below.
+    {
+        std::string driverBundle;
+        std::string driverAbility;
+        uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
+        if (GetUkeyAbilityInfo(asyncContext->certUri, driverBundle, driverAbility, abilityType) == CM_SUCCESS &&
+            abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
+            CM_LOG_I("ukey driver registered a UIExtensionAbility pin dialog, go sa session path");
+            return OpenUkeyAuthDialogNoContext(asyncContext, std::move(report));
+        }
     }
 
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));

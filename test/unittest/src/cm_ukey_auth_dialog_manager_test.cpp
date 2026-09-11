@@ -65,8 +65,8 @@ public:
         manager_ = &CmUkeyAuthDialogManager::GetInstance();
         launcher_ = std::make_shared<FakeLauncher>();
         querier_ = [this](const struct CmBlob *keyUri, std::string &bundle,
-                      std::string &ability) -> int32_t {
-            bundle = driverBundle_; ability = driverAbility_; return querierRet_;
+                      std::string &ability, uint32_t &type) -> int32_t {
+            bundle = driverBundle_; ability = driverAbility_; type = abilityType_; return querierRet_;
         };
         manager_->SetLauncher(launcher_);
         manager_->SetAbilityQuerier(querier_);
@@ -81,6 +81,7 @@ public:
     std::string driverBundle_ = "com.example.ukeydrv";
     std::string driverAbility_ = "DrvUIExtAbility";
     int32_t querierRet_ = 0;
+    uint32_t abilityType_ = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
     int renewalCount_ = 0; // keep-alive renewal hook fire count (F1)
     sptr<FakeClientCallback> client_ = sptr<FakeClientCallback>(new FakeClientCallback());
     struct CmBlob keyUri_ = { 8, reinterpret_cast<uint8_t *>(const_cast<char *>("testuri")) };
@@ -89,6 +90,13 @@ public:
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogAbilityQueryFail, testing::ext::TestSize.Level0)
 {
     querierRet_ = -51; // HUKS query error -> treated as not-registered
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED);
+    EXPECT_EQ(launcher_->connectCount_, 0);
+}
+
+HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogWrongAbilityType, testing::ext::TestSize.Level0)
+{
+    abilityType_ = CM_UKEY_ABILITY_TYPE_UIABILITY; // registered as UIAbility, not UIExtensionAbility
     ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED);
     EXPECT_EQ(launcher_->connectCount_, 0);
 }

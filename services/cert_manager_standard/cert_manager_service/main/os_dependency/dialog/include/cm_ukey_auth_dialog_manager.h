@@ -28,6 +28,7 @@
 #include "nocopyable.h"
 
 #include "cm_type.h"
+#include "cm_ukey_ability_type.h"
 #include "cert_manager_service_ipc_interface_code.h" // CM_UKEY_DIALOG_CALLBACK_CMD
 
 namespace OHOS::Security::CertManager {
@@ -48,10 +49,11 @@ public:
     virtual void Disconnect(const sptr<IAbilityConnection> &conn) = 0;
 };
 
-// ability 查询注入点（生产环境由 T4 装配为 HksQueryAbilityInfo 适配函数：
-// 仅返回 bundle/ability 名，查询失败即视为"未注册自定义弹框"——类型不经 HUKS，D3）
+// ability 查询注入点（生产环境由 InitRealDependencies 装配为 HksQueryAbilityInfo
+// 适配函数：返回 bundle/ability 名与 abilityType，查询失败即视为"未注册自定义弹框"；
+// type 非 UIExtensionAbility 同样拒绝——spec §6.1，联调期可经桩固定返回）
 using AbilityQuerier = std::function<int32_t(const struct CmBlob *keyUri,
-    std::string &bundleName, std::string &abilityName)>;
+    std::string &bundleName, std::string &abilityName, uint32_t &abilityType)>;
 
 class CmUkeyAuthDialogManager {
 public:

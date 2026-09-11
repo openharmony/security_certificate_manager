@@ -29,7 +29,12 @@ ohos_shared_library("certmanager_dialog_ani") {
   }
   include_dirs = [
     "include",
+    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common/include",
   ]
+  defines = []
+  if (certificate_manager_ukey_ability_stub) {
+    defines += [ "CERT_MANAGER_UKEY_ABILITY_QUERY_STUB" ]
+  }
   sources = [
     "./src/cm_dialog_ani.cpp",
     "./src/cm_open_dialog.cpp",

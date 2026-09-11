@@ -16,13 +16,17 @@
 #include "cm_dialog_api_common.h"
 #include "bundle_mgr_proxy.h"
 #include "cm_log.h"
+#include "cm_ukey_ability_type.h"
 #include "syspara/parameters.h"
 #include "systemcapability.h"
 #include "hks_api.h"
 #include "cm_mem.h"
 
 namespace OHOS::Security::CertManager::Dialog {
+/* HUKS ability 查询缓冲区长度；桩开启时真实查询路径不参与编译，随之收窄 */
+#ifndef CERT_MANAGER_UKEY_ABILITY_QUERY_STUB
 constexpr static uint32_t HAP_INFO_MAX_LENGTH = 128;
+#endif
 
 static OHOS::sptr<OHOS::AppExecFwk::IBundleMgr> GetBundleMgrProxy()
 {
@@ -95,8 +99,18 @@ static void GetDefaultAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want
     want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
 }
 
-static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName, std::string &bundleName)
+static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName,
+    std::string &bundleName, uint32_t &abilityType)
 {
+#ifdef CERT_MANAGER_UKEY_ABILITY_QUERY_STUB
+    (void)keyUri;
+    abilityName = CM_UKEY_ABILITY_STUB_ABILITY;
+    bundleName = CM_UKEY_ABILITY_STUB_BUNDLE;
+    abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
+    CM_LOG_W("ukey ability query stub active, bundle: %s, ability: %s",
+        bundleName.c_str(), abilityName.c_str());
+    return CM_SUCCESS;
+#else
     struct HksAbilityInfo abilityInfo{};
     abilityInfo.abilityName.data = (uint8_t*)CmMalloc(HAP_INFO_MAX_LENGTH);
     abilityInfo.bundleName.data = (uint8_t*)CmMalloc(HAP_INFO_MAX_LENGTH);
@@ -123,14 +137,29 @@ static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName, 
     bundleName.assign(reinterpret_cast<char *>(abilityInfo.bundleName.data), abilityInfo.bundleName.size);
     CM_FREE_PTR(abilityInfo.abilityName.data);
     CM_FREE_PTR(abilityInfo.bundleName.data);
+    /* 本树 HUKS HksAbilityInfo 尚无 abilityType 字段（spec §6.1 对齐项），
+     * 非桩路径暂按默认 UIAbility 处理，HUKS 字段合入后替换为透传。 */
+    abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
     return CM_SUCCESS;
+#endif
+}
+
+int32_t GetUkeyAbilityInfo(const CmBlob *keyUri, std::string &bundleName,
+    std::string &abilityName, uint32_t &abilityType)
+{
+    if (keyUri == nullptr || keyUri->data == nullptr || keyUri->size == 0) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
+    return QueryAbilityInfo(keyUri, abilityName, bundleName, abilityType);
 }
 
 int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
 {
     std::string abilityName = "";
     std::string bundleName = "";
-    int32_t ret = QueryAbilityInfo(keyUri, abilityName, bundleName);
+    uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
+    int32_t ret = QueryAbilityInfo(keyUri, abilityName, bundleName, abilityType);
     /**
      * When the query for the custom dialog's ability information fails,
      * launch the default dialog of the certificate manager.

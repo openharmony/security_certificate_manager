@@ -214,6 +214,14 @@ bool IsEnableCACertDialog();
 
 int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want);
 
+/* 查询 UKey 驱动注册的自定义 Pin 弹框 ability 信息（bundle/ability 名 + abilityType）。
+ * 返回 CM_SUCCESS 且 type 为 CM_UKEY_ABILITY_TYPE_UIEXTENSION 时，调用方可走
+ * SA 会话新链路；查询失败返回非 0（视为未注册，走原路径或回 -1016）。
+ * 联调期可经 CERT_MANAGER_UKEY_ABILITY_QUERY_STUB 桩固定返回（见
+ * frameworks/.../common/include/cm_ukey_ability_type.h）。 */
+int32_t GetUkeyAbilityInfo(const CmBlob *keyUri, std::string &bundleName,
+    std::string &abilityName, uint32_t &abilityType);
+
 bool IsSupportDialogSyscap();
 }  // namespace
 #endif

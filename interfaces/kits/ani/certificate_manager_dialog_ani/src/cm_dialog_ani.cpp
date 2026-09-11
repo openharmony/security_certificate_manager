@@ -32,6 +32,8 @@
 #include "cm_ani_utils.h"
 #include "cm_api_common.h"
 #include "cm_metrics.h"
+#include "cm_mem.h"
+#include "cm_ukey_ability_type.h"
 
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
@@ -176,6 +178,25 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
     if (!IsSupportDialogSyscap()) {
         CM_LOG_E("check syscap is not supported.");
         return InvokeCallbackVoid(env, callback);
+    }
+    /* branch by the registered ability type (spec §10.2): a UIExtensionAbility
+     * registration takes the no-context SA session path; UIAbility or query
+     * failure keeps the legacy context-based flow. */
+    {
+        CmBlob keyUriBlob = { 0, nullptr };
+        if (AniUtils::ParseString(env, keyUri, keyUriBlob) == CM_SUCCESS) {
+            std::string driverBundle;
+            std::string driverAbility;
+            uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
+            if (GetUkeyAbilityInfo(&keyUriBlob, driverBundle, driverAbility, abilityType) == CM_SUCCESS &&
+                abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
+                CM_LOG_I("ukey driver registered a UIExtensionAbility pin dialog, go sa session path");
+                CM_FREE_BLOB(keyUriBlob);
+                auto noContextImpl = std::make_shared<CmOpenUkeyAuthDialogNoContext>(env, keyUri, callback);
+                return noContextImpl->Invoke();
+            }
+            CM_FREE_BLOB(keyUriBlob);
+        }
     }
     auto openUkeyAuthDialogImpl = std::make_shared<CmOpenUkeyAuthDialog>(env, context, keyUri, callback);
     return openUkeyAuthDialogImpl->Invoke();
