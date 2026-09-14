@@ -38,6 +38,7 @@ ohos_unittest("cm_sdk_test") {
     "unittest/src/cm_sys_app_cert_test.cpp",
     "unittest/src/cm_test_common.cpp",
     "unittest/src/cm_ukey_auth_dialog_manager_test.cpp",
+    "unittest/src/cm_ukey_auth_dialog_real_ipc_test.cpp",
     "unittest/src/cm_update_test.cpp",
     "unittest/src/cm_user_cert_test.cpp",
     "unittest/src/cm_pfx_test.cpp",

@@ -14,11 +14,14 @@
  */
 
 #include "cm_ipc_client.h"
+#include "cm_request_dialog.h"
 
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
 
 #include "event_handler.h"
 #include "event_runner.h"
@@ -37,14 +40,9 @@ namespace OHOS {
 namespace Security {
 namespace CertManager {
 namespace {
-constexpr int SA_ID_KEYSTORE_SERVICE = 3512;
-constexpr int32_t LOAD_ABILITY_TIME_OUT_SECONDS = 3;
-const std::u16string SA_KEYSTORE_SERVICE_DESCRIPTOR = u"ohos.security.cm.service";
-
 /* client-side fallback timer (> SA 5min total timeout): guards against SA death
  * leaving the caller's callback pending forever */
 constexpr uint32_t CM_UKEY_DIALOG_CLIENT_FALLBACK_MS = 360000; /* 6 min */
-
 /* IRemoteStub<T> requires T::GetDescriptor(); IRemoteBroker has none, so a
  * local broker descriptor is declared (same fix as the SA-side test fake) */
 class CmDialogCallbackBroker : public IRemoteBroker {
@@ -187,67 +185,6 @@ void CmDialogCallbackStub::Deliver(int32_t result)
 using namespace OHOS;
 using namespace OHOS::Security::CertManager;
 
-static sptr<IRemoteObject> CmLoadSystemAbility(void)
-{
-    auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (saManager == nullptr) {
-        CM_LOG_E("GetCmProxy registry is null");
-        return {};
-    }
-
-    auto object = saManager->CheckSystemAbility(SA_ID_KEYSTORE_SERVICE);
-    if (object != nullptr) {
-        return object;
-    }
-
-    return saManager->LoadSystemAbility(SA_ID_KEYSTORE_SERVICE, LOAD_ABILITY_TIME_OUT_SECONDS);
-}
-
-/* Wire format (must match cm_sa.cpp OnRemoteRequest byte-for-byte):
- * [interfaceToken][uint32 size][paramSet blob][remote object (OPEN only)];
- * sync reply is a bare [int32 ret]. Dialog codes skip the outSize word. */
-static int32_t SendDialogRequest(enum CertManagerInterfaceCode type, const struct CmBlob *parcelBlob,
-    const sptr<IRemoteObject> &remoteObject, int32_t *replyCode)
-{
-    sptr<IRemoteObject> cmProxy = CmLoadSystemAbility();
-    if (cmProxy == nullptr) {
-        cmProxy = CmLoadSystemAbility();
-    }
-
-    if (cmProxy == nullptr) {
-        CM_LOG_E("Certificate manager Proxy is null.");
-        return CMR_ERROR_NULL_POINTER;
-    }
-
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option = MessageOption::TF_SYNC;
-
-    data.WriteInterfaceToken(SA_KEYSTORE_SERVICE_DESCRIPTOR);
-    data.WriteUint32(parcelBlob->size);
-    bool isWriteSuccess = data.WriteBuffer(parcelBlob->data, static_cast<size_t>(parcelBlob->size));
-    if (!isWriteSuccess) {
-        CM_LOG_E("WriteBuffer failed, size: %u", parcelBlob->size);
-        isWriteSuccess = data.WriteRawData(parcelBlob->data, static_cast<size_t>(parcelBlob->size));
-    }
-    if (!isWriteSuccess) {
-        CM_LOG_E("WriteBuffer and WriteRawData both failed, size: %u", parcelBlob->size);
-        return CMR_ERROR_IPC_WRITE_FAIL;
-    }
-    if (remoteObject != nullptr && !data.WriteRemoteObject(remoteObject)) {
-        CM_LOG_E("WriteRemoteObject failed");
-        return CMR_ERROR_IPC_WRITE_FAIL;
-    }
-
-    int32_t error = cmProxy->SendRequest(static_cast<uint32_t>(type), data, reply, option);
-    if (error != 0) {
-        CM_LOG_E("SendRequest error:%d", error);
-        return error;
-    }
-    *replyCode = reply.ReadInt32();
-    return CM_SUCCESS;
-}
-
 int32_t CmClientOpenUkeyAuthDialog(const struct CmBlob *keyUri,
     CmUkeyAuthDialogResultCallback callback, void *userData)
 {
@@ -283,7 +220,7 @@ int32_t CmClientOpenUkeyAuthDialog(const struct CmBlob *keyUri,
         }
 
         int32_t replyCode = CM_FAILURE;
-        ret = SendDialogRequest(CM_MSG_OPEN_UKEY_AUTH_DIALOG, &parcelBlob, stub, &replyCode);
+        ret = OHOS::SendRequestWithRemote(CM_MSG_OPEN_UKEY_AUTH_DIALOG, &parcelBlob, stub, &replyCode);
         if (ret != CM_SUCCESS || replyCode != CM_SUCCESS) {
             /* sync error: destroy the stub without invoking the callback (spec 4) */
             CM_LOG_E("open ukey auth dialog request failed, ret = %d, reply = %d", ret, replyCode);
@@ -321,7 +258,7 @@ int32_t CmClientReportUkeyAuthResult(const struct CmBlob *requestId, int32_t res
     struct CmBlob parcelBlob = { sendParamSet->paramSetSize, reinterpret_cast<uint8_t *>(sendParamSet) };
 
     int32_t replyCode = CM_FAILURE;
-    ret = SendDialogRequest(CM_MSG_REPORT_UKEY_AUTH_RESULT, &parcelBlob, nullptr, &replyCode);
+    ret = OHOS::SendRequestWithRemote(CM_MSG_REPORT_UKEY_AUTH_RESULT, &parcelBlob, nullptr, &replyCode);
     CmFreeParamSet(&sendParamSet);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("report ukey auth result request failed, ret = %d", ret);

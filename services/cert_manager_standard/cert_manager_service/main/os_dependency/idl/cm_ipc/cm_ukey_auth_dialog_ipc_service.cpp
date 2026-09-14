@@ -34,9 +34,10 @@ using namespace OHOS::Security::AccessToken;
  * 会话不触及按用户/uid 隔离的存储数据，调用方身份经 IPCSkeleton（uid/tokenId）
  * 获取并已完成权限与 HAP 身份校验。 */
 
-int32_t CmIpcServiceOpenUkeyAuthDialog(const struct CmBlob *paramSetBlob,
-    const sptr<IRemoteObject> &clientCallback)
+void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSetBlob,
+    const struct CmContext *context, const sptr<IRemoteObject> &clientCallback)
 {
+    (void)code;
     struct CmParamSet *paramSet = nullptr;
     struct CmBlob keyUri = { 0, nullptr };
     struct CmParamOut params[] = {
@@ -50,7 +51,8 @@ int32_t CmIpcServiceOpenUkeyAuthDialog(const struct CmBlob *paramSetBlob,
     if (ret != CM_SUCCESS) {
         CM_LOG_E("open ukey dialog get params failed, ret = %d", ret);
         CmFreeParamSet(&paramSet);
-        return CMR_ERROR_INVALID_ARGUMENT;
+        CmSendResponse(context, CMR_ERROR_INVALID_ARGUMENT, NULL);
+        return;
     }
 
     /* 服务端权限校验（纵深防御；NAPI 侧已有一次） */
@@ -58,18 +60,21 @@ int32_t CmIpcServiceOpenUkeyAuthDialog(const struct CmBlob *paramSetBlob,
         "ohos.permission.ACCESS_CERT_MANAGER") != PERMISSION_GRANTED) {
         CM_LOG_E("open ukey dialog permission denied");
         CmFreeParamSet(&paramSet);
-        return CMR_DIALOG_ERROR_PERMISSION_DENIED;
+        CmSendResponse(context, CMR_DIALOG_ERROR_PERMISSION_DENIED, NULL);
+        return;
     }
 
     CmUkeyAuthDialogManager::GetInstance().InitRealDependencies();
     ret = CmUkeyAuthDialogManager::GetInstance().OpenDialog(&keyUri,
         static_cast<uint32_t>(IPCSkeleton::GetCallingUid()), clientCallback);
     CmFreeParamSet(&paramSet);
-    return ret;
+    CmSendResponse(context, ret, NULL);
 }
 
-int32_t CmIpcServiceReportUkeyAuthResult(const struct CmBlob *paramSetBlob)
+void CmIpcServiceReportUkeyAuthResult(uint32_t code, const struct CmBlob *paramSetBlob,
+    const struct CmContext *context)
 {
+    (void)code;
     struct CmParamSet *paramSet = nullptr;
     struct CmBlob requestId = { 0, nullptr };
     uint32_t resultCode = 0;
@@ -85,7 +90,8 @@ int32_t CmIpcServiceReportUkeyAuthResult(const struct CmBlob *paramSetBlob)
     if (ret != CM_SUCCESS) {
         CM_LOG_E("report ukey result get params failed, ret = %d", ret);
         CmFreeParamSet(&paramSet);
-        return CMR_ERROR_INVALID_ARGUMENT;
+        CmSendResponse(context, CMR_ERROR_INVALID_ARGUMENT, NULL);
+        return;
     }
 
     /* 身份校验：仅 HAP token 可上报（bundleName 由 manager 与会话驱动比对） */
@@ -94,13 +100,14 @@ int32_t CmIpcServiceReportUkeyAuthResult(const struct CmBlob *paramSetBlob)
         CM_LOG_E("report ukey result caller is not hap token, callingUid = %d",
             static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
         CmFreeParamSet(&paramSet);
-        return CMR_DIALOG_ERROR_INTERNAL;
+        CmSendResponse(context, CMR_DIALOG_ERROR_INTERNAL, NULL);
+        return;
     }
 
     std::string reqId(reinterpret_cast<char *>(requestId.data), requestId.size);
     ret = CmUkeyAuthDialogManager::GetInstance().OnReport(reqId, hapInfo.bundleName,
         static_cast<int32_t>(resultCode));
     CmFreeParamSet(&paramSet);
-    return ret;
+    CmSendResponse(context, ret, NULL);
 }
 } // namespace OHOS::Security::CertManager

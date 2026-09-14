@@ -45,6 +45,11 @@ constexpr uint32_t HAP_INFO_MAX_LENGTH = 128;
 #endif
 /* 弹框 parameters JSON 的 action 值（spec §6.2） */
 constexpr const char *UKEY_DIALOG_ACTION = "UkeyPINAuth";
+/* UIExtensionComponent 拉起扩展需以该 want 参数标识扩展类型（ukeyAuth = type 40
+ * UKEY_AUTH），缺失时 AMS 侧无法识别为 ukeyAuth 扩展（checkOptExtensionAbility
+ * error），驱动 ability 不会被拉起 */
+constexpr const char *UKEY_DIALOG_UI_EXTENSION_TYPE_KEY = "ability.want.params.uiExtensionType";
+constexpr const char *UKEY_DIALOG_UI_EXTENSION_TYPE = "ukeyAuth";
 
 std::string GenerateRequestId() // 16 random bytes -> 32 hex chars
 {
@@ -125,7 +130,8 @@ private:
 };
 
 /* 组装驱动弹框 parameters JSON（spec §6.2）：
- * {"keyUri":"<uri>","appUid":<callerUid>,"requestId":"<id>","action":"UkeyPINAuth"} */
+ * {"keyUri":"<uri>","appUid":<callerUid>,"requestId":"<id>","action":"UkeyPINAuth",
+ *  "ability.want.params.uiExtensionType":"ukeyAuth"} */
 bool BuildUkeyDialogParams(const std::string &requestId, const struct CmBlob *keyUri,
     uint32_t callerUid, std::string &paramsJson)
 {
@@ -141,8 +147,10 @@ bool BuildUkeyDialogParams(const std::string &requestId, const struct CmBlob *ke
         cJSON_CreateNumber(static_cast<double>(callerUid)), // appUid
         cJSON_CreateString(requestId.c_str()),              // requestId
         cJSON_CreateString(UKEY_DIALOG_ACTION),             // action
+        cJSON_CreateString(UKEY_DIALOG_UI_EXTENSION_TYPE), // uiExtensionType
     };
-    const char *names[] = { "keyUri", "appUid", "requestId", "action" };
+    const char *names[] = { "keyUri", "appUid", "requestId", "action",
+        UKEY_DIALOG_UI_EXTENSION_TYPE_KEY };
     bool ok = true;
     for (size_t i = 0; i < sizeof(items) / sizeof(items[0]); i++) {
         if (items[i] != nullptr && cJSON_AddItemToObject(root, names[i], items[i])) {

@@ -19,15 +19,19 @@
 #include "iremote_object.h"
 
 #include "cm_type.h"
+#include "cm_response.h"
 
 namespace OHOS::Security::CertManager {
-/* UKey 认证弹框 IPC 处理器（新式同步应答：处理器返回值由路由层
- * reply.WriteInt32 原样透传，不经 ConvertErrorCode 折叠）。
+/* UKey 认证弹框 IPC 处理器（对齐 ukey parcel 系列表模式：context 即 reply parcel，
+ * 处理器经 CmSendResponse 写同步应答，ConvertErrorCode 不折叠 -1016/-1018）。
  * 请求 parcel：OPEN   [uint32 size][paramSet: CM_TAG_PARAM0_BUFFER=keyUri][remote object 回调stub]
- *             REPORT [uint32 size][paramSet: CM_TAG_PARAM0_BUFFER=requestId, CM_TAG_PARAM1_UINT32=resultCode] */
-int32_t CmIpcServiceOpenUkeyAuthDialog(const struct CmBlob *paramSetBlob,
-    const sptr<IRemoteObject> &clientCallback);
+ *             REPORT [uint32 size][paramSet: CM_TAG_PARAM0_BUFFER=requestId, CM_TAG_PARAM1_UINT32=resultCode]
+ * OPEN 因需从 data parcel 读取 remote object，由 cm_sa.cpp OnRemoteRequest 分支调用；
+ * REPORT 无额外参数，经 g_cmParcelIpcHandler 表分发。 */
+void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSetBlob,
+    const struct CmContext *context, const sptr<IRemoteObject> &clientCallback);
 
-int32_t CmIpcServiceReportUkeyAuthResult(const struct CmBlob *paramSetBlob);
+void CmIpcServiceReportUkeyAuthResult(uint32_t code, const struct CmBlob *paramSetBlob,
+    const struct CmContext *context);
 } // namespace OHOS::Security::CertManager
 #endif // CM_UKEY_AUTH_DIALOG_IPC_SERVICE_H

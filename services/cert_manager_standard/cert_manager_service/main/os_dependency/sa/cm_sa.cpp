@@ -66,6 +66,7 @@ static struct CmParcelIpcPoint g_cmParcelIpcHandler[] = {
     { CM_MSG_GET_UKEY_CERTIFICATE_LIST, CmIpcServiceGetUkeyCertList },
     { CM_MSG_GET_UKEY_CERTIFICATE, CmIpcServiceGetUkeyCert },
     { CM_MSG_IMPORT_UKEY_CERTIFICATE, CmIpcServiceImportUkeyCert },
+    { CM_MSG_REPORT_UKEY_AUTH_RESULT, CmIpcServiceReportUkeyAuthResult },
 };
 
 struct CmIpcPoint {
@@ -229,13 +230,9 @@ int32_t CertManagerService::Init()
     return CM_SUCCESS;
 }
 
-static int32_t GetSrcData(MessageParcel &data, struct CmBlob *srcData)
+static int32_t GetSrcDataBody(MessageParcel &data, uint32_t size, struct CmBlob *srcData)
 {
-    srcData->size = static_cast<uint32_t>(data.ReadUint32());
-    if (IsInvalidLength(srcData->size)) {
-        CM_LOG_E("srcData size is invalid, size:%u", srcData->size);
-        return CMR_ERROR_IPC_PARAM_SIZE_INVALID;
-    }
+    srcData->size = size;
     srcData->data = static_cast<uint8_t *>(CmMalloc(srcData->size));
     if (srcData->data == nullptr) {
         CM_LOG_E("Malloc srcData failed.");
@@ -260,6 +257,16 @@ static int32_t GetSrcData(MessageParcel &data, struct CmBlob *srcData)
         return CMR_ERROR_MEM_OPERATION_COPY;
     }
     return CM_SUCCESS;
+}
+
+static int32_t GetSrcData(MessageParcel &data, struct CmBlob *srcData)
+{
+    uint32_t size = static_cast<uint32_t>(data.ReadUint32());
+    if (IsInvalidLength(size)) {
+        CM_LOG_E("srcData size is invalid, size:%u", size);
+        return CMR_ERROR_IPC_PARAM_SIZE_INVALID;
+    }
+    return GetSrcDataBody(data, size, srcData);
 }
 
 int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
@@ -288,25 +295,42 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
         code != static_cast<uint32_t>(CM_MSG_REPORT_UKEY_AUTH_RESULT)) {
         outSize = static_cast<uint32_t>(data.ReadUint32());
     }
+    /* OPEN 请求布局 [uint32 size][remote object][buffer]：客户端回调 stub 位于
+     * buffer 之前（WriteBuffer 会补尾 pad 而 ReadBuffer 不跳过，对象须避免写在
+     * 非对齐 buffer 之后），因此 OPEN 在通用 GetSrcData 之前自行解析；
+     * 应答由处理器经 CmSendResponse(context=reply) 写入。 */
+    if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG)) {
+        uint32_t openBlobSize = static_cast<uint32_t>(data.ReadUint32());
+        if (IsInvalidLength(openBlobSize)) {
+            CM_LOG_E("open dialog srcData size is invalid, size:%u", openBlobSize);
+            CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply),
+                CMR_ERROR_IPC_PARAM_SIZE_INVALID, NULL);
+            return NO_ERROR;
+        }
+        sptr<IRemoteObject> remoteCallback = data.ReadRemoteObject();
+        if (remoteCallback == nullptr) {
+            CM_LOG_E("open ukey dialog read remote callback null");
+            CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply), CMR_ERROR_NULL_POINTER, NULL);
+            return NO_ERROR;
+        }
+        struct CmBlob openSrcData = { 0, nullptr };
+        int32_t openRet = GetSrcDataBody(data, openBlobSize, &openSrcData);
+        if (openRet != CM_SUCCESS) {
+            CM_LOG_E("open dialog GetSrcDataBody failed!");
+            CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply), openRet, NULL);
+            return NO_ERROR;
+        }
+        CmIpcServiceOpenUkeyAuthDialog(code, &openSrcData,
+            reinterpret_cast<const struct CmContext *>(&reply), remoteCallback);
+        CM_FREE_BLOB(openSrcData);
+        return NO_ERROR;
+    }
     struct CmBlob srcData = { 0, nullptr };
     int32_t ret = CM_SUCCESS;
     ret = GetSrcData(data, &srcData);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("GetSrcData failed!");
         return ret;
-    }
-    if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG) ||
-        code == static_cast<uint32_t>(CM_MSG_REPORT_UKEY_AUTH_RESULT)) {
-        if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG)) {
-            sptr<IRemoteObject> remoteCallback = data.ReadRemoteObject();
-            ret = (remoteCallback == nullptr) ? CMR_ERROR_NULL_POINTER
-                : CmIpcServiceOpenUkeyAuthDialog(&srcData, remoteCallback);
-        } else {
-            ret = CmIpcServiceReportUkeyAuthResult(&srcData);
-        }
-        reply.WriteInt32(ret);
-        CM_FREE_BLOB(srcData);
-        return NO_ERROR;
     }
     ret = ProcessMessage(code, outSize, srcData, reply);
     if (ret != CM_SUCCESS) {
