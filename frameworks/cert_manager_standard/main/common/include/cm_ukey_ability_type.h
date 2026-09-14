@@ -28,7 +28,7 @@
  * HksQueryAbilityInfo 固定返回以下三元组，模拟 UKey 驱动注册的 UIExtensionAbility
  * 类型自定义 Pin 弹框，用于无真实 UKey 设备的真机联调。 */
 #define CM_UKEY_ABILITY_STUB_BUNDLE  "com.example.ukeyauthability2"
-#define CM_UKEY_ABILITY_STUB_ABILITY "MyUkeyAuthUIExtensionAbility"
+#define CM_UKEY_ABILITY_STUB_ABILITY "MyUkeyAuthExtensionAbility"
 #endif
 
 #endif /* CM_UKEY_ABILITY_TYPE_H */
