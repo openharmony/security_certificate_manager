@@ -14,18 +14,24 @@
  */
 
 #include "cm_open_ukey_auth_dialog.h"
+#include "securec.h"
+
 #include "cm_mem.h"
 #include "cm_ani_utils.h"
 #include "cm_ani_common.h"
 #include "cm_log.h"
 #include "cm_dialog_api_common.h"
+#include "cm_ukey_dialog_common.h"
 
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
 CmOpenUkeyAuthDialog::CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_string aniKeyUri,
-    ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback, "openUkeyAuthDialog")
+    ani_string aniScene, ani_object aniCustomData, ani_object callback)
+    : CertManagerAsyncImpl(env, aniContext, callback, "openUkeyAuthDialog")
 {
     this->aniKeyUri = aniKeyUri;
+    this->aniScene = aniScene;
+    this->aniCustomData = aniCustomData;
 }
 
 int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
@@ -46,6 +52,38 @@ int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
         CM_LOG_E("keyUri is too long, max length: %d", MAX_LEN_URI);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
+
+    /* optional scene; must be exactly 'Login' or 'Custom' (D9/D11) */
+    CmBlob sceneBlob = { 0 };
+    ret = AniUtils::ParseString(env, this->aniScene, sceneBlob);
+    if (ret != CM_SUCCESS || sceneBlob.size == 0) {
+        CM_LOG_E("parse scene failed. ret = %d", ret);
+        CM_FREE_BLOB(sceneBlob);
+        return CMR_DIALOG_ERROR_PARAM_INVALID;
+    }
+    std::string sceneStr(reinterpret_cast<char *>(sceneBlob.data), sceneBlob.size - 1);
+    CM_FREE_BLOB(sceneBlob);
+    if (sceneStr == CM_UKEY_SCENE_LOGIN_STR) {
+        this->scene = CM_UKEY_AUTH_SCENE_LOGIN;
+    } else if (sceneStr == CM_UKEY_SCENE_CUSTOM_STR) {
+        this->scene = CM_UKEY_AUTH_SCENE_CUSTOM;
+    } else {
+        CM_LOG_E("scene is not a valid UkeyAuthScene value");
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+
+    /* optional customData; Uint8Array <= 2048 raw bytes (D19), ets layer normalized */
+    ret = AniUtils::ParseUint8Array(env, reinterpret_cast<ani_arraybuffer>(this->aniCustomData),
+        this->customData);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("parse customData failed. ret = %d", ret);
+        return ret;
+    }
+    if (this->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
+        CM_LOG_E("customData is too long, max: %d", CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE);
+        CM_FREE_BLOB(this->customData);
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
     return CM_SUCCESS;
 }
 
@@ -63,8 +101,20 @@ int32_t CmOpenUkeyAuthDialog::StartUkeyPinAbility(std::shared_ptr<AbilityContext
 int32_t CmOpenUkeyAuthDialog::InvokeAsyncWork()
 {
     CM_LOG_D("InvokeAsyncWork start");
+    /* rule 3（spec D10）：需默认弹框但 scene=Custom，同步拒绝 29700005（无 IPC）。
+     * UIExtension 委托判定在 cm_dialog_ani.cpp（此处必为非 UIExtension 路径）。 */
+    {
+        std::string driverBundle;
+        std::string driverAbility;
+        uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
+        int32_t queryRet = GetUkeyAbilityInfo(&this->keyUri, driverBundle, driverAbility, abilityType);
+        if (queryRet != CM_SUCCESS && this->scene == CM_UKEY_AUTH_SCENE_CUSTOM) {
+            CM_LOG_E("no custom dialog registered but scene is Custom");
+            return CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED;
+        }
+    }
     OHOS::AAFwk::Want want{};
-    int32_t ret = GetCustomerAuthCertWant(&this->keyUri, want);
+    int32_t ret = GetCustomerAuthCertWant(&this->keyUri, this->scene, &this->customData, want);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get customer auth cert want failed. ret = %d", ret);
         return ret;
@@ -84,6 +134,11 @@ int32_t CmOpenUkeyAuthDialog::UnpackResult()
 void CmOpenUkeyAuthDialog::OnFinish()
 {
     CM_FREE_BLOB(this->keyUri);
+    if (this->customData.data != nullptr && this->customData.size > 0) {
+        /* customData 为调用方不透明数据，释放前擦除（spec R10） */
+        (void)memset_s(this->customData.data, this->customData.size, 0, this->customData.size);
+    }
+    CM_FREE_BLOB(this->customData);
     return;
 }
 }

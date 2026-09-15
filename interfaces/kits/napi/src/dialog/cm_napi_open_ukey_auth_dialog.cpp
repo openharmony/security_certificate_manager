@@ -21,6 +21,7 @@
 #include "cm_log.h"
 #include "cm_metrics.h"
 #include "cm_ukey_ability_type.h"
+#include "cm_ukey_dialog_common.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_napi_dialog_callback_void.h"
 
@@ -33,6 +34,9 @@ struct CmUkeyAuthResultContext {
     napi_deferred deferred = nullptr;
     napi_threadsafe_function tsfn = nullptr;
     int32_t resultCode = 0;
+    /* D8 修订：老接口（argc==2）委托 SA 会话时不向已发布 throws 面新增
+     * since-26 错误码，-1017/-1018 在此标记下折叠为 29700002/29700003 */
+    bool legacyOverload = false;
     std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
 
@@ -99,6 +103,87 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
             }
         }
     }
+    /* optional scene (D9/D11): absent/undefined/null keeps LOGIN; present value must be
+     * exactly 'Login' or 'Custom' (case sensitive), otherwise a parameter error */
+    bool hasScene = false;
+    status = napi_has_named_property(asyncContext->env, arg, "scene", &hasScene);
+    if (status == napi_ok && hasScene) {
+        napi_value sceneValue = nullptr;
+        status = napi_get_named_property(asyncContext->env, arg, "scene", &sceneValue);
+        if (status == napi_ok && sceneValue != nullptr) {
+            napi_valuetype sceneType = napi_undefined;
+            if (napi_typeof(asyncContext->env, sceneValue, &sceneType) == napi_ok &&
+                sceneType != napi_undefined && sceneType != napi_null) {
+                if (sceneType != napi_string) {
+                    CM_LOG_E("type of param scene is not string");
+                    return nullptr;
+                }
+                char sceneBuf[16] = { 0 };
+                size_t copied = 0;
+                if (napi_get_value_string_utf8(asyncContext->env, sceneValue, sceneBuf,
+                    sizeof(sceneBuf), &copied) != napi_ok) {
+                    CM_LOG_E("scene value too long or invalid");
+                    return nullptr;
+                }
+                std::string sceneStr(sceneBuf, copied);
+                if (sceneStr == CM_UKEY_SCENE_LOGIN_STR) {
+                    asyncContext->authScene = CM_UKEY_AUTH_SCENE_LOGIN;
+                } else if (sceneStr == CM_UKEY_SCENE_CUSTOM_STR) {
+                    asyncContext->authScene = CM_UKEY_AUTH_SCENE_CUSTOM;
+                } else {
+                    CM_LOG_E("scene is not a valid UkeyAuthScene value");
+                    return nullptr;
+                }
+            }
+        }
+    }
+
+    /* optional customData (D19): absent/undefined/null keeps none; must be a
+     * Uint8Array of at most 2048 raw bytes */
+    bool hasCustomData = false;
+    status = napi_has_named_property(asyncContext->env, arg, "customData", &hasCustomData);
+    if (status == napi_ok && hasCustomData) {
+        napi_value customDataValue = nullptr;
+        status = napi_get_named_property(asyncContext->env, arg, "customData", &customDataValue);
+        if (status == napi_ok && customDataValue != nullptr) {
+            napi_valuetype customDataType = napi_undefined;
+            if (napi_typeof(asyncContext->env, customDataValue, &customDataType) == napi_ok &&
+                customDataType != napi_undefined && customDataType != napi_null) {
+                napi_typedarray_type arrayType = napi_int8_array;
+                size_t length = 0;
+                void *data = nullptr;
+                if (napi_get_typedarray_info(asyncContext->env, customDataValue, &arrayType,
+                    &length, &data, nullptr, nullptr) != napi_ok || arrayType != napi_uint8_array) {
+                    CM_LOG_E("type of param customData is not Uint8Array");
+                    return nullptr;
+                }
+                if (length > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
+                    CM_LOG_E("customData is too long, max: %d", CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE);
+                    return nullptr;
+                }
+                if (length > 0) {
+                    asyncContext->authCustomData = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
+                    if (asyncContext->authCustomData == nullptr) {
+                        CM_LOG_E("alloc customData blob failed");
+                        return nullptr;
+                    }
+                    asyncContext->authCustomData->data = static_cast<uint8_t *>(CmMalloc(length));
+                    if (asyncContext->authCustomData->data == nullptr) {
+                        CM_FREE_PTR(asyncContext->authCustomData);
+                        CM_LOG_E("alloc customData buffer failed");
+                        return nullptr;
+                    }
+                    if (memcpy_s(asyncContext->authCustomData->data, length, data, length) != EOK) {
+                        CM_FREE_PTR(asyncContext->authCustomData->data);
+                        CM_FREE_PTR(asyncContext->authCustomData);
+                        CM_LOG_E("copy customData failed");
+                        return nullptr;
+                    }
+                    asyncContext->authCustomData->size = static_cast<uint32_t>(length);
+                }
+            }
+        }
+    }
     return GetInt32(asyncContext->env, 0);
 }
 
@@ -157,8 +242,8 @@ static void UvTsfnCallback(napi_env env, napi_value jsCallback, void *context, v
         NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &undefined));
         NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, resultContext->deferred, undefined));
     } else {
-        napi_value error = GenerateBusinessError(env, resultContext->resultCode,
-            resultContext->metricsReport.get());
+        napi_value error = GenerateUkeyResultError(env, resultContext->resultCode,
+            resultContext->legacyOverload, resultContext->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, resultContext->deferred, error));
     }
     // The result is delivered exactly once per open call (inner API contract),
@@ -183,11 +268,56 @@ static void UkeyAuthDialogResultCallback(int32_t resultCode, void *userData)
     }
 }
 
+/* D8 修订：老接口（argc==2）委托 SA 会话后可能产生 -1017/-1018。老接口 since-22
+ * 已发布，不新增 since-26 错误码至其 throws 面——超时折叠 29700002、单飞折叠
+ * 29700003，错误消息保留具体原因（超时未上报 / 已有挂起会话）。 */
+static bool IsLegacyFoldCode(int32_t resultCode)
+{
+    return resultCode == CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT ||
+        resultCode == CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS;
+}
+
+static napi_value GenerateLegacyFoldedBusinessError(napi_env env, int32_t resultCode,
+    OHOS::Security::CertManager::CmMetricsReport *metricsReport)
+{
+    int32_t jsCode = DIALOG_ERROR_GENERIC;
+    const std::string *msg = &DIALOG_GENERIC_MSG;
+    if (resultCode == CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT) {
+        jsCode = DIALOG_ERROR_OPERATION_CANCELED; /* 29700002 */
+        msg = &UKEY_AUTH_REPORT_TIMEOUT_MSG;
+    } else if (resultCode == CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS) {
+        jsCode = DIALOG_ERROR_INSTALL_FAILED; /* 29700003 */
+        msg = &UKEY_DIALOG_IN_PROGRESS_MSG;
+    }
+
+    napi_value code = nullptr;
+    NAPI_CALL(env, napi_create_int32(env, jsCode, &code));
+    napi_value message = nullptr;
+    NAPI_CALL(env, napi_create_string_utf8(env, msg->c_str(), NAPI_AUTO_LENGTH, &message));
+    napi_value businessError = nullptr;
+    NAPI_CALL(env, napi_create_error(env, nullptr, message, &businessError));
+    NAPI_CALL(env, napi_set_named_property(env, businessError, BUSINESS_ERROR_PROPERTY_CODE.c_str(), code));
+    if (metricsReport != nullptr) {
+        metricsReport->Finish(jsCode);
+    }
+    return businessError;
+}
+
+static napi_value GenerateUkeyResultError(napi_env env, int32_t resultCode, bool legacyOverload,
+    OHOS::Security::CertManager::CmMetricsReport *metricsReport)
+{
+    if (legacyOverload && IsLegacyFoldCode(resultCode)) {
+        return GenerateLegacyFoldedBusinessError(env, resultCode, metricsReport);
+    }
+    return GenerateBusinessError(env, resultCode, metricsReport);
+}
+
 // argc == PARAM_SIZE_ONE overload: no caller ability context, the dialog is
 // driven by the SA-side ukey session and the final result arrives
-// asynchronously on an IPC thread.
+// asynchronously on an IPC thread. legacyOverload marks calls delegated from
+// the argc == 2 overload (error-code folding, D8 修订).
 static napi_value OpenUkeyAuthDialogNoContext(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
-    OHOS::Security::CertManager::CmMetricsReport &&report)
+    OHOS::Security::CertManager::CmMetricsReport &&report, bool legacyOverload = false)
 {
     napi_env env = asyncContext->env;
     napi_value result = nullptr;
@@ -203,6 +333,7 @@ static napi_value OpenUkeyAuthDialogNoContext(std::shared_ptr<CmUIExtensionReque
     }
     resultContext->env = env;
     resultContext->deferred = deferred;
+    resultContext->legacyOverload = legacyOverload;
     resultContext->metricsReport =
         std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
 
@@ -226,12 +357,18 @@ static napi_value OpenUkeyAuthDialogNoContext(std::shared_ptr<CmUIExtensionReque
     ukeyAuthRequest.keyUri.size = asyncContext->certUri->size;
     ukeyAuthRequest.keyUri.data = asyncContext->certUri->data;
     ukeyAuthRequest.timeout = asyncContext->authTimeoutMs;
+    ukeyAuthRequest.scene = asyncContext->authScene;
+    if (asyncContext->authCustomData != nullptr) {
+        ukeyAuthRequest.customData.size = asyncContext->authCustomData->size;
+        ukeyAuthRequest.customData.data = asyncContext->authCustomData->data;
+    }
     int32_t ret = CmOpenUkeyAuthDialog(&ukeyAuthRequest, UkeyAuthDialogResultCallback, resultContext);
     if (ret != CM_SUCCESS) {
         // sync failure: the result callback never fires (inner API contract),
         // so settle the promise here and drop the threadsafe function
         CM_LOG_E("open ukey auth dialog failed, ret = %d", ret);
-        napi_value error = GenerateBusinessError(env, ret, resultContext->metricsReport.get());
+        napi_value error = GenerateUkeyResultError(env, ret, legacyOverload,
+            resultContext->metricsReport.get());
         NAPI_CALL(env, napi_reject_deferred(env, deferred, error));
         napi_release_threadsafe_function(resultContext->tsfn, napi_tsfn_release);
     }
@@ -280,16 +417,25 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
     }
 
     // argc == PARAM_SIZE_TWO (legacy overload): branch by the registered ability
-    // type (spec §10.2) — UIExtensionAbility registrations take the new SA-side
-    // session path; UIAbility / unregistered keep the legacy flow below.
+    // type (spec §4.1) — UIExtensionAbility registrations take the SA-side
+    // session path (error codes folded per D8 修订); UIAbility / unregistered
+    // keep the legacy direct-launch flow below, with scene + customData
+    // (base64) added to the custom-dialog want (D9/D18).
     {
         std::string driverBundle;
         std::string driverAbility;
         uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
-        if (GetUkeyAbilityInfo(asyncContext->certUri, driverBundle, driverAbility, abilityType) == CM_SUCCESS &&
-            abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
+        int32_t queryRet = GetUkeyAbilityInfo(asyncContext->certUri, driverBundle, driverAbility,
+            abilityType);
+        if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
             CM_LOG_I("ukey driver registered a UIExtensionAbility pin dialog, go sa session path");
-            return OpenUkeyAuthDialogNoContext(asyncContext, std::move(report));
+            return OpenUkeyAuthDialogNoContext(asyncContext, std::move(report), true);
+        }
+        if (queryRet != CM_SUCCESS && asyncContext->authScene == CM_UKEY_AUTH_SCENE_CUSTOM) {
+            // rule 3 (spec D10)：需默认弹框但 scene=Custom，同步拒绝（无 IPC）
+            ThrowError(env, DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY,
+                UKEY_DEFAULT_NOT_SUPPORTED_MSG, &report);
+            return nullptr;
         }
     }
 
@@ -298,7 +444,8 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
     asyncContext->metricsReport = reportHolder;
     auto uiExtCallback = std::make_shared<CmUIExtensionVoidCallback>(asyncContext);
     OHOS::AAFwk::Want want{};
-    int32_t ret = GetCustomerAuthCertWant(asyncContext->certUri, want);
+    int32_t ret = GetCustomerAuthCertWant(asyncContext->certUri, asyncContext->authScene,
+        asyncContext->authCustomData, want);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get customer auth cert want failed. ret = %d", ret);
         ThrowError(env, DIALOG_ERROR_GENERIC, "get customer auth cert want failed.", reportHolder.get());

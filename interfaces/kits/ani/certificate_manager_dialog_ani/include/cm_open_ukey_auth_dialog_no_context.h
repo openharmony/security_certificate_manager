@@ -26,15 +26,22 @@ private:
     /* ani params */
     ani_string aniKeyUri = nullptr;
     ani_double aniTimeout = 0;
+    ani_string aniScene = nullptr;
+    ani_object aniCustomData = nullptr;
     /* parsed params */
     CmBlob keyUri = { 0 };
     uint32_t timeoutMs = 0; /* 0 = server default */
+    uint32_t scene = CM_UKEY_AUTH_SCENE_LOGIN; /* absent = Login (D9) */
+    CmBlob customData = { 0 }; /* raw bytes <= 2048; size 0 = absent (D19) */
+    /* D8 修订：老接口（带 context 重载）委托 SA 会话时折叠 -1017/-1018 */
+    bool legacyOverload = false;
 
 public:
     CmOpenUkeyAuthDialogNoContext(ani_env *env, ani_string aniKeyUri,
-        ani_double aniTimeout, ani_object callback);
+        ani_double aniTimeout, ani_string aniScene, ani_object aniCustomData, ani_object callback);
     ~CmOpenUkeyAuthDialogNoContext() {};
 
+    void SetLegacyOverload();
     int32_t GetParamsFromEnv() override;
     int32_t UnpackResult() override;
     void OnFinish() override;

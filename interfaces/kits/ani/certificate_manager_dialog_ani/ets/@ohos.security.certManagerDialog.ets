@@ -71,12 +71,16 @@ native function openUkeyAuthDialogNative(
   context: common.Context,
   keyUri: string,
   timeout: number,
+  scene: string,
+  customData: Uint8Array,
   callback: AsyncCallbackWrapper<void>
 ): NativeResult<void>;
 
 native function openUkeyAuthDialogNoContextNative(
   keyUri: string,
   timeout: number,
+  scene: string,
+  customData: Uint8Array,
   callback: AsyncCallbackWrapper<void>
 ): NativeResult<void>;
 
@@ -127,9 +131,16 @@ export namespace certificateManagerDialog {
     keyUri: string;
   }
 
+  export enum UkeyAuthScene {
+    LOGIN = 'Login',
+    CUSTOM = 'Custom',
+  }
+
   export interface UkeyAuthRequest {
     keyUri: string,
-    timeout?: number /* auth timeout in ms; absent = server default max */
+    timeout?: number, /* auth timeout in ms; absent = server default max */
+    scene?: UkeyAuthScene, /* auth scene; absent = LOGIN (default dialog fallback allowed) */
+    customData?: Uint8Array /* opaque data (<= 2048 bytes) delivered base64 to custom dialogs only */
   }
 
   export enum CertificateDialogErrorCode {
@@ -383,7 +394,10 @@ export namespace certificateManagerDialog {
           throw error;
         }
         let timeout: number = ukeyAuthRequest.timeout ?? 0; /* 0 = server default max */
-        let result: NativeResult<void> = openUkeyAuthDialogNative(context, keyUri, timeout, callback);
+        let scene: string = ukeyAuthRequest.scene ?? UkeyAuthScene.LOGIN;
+        let customData: Uint8Array = ukeyAuthRequest.customData ?? new Uint8Array(0);
+        let result: NativeResult<void> = openUkeyAuthDialogNative(context, keyUri, timeout, scene,
+            customData, callback);
         if (result.code !== 0) {
           let err = new BusinessError();
           err.code = result.code;
@@ -411,7 +425,10 @@ export namespace certificateManagerDialog {
             throw error;
         }
         let timeout: number = ukeyAuthRequest.timeout ?? 0; /* 0 = server default max */
-        let result: NativeResult<void> = openUkeyAuthDialogNoContextNative(keyUri, timeout, callback);
+        let scene: string = ukeyAuthRequest.scene ?? UkeyAuthScene.LOGIN;
+        let customData: Uint8Array = ukeyAuthRequest.customData ?? new Uint8Array(0);
+        let result: NativeResult<void> = openUkeyAuthDialogNoContextNative(keyUri, timeout, scene,
+            customData, callback);
         if (result.code !== 0) {
             let err = new BusinessError();
             err.code = result.code;

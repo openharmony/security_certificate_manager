@@ -39,7 +39,6 @@ enum ErrorCode {
     DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY = 29700005,
     DIALOG_ERROR_PARAMETER_VALIDATION_FAILED = 29700006,
     DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE = 29700007,
-    DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED = 29700008,
     DIALOG_ERROR_UKEY_AUTH_REPORT_TIMEOUT = 29700009,
     DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS = 29700010,
 };
@@ -66,12 +65,17 @@ static const std::string NOT_ENTERPRISE_DEVICE_MSG = "The operation does not com
 static const std::string CAPABILITY_NOT_SUPPORTED_MSG = "the capability not supported.";
 static const std::string NO_AVAILABLE_CERTIFICATE_MSG = "no available certificate for authorization.";
 static const std::string START_UIABILITY_FAILED_MSG = "start uiAbility failed.";
-static const std::string UKEY_ABILITY_NOT_SUPPORTED_MSG =
-    "the ukey driver has not registered a custom pin dialog of the UIExtensionAbility type.";
 static const std::string UKEY_AUTH_REPORT_TIMEOUT_MSG =
     "the ukey driver did not report the auth result within the timeout.";
 static const std::string UKEY_DIALOG_IN_PROGRESS_MSG =
     "another ukey pin auth dialog is already in progress.";
+/* 29700005 两场景细化文案（spec D10 终裁：-1019/-1020 → 29700005，消息注明原因） */
+static const std::string UKEY_DEFAULT_NOT_SUPPORTED_MSG =
+    "the operation does not comply with the device security policy: "
+    "the scene is custom but no custom pin dialog is registered.";
+static const std::string UKEY_NOT_PC_DEVICE_MSG =
+    "the operation does not comply with the device security policy: "
+    "the ukey uiextension pin dialog requires a pc device or pc mode.";
 
 static const std::string CERT_MGR_DIALOG_SYSCAP = "SystemCapability.Security.CertificateManagerDialog";
 static const std::string CONST_NAME_DEVICETYPE = "const.product.devicetype";
@@ -168,7 +172,8 @@ static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
     { CMR_DIALOG_ERROR_NOT_ENTERPRISE_DEVICE, DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY },
     { CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED },
     { CMR_DIALOG_ERROR_START_UIABILITY_FAILED, DIALOG_ERROR_INSTALL_FAILED },
-    { CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED, DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED },
+    { CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED, DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY },
+    { CMR_DIALOG_ERROR_NOT_PC_DEVICE, DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY },
     { CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT, DIALOG_ERROR_UKEY_AUTH_REPORT_TIMEOUT },
     { CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS, DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS },
 
@@ -197,7 +202,8 @@ static const std::unordered_map<int32_t, std::string> DIALOG_CODE_TO_MSG_MAP = {
     { CMR_DIALOG_ERROR_NOT_EXIST, DIALOG_OPERATION_FAILED_MSG + NOT_EXIST_MSG },
     { CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, DIALOG_OPERATION_FAILED_MSG + DIALOG_INVALID_PARAMS_MSG },
     { CMR_DIALOG_ERROR_START_UIABILITY_FAILED, START_UIABILITY_FAILED_MSG },
-    { CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED, UKEY_ABILITY_NOT_SUPPORTED_MSG },
+    { CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED, UKEY_DEFAULT_NOT_SUPPORTED_MSG },
+    { CMR_DIALOG_ERROR_NOT_PC_DEVICE, UKEY_NOT_PC_DEVICE_MSG },
     { CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT, UKEY_AUTH_REPORT_TIMEOUT_MSG },
     { CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS, UKEY_DIALOG_IN_PROGRESS_MSG },
 
@@ -212,13 +218,17 @@ int32_t GetCallerLabelName(std::shared_ptr<OHOS::AbilityRuntime::AbilityContext>
 
 bool IsEnableCACertDialog();
 
-int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want);
+/* 组装 UKey Pin 弹框拉起 want（带 context 直启路径）：scene 透传给弹框；
+ * customData 原始字节 base64 后仅写入自定义弹框（UIAbility）want，默认弹框不携带
+ * （spec D9/D18/§10.1）。 */
+int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, uint32_t scene,
+    const CmBlob *customData, OHOS::AAFwk::Want &want);
 
 /* 查询 UKey 驱动注册的自定义 Pin 弹框 ability 信息（bundle/ability 名 + abilityType）。
  * 返回 CM_SUCCESS 且 type 为 CM_UKEY_ABILITY_TYPE_UIEXTENSION 时，调用方可走
- * SA 会话新链路；查询失败返回非 0（视为未注册，走原路径或回 -1016）。
- * 联调期可经 CERT_MANAGER_UKEY_ABILITY_QUERY_STUB 桩固定返回（见
- * frameworks/.../common/include/cm_ukey_ability_type.h）。 */
+ * SA 会话新链路；查询失败返回非 0（视为未注册，走默认弹框或同步拒绝，spec §4.1）。
+ * 联调期可经 CERT_MANAGER_UKEY_ABILITY_QUERY_STUB 桩返回（见
+ * frameworks/.../common/include/cm_ukey_ability_type.h 与 cm_ukey_dialog_common.h）。 */
 int32_t GetUkeyAbilityInfo(const CmBlob *keyUri, std::string &bundleName,
     std::string &abilityName, uint32_t &abilityType);
 

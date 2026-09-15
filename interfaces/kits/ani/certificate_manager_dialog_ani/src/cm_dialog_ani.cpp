@@ -169,7 +169,7 @@ ani_object openAuthorizeDialogWithReqNative(ani_env *env, ani_object context, an
 }
 
 ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string keyUri,
-    ani_double timeout, ani_object callback)
+    ani_double timeout, ani_string scene, ani_object customData, ani_object callback)
 {
     if (env == nullptr) {
         CM_LOG_E("check env is nullptr.");
@@ -179,9 +179,10 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
         CM_LOG_E("check syscap is not supported.");
         return InvokeCallbackVoid(env, callback);
     }
-    /* branch by the registered ability type (spec §10.2): a UIExtensionAbility
-     * registration takes the no-context SA session path; UIAbility or query
-     * failure keeps the legacy context-based flow. */
+    /* branch by the registered ability type (spec §4.1): a UIExtensionAbility
+     * registration takes the no-context SA session path (error codes folded
+     * per D8 修订); UIAbility or query failure keeps the legacy context-based
+     * flow, with the scene=Custom + unregistered check inside the impl. */
     {
         CmBlob keyUriBlob = { 0, nullptr };
         if (AniUtils::ParseString(env, keyUri, keyUriBlob) == CM_SUCCESS) {
@@ -193,18 +194,20 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
                 CM_LOG_I("ukey driver registered a UIExtensionAbility pin dialog, go sa session path");
                 CM_FREE_BLOB(keyUriBlob);
                 auto noContextImpl = std::make_shared<CmOpenUkeyAuthDialogNoContext>(env, keyUri, timeout,
-                    callback);
+                    scene, customData, callback);
+                noContextImpl->SetLegacyOverload();
                 return noContextImpl->Invoke();
             }
             CM_FREE_BLOB(keyUriBlob);
         }
     }
-    auto openUkeyAuthDialogImpl = std::make_shared<CmOpenUkeyAuthDialog>(env, context, keyUri, callback);
+    auto openUkeyAuthDialogImpl = std::make_shared<CmOpenUkeyAuthDialog>(env, context, keyUri, scene,
+        customData, callback);
     return openUkeyAuthDialogImpl->Invoke();
 }
 
 ani_object openUkeyAuthDialogNoContextNative(ani_env *env, ani_string keyUri, ani_double timeout,
-    ani_object callback)
+    ani_string scene, ani_object customData, ani_object callback)
 {
     if (env == nullptr) {
         CM_LOG_E("check env is nullptr.");
@@ -215,7 +218,7 @@ ani_object openUkeyAuthDialogNoContextNative(ani_env *env, ani_string keyUri, an
         return InvokeCallbackVoid(env, callback);
     }
     auto openUkeyAuthDialogNoContextImpl = std::make_shared<CmOpenUkeyAuthDialogNoContext>(env, keyUri,
-        timeout, callback);
+        timeout, scene, customData, callback);
     return openUkeyAuthDialogNoContextImpl->Invoke();
 }
 

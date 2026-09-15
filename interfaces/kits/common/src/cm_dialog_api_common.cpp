@@ -17,6 +17,7 @@
 #include "bundle_mgr_proxy.h"
 #include "cm_log.h"
 #include "cm_ukey_ability_type.h"
+#include "cm_ukey_dialog_common.h"
 #include "syspara/parameters.h"
 #include "systemcapability.h"
 #include "hks_api.h"
@@ -89,7 +90,7 @@ bool IsEnableCACertDialog()
     return isSupportSyscap && (isPc || isEnableCACertDialog);
 }
 
-static void GetDefaultAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
+static void GetDefaultAuthCertWant(const CmBlob *keyUri, uint32_t scene, OHOS::AAFwk::Want &want)
 {
     want.SetElementName(CERT_MANAGER_BUNDLENAME, CERT_MANAGER_ABILITYNAME);
     want.SetParam(CERT_MANAGER_CALLER_UID, static_cast<int32_t>(getuid()));
@@ -97,6 +98,7 @@ static void GetDefaultAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want
     want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(CmDialogPageType::PAGE_UKEY_PIN_AUTHORIZE));
     std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
     want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
+    want.SetParam(CM_UKEY_DIALOG_PARAM_SCENE, CmUkeySceneToString(scene));
 }
 
 static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName,
@@ -104,12 +106,7 @@ static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName,
 {
 #ifdef CERT_MANAGER_UKEY_ABILITY_QUERY_STUB
     (void)keyUri;
-    abilityName = CM_UKEY_ABILITY_STUB_ABILITY;
-    bundleName = CM_UKEY_ABILITY_STUB_BUNDLE;
-    abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
-    CM_LOG_W("ukey ability query stub active, bundle: %s, ability: %s",
-        bundleName.c_str(), abilityName.c_str());
-    return CM_SUCCESS;
+    return CmUkeyAbilityStubQuery(bundleName, abilityName, abilityType);
 #else
     struct HksAbilityInfo abilityInfo{};
     abilityInfo.abilityName.data = (uint8_t*)CmMalloc(HAP_INFO_MAX_LENGTH);
@@ -154,7 +151,8 @@ int32_t GetUkeyAbilityInfo(const CmBlob *keyUri, std::string &bundleName,
     return QueryAbilityInfo(keyUri, abilityName, bundleName, abilityType);
 }
 
-int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
+int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, uint32_t scene,
+    const CmBlob *customData, OHOS::AAFwk::Want &want)
 {
     std::string abilityName = "";
     std::string bundleName = "";
@@ -162,11 +160,12 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
     int32_t ret = QueryAbilityInfo(keyUri, abilityName, bundleName, abilityType);
     /**
      * When the query for the custom dialog's ability information fails,
-     * launch the default dialog of the certificate manager.
+     * launch the default dialog of the certificate manager (spec §4.1；
+     * scene==Custom 的同步拒绝由 NAPI/ANI 调用方在查询前置判定).
      */
     if (ret != HKS_SUCCESS) {
         CM_LOG_E("query ability failed, ret = %d.", ret);
-        GetDefaultAuthCertWant(keyUri, want);
+        GetDefaultAuthCertWant(keyUri, scene, want);
         return CM_SUCCESS;
     }
 
@@ -175,6 +174,12 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
     want.SetParam(CERT_MANAGER_CALLER_UID, static_cast<int32_t>(getuid()));
     std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
     want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
+    want.SetParam(CM_UKEY_DIALOG_PARAM_SCENE, CmUkeySceneToString(scene));
+    if (customData != nullptr && customData->size > 0) {
+        /* 自定义弹框透传 customData（base64，spec D18） */
+        want.SetParam(CM_UKEY_DIALOG_PARAM_CUSTOM_DATA,
+            CmBase64Encode(customData->data, customData->size));
+    }
     return CM_SUCCESS;
 }
 

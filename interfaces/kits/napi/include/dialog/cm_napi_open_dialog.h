@@ -52,6 +52,14 @@ struct CmUIExtensionRequestContext : public CommonAsyncContext {
             CM_FREE_PTR(certUri->data);
             CM_FREE_PTR(certUri);
         }
+        if (authCustomData != nullptr) {
+            /* customData 为调用方不透明数据，释放前擦除（spec R10） */
+            if (authCustomData->data != nullptr && authCustomData->size > 0) {
+                (void)memset_s(authCustomData->data, authCustomData->size, 0, authCustomData->size);
+            }
+            CM_FREE_PTR(authCustomData->data);
+            CM_FREE_PTR(authCustomData);
+        }
     }
 
     std::shared_ptr<OHOS::AbilityRuntime::AbilityContext> context = nullptr;
@@ -59,6 +67,8 @@ struct CmUIExtensionRequestContext : public CommonAsyncContext {
     uint32_t certificateScope = 0;
     int32_t appUid = -1;
     uint32_t authTimeoutMs = 0; /* optional openUkeyAuthDialog timeout; 0 = server default */
+    uint32_t authScene = CM_UKEY_AUTH_SCENE_LOGIN; /* optional scene; Login by default (D9) */
+    CmBlob *authCustomData = nullptr; /* optional custom data, raw bytes <= 2048 (D19) */
     std::string certStr = "";
     std::string labelName = "";
     CmBlob *certUri = nullptr;
