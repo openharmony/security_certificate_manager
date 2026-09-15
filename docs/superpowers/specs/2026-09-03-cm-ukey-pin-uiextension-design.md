@@ -29,8 +29,8 @@ v1/v2 已交付：无 context 重载经 SA + 系统弹窗服务拉起驱动 UIEx
    `customData`**（≤ 2048 字节，base64 编码后下发自定义弹框）；
 2. SA 依据 ability 查询结果路由：**未注册 → 系统默认弹框**（`com.ohos.certmanager`）；
    **UIAbility → SA StartAbility 拉起**；**UIExtensionAbility → 经系统弹窗服务拉起**（不变）；
-3. `scene == 'Custom'`（声明仅用自定义弹框）而查询结果需要默认弹框时，同步回 29700004；
-4. UIExtension 路径（无论有无 context）须设备为 **PC（2in1）或处于 PC 模式**，否则 29700004。
+3. `scene == 'Custom'`（声明仅用自定义弹框）而查询结果需要默认弹框时，同步回 29700005；
+4. UIExtension 路径（无论有无 context）须设备为 **PC（2in1）或处于 PC 模式**，否则 29700005。
 
 ## 2. 术语
 
@@ -60,9 +60,9 @@ v1/v2 已交付：无 context 重载经 SA + 系统弹窗服务拉起驱动 UIEx
 | D7 | report 权限 | 不加权限，安全由 requestId CSPRNG 随机性 + 上报者 bundleName 双重校验保障 | 驱动为三方 HAP，通常不持有 `ACCESS_CERT_MANAGER` |
 | D8 | 错误码细分 | 提供方超时未上报 → **29700009**；单飞拒绝 → **29700010**；断连宽限超时仍归 29700002 | 专属错误码便于定位，不再折叠为 29700001 |
 | D9 | 请求字段面 | **v3（2026-09-15，三轮收敛）**：`UkeyAuthRequest = { keyUri, timeout?, scene?, customData? }`。`scene?: UkeyAuthScene`（`'Login'` 缺省 / `'Custom'`）；`customData?: Uint8Array`（原始字节 ≤2048，仅下发自定义弹框）。中间形态 `supportDefaultDialog: boolean`、`sceneName: UkeyAuthSceneName\|string`（及 `UkeyAuthSceneName` 枚举、`UkeyAuthSceneType` 命名）经 2026-09-15 两轮修订**全部被替代删除**——场景语义并入 `scene` 枚举，自由串场景参数并入 `customData` | 用户裁定：布尔开关升级为场景枚举；场景名与自定义数据合并为单一 `customData` 通道；拼写修正 Sence/Scen→Scene |
-| D10 | rule 3/6 错误码 | 需默认弹框但 `scene=='Custom'`（不支持默认）→ 29700004；非 PC 且非 PC 模式拉 UIExtension → 29700004 | **推翻来文指定的 29700005**（现语义为 GLOBAL_USER 安全策略）；29700004（设备不支持）语义贴合，用户裁定采纳 |
+| D10 | rule 3/6 错误码 | **终裁（2026-09-15 复裁）**：需默认弹框但 `scene=='Custom'`（不支持默认）→ 29700005；非 PC 且非 PC 模式拉 UIExtension → 29700005。裁决轨迹：来文指定 29700005 → 同日首轮裁定 29700004（"设备不支持"语义贴合，其现有 d.ts 描述仅 GLOBAL_USER 案例）→ 同日用户复裁回 **29700005**。**随之 d.ts 枚举 `ERROR_NOT_COMPLY_SECURITY_POLICY` 的 JSDoc 描述需泛化**以覆盖 ukey 两场景（现仅描述 GLOBAL_USER 案例） | 用户终裁维持来文取值；语义泛化随 d.ts 变更一并落地 |
 | D11 | 非法参数错误码 | `scene` 非枚举值 / `customData` 超限或类型错 → 29700006（沿用本 API 既有约定：request 解析失败 29700006，argc 不匹配 401） | 与既有 NAPI 解析约定一致 |
-| D12 | 29700008 处置 | **删除** `CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED`(-1016) 与 JS 码 29700008（枚举、d.ts throws、映射表、单测用例一并清理） | 新方案下触发条件消失（未注册→默认弹框或 29700004）；26.0.0 未发布无兼容包袱 |
+| D12 | 29700008 处置 | **删除** `CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED`(-1016) 与 JS 码 29700008（枚举、d.ts throws、映射表、单测用例一并清理） | 新方案下触发条件消失（未注册→默认弹框或 29700005）；26.0.0 未发布无兼容包袱 |
 | D13 | scene 校验时机 | ~~flag=true 时解析期校验 sceneName~~ **被 D9 替代**：`scene` 为纯枚举，解析期校验 ∈{'Login','Custom'}（两重载一致），SA 侧 IPC 到达后对 uint32 值再校验一道（纵深防御） | 纯枚举无自由串，校验简化 |
 | D14 | 默认弹框结果回传 | SA 拉起的默认弹框：参数带 requestId，`com.ohos.certmanager` 完成后经 inner API `CmReportUkeyAuthResult` 上报（TEMP：user_certificate_manager 仓加 native 桥接模块联调；上游化需产品侧对齐） | 与驱动弹框回传统一；systemui 现有 remote 转发通道（COMMAND_SEND_REMOTE_OBJECT/ExtIndex.onOk）系统内从未启用，风险高被否 |
 | D15 | PC 判定口径 | `OHOS::system::GetDeviceType() == "2in1"` **或** `GetBoolParameter("persist.sceneboard.ispcmode", false)`，**每次调用实时读**（模式可运行时切换）；仅 SA 侧判定，做成可注入 seam 供单测；rk3568 联调用 `param set persist.sceneboard.ispcmode true` 切换分支 | 2in1 为 PC 形态权威值（render_service 亦接受 "pc"，本设计不采纳）；ispcmode 为 WMS/ace/RS/powermgr 共同消费的 PC 模式权威信号 |
@@ -81,9 +81,9 @@ ability 查询结果（SA 或 Kit 各自执行）：**查询失败=未注册→�
 
 | 查询结果 | 老接口（argc==2，有 context） | 新接口（argc==1，无 context） |
 |---|---|---|
-| 未注册（默认弹框） | Kit 直启 `com.ohos.certmanager`/`CertPickerUIExtAbility`（现状流程，want 增补 `scene`；customData 丢弃 D18）；若 `scene=='Custom'` → **同步抛 29700004** | SA 经系统弹窗服务拉起**同一默认弹框**（bundle/ability/type=`sys/commonUI`、pageType=7）；若 `scene=='Custom'` → 同步回 -1019/29700004 |
+| 未注册（默认弹框） | Kit 直启 `com.ohos.certmanager`/`CertPickerUIExtAbility`（现状流程，want 增补 `scene`；customData 丢弃 D18）；若 `scene=='Custom'` → **同步抛 29700005** | SA 经系统弹窗服务拉起**同一默认弹框**（bundle/ability/type=`sys/commonUI`、pageType=7）；若 `scene=='Custom'` → 同步回 -1019/29700005 |
 | UIAbility | Kit 直启（现状：action `UkeyPINAuth` want；**增补** scene + customData(base64) 参数） | SA `AbilityManagerClient::GetInstance()->StartAbility(want)`（want 含 driver bundle/ability、action、appUid、keyUri、requestId、scene、customData(base64)） |
-| UIExtensionAbility | **忽略 context，走 SA**（D3 v2 现状）+ PC 门禁（D15，新增） | SA 经系统弹窗服务（现状）+ PC 门禁（新增）；非 PC 且非 PC 模式 → 同步回 -1020/29700004 |
+| UIExtensionAbility | **忽略 context，走 SA**（D3 v2 现状）+ PC 门禁（D15，新增） | SA 经系统弹窗服务（现状）+ PC 门禁（新增）；非 PC 且非 PC 模式 → 同步回 -1020/29700005 |
 
 要点：
 
@@ -102,7 +102,7 @@ ability 查询结果（SA 或 Kit 各自执行）：**查询失败=未注册→�
   │                ├─────────────────────>│ 参数/权限/单飞校验           │                      │
   │                │                      │ scene∈枚举? customData≤2048?│                      │
   │                │                      │ HksQueryAbilityInfo(keyUri) │                      │
-  │                │                      │  ├─ 未注册: scene==Custom? →同步回-1019(29700004)    │
+  │                │                      │  ├─ 未注册: scene==Custom? →同步回-1019(29700005)    │
   │                │                      │  ├─ 未注册: 默认弹框会话 → LaunchViaSystemDialog     │
   │                │                      │  │   {com.ohos.certmanager, CertPickerUIExtAbility,  │
   │                │                      │  │    sys/commonUI, pageType=7, keyUri,appUid,       │
@@ -110,7 +110,7 @@ ability 查询结果（SA 或 Kit 各自执行）：**查询失败=未注册→�
   │                │                      │  ├─ UIAbility: UIAbility 会话 → StartAbility(want) ─────────────────>│
   │                │                      │  │   {driver bundle/ability, action:UkeyPINAuth,      │
   │                │                      │  │    appUid,keyUri,requestId,scene,customData(b64)}  │
-  │                │                      │  └─ UIExtension: PC/PC模式? 否→同步回-1020(29700004)  │
+  │                │                      │  └─ UIExtension: PC/PC模式? 否→同步回-1020(29700005)  │
   │                │                      │      UIExtension 会话 → ConnectServiceExtensionAbility│
   │                │                      │<─ 同步回执(0) ────────────┤ SendRequest(START_DIALOG,│
   │                │                      │ 生成 requestId,建会话,启动总超时(默认10min,clamp)     │
@@ -147,7 +147,7 @@ export enum UkeyAuthScene {
     LOGIN = 'Login',
     /**
      * Custom scenario. Only the UKey driver's custom dialog is used; the call
-     * fails with 29700004 if no custom dialog is registered.
+     * fails with 29700005 if no custom dialog is registered.
      */
     CUSTOM = 'Custom',
 }
@@ -169,10 +169,14 @@ export interface UkeyAuthRequest {
 }
 ```
 
-老接口（argc==2）`@throws` 增补：29700004（Custom 场景无自定义弹框 / 非 PC 设备 UIExtension）、
-29700009、29700010（UIExtension 委托 SA 会话后可产生）；新接口（argc==1）`@throws`
-**删除 29700008**，增补 29700004。`CertificateDialogErrorCode`：删除
-`ERROR_UKEY_ABILITY_NOT_SUPPORTED = 29700008`（26.0.0 未发布，无兼容包袱，D12）。
+老接口（argc==2）`@throws` 增补：29700005（Custom 场景无自定义弹框 / 非 PC 设备
+UIExtension）、29700009、29700010（UIExtension 委托 SA 会话后可产生）；新接口
+（argc==1）`@throws`
+**删除 29700008**，增补 29700005。`CertificateDialogErrorCode`：删除
+`ERROR_UKEY_ABILITY_NOT_SUPPORTED = 29700008`（26.0.0 未发布，无兼容包袱，D12）；
+`ERROR_NOT_COMPLY_SECURITY_POLICY = 29700005` 枚举 JSDoc **描述需泛化**，覆盖
+"Custom 场景无自定义弹框注册"与"非 PC/PC 模式设备拉起 UIExtension 弹框"两场景
+（D10 终裁）。
 
 解析约定（两重载共用，NAPI/ANI 各实现，D11）：
 
@@ -263,8 +267,8 @@ struct UkeyAuthRequest {
 };
 
 /* 对话框内部错误码段：现有 -1017/-1018 保留，-1016 删除（D12），追加： */
-CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED = -1019  /* 需默认弹框但 scene=Custom（→29700004） */
-CMR_DIALOG_ERROR_NOT_PC_DEVICE = -1020          /* 非 PC 且非 PC 模式拉 UIExtension（→29700004） */
+CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED = -1019  /* 需默认弹框但 scene=Custom（→29700005） */
+CMR_DIALOG_ERROR_NOT_PC_DEVICE = -1020          /* 非 PC 且非 PC 模式拉 UIExtension（→29700005） */
 ```
 
 ### 7.2 `cert_manager_api.h`
@@ -367,9 +371,10 @@ resultCode 白名单 `{0, 29700001, 29700002, 29700003, 29700006}`（未知折�
 - `GetUkeyAbilityInfo` 不变；`GetCustomerAuthCertWant`（UIAbility 直启）增补
   scene + customData(base64) 参数；
 - `DIALOG_CODE_TO_JS_CODE_MAP` / `DIALOG_CODE_TO_MSG_MAP`：删除 -1016/29700008 条目，
-  追加 `{CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED, 29700004}`、
-  `{CMR_DIALOG_ERROR_NOT_PC_DEVICE, 29700004}` 及文案（29700004 复用既有
-  "the API is not supported on this device" 文案基线，按场景细化后缀）。
+  追加 `{CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED, 29700005}`、
+  `{CMR_DIALOG_ERROR_NOT_PC_DEVICE, 29700005}` 及文案（复用既有
+  "the operation does not comply with the device security policy" 文案基线，
+  按场景细化后缀）。
 
 ### 10.2 NAPI `cm_napi_open_ukey_auth_dialog.cpp`
 
@@ -383,7 +388,7 @@ CMNapiOpenUkeyAuthorizeDialog:
         GetUkeyAbilityInfo:
           UIExtension → 走 SA 链路（同 argc==1，忽略 context）
           UIAbility   → 原 Kit 直启流程（want 增补 scene/customData(b64)）
-          查询失败    → scene==CUSTOM → 同步 reject 29700004（无 IPC）
+          查询失败    → scene==CUSTOM → 同步 reject 29700005（无 IPC）
                        → 默认弹框 Kit 直启（现状流程，want 增补 scene；customData 丢弃）
 ```
 
@@ -394,8 +399,8 @@ CMNapiOpenUkeyAuthorizeDialog:
 
 | 场景 | 内部码 | JS 码 |
 |---|---|---|
-| 需默认弹框但 scene=Custom（rule 3） | -1019（新） | 29700004 |
-| 非 PC 且非 PC 模式拉 UIExtension（rule 6） | -1020（新） | 29700004 |
+| 需默认弹框但 scene=Custom（rule 3） | -1019（新） | 29700005 |
+| 非 PC 且非 PC 模式拉 UIExtension（rule 6） | -1020（新） | 29700005 |
 | ~~ability 查询为空 / 类型非 UIExtension~~ | ~~-1016~~ **已删除**（D12） | ~~29700008~~ |
 | 提供方超时未上报（总超时到期） | -1017 | 29700009 |
 | 已有挂起会话（单飞拒绝） | -1018 | 29700010 |
@@ -436,9 +441,9 @@ CMNapiOpenUkeyAuthorizeDialog:
 - **构建验证**：`--build-only-gn`；`--build-target cert_manager_service`、
   `certmanager`、`cert_manager_sdk`、`cm_sdk_test`。
 - **真机 E2E**（rk3568，桩旋钮 D16 + `param set persist.sceneboard.ispcmode true/false`）：
-  - UIExtension：PC=true 通、PC=false 回 29700004（新接口与老接口各一）；
+  - UIExtension：PC=true 通、PC=false 回 29700005（新接口与老接口各一）；
   - 默认弹框：新接口 → SA 经 systemui 拉起 `sys/commonUI` 扩展（R7 门禁）→
-    certmanager 上报（TEMP 桥）→ 回调 resolve；scene=CUSTOM 同步 29700004；
+    certmanager 上报（TEMP 桥）→ 回调 resolve；scene=CUSTOM 同步 29700005；
   - UIAbility：SA StartAbility 拉起 demo（需驱动 demo 应用补 UIAbility 形态），
     上报经 cmtest 探针验证（R1 通道未定的替代验证）；
   - customData：1B/2048B 经 systemui JSON 全链路送达弹框；LOGIN+默认弹框不携带；
@@ -478,7 +483,7 @@ CMNapiOpenUkeyAuthorizeDialog:
 
 | 模块 | 文件 | 变更 |
 |---|---|---|
-| SDK | interface/sdk-js/api + zh-cn/api/@ohos.security.certManagerDialog.d.ts | `UkeyAuthScene` 枚举、`scene`/`customData` 字段、throws 修订（删 29700008、增 29700004）、删枚举项 29700008 |
+| SDK | interface/sdk-js/api + zh-cn/api/@ohos.security.certManagerDialog.d.ts | `UkeyAuthScene` 枚举、`scene`/`customData` 字段、throws 修订（删 29700008、增 29700005、29700005 枚举描述泛化）、删枚举项 29700008 |
 | inner API | interfaces/innerkits/.../cm_type.h | `UkeyAuthRequest` 增字段、`CmUkeyAuthScene`、删 -1016、增 -1019/-1020 |
 | IPC 客户端 | frameworks/.../cm_ipc/ | OPEN 组包增 scene/customData |
 | frameworks/common | cm_util（新增 Base64Encode + 单测） | 共享 base64 编码 |
