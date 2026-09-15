@@ -58,7 +58,7 @@ v1/v2 已交付：无 context 重载经 SA + 系统弹窗服务拉起驱动 UIEx
 | D5 | 超时参数 | **修订**：总超时 **10 分钟**（`CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS = 600000`，请求 `timeout`（ms）可指定，超上限 clamp，0=服务端默认最大）；断连后上报宽限期 **10 秒**；客户端兜底 timer 11 分钟 | 评审定值；v1 暂定的 5 分钟被 10 分钟取代 |
 | D6 | 并发约束 | SA 侧全局单飞：同一时刻仅允许一个挂起会话（含三种弹框类型） | 系统弹窗 remote object 按连接方维度共享；模态全屏弹窗互斥 |
 | D7 | report 权限 | 不加权限，安全由 requestId CSPRNG 随机性 + 上报者 bundleName 双重校验保障 | 驱动为三方 HAP，通常不持有 `ACCESS_CERT_MANAGER` |
-| D8 | 错误码细分 | 提供方超时未上报 → **29700009**；单飞拒绝 → **29700010**；断连宽限超时仍归 29700002 | 专属错误码便于定位，不再折叠为 29700001 |
+| D8 | 错误码细分 | **修订（2026-09-15，用户裁定）**：新接口（argc==1）维持专属码——提供方超时未上报 → **29700009**、单飞拒绝 → **29700010**、断连宽限超时 → 29700002。**老接口（argc==2）不新增 since-26 错误码至已发布 throws 面**：超时折叠 **29700002**、单飞折叠 **29700003**，**错误消息必须注明具体原因**（超时未上报 / 已有弹框会话挂起）；29700005 为 since-18 既有码，仅补 throws 描述。折叠发生在 Kit（NAPI/ANI）层，SA/inner/IPC 全程保留 -1017/-1018 | 老接口 since-22 已发布，throws 面新增成员受 API 治理约束；新接口 26.0.0 未发布可携带专属码（原 rationale 保留于新接口）；折叠后可诊断性由消息文本兜底 |
 | D9 | 请求字段面 | **v3（2026-09-15，三轮收敛）**：`UkeyAuthRequest = { keyUri, timeout?, scene?, customData? }`。`scene?: UkeyAuthScene`（`'Login'` 缺省 / `'Custom'`）；`customData?: Uint8Array`（原始字节 ≤2048，仅下发自定义弹框）。中间形态 `supportDefaultDialog: boolean`、`sceneName: UkeyAuthSceneName\|string`（及 `UkeyAuthSceneName` 枚举、`UkeyAuthSceneType` 命名）经 2026-09-15 两轮修订**全部被替代删除**——场景语义并入 `scene` 枚举，自由串场景参数并入 `customData` | 用户裁定：布尔开关升级为场景枚举；场景名与自定义数据合并为单一 `customData` 通道；拼写修正 Sence/Scen→Scene |
 | D10 | rule 3/6 错误码 | **终裁（2026-09-15 复裁）**：需默认弹框但 `scene=='Custom'`（不支持默认）→ 29700005；非 PC 且非 PC 模式拉 UIExtension → 29700005。裁决轨迹：来文指定 29700005 → 同日首轮裁定 29700004（"设备不支持"语义贴合，其现有 d.ts 描述仅 GLOBAL_USER 案例）→ 同日用户复裁回 **29700005**。**随之 d.ts 枚举 `ERROR_NOT_COMPLY_SECURITY_POLICY` 的 JSDoc 描述需泛化**以覆盖 ukey 两场景（现仅描述 GLOBAL_USER 案例） | 用户终裁维持来文取值；语义泛化随 d.ts 变更一并落地 |
 | D11 | 非法参数错误码 | `scene` 非枚举值 / `customData` 超限或类型错 → 29700006（沿用本 API 既有约定：request 解析失败 29700006，argc 不匹配 401） | 与既有 NAPI 解析约定一致 |
@@ -91,7 +91,10 @@ ability 查询结果（SA 或 Kit 各自执行）：**查询失败=未注册→�
 - SA 侧同样校验（老接口 UIExtension 委托路径、新接口全部路径）——纵深防御；
 - PC 门禁仅作用于 UIExtension 路径（默认弹框与 UIAbility 不校验 PC）；
 - 同步应答仅承载即时校验结果（参数/权限/单飞/路由拒绝）；同步回错时不触发异步回调；
-- 异步结果经客户端回调 stub 回传，保证恰好一次（成功、取消、失败、超时四选一）。
+- 异步结果经客户端回调 stub 回传，保证恰好一次（成功、取消、失败、超时四选一）；
+- **错误码按调用重载折叠（D8 修订）**：-1017/-1018 在 SA/inner/IPC 全程保留，
+  Kit 层按重载映射——新接口回 29700009/29700010；老接口（UIExtension 委托路径）
+  折叠为 29700002/29700003，错误消息注明具体原因。
 
 ### 4.2 SA 链路时序（三种弹框共用会话机制）
 
@@ -169,10 +172,13 @@ export interface UkeyAuthRequest {
 }
 ```
 
-老接口（argc==2）`@throws` 增补：29700005（Custom 场景无自定义弹框 / 非 PC 设备
-UIExtension）、29700009、29700010（UIExtension 委托 SA 会话后可产生）；新接口
-（argc==1）`@throws`
-**删除 29700008**，增补 29700005。`CertificateDialogErrorCode`：删除
+老接口（argc==2）`@throws`：增补 29700005（Custom 场景无自定义弹框 / 非 PC 设备
+UIExtension，since-18 既有码仅补描述）；**不新增 29700009/29700010**（D8 修订）——
+超时折叠 **29700002**、单飞折叠 **29700003**，且两码的 throws 描述扩充注明折叠原因
+（"…or the dialog did not report the authentication result within the timeout" /
+"…or another UKey PIN authentication dialog is already in progress"）。
+新接口（argc==1）`@throws`
+**删除 29700008**，增补 29700005，维持 29700009/29700010。`CertificateDialogErrorCode`：删除
 `ERROR_UKEY_ABILITY_NOT_SUPPORTED = 29700008`（26.0.0 未发布，无兼容包袱，D12）；
 `ERROR_NOT_COMPLY_SECURITY_POLICY = 29700005` 枚举 JSDoc **描述需泛化**，覆盖
 "Custom 场景无自定义弹框注册"与"非 PC/PC 模式设备拉起 UIExtension 弹框"两场景
@@ -393,7 +399,10 @@ CMNapiOpenUkeyAuthorizeDialog:
 ```
 
 - metrics 沿现有 `CmMetricsReport("openUkeyAuthDialog", DIALOG)` 覆盖全部分支；
-- ANI 两实现与 NAPI 语义严格一致。
+- **按重载折叠错误码（D8 修订）**：老接口委托 SA 会话的结果上下文携带重载来源，
+  -1017→29700002、-1018→29700003（同步/异步路径一致；新接口维持 29700009/29700010）；
+  错误消息注明具体原因（超时未上报 / 已有挂起会话）；
+- ANI 两实现与 NAPI 语义严格一致（含折叠逻辑）。
 
 ## 11. 错误码汇总
 
@@ -402,8 +411,8 @@ CMNapiOpenUkeyAuthorizeDialog:
 | 需默认弹框但 scene=Custom（rule 3） | -1019（新） | 29700005 |
 | 非 PC 且非 PC 模式拉 UIExtension（rule 6） | -1020（新） | 29700005 |
 | ~~ability 查询为空 / 类型非 UIExtension~~ | ~~-1016~~ **已删除**（D12） | ~~29700008~~ |
-| 提供方超时未上报（总超时到期） | -1017 | 29700009 |
-| 已有挂起会话（单飞拒绝） | -1018 | 29700010 |
+| 提供方超时未上报（总超时到期） | -1017 | 新接口 29700009；老接口折叠 29700002（消息注明超时未上报） |
+| 已有挂起会话（单飞拒绝） | -1018 | 新接口 29700010；老接口折叠 29700003（消息注明已有挂起会话） |
 | 连接失败 / 发命令失败 / StartAbility 失败 / 上报校验失败 / CSPRNG 不可用 | CMR_DIALOG_ERROR_INTERNAL | 29700001 |
 | 断连宽限超时（判定取消） | CMR_DIALOG_ERROR_OPERATION_CANCELS | 29700002 |
 | 提供方上报透传 | 29700003 / 29700006 | 29700003 / 29700006 |
@@ -435,6 +444,8 @@ CMNapiOpenUkeyAuthorizeDialog:
   - params/want 内容断言：默认弹框无 customData、自定义弹框含 base64、scene 传递；
   - 既有 22 用例回归（-1016 用例改造为路由断言）；
   - NAPI 解析：scene 缺省/非法、customData 0/1/2048/2049 字节边界；
+  - 错误码折叠（D8 修订）：老接口 -1017→29700002、-1018→29700003 且消息含具体原因
+    断言；新接口维持 29700009/29700010；
   - requestId 唯一性/格式（既有 CSPRNG 用例保留）。
 - **Fuzz**：OPEN/REPORT 两 fuzzer 扩字段（scene uint32 混乱值、customData 超长）；
   NAPI fuzzer 扩 scene/customData 类型混乱。
@@ -490,7 +501,7 @@ CMNapiOpenUkeyAuthorizeDialog:
 | SA | services/.../dialog/cm_ukey_auth_dialog_manager.{h,cpp} | 三策略路由、PC seam、owner 校验、scene/customData 校验、桩旋钮 |
 | SA 配置 | services/cert_manager_standard/cert_manager_service.cfg | 增 START_ABILITIES_FROM_BACKGROUND |
 | kits/common | cm_dialog_api_common.{h,cpp} | 错误码映射修订、UIAbility want 增参 |
-| NAPI/ANI | cm_napi_open_ukey_auth_dialog.cpp、cm_open_ukey_auth_dialog*.cpp | 解析两字段、老接口路由修订 |
+| NAPI/ANI | cm_napi_open_ukey_auth_dialog.cpp、cm_open_ukey_auth_dialog*.cpp | 解析两字段、老接口路由修订、按重载折叠 -1017/-1018（D8 修订） |
 | 测试 | test/unittest、test/fuzz_test | §13 增量 |
 | TEMP 联调 | user_certificate_manager native 桥（默认弹框上报） | R8 |
 
