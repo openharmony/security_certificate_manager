@@ -131,9 +131,10 @@ private:
 
 /* 组装驱动弹框 parameters JSON（spec §6.2）：
  * {"keyUri":"<uri>","appUid":<callerUid>,"requestId":"<id>","action":"UkeyPINAuth",
- *  "ability.want.params.uiExtensionType":"ukeyAuth"} */
+ *  "ability.want.params.uiExtensionType":"ukeyAuth","timeout":<ms>}
+ * timeout 为本会话归一化后的实际超时时长（ms），供驱动弹窗自行控制 UI 倒计时 */
 bool BuildUkeyDialogParams(const std::string &requestId, const struct CmBlob *keyUri,
-    uint32_t callerUid, std::string &paramsJson)
+    uint32_t callerUid, uint32_t timeoutMs, std::string &paramsJson)
 {
     cJSON *root = cJSON_CreateObject();
     if (root == nullptr) {
@@ -148,9 +149,10 @@ bool BuildUkeyDialogParams(const std::string &requestId, const struct CmBlob *ke
         cJSON_CreateString(requestId.c_str()),              // requestId
         cJSON_CreateString(UKEY_DIALOG_ACTION),             // action
         cJSON_CreateString(UKEY_DIALOG_UI_EXTENSION_TYPE), // uiExtensionType
+        cJSON_CreateNumber(static_cast<double>(timeoutMs)), // timeout
     };
     const char *names[] = { "keyUri", "appUid", "requestId", "action",
-        UKEY_DIALOG_UI_EXTENSION_TYPE_KEY };
+        UKEY_DIALOG_UI_EXTENSION_TYPE_KEY, "timeout" };
     bool ok = true;
     for (size_t i = 0; i < sizeof(items) / sizeof(items[0]); i++) {
         if (items[i] != nullptr && cJSON_AddItemToObject(root, names[i], items[i])) {
@@ -336,7 +338,7 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
     session->state = UkeyAuthSession::LAUNCHING;
 
     std::string paramsJson;
-    if (!BuildUkeyDialogParams(session->requestId, keyUri, callerUid, paramsJson)) {
+    if (!BuildUkeyDialogParams(session->requestId, keyUri, callerUid, totalTimeoutMs_, paramsJson)) {
         CM_LOG_E("build ukey dialog params json failed");
         return CMR_DIALOG_ERROR_INTERNAL;
     }

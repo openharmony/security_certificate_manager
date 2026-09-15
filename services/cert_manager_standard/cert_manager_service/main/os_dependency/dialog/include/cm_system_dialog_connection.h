@@ -43,6 +43,9 @@ public:
      * remoteObject 为空时使用连接成功时保存的服务代理（不再持有则不发）。 */
     void ReleaseWindow(const sptr<IRemoteObject> &remoteObject);
 
+    /* 下发给驱动弹窗的 parameters JSON（含 timeout），测试用于验证内容 */
+    const std::string &GetParamsJson() const { return paramsJson_; }
+
 private:
     std::string requestId_;
     std::string bundle_;

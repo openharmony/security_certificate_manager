@@ -30,14 +30,16 @@ class FakeLauncher : public SystemDialogLauncher {
 public:
     int32_t Connect(const sptr<IAbilityConnection> &conn) override
     {
-        connectCount_++; conn_ = conn; return connectRet_;
+        connectCount_++;
+        conn_ = static_cast<CmSystemDialogConnection *>(conn.GetRefPtr()); /* manager 侧必为该类型 */
+        return connectRet_;
     }
     void Disconnect(const sptr<IAbilityConnection> &conn) override
     {
         disconnectCount_++;
     }
     int32_t connectRet_ = 0; int connectCount_ = 0; int disconnectCount_ = 0;
-    sptr<IAbilityConnection> conn_;
+    sptr<CmSystemDialogConnection> conn_; // 需要访问 paramsJson 验证
 };
 
 /* IRemoteStub requires a broker interface with a valid descriptor; a minimal
@@ -169,6 +171,30 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, TotalTimeoutMeansReportTimeout, testing::e
     EXPECT_EQ(launcher_->disconnectCount_, 1);
 }
 
+HWTEST_F(CmUkeyAuthDialogManagerTest, ParamsJsonCarriesTimeout, testing::ext::TestSize.Level0)
+{
+    /* the normalized session timeout must reach the driver dialog via the
+     * parameters json (spec §6.2): default -> preconfigured test value,
+     * explicit value -> that value, over-max -> clamped to the server max */
+    manager_->OpenDialog(&keyUri_, 100, 0, client_); // default -> 200ms (preconfigured)
+    auto conn = launcher_->conn_;
+    ASSERT_NE(conn, nullptr);
+    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":200"), std::string::npos);
+    manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
+
+    manager_->OpenDialog(&keyUri_, 100, 150, client_); // explicit 150ms
+    conn = launcher_->conn_;
+    ASSERT_NE(conn, nullptr);
+    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":150"), std::string::npos);
+    manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
+
+    manager_->OpenDialog(&keyUri_, 100, 999999999, client_); // over max -> clamp 600000
+    conn = launcher_->conn_;
+    ASSERT_NE(conn, nullptr);
+    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":600000"), std::string::npos);
+    manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
+}
+
 HWTEST_F(CmUkeyAuthDialogManagerTest, CustomTimeoutTakesEffect, testing::ext::TestSize.Level0)
 {
     /* explicit short timeout overrides the preconfigured test timeout */
@@ -222,7 +248,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, ConnectionParcelFormat, testing::ext::Test
 {
     sptr<FakeDialogService> svc = sptr<FakeDialogService>(new FakeDialogService());
     CmSystemDialogConnection conn("req123", "com.example.ukeydrv", "DrvUIExtAbility",
-        R"({"keyUri":"u1","requestId":"req123"})");
+        R"({"keyUri":"u1","requestId":"req123","timeout":600000})");
     conn.OnAbilityConnectDone(AppExecFwk::ElementName(), svc, 0);
     ASSERT_EQ(svc->keys_.size(), 3u);
     EXPECT_EQ(svc->keys_[0], "bundleName");
@@ -230,7 +256,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, ConnectionParcelFormat, testing::ext::Test
     EXPECT_EQ(svc->keys_[1], "abilityName");
     EXPECT_EQ(svc->values_[1], "DrvUIExtAbility");
     EXPECT_EQ(svc->keys_[2], "parameters");
-    EXPECT_EQ(svc->values_[2], R"({"keyUri":"u1","requestId":"req123"})");
+    EXPECT_EQ(svc->values_[2], R"({"keyUri":"u1","requestId":"req123","timeout":600000})");
 }
 
 /* ---- F1: SA keep-alive during WAITING_REPORT ---- */
