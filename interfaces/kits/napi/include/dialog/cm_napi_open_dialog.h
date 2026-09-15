@@ -58,6 +58,7 @@ struct CmUIExtensionRequestContext : public CommonAsyncContext {
     uint32_t pageType = 0;
     uint32_t certificateScope = 0;
     int32_t appUid = -1;
+    uint32_t authTimeoutMs = 0; /* optional openUkeyAuthDialog timeout; 0 = server default */
     std::string certStr = "";
     std::string labelName = "";
     CmBlob *certUri = nullptr;

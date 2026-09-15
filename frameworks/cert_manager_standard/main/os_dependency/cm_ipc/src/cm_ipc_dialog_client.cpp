@@ -42,7 +42,7 @@ namespace CertManager {
 namespace {
 /* client-side fallback timer (> SA 5min total timeout): guards against SA death
  * leaving the caller's callback pending forever */
-constexpr uint32_t CM_UKEY_DIALOG_CLIENT_FALLBACK_MS = 360000; /* 6 min */
+constexpr uint32_t CM_UKEY_DIALOG_CLIENT_FALLBACK_MS = 660000; /* 11 min, > server 10min max */
 /* IRemoteStub<T> requires T::GetDescriptor(); IRemoteBroker has none, so a
  * local broker descriptor is declared (same fix as the SA-side test fake) */
 class CmDialogCallbackBroker : public IRemoteBroker {
@@ -185,7 +185,7 @@ void CmDialogCallbackStub::Deliver(int32_t result)
 using namespace OHOS;
 using namespace OHOS::Security::CertManager;
 
-int32_t CmClientOpenUkeyAuthDialog(const struct CmBlob *keyUri,
+int32_t CmClientOpenUkeyAuthDialog(const struct CmBlob *keyUri, uint32_t timeoutMs,
     CmUkeyAuthDialogResultCallback callback, void *userData)
 {
     if (CmCheckBlob(keyUri) != CM_SUCCESS || callback == nullptr) {
@@ -202,6 +202,7 @@ int32_t CmClientOpenUkeyAuthDialog(const struct CmBlob *keyUri,
     struct CmParamSet *sendParamSet = nullptr;
     struct CmParam params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = *keyUri },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = timeoutMs }, /* 0 = server default */
     };
 
     int32_t ret = CmParamsToParamSet(params, CM_ARRAY_SIZE(params), &sendParamSet);

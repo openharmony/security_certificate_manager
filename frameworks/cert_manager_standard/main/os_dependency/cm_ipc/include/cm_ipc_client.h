@@ -93,7 +93,7 @@ int32_t CmClientCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,
 int32_t CmClientImportUkeyCert(const struct CmBlob *keyUri, const struct CmBlob *cert,
     const struct UkeyInfo *ukeyInfo);
 
-int32_t CmClientOpenUkeyAuthDialog(const struct CmBlob *keyUri,
+int32_t CmClientOpenUkeyAuthDialog(const struct CmBlob *keyUri, uint32_t timeoutMs,
     CmUkeyAuthDialogResultCallback callback, void *userData);
 
 int32_t CmClientReportUkeyAuthResult(const struct CmBlob *requestId, int32_t resultCode);

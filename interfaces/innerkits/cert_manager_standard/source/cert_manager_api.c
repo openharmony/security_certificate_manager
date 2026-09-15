@@ -662,7 +662,8 @@ CM_API_EXPORT int32_t CmOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAut
         return CMR_ERROR_INVALID_ARGUMENT;
     }
 
-    int32_t ret = CmClientOpenUkeyAuthDialog(&ukeyAuthRequest->keyUri, callback, userData);
+    int32_t ret = CmClientOpenUkeyAuthDialog(&ukeyAuthRequest->keyUri, ukeyAuthRequest->timeout,
+        callback, userData);
     CM_LOG_I("leave open ukey auth dialog, result = %d", ret);
     return ret;
 }

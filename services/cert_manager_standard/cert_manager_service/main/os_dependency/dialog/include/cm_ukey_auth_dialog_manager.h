@@ -36,7 +36,9 @@ using OHOS::AAFwk::IAbilityConnection;
 
 class CmSystemDialogConnection; // 生产装配的真实连接对象（T3）
 
-constexpr uint32_t CM_UKEY_DIALOG_TOTAL_TIMEOUT_MS = 300000; // 5min, spec D5
+/* 认证超时上限（spec D5 修订：openUkeyAuthDialog 可选 timeout 入参，不传默认取
+ * 该最大值；超过该值的服务端 clamp 到最大值） */
+constexpr uint32_t CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS = 600000; // 10 min
 constexpr uint32_t CM_UKEY_DIALOG_GRACE_TIMEOUT_MS = 10000;  // 10s, spec D5
 /* 会话保活周期（spec §9.4）：须小于 SA 空闲卸载延时 60s（cm_sa.cpp DELAY_TIME），
  * 会话期间无 IPC 进来，靠周期续期钩子重置空闲卸载计时。 */
@@ -73,7 +75,7 @@ public:
      * 查询适配；由 SA OnStart/处理器首次调用时触发（T4）。 */
     void InitRealDependencies();
     // 同步返回校验码（CM_SUCCESS / -1016 / -1017 / -1018 / CMR_DIALOG_ERROR_INTERNAL）
-    int32_t OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid,
+    int32_t OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid, uint32_t timeoutMs,
         const sptr<IRemoteObject> &clientCallback);
     // 返回 CM_SUCCESS（已接受）或 CMR_DIALOG_ERROR_INTERNAL（会话不存在/身份不符/终态）
     int32_t OnReport(const std::string &requestId, const std::string &callerBundleName,
@@ -118,7 +120,7 @@ private:
     AbilityQuerier querier_;
     std::function<void()> unloadRenewal_;  // SA 空闲卸载续期钩子（注入，F1）
     bool realDepsInited_ = false;          // InitRealDependencies 幂等标记
-    uint32_t totalTimeoutMs_ = CM_UKEY_DIALOG_TOTAL_TIMEOUT_MS;
+    uint32_t totalTimeoutMs_ = CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS;
     uint32_t graceTimeoutMs_ = CM_UKEY_DIALOG_GRACE_TIMEOUT_MS;
     uint32_t keepAliveIntervalMs_ = CM_UKEY_DIALOG_KEEPALIVE_INTERVAL_MS;
     bool timerPostFailForTest_ = false;    // PostTask 故障注入（F8 测试）

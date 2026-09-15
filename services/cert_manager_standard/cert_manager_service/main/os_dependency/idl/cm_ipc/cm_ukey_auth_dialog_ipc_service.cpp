@@ -40,8 +40,10 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
     (void)code;
     struct CmParamSet *paramSet = nullptr;
     struct CmBlob keyUri = { 0, nullptr };
+    uint32_t timeoutMs = 0; /* 0 = 未传，SA 侧取默认最大值 */
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = &keyUri },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &timeoutMs },
     };
     int32_t ret = CmGetParamSet(reinterpret_cast<struct CmParamSet *>(paramSetBlob->data),
         paramSetBlob->size, &paramSet);
@@ -66,7 +68,7 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
 
     CmUkeyAuthDialogManager::GetInstance().InitRealDependencies();
     ret = CmUkeyAuthDialogManager::GetInstance().OpenDialog(&keyUri,
-        static_cast<uint32_t>(IPCSkeleton::GetCallingUid()), clientCallback);
+        static_cast<uint32_t>(IPCSkeleton::GetCallingUid()), timeoutMs, clientCallback);
     CmFreeParamSet(&paramSet);
     CmSendResponse(context, ret, NULL);
 }

@@ -25,12 +25,14 @@ class CmOpenUkeyAuthDialogNoContext : public CertManagerAsyncImpl {
 private:
     /* ani params */
     ani_string aniKeyUri = nullptr;
+    ani_double aniTimeout = 0;
     /* parsed params */
     CmBlob keyUri = { 0 };
+    uint32_t timeoutMs = 0; /* 0 = server default */
 
 public:
     CmOpenUkeyAuthDialogNoContext(ani_env *env, ani_string aniKeyUri,
-        ani_object callback);
+        ani_double aniTimeout, ani_object callback);
     ~CmOpenUkeyAuthDialogNoContext() {};
 
     int32_t GetParamsFromEnv() override;

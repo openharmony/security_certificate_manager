@@ -281,12 +281,21 @@ void CmUkeyAuthDialogManager::SetTimerPostFailForTest(bool fail)
 }
 
 int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid,
-    const sptr<IRemoteObject> &clientCallback)
+    uint32_t timeoutMs, const sptr<IRemoteObject> &clientCallback)
 {
     if (keyUri == nullptr || keyUri->data == nullptr || keyUri->size == 0 ||
         keyUri->size > MAX_LEN_URI || clientCallback == nullptr) {
         CM_LOG_E("invalid open dialog arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    /* timeout 归一化（spec D5 修订）：0（未传）沿用当前配置（生产默认最大值，
+     * 测试可经 SetTimeoutForTest 预置短超时）；超上限 clamp 到最大值 */
+    if (timeoutMs > CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS) {
+        CM_LOG_W("timeout %u exceeds max, clamp to %u", timeoutMs, CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS);
+        timeoutMs = CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS;
+    }
+    if (timeoutMs != 0) {
+        totalTimeoutMs_ = timeoutMs;
     }
 
     std::lock_guard<std::mutex> lock(mutex_);

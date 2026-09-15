@@ -566,6 +566,7 @@ struct UkeyInfo {
 
 struct UkeyAuthRequest {
     struct CmBlob keyUri; /* ukey credential uri, max 256 bytes */
+    uint32_t timeout; /* auth timeout in ms, 0 = default (server max); server clamps to max */
 };
 
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)

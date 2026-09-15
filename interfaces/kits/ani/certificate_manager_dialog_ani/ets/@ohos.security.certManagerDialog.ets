@@ -70,17 +70,13 @@ export interface ReqestAuthDialogParams {
 native function openUkeyAuthDialogNative(
   context: common.Context,
   keyUri: string,
+  timeout: number,
   callback: AsyncCallbackWrapper<void>
 ): NativeResult<void>;
 
 native function openUkeyAuthDialogNoContextNative(
   keyUri: string,
-  callback: AsyncCallbackWrapper<void>
-): NativeResult<void>;
-
-native function reportUkeyAuthResultNative(
-  requestId: string,
-  resultCode: number,
+  timeout: number,
   callback: AsyncCallbackWrapper<void>
 ): NativeResult<void>;
 
@@ -132,7 +128,8 @@ export namespace certificateManagerDialog {
   }
 
   export interface UkeyAuthRequest {
-    keyUri: string
+    keyUri: string,
+    timeout?: number /* auth timeout in ms; absent = server default max */
   }
 
   export enum CertificateDialogErrorCode {
@@ -385,7 +382,8 @@ export namespace certificateManagerDialog {
           error.message = 'the input parameters is invalid.';
           throw error;
         }
-        let result: NativeResult<void> = openUkeyAuthDialogNative(context, keyUri, callback);
+        let timeout: number = ukeyAuthRequest.timeout ?? 0; /* 0 = server default max */
+        let result: NativeResult<void> = openUkeyAuthDialogNative(context, keyUri, timeout, callback);
         if (result.code !== 0) {
           let err = new BusinessError();
           err.code = result.code;
@@ -412,34 +410,8 @@ export namespace certificateManagerDialog {
             error.message = 'the input parameters is invalid.';
             throw error;
         }
-        let result: NativeResult<void> = openUkeyAuthDialogNoContextNative(keyUri, callback);
-        if (result.code !== 0) {
-            let err = new BusinessError();
-            err.code = result.code;
-            err.message = result.message;
-            reject(err);
-        }
-    });
-  }
-
-  export function reportUkeyAuthResult(requestId: string, resultCode: number): Promise<void> {
-    return new Promise<void>((resolve, reject: (error: BusinessError) => void) => {
-        let callback = new AsyncCallbackWrapper<void>((err: BusinessError | null) => {
-            if (err?.code !== 0) {
-                reject(err as BusinessError);
-            } else {
-                resolve(undefined);
-            }
-        });
-
-        if (requestId === undefined || resultCode === undefined) {
-            let error = new BusinessError();
-            error.code = 401;
-            error.message = 'the input parameters is invalid.';
-            throw error;
-        }
-        checkStrLen(requestId, MIN_DATA_LEN, MAX_REQUEST_ID_LEN);
-        let result: NativeResult<void> = reportUkeyAuthResultNative(requestId, resultCode, callback);
+        let timeout: number = ukeyAuthRequest.timeout ?? 0; /* 0 = server default max */
+        let result: NativeResult<void> = openUkeyAuthDialogNoContextNative(keyUri, timeout, callback);
         if (result.code !== 0) {
             let err = new BusinessError();
             err.code = result.code;

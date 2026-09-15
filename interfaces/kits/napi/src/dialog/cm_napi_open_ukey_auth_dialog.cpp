@@ -73,6 +73,32 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
         CM_LOG_E("keyUri is too long, max length: %d", MAX_LEN_URI);
         return nullptr;
     }
+
+    /* optional timeout (ms): absent/undefined keeps 0 (= server default max);
+     * present but non-number is a parameter error */
+    bool hasTimeout = false;
+    status = napi_has_named_property(asyncContext->env, arg, "timeout", &hasTimeout);
+    if (status == napi_ok && hasTimeout) {
+        napi_value timeoutValue = nullptr;
+        status = napi_get_named_property(asyncContext->env, arg, "timeout", &timeoutValue);
+        if (status == napi_ok && timeoutValue != nullptr) {
+            napi_valuetype timeoutType = napi_undefined;
+            if (napi_typeof(asyncContext->env, timeoutValue, &timeoutType) == napi_ok &&
+                timeoutType != napi_undefined && timeoutType != napi_null) {
+                if (timeoutType != napi_number) {
+                    CM_LOG_E("type of param timeout is not number");
+                    return nullptr;
+                }
+                double timeoutDouble = 0;
+                if (napi_get_value_double(asyncContext->env, timeoutValue, &timeoutDouble) != napi_ok ||
+                    timeoutDouble < 0 || timeoutDouble > UINT32_MAX) {
+                    CM_LOG_E("invalid timeout value");
+                    return nullptr;
+                }
+                asyncContext->authTimeoutMs = static_cast<uint32_t>(timeoutDouble);
+            }
+        }
+    }
     return GetInt32(asyncContext->env, 0);
 }
 
@@ -199,6 +225,7 @@ static napi_value OpenUkeyAuthDialogNoContext(std::shared_ptr<CmUIExtensionReque
     struct UkeyAuthRequest ukeyAuthRequest = {};
     ukeyAuthRequest.keyUri.size = asyncContext->certUri->size;
     ukeyAuthRequest.keyUri.data = asyncContext->certUri->data;
+    ukeyAuthRequest.timeout = asyncContext->authTimeoutMs;
     int32_t ret = CmOpenUkeyAuthDialog(&ukeyAuthRequest, UkeyAuthDialogResultCallback, resultContext);
     if (ret != CM_SUCCESS) {
         // sync failure: the result callback never fires (inner API contract),

@@ -90,32 +90,32 @@ public:
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogAbilityQueryFail, testing::ext::TestSize.Level0)
 {
     querierRet_ = -51; // HUKS query error -> treated as not-registered
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED);
     EXPECT_EQ(launcher_->connectCount_, 0);
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogWrongAbilityType, testing::ext::TestSize.Level0)
 {
     abilityType_ = CM_UKEY_ABILITY_TYPE_UIABILITY; // registered as UIAbility, not UIExtensionAbility
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED);
     EXPECT_EQ(launcher_->connectCount_, 0);
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogConnectFail, testing::ext::TestSize.Level0)
 {
     launcher_->connectRet_ = 29160333; // arbitrary aafwk error
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CMR_DIALOG_ERROR_INTERNAL);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CMR_DIALOG_ERROR_INTERNAL);
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, SingleFlightRejected, testing::ext::TestSize.Level0)
 {
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CM_SUCCESS);
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CM_SUCCESS);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS);
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, NormalReportDeliversCode, testing::ext::TestSize.Level0)
 {
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CM_SUCCESS);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CM_SUCCESS);
     // 取回 requestId：manager 需提供测试取回接口 GetRequestIdForTest()
     std::string reqId = manager_->GetRequestIdForTest();
     EXPECT_EQ(reqId.size(), 32u); // 16 bytes hex
@@ -127,7 +127,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, NormalReportDeliversCode, testing::ext::Te
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, ReportWrongBundleRejected, testing::ext::TestSize.Level0)
 {
-    manager_->OpenDialog(&keyUri_, 100, client_);
+    manager_->OpenDialog(&keyUri_, 100, 0, client_);
     ASSERT_EQ(manager_->OnReport(manager_->GetRequestIdForTest(), "com.example.other", 0),
         CMR_DIALOG_ERROR_INTERNAL);
     EXPECT_EQ(client_->called_, 0); // session still pending
@@ -136,14 +136,14 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, ReportWrongBundleRejected, testing::ext::T
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, ReportUnknownCodeFolded, testing::ext::TestSize.Level0)
 {
-    manager_->OpenDialog(&keyUri_, 100, client_);
+    manager_->OpenDialog(&keyUri_, 100, 0, client_);
     ASSERT_EQ(manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 12345), CM_SUCCESS);
     EXPECT_EQ(client_->lastCode_, CMR_DIALOG_ERROR_INTERNAL); // folded to 29700001
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, DisconnectThenGraceReport, testing::ext::TestSize.Level0)
 {
-    manager_->OpenDialog(&keyUri_, 100, client_);
+    manager_->OpenDialog(&keyUri_, 100, 0, client_);
     std::string reqId = manager_->GetRequestIdForTest();
     manager_->OnDialogDisconnected(reqId); // enter grace
     ASSERT_EQ(manager_->OnReport(reqId, driverBundle_, 0), CM_SUCCESS); // within 100ms
@@ -152,7 +152,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, DisconnectThenGraceReport, testing::ext::T
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, GraceTimeoutMeansCancel, testing::ext::TestSize.Level0)
 {
-    manager_->OpenDialog(&keyUri_, 100, client_);
+    manager_->OpenDialog(&keyUri_, 100, 0, client_);
     manager_->OnDialogDisconnected(manager_->GetRequestIdForTest());
     std::this_thread::sleep_for(std::chrono::milliseconds(300)); // > 100ms grace
     EXPECT_EQ(client_->called_, 1);
@@ -162,16 +162,36 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, GraceTimeoutMeansCancel, testing::ext::Tes
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, TotalTimeoutMeansReportTimeout, testing::ext::TestSize.Level0)
 {
-    manager_->OpenDialog(&keyUri_, 100, client_);
+    manager_->OpenDialog(&keyUri_, 100, 0, client_);
     std::this_thread::sleep_for(std::chrono::milliseconds(400)); // > 200ms total
     EXPECT_EQ(client_->called_, 1);
     EXPECT_EQ(client_->lastCode_, CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT);
     EXPECT_EQ(launcher_->disconnectCount_, 1);
 }
 
+HWTEST_F(CmUkeyAuthDialogManagerTest, CustomTimeoutTakesEffect, testing::ext::TestSize.Level0)
+{
+    /* explicit short timeout overrides the preconfigured test timeout */
+    manager_->OpenDialog(&keyUri_, 100, 150, client_); // 150ms
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    EXPECT_EQ(client_->called_, 1);
+    EXPECT_EQ(client_->lastCode_, CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT);
+}
+
+HWTEST_F(CmUkeyAuthDialogManagerTest, TimeoutClampedToMax, testing::ext::TestSize.Level0)
+{
+    /* timeout above the server max is clamped: with the preconfigured short
+     * test timeout, a clamped request must NOT fire within the short window */
+    manager_->OpenDialog(&keyUri_, 100, 999999999, client_); // > max -> clamp
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    EXPECT_EQ(client_->called_, 0); // still waiting (clamped to 10min), not fired
+    manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
+    EXPECT_EQ(client_->lastCode_, 0);
+}
+
 HWTEST_F(CmUkeyAuthDialogManagerTest, LateReportAfterDoneIgnored, testing::ext::TestSize.Level0)
 {
-    manager_->OpenDialog(&keyUri_, 100, client_);
+    manager_->OpenDialog(&keyUri_, 100, 0, client_);
     std::string reqId = manager_->GetRequestIdForTest();
     manager_->OnReport(reqId, driverBundle_, 0);
     ASSERT_EQ(manager_->OnReport(reqId, driverBundle_, 0), CMR_DIALOG_ERROR_INTERNAL);
@@ -218,7 +238,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, ConnectionParcelFormat, testing::ext::Test
 HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveFiresPeriodicallyAndCancelsOnFinish,
     testing::ext::TestSize.Level0)
 {
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CM_SUCCESS);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CM_SUCCESS);
     std::string reqId = manager_->GetRequestIdForTest();
     std::this_thread::sleep_for(std::chrono::milliseconds(130)); // >= 2 fires at 50ms
     EXPECT_GE(renewalCount_, 2); // armed on success + periodic re-arm
@@ -231,17 +251,17 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveFiresPeriodicallyAndCancelsOnFini
 HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveNotArmedOnSyncFailure, testing::ext::TestSize.Level0)
 {
     querierRet_ = -51; // ability query fail -> reject before session
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED);
     querierRet_ = 0;
     launcher_->connectRet_ = 29160333; // connect fail -> reject before session
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CMR_DIALOG_ERROR_INTERNAL);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CMR_DIALOG_ERROR_INTERNAL);
     std::this_thread::sleep_for(std::chrono::milliseconds(150));
     EXPECT_EQ(renewalCount_, 0);
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveCancelledOnAbort, testing::ext::TestSize.Level0)
 {
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CM_SUCCESS);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CM_SUCCESS);
     manager_->SetTimeoutForTest(200, 100); // reconfiguration aborts the active session
     std::this_thread::sleep_for(std::chrono::milliseconds(150)); // > 50ms interval
     EXPECT_EQ(renewalCount_, 0); // cancelled before the first fire
@@ -252,7 +272,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveCancelledOnAbort, testing::ext::T
 HWTEST_F(CmUkeyAuthDialogManagerTest, ClientDeathAbortsSessionWithoutResult,
     testing::ext::TestSize.Level0)
 {
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CM_SUCCESS);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CM_SUCCESS);
     std::string reqId = manager_->GetRequestIdForTest();
     manager_->OnClientDied(reqId);
     EXPECT_EQ(manager_->GetRequestIdForTest(), ""); // session cleared
@@ -260,13 +280,13 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, ClientDeathAbortsSessionWithoutResult,
     EXPECT_EQ(launcher_->disconnectCount_, 1); // dialog connection torn down
     std::this_thread::sleep_for(std::chrono::milliseconds(150));
     EXPECT_EQ(renewalCount_, 0); // keep-alive cancelled on abort
-    EXPECT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CM_SUCCESS); // single-flight free
+    EXPECT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CM_SUCCESS); // single-flight free
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, ClientDeathUnknownRequestIdNoop, testing::ext::TestSize.Level0)
 {
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CM_SUCCESS);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CM_SUCCESS);
     std::string reqId = manager_->GetRequestIdForTest();
     manager_->OnClientDied(reqId + "ff"); // unknown request id
     manager_->OnClientDied("00000000000000000000000000000000"); // expired request id
@@ -281,19 +301,19 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, ClientDeathUnknownRequestIdNoop, testing::
 HWTEST_F(CmUkeyAuthDialogManagerTest, TotalTimeoutPostFailRejectsOpen, testing::ext::TestSize.Level0)
 {
     manager_->SetTimerPostFailForTest(true);
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CMR_DIALOG_ERROR_INTERNAL);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CMR_DIALOG_ERROR_INTERNAL);
     EXPECT_EQ(manager_->GetRequestIdForTest(), ""); // session not stored
     EXPECT_EQ(client_->called_, 0); // no result delivered
     EXPECT_EQ(launcher_->disconnectCount_, 1); // established connection rolled back
     EXPECT_EQ(renewalCount_, 0); // keep-alive not armed
     manager_->SetTimerPostFailForTest(false);
-    EXPECT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CM_SUCCESS); // single-flight free
+    EXPECT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CM_SUCCESS); // single-flight free
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, GraceTimerPostFailFinishesSession, testing::ext::TestSize.Level0)
 {
-    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, client_), CM_SUCCESS);
+    ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CM_SUCCESS);
     std::string reqId = manager_->GetRequestIdForTest();
     manager_->SetTimerPostFailForTest(true);
     manager_->OnDialogDisconnected(reqId); // grace arm fails -> finish as cancel

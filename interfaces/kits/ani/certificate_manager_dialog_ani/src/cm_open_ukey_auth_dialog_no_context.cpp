@@ -46,9 +46,11 @@ void ReleaseUkeyAuthResultResources(ani_env *env, CmUkeyAuthDialogAniResultConte
 } // namespace
 
 CmOpenUkeyAuthDialogNoContext::CmOpenUkeyAuthDialogNoContext(ani_env *env, ani_string aniKeyUri,
-    ani_object callback) : CertManagerAsyncImpl(env, nullptr, callback, "openUkeyAuthDialog")
+    ani_double aniTimeout, ani_object callback)
+    : CertManagerAsyncImpl(env, nullptr, callback, "openUkeyAuthDialog")
 {
     this->aniKeyUri = aniKeyUri;
+    this->aniTimeout = aniTimeout;
 }
 
 int32_t CmOpenUkeyAuthDialogNoContext::GetParamsFromEnv()
@@ -69,6 +71,12 @@ int32_t CmOpenUkeyAuthDialogNoContext::GetParamsFromEnv()
         CM_LOG_E("keyUri is too long, max length: %d", MAX_LEN_URI);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
+    /* optional timeout in ms; negative / non-finite maps to a param error */
+    if (this->aniTimeout < 0 || this->aniTimeout > UINT32_MAX) {
+        CM_LOG_E("invalid timeout value");
+        return CMR_DIALOG_ERROR_PARAM_INVALID;
+    }
+    this->timeoutMs = static_cast<uint32_t>(this->aniTimeout);
 
     ani_status status = env->GlobalReference_Create(reinterpret_cast<ani_ref>(this->callback),
         &this->globalCallback);
@@ -152,6 +160,7 @@ int32_t CmOpenUkeyAuthDialogNoContext::InvokeAsyncWork()
      * so it only needs to live until the call returns */
     struct UkeyAuthRequest ukeyAuthRequest = {};
     ukeyAuthRequest.keyUri.data = this->keyUri.data;
+    ukeyAuthRequest.timeout = this->timeoutMs;
     ukeyAuthRequest.keyUri.size = this->keyUri.size;
 
     int32_t ret = CmOpenUkeyAuthDialog(&ukeyAuthRequest, UkeyAuthDialogResultCallback, resultContext);
