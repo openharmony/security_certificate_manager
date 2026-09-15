@@ -15,6 +15,8 @@
 
 #include "cm_ukey_auth_dialog_manager.h"
 
+#include <sys/random.h>
+
 #include <cstdio>
 #include <ctime>
 
@@ -51,33 +53,39 @@ constexpr const char *UKEY_DIALOG_ACTION = "UkeyPINAuth";
 constexpr const char *UKEY_DIALOG_UI_EXTENSION_TYPE_KEY = "ability.want.params.uiExtensionType";
 constexpr const char *UKEY_DIALOG_UI_EXTENSION_TYPE = "ukeyAuth";
 
-std::string GenerateRequestId() // 16 random bytes -> 32 hex chars
+/* requestId 是会话凭证（安全设计 D7 的第一道防线），必须来自内核 CSPRNG。
+ * 任何随机源不可用都拒绝开会话（fail-closed）——禁止可预测的降级种子。
+ * 16 random bytes -> 32 hex chars */
+bool GenerateRequestId(std::string &id)
 {
     uint8_t buf[16] = {0};
     bool randomOk = false;
-    FILE *f = fopen("/dev/urandom", "r");
-    if (f != nullptr) {
-        randomOk = (fread(buf, 1, sizeof(buf), f) == sizeof(buf));
-        fclose(f);
-    }
-    if (!randomOk) {
-        /* fallback: loop counter + time（仅当 /dev/urandom 不可读时） */
-        CM_LOG_E("read /dev/urandom failed, fall back to time+counter request id seed");
-        static uint32_t fallbackCounter = 0;
-        uint64_t seed = static_cast<uint64_t>(time(nullptr)) |
-            (static_cast<uint64_t>(fallbackCounter++) << 32);
-        for (size_t i = 0; i < sizeof(buf); i++) {
-            buf[i] = static_cast<uint8_t>((seed >> ((i % sizeof(uint64_t)) * 8)) & 0xFF);
+    /* 优先 getrandom 系统调用（不依赖文件系统，阻塞直至内核完成熵初始化） */
+    ssize_t got = getrandom(buf, sizeof(buf), 0);
+    if (got == static_cast<ssize_t>(sizeof(buf))) {
+        randomOk = true;
+    } else {
+        /* 回退 /dev/urandom，短重试掩盖偶发 IO 抖动 */
+        for (int attempt = 0; attempt < 3 && !randomOk; attempt++) {
+            FILE *f = fopen("/dev/urandom", "rb");
+            if (f != nullptr) {
+                randomOk = (fread(buf, 1, sizeof(buf), f) == sizeof(buf));
+                fclose(f);
+            }
         }
     }
+    if (!randomOk) {
+        CM_LOG_E("no usable random source for request id, refuse to open session");
+        return false;
+    }
     static const char hex[] = "0123456789abcdef";
-    std::string id;
+    id.clear();
     id.reserve(sizeof(buf) * 2);
     for (size_t i = 0; i < sizeof(buf); i++) {
         id += hex[buf[i] >> 4];
         id += hex[buf[i] & 0xF];
     }
-    return id;
+    return true;
 }
 
 /* 白名单校验 + 未知码折叠为通用失败（映射为内部 CMR_DIALOG_ERROR_* 码下发客户端） */
@@ -331,7 +339,11 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
     }
 
     auto session = std::make_shared<UkeyAuthSession>();
-    session->requestId = GenerateRequestId();
+    if (!GenerateRequestId(session->requestId)) {
+        /* fail-closed：requestId 是会话凭证，无 CSPRNG 即拒绝开会话 */
+        CM_LOG_E("generate request id failed");
+        return CMR_DIALOG_ERROR_INTERNAL;
+    }
     session->driverBundleName = bundleName;
     session->callerUid = callerUid;
     session->clientCallback = clientCallback;

@@ -20,6 +20,8 @@
 
 #include <gtest/gtest.h>
 
+#include <set>
+
 #include "string_ex.h"
 
 #include "cm_system_dialog_connection.h"
@@ -113,6 +115,24 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, SingleFlightRejected, testing::ext::TestSi
 {
     ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CM_SUCCESS);
     ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS);
+}
+
+/* requestId 必须来自 CSPRNG：多次会话互不相同（不可预测性的可测代理）+ 32 位 hex 格式 */
+HWTEST_F(CmUkeyAuthDialogManagerTest, RequestIdUniquePerSession, testing::ext::TestSize.Level0)
+{
+    const int sessions = 16;
+    std::set<std::string> ids;
+    for (int i = 0; i < sessions; i++) {
+        ASSERT_EQ(manager_->OpenDialog(&keyUri_, 100, 0, client_), CM_SUCCESS);
+        std::string reqId = manager_->GetRequestIdForTest();
+        EXPECT_EQ(reqId.size(), 32u); /* 16 bytes hex */
+        for (char c : reqId) {
+            EXPECT_TRUE((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'));
+        }
+        ids.insert(reqId);
+        manager_->OnReport(reqId, driverBundle_, 0); /* cleanup, single-flight */
+    }
+    EXPECT_EQ(ids.size(), static_cast<size_t>(sessions)); /* no duplicates */
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, NormalReportDeliversCode, testing::ext::TestSize.Level0)
