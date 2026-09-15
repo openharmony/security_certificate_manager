@@ -507,9 +507,20 @@ CMNapiOpenUkeyAuthorizeDialog:
 
 ## 17. 实现状态
 
-**基线（v1/v2）已交付**：22+ 提交在 master（最新 `7c1d09c`，已推 leal 远端）——SA 会话
+**基线（v1/v2）已交付**：22+ 提交在 master（已推 leal 远端）——SA 会话
 管理器（requestId CSPRNG fail-closed/单飞/10min 总超时/宽限/保活/死亡监听）、systemui
 连接、IPC OPEN/REPORT、客户端（29201 重试）、NAPI/ANI、fuzz ×2、spec；真机 E2E：UIExtension
 全链路（拉起/上报/取消/超时/clamp）、timeout 全链路、requestId 唯一性；单测 23 用例通过。
 
-**v3（本修订）待实现**：按 §16 清单推进，实施计划另行制定（writing-plans）。
+**v3（场景路由 + customData）代码已实现（2026-09-15）**：
+- certificate_manager @ master：`24552d3`（inner API/IPC/共享常量与 base64）→ `443d42b`
+  （SA 三策略路由/PC 门禁/owner 校验/StartAbility/cfg）→ `2f72148`（kits 解析/折叠/直启 want）→
+  `4efacd6`（单测路由矩阵 + fuzz 扩展）
+- interface_sdk-js @ ukey-auth：`8ac23e3f2`（d.ts en/zh）
+- 构建验证：cert_manager_service / certmanager / certmanager_dialog_ani（含 ets→abc）/
+  cert_manager_sdk / cm_sdk_test / 两 fuzzer 全部通过
+- **待真机验证**（设备离线阻塞）：31 个管理器单测用例执行 + §13 E2E 矩阵
+  （`param set persist.sceneboard.ispcmode true|false` 切 PC 分支；
+  `persist.security.cm.ukey_stub_type` 切 uiextension/uiability/none 路由）
+- 未完成项：R8 默认弹框上报桥（user_certificate_manager，TEMP 跨仓）、R11 UIAbility demo、
+  R9 SELinux 固化——见 §14
