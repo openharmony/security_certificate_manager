@@ -55,6 +55,7 @@ ohos_static_library("libcm_service_idl_standard_static") {
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
     "huks:libhukssdk",
+    "init:libbegetutil",
     "ipc:ipc_core",
     "openssl:libcrypto_shared",
     "os_account:os_account_innerkits",

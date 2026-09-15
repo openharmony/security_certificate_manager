@@ -43,6 +43,9 @@ public:
      * remoteObject 为空时使用连接成功时保存的服务代理（不再持有则不发）。 */
     void ReleaseWindow(const sptr<IRemoteObject> &remoteObject);
 
+    /* 隐私（spec R10）：parameters JSON 可能含 customData base64，会话收尾前擦除。 */
+    void ScrubParams();
+
     /* 下发给驱动弹窗的 parameters JSON（含 timeout），测试用于验证内容 */
     const std::string &GetParamsJson() const { return paramsJson_; }
 

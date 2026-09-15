@@ -26,9 +26,11 @@
 #include "iremote_object.h"
 #include "iremote_stub.h"
 #include "nocopyable.h"
+#include "want.h"
 
 #include "cm_type.h"
 #include "cm_ukey_ability_type.h"
+#include "cm_ukey_dialog_common.h"
 #include "cert_manager_service_ipc_interface_code.h" // CM_UKEY_DIALOG_CALLBACK_CMD
 
 namespace OHOS::Security::CertManager {
@@ -52,10 +54,18 @@ public:
 };
 
 // ability 查询注入点（生产环境由 InitRealDependencies 装配为 HksQueryAbilityInfo
-// 适配函数：返回 bundle/ability 名与 abilityType，查询失败即视为"未注册自定义弹框"；
-// type 非 UIExtensionAbility 同样拒绝——spec §6.1，联调期可经桩固定返回）
+// 适配函数：返回 bundle/ability 名与 abilityType；查询失败即视为"未注册自定义弹框"，
+// 路由进系统默认弹框（spec §4.1，联调期可经桩固定返回）
 using AbilityQuerier = std::function<int32_t(const struct CmBlob *keyUri,
     std::string &bundleName, std::string &abilityName, uint32_t &abilityType)>;
+
+// PC / PC 模式判定注入点（spec D15：仅 UIExtension 路径消费；生产装配读
+// const.product.devicetype=="2in1" 或 persist.sceneboard.ispcmode）
+using PcChecker = std::function<bool()>;
+
+// UIAbility 拉起注入点（spec §9.2：无 context 的 UIAbility 驱动弹框经
+// AbilityManagerClient::StartAbility(want) 拉起；生产装配见 InitRealDependencies）
+using AbilityStarter = std::function<int32_t(const AAFwk::Want &)>;
 
 class CmUkeyAuthDialogManager {
 public:
@@ -63,6 +73,8 @@ public:
 
     void SetLauncher(std::shared_ptr<SystemDialogLauncher> launcher);
     void SetAbilityQuerier(AbilityQuerier querier);
+    void SetPcChecker(PcChecker checker);
+    void SetAbilityStarter(AbilityStarter starter);
     void SetTimeoutForTest(uint32_t totalMs, uint32_t graceMs);
     /* SA 空闲卸载续期钩子（F1）：会话活跃期间由周期保活任务调用；由 SA 侧
      * （cm_sa.cpp Init）注入 DelayUnload，弹框静态库不得依赖 cm_sa.h。 */
@@ -74,9 +86,10 @@ public:
     /* 生产装配入口（幂等懒初始化）：RealSystemDialogLauncher + HUKS ability
      * 查询适配；由 SA OnStart/处理器首次调用时触发（T4）。 */
     void InitRealDependencies();
-    // 同步返回校验码（CM_SUCCESS / -1016 / -1017 / -1018 / CMR_DIALOG_ERROR_INTERNAL）
+    // 同步返回校验码（CM_SUCCESS / -1017 / -1018 / -1019 / -1020 / CMR_DIALOG_ERROR_*）；
+    // customData 仅在同步拉起期间消费（写入弹框参数），不随会话保留
     int32_t OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid, uint32_t timeoutMs,
-        const sptr<IRemoteObject> &clientCallback);
+        uint32_t scene, const struct CmBlob *customData, const sptr<IRemoteObject> &clientCallback);
     // 返回 CM_SUCCESS（已接受）或 CMR_DIALOG_ERROR_INTERNAL（会话不存在/身份不符/终态）
     int32_t OnReport(const std::string &requestId, const std::string &callerBundleName,
         int32_t resultCode);
@@ -93,13 +106,17 @@ private:
     DISALLOW_COPY_AND_MOVE(CmUkeyAuthDialogManager);
 
     struct UkeyAuthSession {
+        enum DialogKind { DEFAULT_DIALOG, UIABILITY_DIALOG, UIEXTENSION_DIALOG };
         enum State { LAUNCHING, WAITING_REPORT, GRACE_WAITING, DONE };
-        std::string requestId;                 // 32 字符 hex（/dev/urandom 16 字节）
-        std::string driverBundleName;          // 来自 HksQueryAbilityInfo，上报身份校验用
+        std::string requestId;                 // 32 字符 hex（CSPRNG 16 字节）
+        DialogKind kind = DEFAULT_DIALOG;      // 拉起策略（spec §4.1 路由矩阵）
+        uint32_t scene = CM_UKEY_AUTH_SCENE_LOGIN; // 透传给弹框的场景
+        std::string ownerBundleName;           // 上报责任方 bundle：驱动 bundle 或默认弹框
+                                              // 所属 com.ohos.certmanager（spec §9.2）
         uint32_t callerUid = 0;                // 原客户端 uid（弹框参数 appUid 用）
         sptr<IRemoteObject> clientCallback;    // 客户端回调 stub
         sptr<IRemoteObject::DeathRecipient> clientDeathRecipient; // 客户端死亡监听（F2）
-        sptr<CmSystemDialogConnection> connection; // 系统弹窗服务连接
+        sptr<CmSystemDialogConnection> connection; // 系统弹窗服务连接（UIAbility 会话为空）
         State state = LAUNCHING;
     };
 
@@ -118,6 +135,8 @@ private:
     std::mutex mutex_;
     std::shared_ptr<SystemDialogLauncher> launcher_;
     AbilityQuerier querier_;
+    PcChecker pcChecker_;                      // 缺省视为非 PC（fail-closed，spec D15）
+    AbilityStarter abilityStarter_;            // UIAbility 拉起（生产装配见 InitRealDependencies）
     std::function<void()> unloadRenewal_;  // SA 空闲卸载续期钩子（注入，F1）
     bool realDepsInited_ = false;          // InitRealDependencies 幂等标记
     uint32_t totalTimeoutMs_ = CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS;

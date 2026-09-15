@@ -15,6 +15,8 @@
 
 #include "cm_system_dialog_connection.h"
 
+#include <algorithm>
+
 #include "ability_connect_callback_interface.h"
 #include "errors.h"
 #include "extension_manager_client.h"
@@ -47,6 +49,15 @@ void CmSystemDialogConnection::OnAbilityConnectDone(const AppExecFwk::ElementNam
         return;
     }
 
+    /* 与 ScrubParams 互斥地快照参数与代理：收尾擦除后不再补发启动命令 */
+    std::string paramsSnapshot;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (released_) { return; } /* ReleaseWindow 之后不再补发启动命令 */
+        paramsSnapshot = paramsJson_;
+        dialogRemoteObject_ = remoteObject;
+    }
+
     /* 报文格式逐字段对齐 useriam ui_extension_ability_connection.cpp:47-57 */
     MessageParcel data;
     MessageParcel reply;
@@ -58,12 +69,7 @@ void CmSystemDialogConnection::OnAbilityConnectDone(const AppExecFwk::ElementNam
     data.WriteString16(u"abilityName");
     data.WriteString16(Str8ToStr16(ability_));
     data.WriteString16(u"parameters");
-    data.WriteString16(Str8ToStr16(paramsJson_));
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (released_) { return; } /* ReleaseWindow 之后不再补发启动命令 */
-        dialogRemoteObject_ = remoteObject;
-    }
+    data.WriteString16(Str8ToStr16(paramsSnapshot));
     int32_t err = remoteObject->SendRequest(IAbilityConnection::ON_ABILITY_CONNECT_DONE, data, reply, option);
     if (err != 0) {
         CM_LOG_E("start dialog cmd failed %{public}d", err);
@@ -71,6 +77,13 @@ void CmSystemDialogConnection::OnAbilityConnectDone(const AppExecFwk::ElementNam
         return;
     }
     CM_LOG_I("start dialog cmd sent, request id: %s", requestId_.c_str());
+}
+
+void CmSystemDialogConnection::ScrubParams()
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::fill(paramsJson_.begin(), paramsJson_.end(), '\0');
+    paramsJson_.clear();
 }
 
 void CmSystemDialogConnection::OnAbilityDisconnectDone(const AppExecFwk::ElementName &element,

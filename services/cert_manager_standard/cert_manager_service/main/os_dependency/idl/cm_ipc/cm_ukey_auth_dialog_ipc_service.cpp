@@ -41,14 +41,23 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
     struct CmParamSet *paramSet = nullptr;
     struct CmBlob keyUri = { 0, nullptr };
     uint32_t timeoutMs = 0; /* 0 = 未传，SA 侧取默认最大值 */
+    uint32_t scene = CM_UKEY_AUTH_SCENE_LOGIN; /* 缺省 Login（spec D9） */
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = &keyUri },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &timeoutMs },
+        { .tag = CM_TAG_PARAM2_UINT32, .uint32Param = &scene },
     };
     int32_t ret = CmGetParamSet(reinterpret_cast<struct CmParamSet *>(paramSetBlob->data),
         paramSetBlob->size, &paramSet);
     if (ret == CM_SUCCESS) {
         ret = CmParamSetToParams(paramSet, params, CM_ARRAY_SIZE(params));
+    }
+    struct CmBlob customData = { 0, nullptr }; /* 可选：仅自定义弹框下发（spec D18/D19） */
+    if (ret == CM_SUCCESS) {
+        struct CmParam *customDataParam = nullptr;
+        if (CmGetParam(paramSet, CM_TAG_PARAM3_BUFFER, &customDataParam) == CM_SUCCESS) {
+            customData = customDataParam->blob;
+        }
     }
     if (ret != CM_SUCCESS) {
         CM_LOG_E("open ukey dialog get params failed, ret = %d", ret);
@@ -67,8 +76,10 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
     }
 
     CmUkeyAuthDialogManager::GetInstance().InitRealDependencies();
+    /* customData 指向 paramSet 缓冲，OpenDialog 同步消费（写入弹框参数）后即不再引用 */
     ret = CmUkeyAuthDialogManager::GetInstance().OpenDialog(&keyUri,
-        static_cast<uint32_t>(IPCSkeleton::GetCallingUid()), timeoutMs, clientCallback);
+        static_cast<uint32_t>(IPCSkeleton::GetCallingUid()), timeoutMs, scene, &customData,
+        clientCallback);
     CmFreeParamSet(&paramSet);
     CmSendResponse(context, ret, NULL);
 }
