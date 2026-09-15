@@ -185,12 +185,23 @@ void CmDialogCallbackStub::Deliver(int32_t result)
 using namespace OHOS;
 using namespace OHOS::Security::CertManager;
 
-int32_t CmClientOpenUkeyAuthDialog(const struct CmBlob *keyUri, uint32_t timeoutMs,
+int32_t CmClientOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest,
     CmUkeyAuthDialogResultCallback callback, void *userData)
 {
-    if (CmCheckBlob(keyUri) != CM_SUCCESS || callback == nullptr) {
+    if (ukeyAuthRequest == nullptr || callback == nullptr ||
+        CmCheckBlob(&ukeyAuthRequest->keyUri) != CM_SUCCESS) {
         CM_LOG_E("invalid open ukey auth dialog arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    /* 纵深防御：inner API 直调方绕过 NAPI 校验时在此拦截（spec §8.3） */
+    if (ukeyAuthRequest->scene != CM_UKEY_AUTH_SCENE_LOGIN &&
+        ukeyAuthRequest->scene != CM_UKEY_AUTH_SCENE_CUSTOM) {
+        CM_LOG_E("invalid ukey auth scene: %u", ukeyAuthRequest->scene);
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+    if (ukeyAuthRequest->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
+        CM_LOG_E("custom data too large: %u", ukeyAuthRequest->customData.size);
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
 
     sptr<CmDialogCallbackStub> stub = new (std::nothrow) CmDialogCallbackStub(callback, userData);
@@ -199,15 +210,26 @@ int32_t CmClientOpenUkeyAuthDialog(const struct CmBlob *keyUri, uint32_t timeout
         return CMR_ERROR_MALLOC_FAIL;
     }
 
-    struct CmParamSet *sendParamSet = nullptr;
+    /* customData 缺省（size==0）不占 param；SA 侧按 tag 存在性解析 */
     struct CmParam params[] = {
-        { .tag = CM_TAG_PARAM0_BUFFER, .blob = *keyUri },
-        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = timeoutMs }, /* 0 = server default */
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = ukeyAuthRequest->keyUri },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = ukeyAuthRequest->timeout }, /* 0 = server default */
+        { .tag = CM_TAG_PARAM2_UINT32, .uint32Param = ukeyAuthRequest->scene },
     };
+    struct CmParam customDataParam = {
+        .tag = CM_TAG_PARAM3_BUFFER,
+        .blob = ukeyAuthRequest->customData,
+    };
+    bool hasCustomData = ukeyAuthRequest->customData.size > 0;
 
+    struct CmParamSet *sendParamSet = nullptr;
     int32_t ret = CmParamsToParamSet(params, CM_ARRAY_SIZE(params), &sendParamSet);
+    if (ret == CM_SUCCESS && hasCustomData) {
+        ret = CmAddParams(sendParamSet, &customDataParam, 1);
+    }
     if (ret != CM_SUCCESS) {
         CM_LOG_E("open ukey dialog pack params failed, ret = %d", ret);
+        CmFreeParamSet(&sendParamSet);
         return ret;
     }
     struct CmBlob parcelBlob = { sendParamSet->paramSetSize, reinterpret_cast<uint8_t *>(sendParamSet) };

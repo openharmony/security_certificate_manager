@@ -261,9 +261,10 @@ enum CMDialogErrorCode {
     CMR_DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE = -1013, /* UIExtension will return -1013 if no available cert to use*/
     CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED = -1014,
     CMR_DIALOG_ERROR_START_UIABILITY_FAILED = -1015,
-    CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED = -1016, /* ukey ability query empty or not UIExtensionAbility */
     CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT = -1017, /* provider did not report result within total timeout */
     CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS = -1018, /* another ukey pin dialog session is in progress */
+    CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED = -1019, /* default dialog needed but scene is Custom (29700005) */
+    CMR_DIALOG_ERROR_NOT_PC_DEVICE = -1020, /* UIExtension dialog requires a PC device or PC mode (29700005) */
 };
 
 enum CMErrorCode { /* temp use */
@@ -564,9 +565,22 @@ struct UkeyInfo {
     enum CmCertificatePurpose certPurpose;
 };
 
+/* Scene of the ukey pin auth dialog request (spec D9): Login (default) allows the
+ * system default dialog fallback; Custom restricts to the driver's custom dialog. */
+enum CmUkeyAuthScene {
+    CM_UKEY_AUTH_SCENE_LOGIN = 0,
+    CM_UKEY_AUTH_SCENE_CUSTOM = 1,
+};
+
+/* Opaque caller data delivered (base64-encoded) to custom dialogs only (spec D9/D19). */
+#define CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE 2048
+
 struct UkeyAuthRequest {
     struct CmBlob keyUri; /* ukey credential uri, max 256 bytes */
     uint32_t timeout; /* auth timeout in ms, 0 = default (server max); server clamps to max */
+    uint32_t scene; /* enum CmUkeyAuthScene, CM_UKEY_AUTH_SCENE_LOGIN by default */
+    struct CmBlob customData; /* raw caller data, max CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE bytes;
+                                  size 0 / NULL data = absent; never persisted or logged */
 };
 
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)
