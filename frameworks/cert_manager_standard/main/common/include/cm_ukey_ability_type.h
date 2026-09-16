@@ -25,10 +25,12 @@
 
 #ifdef CERT_MANAGER_UKEY_ABILITY_QUERY_STUB
 /* TEMP(联调桩，上游 PR 前移除)：由 certificate_manager_ukey_ability_stub 开启，
- * HksQueryAbilityInfo 固定返回以下三元组，模拟 UKey 驱动注册的 UIExtensionAbility
- * 类型自定义 Pin 弹框，用于无真实 UKey 设备的真机联调。 */
+ * HksQueryAbilityInfo 查询按 persist.security.cm.ukey_stub_type 旋钮返回，模拟
+ * UKey 驱动注册的 UIExtensionAbility / UIAbility 两类自定义 Pin 弹框，用于无真实
+ * UKey 设备的真机联调全链路。 */
 #define CM_UKEY_ABILITY_STUB_BUNDLE  "com.example.ukeyauthability2"
 #define CM_UKEY_ABILITY_STUB_ABILITY "MyUkeyAuthExtensionAbility"
+#define CM_UKEY_ABILITY_STUB_UIABILITY_NAME "MyUkeyAuthAbility"
 #endif
 
 #endif /* CM_UKEY_ABILITY_TYPE_H */

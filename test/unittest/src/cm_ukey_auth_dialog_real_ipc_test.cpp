@@ -91,6 +91,9 @@ HWTEST_F(CmUkeyDialogRealIpcTest, OpenDialogRealIpcProbe, testing::ext::TestSize
     struct UkeyAuthRequest req = {};
     req.keyUri.data = reinterpret_cast<uint8_t *>(uri);
     req.keyUri.size = sizeof(uri); /* NUL-terminated, same as the NAPI layer */
+    uint8_t customData[] = { 'a', 'b', 'c' }; /* base64 -> "YWJj", exercises the want param */
+    req.customData.data = customData;
+    req.customData.size = sizeof(customData);
 
     CertmanagerTest::MockHapToken mockHap({ "ohos.permission.ACCESS_CERT_MANAGER" });
     int32_t ret = CmOpenUkeyAuthDialog(&req, RealIpcResultCallback, nullptr);

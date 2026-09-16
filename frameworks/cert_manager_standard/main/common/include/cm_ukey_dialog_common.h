@@ -91,7 +91,8 @@ inline int32_t CmUkeyAbilityStubQuery(std::string &bundleName, std::string &abil
         return CM_FAILURE; /* 模拟未注册：调用方按查询失败走默认弹框路由 */
     }
     bundleName = CM_UKEY_ABILITY_STUB_BUNDLE;
-    abilityName = CM_UKEY_ABILITY_STUB_ABILITY;
+    abilityName = (knob == CM_UKEY_ABILITY_STUB_VAL_UIABILITY) ? CM_UKEY_ABILITY_STUB_UIABILITY_NAME
+                                                               : CM_UKEY_ABILITY_STUB_ABILITY;
     abilityType = (knob == CM_UKEY_ABILITY_STUB_VAL_UIABILITY) ? CM_UKEY_ABILITY_TYPE_UIABILITY
                                                                : CM_UKEY_ABILITY_TYPE_UIEXTENSION;
     return CM_SUCCESS;

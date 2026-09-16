@@ -210,23 +210,19 @@ int32_t CmClientOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest
         return CMR_ERROR_MALLOC_FAIL;
     }
 
-    /* customData 缺省（size==0）不占 param；SA 侧按 tag 存在性解析 */
+    /* 全部参数一次性序列化：CmParamsToParamSet 内部 FreshParamSet 会把 blob 数据
+     * 写入 paramSet 尾部，事后 CmAddParams 追加 param 会覆写已序列化数据且新
+     * param 的 blob 永不入列（SA 侧读到未初始化堆）。customData 缺省（size 0）由
+     * CmParamsToParamSet 的 NULL-blob 标记转换处理，SA 侧按 PARAM3 缺失解析。 */
     struct CmParam params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = ukeyAuthRequest->keyUri },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = ukeyAuthRequest->timeout }, /* 0 = server default */
         { .tag = CM_TAG_PARAM2_UINT32, .uint32Param = ukeyAuthRequest->scene },
+        { .tag = CM_TAG_PARAM3_BUFFER, .blob = ukeyAuthRequest->customData },
     };
-    struct CmParam customDataParam = {
-        .tag = CM_TAG_PARAM3_BUFFER,
-        .blob = ukeyAuthRequest->customData,
-    };
-    bool hasCustomData = ukeyAuthRequest->customData.size > 0;
 
     struct CmParamSet *sendParamSet = nullptr;
     int32_t ret = CmParamsToParamSet(params, CM_ARRAY_SIZE(params), &sendParamSet);
-    if (ret == CM_SUCCESS && hasCustomData) {
-        ret = CmAddParams(sendParamSet, &customDataParam, 1);
-    }
     if (ret != CM_SUCCESS) {
         CM_LOG_E("open ukey dialog pack params failed, ret = %d", ret);
         CmFreeParamSet(&sendParamSet);

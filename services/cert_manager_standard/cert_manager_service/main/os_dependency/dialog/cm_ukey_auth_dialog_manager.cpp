@@ -271,7 +271,9 @@ void BuildDriverUiAbilityWant(const std::string &bundleName, const std::string &
     std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
     want.SetParam("keyUri", uriStr);
     want.SetParam("requestId", requestId);
-    want.SetParam(CM_UKEY_DIALOG_PARAM_SCENE, CmUkeySceneToString(scene));
+    /* 显式构造 std::string：const char* 实参会命中 Want::SetParam(string, bool)
+     * 重载（指针→true），场景值会被写成布尔 */
+    want.SetParam(CM_UKEY_DIALOG_PARAM_SCENE, std::string(CmUkeySceneToString(scene)));
     if (customData != nullptr && customData->size > 0) {
         want.SetParam(CM_UKEY_DIALOG_PARAM_CUSTOM_DATA,
             CmBase64Encode(customData->data, customData->size));

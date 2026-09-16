@@ -98,7 +98,8 @@ static void GetDefaultAuthCertWant(const CmBlob *keyUri, uint32_t scene, OHOS::A
     want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(CmDialogPageType::PAGE_UKEY_PIN_AUTHORIZE));
     std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
     want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
-    want.SetParam(CM_UKEY_DIALOG_PARAM_SCENE, CmUkeySceneToString(scene));
+    /* std::string 显式构造：const char* 会命中 Want::SetParam(string, bool) 重载 */
+    want.SetParam(CM_UKEY_DIALOG_PARAM_SCENE, std::string(CmUkeySceneToString(scene)));
 }
 
 static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName,
@@ -174,7 +175,8 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, uint32_t scene,
     want.SetParam(CERT_MANAGER_CALLER_UID, static_cast<int32_t>(getuid()));
     std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
     want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
-    want.SetParam(CM_UKEY_DIALOG_PARAM_SCENE, CmUkeySceneToString(scene));
+    /* std::string 显式构造：const char* 会命中 Want::SetParam(string, bool) 重载 */
+    want.SetParam(CM_UKEY_DIALOG_PARAM_SCENE, std::string(CmUkeySceneToString(scene)));
     if (customData != nullptr && customData->size > 0) {
         /* 自定义弹框透传 customData（base64，spec D18） */
         want.SetParam(CM_UKEY_DIALOG_PARAM_CUSTOM_DATA,
