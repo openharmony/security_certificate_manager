@@ -111,11 +111,10 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogAbilityQueryFail, testing::ext::
     EXPECT_EQ(launcher_->connectCount_, 1);
     auto conn = launcher_->conn_;
     ASSERT_NE(conn, nullptr);
-    /* 默认弹框身份与参数（spec §6.2/§9.2）：sys/commonUI + pageType=7，
-     * customData 不下发（D18 静默丢弃） */
+    /* 默认弹框身份与参数（spec §6.2/§9.2，D14 修订）：ukeyAuth 类型扩展
+     * （com.ohos.certmanager/UkeyAuthExtensionAbility），customData 不下发（D18 静默丢弃） */
     const std::string &params = conn->GetParamsJson();
-    EXPECT_NE(params.find("\"ability.want.params.uiExtensionType\":\"sys/commonUI\""), std::string::npos);
-    EXPECT_NE(params.find("\"pageType\":7"), std::string::npos);
+    EXPECT_NE(params.find("\"ability.want.params.uiExtensionType\":\"ukeyAuth\""), std::string::npos);
     EXPECT_NE(params.find("\"scene\":\"Login\""), std::string::npos);
     EXPECT_EQ(params.find("customData"), std::string::npos);
     /* 上报责任方为 com.ohos.certmanager（owner 校验，spec §9.2） */

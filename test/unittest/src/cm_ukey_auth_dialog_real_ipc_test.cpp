@@ -25,6 +25,7 @@
 #include <atomic>
 
 #include "cert_manager_api.h"
+#include "cm_test_common.h"
 #include "cm_type.h"
 
 namespace {
@@ -66,6 +67,24 @@ HWTEST_F(CmUkeyDialogRealIpcTest, ReportRealIpcProbe, testing::ext::TestSize.Lev
     EXPECT_NE(ret, 29201);
 }
 
+/* scene=Custom E2E probe: with no custom dialog registered (stub knob=none /
+ * real unregistered key) the SA must reject synchronously with -1019; any
+ * other outcome is still logged for on-device inspection. */
+HWTEST_F(CmUkeyDialogRealIpcTest, OpenDialogSceneCustomProbe, testing::ext::TestSize.Level0)
+{
+    char uri[] = "ukey-test-uri";
+    struct UkeyAuthRequest req = {};
+    req.keyUri.data = reinterpret_cast<uint8_t *>(uri);
+    req.keyUri.size = sizeof(uri); /* NUL-terminated, same as the NAPI layer */
+    req.scene = CM_UKEY_AUTH_SCENE_CUSTOM;
+
+    CertmanagerTest::MockHapToken mockHap({ "ohos.permission.ACCESS_CERT_MANAGER" });
+    int32_t ret = CmOpenUkeyAuthDialog(&req, RealIpcResultCallback, nullptr);
+    GTEST_LOG_(INFO) << "CmOpenUkeyAuthDialog(scene=Custom) sync ret = " << ret;
+    sleep(1);
+    EXPECT_FALSE(g_asyncFired.load()); /* sync rejection never fires the callback */
+}
+
 HWTEST_F(CmUkeyDialogRealIpcTest, OpenDialogRealIpcProbe, testing::ext::TestSize.Level0)
 {
     char uri[] = "ukey-test-uri";
@@ -73,6 +92,7 @@ HWTEST_F(CmUkeyDialogRealIpcTest, OpenDialogRealIpcProbe, testing::ext::TestSize
     req.keyUri.data = reinterpret_cast<uint8_t *>(uri);
     req.keyUri.size = sizeof(uri); /* NUL-terminated, same as the NAPI layer */
 
+    CertmanagerTest::MockHapToken mockHap({ "ohos.permission.ACCESS_CERT_MANAGER" });
     int32_t ret = CmOpenUkeyAuthDialog(&req, RealIpcResultCallback, nullptr);
     GTEST_LOG_(INFO) << "CmOpenUkeyAuthDialog sync ret = " << ret;
     if (ret != CM_SUCCESS) {
