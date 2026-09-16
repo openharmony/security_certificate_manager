@@ -69,9 +69,9 @@ static const std::string UKEY_AUTH_REPORT_TIMEOUT_MSG =
     "the ukey driver did not report the auth result within the timeout.";
 static const std::string UKEY_DIALOG_IN_PROGRESS_MSG =
     "another ukey pin auth dialog is already in progress.";
-/* 29700005 两场景细化文案（spec D10 终裁：-1019/-1020 → 29700005，消息注明原因） */
+/* 细化文案（spec D10 修订 2：-1019 → 29700003，-1020 → 29700005） */
 static const std::string UKEY_DEFAULT_NOT_SUPPORTED_MSG =
-    "the operation does not comply with the device security policy: "
+    "the authentication operation failed: "
     "the scene is custom but no custom pin dialog is registered.";
 static const std::string UKEY_NOT_PC_DEVICE_MSG =
     "the operation does not comply with the device security policy: "
@@ -172,7 +172,7 @@ static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
     { CMR_DIALOG_ERROR_NOT_ENTERPRISE_DEVICE, DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY },
     { CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED },
     { CMR_DIALOG_ERROR_START_UIABILITY_FAILED, DIALOG_ERROR_INSTALL_FAILED },
-    { CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED, DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY },
+    { CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED, DIALOG_ERROR_INSTALL_FAILED }, /* 29700003 */
     { CMR_DIALOG_ERROR_NOT_PC_DEVICE, DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY },
     { CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT, DIALOG_ERROR_UKEY_AUTH_REPORT_TIMEOUT },
     { CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS, DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS },
