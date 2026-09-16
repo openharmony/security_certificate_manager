@@ -64,7 +64,7 @@ v1/v2 已交付：无 context 重载经 SA + 系统弹窗服务拉起驱动 UIEx
 | D11 | 非法参数错误码 | `scene` 非枚举值 / `customData` 超限或类型错 → 29700006（沿用本 API 既有约定：request 解析失败 29700006，argc 不匹配 401） | 与既有 NAPI 解析约定一致 |
 | D12 | 29700008 处置 | **删除** `CMR_DIALOG_ERROR_UKEY_ABILITY_NOT_SUPPORTED`(-1016) 与 JS 码 29700008（枚举、d.ts throws、映射表、单测用例一并清理） | 新方案下触发条件消失（未注册→默认弹框或 29700005）；26.0.0 未发布无兼容包袱 |
 | D13 | scene 校验时机 | ~~flag=true 时解析期校验 sceneName~~ **被 D9 替代**：`scene` 为纯枚举，解析期校验 ∈{'Login','Custom'}（两重载一致），SA 侧 IPC 到达后对 uint32 值再校验一道（纵深防御） | 纯枚举无自由串，校验简化 |
-| D14 | 默认弹框结果回传 | SA 拉起的默认弹框：参数带 requestId，`com.ohos.certmanager` 完成后经 inner API `CmReportUkeyAuthResult` 上报（TEMP：user_certificate_manager 仓加 native 桥接模块联调；上游化需产品侧对齐） | 与驱动弹框回传统一；systemui 现有 remote 转发通道（COMMAND_SEND_REMOTE_OBJECT/ExtIndex.onOk）系统内从未启用，风险高被否 |
+| D14 | 默认弹框结果回传 | **修订（2026-09-16，用户裁定）**：默认弹框为 com.ohos.certmanager 新增的 **ukeyAuth 类型 UIExtensionAbility**（`UkeyAuthExtensionAbility`，复用既有 UKeyAuthSheet 页面），与驱动 UIExtension 弹框走**同一 systemui 拉起机制**；其终止经框架 `UkeyAuthExtensionContext.terminateSelf*` 自动完成对 CM SA 的上报（requestId 由 ability_runtime 从 want 注入，含 OnCommandWindow 路径修复）——**无需 app 侧 native 桥** | systemui 宿主对 ukeyAuth 类型已有先例（驱动弹框即走此路），sys/commonUI 经 systemui 无先例的风险（原 R7）随之消除；框架上报通道即 R1 的 UIExtension 答案 |
 | D15 | PC 判定口径 | `OHOS::system::GetDeviceType() == "2in1"` **或** `GetBoolParameter("persist.sceneboard.ispcmode", false)`，**每次调用实时读**（模式可运行时切换）；仅 SA 侧判定，做成可注入 seam 供单测；rk3568 联调用 `param set persist.sceneboard.ispcmode true` 切换分支 | 2in1 为 PC 形态权威值（render_service 亦接受 "pc"，本设计不采纳）；ispcmode 为 WMS/ace/RS/powermgr 共同消费的 PC 模式权威信号 |
 | D16 | 联调桩旋钮 | `CERT_MANAGER_UKEY_ABILITY_QUERY_STUB` 下读 `persist.security.cm.ukey_stub_type`：`uiextension`（缺省/未知值）固定返回 UIExtension 三元组；`uiability` 返回 UIAbility 三元组；`none` 返回查询失败（未注册）。Kit 与 SA 两处桩同源读同一参数；仍由 GN feature `certificate_manager_ukey_ability_stub` 门控（TEMP，上游 PR 前移除） | 一次刷机覆盖全部路由分支，避免逐路径重编重刷 |
 | D17 | ~~sceneType 枚举替代布尔~~ | **被 D19 替代**（中间形态：`UkeyAuthSceneType{Login,Custom}` + `customData` 1MiB） | — |
@@ -232,10 +232,9 @@ UIExtension，since-18 既有码仅补描述）；**不新增 29700009/29700010*
 }
 ```
 
-- **默认弹框 parameters JSON**：`{ability.want.params.uiExtensionType: "sys/commonUI",
-  pageType: 7, keyUri, appUid, requestId, scene}`（无 action/customData/timeout）；
-- `sys/commonUI` 类型扩展经 systemui 宿主拉起**无先例**（ukeyAuth 有先例）——真机 E2E
-  为门禁项（R7）。
+- **默认弹框 parameters JSON**（D14 修订）：`{ability.want.params.uiExtensionType:
+  "ukeyAuth", keyUri, appUid, requestId, scene}`（无 action/customData/timeout/pageType）；
+  目标为 com.ohos.certmanager 的 `UkeyAuthExtensionAbility`（ukeyAuth 类型）。
 
 ### 6.3 弹框提供方契约
 
@@ -249,9 +248,9 @@ UIExtension，since-18 既有码仅补描述）；**不新增 29700009/29700010*
    `scene`：want 参数键 `scene`（'Login'/'Custom'）；
 4. UIAbility 形态结果上报通道同 R1（遗留项）。
 
-**默认弹框（com.ohos.certmanager，D14）**：完成后经 inner API `CmReportUkeyAuthResult`
-上报（错误码协议同上）；TEMP 联调由 user_certificate_manager 仓 native 桥接模块调用
-（系统应用可加载 innerkit），上游化方案需产品侧对齐（R8）。
+**默认弹框（com.ohos.certmanager，D14 修订）**：页面经 want 读取 keyUri/appUid/requestId/
+scene，完成后调用 `UkeyAuthExtensionContext.terminateSelfWithResult`——框架
+（ability_runtime）负责向 CM SA 上报（错误码协议同上），app 侧无需任何上报实现。
 
 ## 7. inner API（interfaces/innerkits/cert_manager_standard/main/include）
 
@@ -464,15 +463,15 @@ CMNapiOpenUkeyAuthorizeDialog:
 
 | # | 风险/事项 | 缓解 |
 |---|---|---|
-| R1 | 三方驱动弹框（UIAbility/UIExtension）的**公开上报通道未定**（公开 API 已删，仅 inner；三方 HAP 无法调 innerkit）；本修订 UIAbility-no-context 路径加深该依赖 | E2E 用 cmtest 探针验证 SA 侧；驱动侧通道随 HUKS/产品侧对齐后单独立项 |
+| R1 | **部分解除（2026-09-16）**：UIExtension 驱动弹框经框架 `UkeyAuthExtensionContext.terminateSelf*` 上报（真机已验证）；**遗留**：UIAbility-no-context 驱动弹框仍无上报通道（三方 HAP 无法调 innerkit，无框架基类） | UIAbility 路径 E2E 以 cmtest 探针替代；通道方案随 HUKS/产品侧对齐后单独立项 |
 | R2 | 提供方不遵守"先上报后终止"契约：systemui 路径 10s 宽限兜底；UIAbility 路径超时终结 + 迟到上报忽略，孤儿弹窗留待用户关闭 | 契约写入 §6.3；HUKS 驱动文档对齐 |
 | R4 | SA 保活续期与按需卸载策略交互 | 已实现（v1），随 v3 路由回归 |
 | R5 | `appUid` 多用户/多应用并发语义依赖提供方实现 | 契约随 §6.2/6.3 |
-| R7 | `sys/commonUI` 类型扩展经 systemui 宿主拉起**无先例**（ukeyAuth 有先例），AMS 校验行为需真机确认 | E2E 门禁项；失败则与 AMS/systemui 对齐（可能需宿主侧适配，违反 D4 时重新裁决） |
-| R8 | 默认弹框上报桥（user_certificate_manager native 模块）为 TEMP 跨仓联调改动，上游化需产品侧对齐（默认弹框是否走 requestId 上报） | §6.3 契约 + TEMP 标注 |
+| R7 | ~~sys/commonUI 经 systemui 拉起无先例~~ **已解除**（D14 修订：默认弹框改走 ukeyAuth 类型，与驱动弹框同机制，真机已验证） | — |
+| R8 | ~~默认弹框上报桥~~ **已解除**（D14 修订：框架 UkeyAuthExtensionContext 上报，app 零上报代码） | — |
 | R9 | StartAbility 路径权限/SELinux：`START_ABILITIES_FROM_BACKGROUND` 授予 + cert_manager_service → ability_mgr binder 规则 | cfg 增补 + selinux_adapter 跨仓项（连同既有 systemui 路径策略一并固化） |
 | R10 | customData 隐私：内容不经日志/打点/持久化外泄 | §8.4/§9.4 约束 + 单测断言日志仅长度 |
-| R11 | UIAbility demo 应用当前仅 UIExtension 形态，E2E 需补 UIAbility | 向用户索取 demo 工程位置后补 |
+| R11 | UIAbility demo 形态已补（/mnt/d/workspace/UkeyAuthAbility2 新增 MyUkeyAuthAbility + 页面，用户侧重编安装后可完成 UIAbility 弹框 E2E） | SA 侧 StartAbility 路径已真机验证到尝试层（demo 未含新 ability 时回 -1000） |
 
 ## 15. 参考实现索引
 
@@ -522,5 +521,17 @@ CMNapiOpenUkeyAuthorizeDialog:
 - **待真机验证**（设备离线阻塞）：31 个管理器单测用例执行 + §13 E2E 矩阵
   （`param set persist.sceneboard.ispcmode true|false` 切 PC 分支；
   `persist.security.cm.ukey_stub_type` 切 uiextension/uiability/none 路由）
-- 未完成项：R8 默认弹框上报桥（user_certificate_manager，TEMP 跨仓）、R11 UIAbility demo、
-  R9 SELinux 固化——见 §14
+- **真机验证（2026-09-16，rk3568 + setenforce 0）**：
+  - 管理器单测 29/29 通过（路由矩阵/PC 门禁/owner 校验/params 断言/base64 向量）；
+  - E2E：UIExtension + 非 PC → 同步 **-1020**；UIExtension + PC 模式 → systemui 拉起
+    （want 含 requestId/scene/timeout）；
+  - E2E：默认弹框（knob=none）→ **全链路闭环**：SA 经 systemui 拉起
+    com.ohos.certmanager/UkeyAuthExtensionAbility → UKeyAuthSheet → 框架上报 →
+    回调恰好一次（-1000/29700001，占位页预期码）；
+  - E2E：scene=Custom + 未注册 → 同步 **-1019**；
+  - E2E：UIAbility（knob=uiability）→ SA StartAbility 尝试（demo 未含新 ability 回
+    -1000，符合预期；完整弹框 E2E 待 demo 重编安装）；
+  - 联调依赖修复：ability_runtime `3c82a83cd4`（OnCommandWindow 路径注入 requestId，
+    否则 ukeyAuth 扩展 terminate 上报被静默跳过）。
+- 未完成项：R1 遗留（UIAbility-no-context 上报通道）、R9 SELinux 固化（联调
+  setenforce 0）、demo 应用重编安装（用户侧）——见 §14
