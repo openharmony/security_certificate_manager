@@ -43,11 +43,8 @@ constexpr int32_t REPORT_CODE_OPERATION_CANCELED = 29700002;
 constexpr int32_t REPORT_CODE_INSTALL_FAILED = 29700003;
 constexpr int32_t REPORT_CODE_PARAM_INVALID = 29700006;
 
-/* HUKS ability 查询缓冲区长度（对齐 kits 层 cm_dialog_api_common.cpp 约定）；
- * 桩开启时真实查询路径不参与编译，常量随之收窄到非桩分支 */
-#ifndef CERT_MANAGER_UKEY_ABILITY_QUERY_STUB
+/* HUKS ability 查询缓冲区长度（对齐 kits 层 cm_dialog_api_common.cpp 约定） */
 constexpr uint32_t HAP_INFO_MAX_LENGTH = 128;
-#endif
 /* 弹框 parameters JSON 的 action 值（spec §6.2） */
 constexpr const char *UKEY_DIALOG_ACTION = "UkeyPINAuth";
 /* UIExtensionComponent 拉起扩展需以该 want 参数标识扩展类型（ukeyAuth = type 40
@@ -304,17 +301,14 @@ int32_t StartDriverUiAbility(const AAFwk::Want &want)
 
 /* HUKS ability 查询适配（生产装配，模式对齐 kits 层 cm_dialog_api_common.cpp）：
  * 查询失败即视为"未注册自定义弹框"，由 OpenDialog 路由进系统默认弹框（spec §4.1）；
- * 联调期由 CERT_MANAGER_UKEY_ABILITY_QUERY_STUB 桩按运行时旋钮返回（spec D16）。 */
+ */
 int32_t QueryUkeyDriverAbility(const struct CmBlob *keyUri,
     std::string &bundleName, std::string &abilityName, uint32_t &abilityType)
 {
     if (keyUri == nullptr || keyUri->data == nullptr || keyUri->size == 0) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-#ifdef CERT_MANAGER_UKEY_ABILITY_QUERY_STUB
-    (void)keyUri;
-    return CmUkeyAbilityStubQuery(bundleName, abilityName, abilityType);
-#else
+
     struct HksAbilityInfo abilityInfo = {};
     abilityInfo.abilityName.data = static_cast<uint8_t *>(CmMalloc(HAP_INFO_MAX_LENGTH));
     abilityInfo.bundleName.data = static_cast<uint8_t *>(CmMalloc(HAP_INFO_MAX_LENGTH));
@@ -341,11 +335,10 @@ int32_t QueryUkeyDriverAbility(const struct CmBlob *keyUri,
     bundleName.assign(reinterpret_cast<char *>(abilityInfo.bundleName.data), abilityInfo.bundleName.size);
     CM_FREE_PTR(abilityInfo.abilityName.data);
     CM_FREE_PTR(abilityInfo.bundleName.data);
-    /* 本树 HUKS HksAbilityInfo 尚无 abilityType 字段（spec §6.1 对齐项），
-     * 非桩路径暂按默认 UIAbility 处理，HUKS 字段合入后替换为透传。 */
-    abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
+    /* abilityType 透传（HksAbilityInfo 已有该字段；HUKS 查询实现尚未填充时，
+     * 零初始化保持 0 = UIAbility，与存量注册行为一致） */
+    abilityType = static_cast<uint32_t>(abilityInfo.abilityType);
     return CM_SUCCESS;
-#endif
 }
 } // namespace
 

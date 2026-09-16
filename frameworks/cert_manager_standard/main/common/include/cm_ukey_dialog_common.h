@@ -68,37 +68,6 @@ inline bool CmUkeyIsPcOrPcMode()
     return OHOS::system::GetBoolParameter(CM_UKEY_PARAM_IS_PC_MODE, false);
 }
 
-#ifdef CERT_MANAGER_UKEY_ABILITY_QUERY_STUB
-/* ---- 联调桩运行时旋钮（spec D16，TEMP：上游 PR 前随桩一并移除）----
- * persist.security.cm.ukey_stub_type:
- *   uiextension（缺省/未知值）固定返回 UIExtensionAbility 三元组
- *   uiability                 固定返回 UIAbility 三元组
- *   none                      返回失败（模拟未注册 → 默认弹框路由） */
-constexpr const char *CM_UKEY_ABILITY_STUB_PARAM = "persist.security.cm.ukey_stub_type";
-constexpr const char *CM_UKEY_ABILITY_STUB_VAL_UIEXTENSION = "uiextension";
-constexpr const char *CM_UKEY_ABILITY_STUB_VAL_UIABILITY = "uiability";
-constexpr const char *CM_UKEY_ABILITY_STUB_VAL_NONE = "none";
-
-inline int32_t CmUkeyAbilityStubQuery(std::string &bundleName, std::string &abilityName,
-    uint32_t &abilityType)
-{
-    std::string knob = OHOS::system::GetParameter(CM_UKEY_ABILITY_STUB_PARAM,
-        CM_UKEY_ABILITY_STUB_VAL_UIEXTENSION);
-    if (knob == CM_UKEY_ABILITY_STUB_VAL_NONE) {
-        bundleName.clear();
-        abilityName.clear();
-        abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
-        return CM_FAILURE; /* 模拟未注册：调用方按查询失败走默认弹框路由 */
-    }
-    bundleName = CM_UKEY_ABILITY_STUB_BUNDLE;
-    abilityName = (knob == CM_UKEY_ABILITY_STUB_VAL_UIABILITY) ? CM_UKEY_ABILITY_STUB_UIABILITY_NAME
-                                                               : CM_UKEY_ABILITY_STUB_ABILITY;
-    abilityType = (knob == CM_UKEY_ABILITY_STUB_VAL_UIABILITY) ? CM_UKEY_ABILITY_TYPE_UIABILITY
-                                                               : CM_UKEY_ABILITY_TYPE_UIEXTENSION;
-    return CM_SUCCESS;
-}
-#endif /* CERT_MANAGER_UKEY_ABILITY_QUERY_STUB */
-
 /* ---- base64 编码（spec §8.4：标准字母表 + padding，仅 want/params 构造边界使用；
  * inner API / IPC 全程传原始字节）---- */
 inline std::string CmBase64Encode(const uint8_t *data, size_t size)

@@ -29,12 +29,6 @@ declare_args() {
     certificate_manager_feature_dialog_enabled = true
   }
 
-  # TEMP(联调桩，上游 PR 前置回 false 或移除)：置 true 时定义
-  # CERT_MANAGER_UKEY_ABILITY_QUERY_STUB，HksQueryAbilityInfo 的 ability 查询
-  # （SA 会话管理器装配 + kits 层）固定返回桩三元组（见
-  # frameworks/.../common/include/cm_ukey_ability_type.h），用于无真实 UKey
-  # 设备时联调 UIExtensionAbility 类型自定义 Pin 弹框链路。
-  certificate_manager_ukey_ability_stub = true
 }
 
 # 当且仅当底层存在 hiviewdfx_api_metrics_ext 部件�?才打开 cert_manager �?NAPI/ANI 打点

@@ -103,9 +103,6 @@ ohos_shared_library("certmanagerdialog") {
   ]
 
   defines = []
-  if (certificate_manager_ukey_ability_stub) {
-    defines += [ "CERT_MANAGER_UKEY_ABILITY_QUERY_STUB" ]
-  }
 
   sources = [
     "../common/src/cm_dialog_api_common.cpp",

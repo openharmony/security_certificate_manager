@@ -24,10 +24,8 @@
 #include "cm_mem.h"
 
 namespace OHOS::Security::CertManager::Dialog {
-/* HUKS ability 查询缓冲区长度；桩开启时真实查询路径不参与编译，随之收窄 */
-#ifndef CERT_MANAGER_UKEY_ABILITY_QUERY_STUB
+/* HUKS ability 查询缓冲区长度 */
 constexpr static uint32_t HAP_INFO_MAX_LENGTH = 128;
-#endif
 
 static OHOS::sptr<OHOS::AppExecFwk::IBundleMgr> GetBundleMgrProxy()
 {
@@ -105,10 +103,7 @@ static void GetDefaultAuthCertWant(const CmBlob *keyUri, uint32_t scene, OHOS::A
 static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName,
     std::string &bundleName, uint32_t &abilityType)
 {
-#ifdef CERT_MANAGER_UKEY_ABILITY_QUERY_STUB
-    (void)keyUri;
-    return CmUkeyAbilityStubQuery(bundleName, abilityName, abilityType);
-#else
+
     struct HksAbilityInfo abilityInfo{};
     abilityInfo.abilityName.data = (uint8_t*)CmMalloc(HAP_INFO_MAX_LENGTH);
     abilityInfo.bundleName.data = (uint8_t*)CmMalloc(HAP_INFO_MAX_LENGTH);
@@ -135,11 +130,10 @@ static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName,
     bundleName.assign(reinterpret_cast<char *>(abilityInfo.bundleName.data), abilityInfo.bundleName.size);
     CM_FREE_PTR(abilityInfo.abilityName.data);
     CM_FREE_PTR(abilityInfo.bundleName.data);
-    /* 本树 HUKS HksAbilityInfo 尚无 abilityType 字段（spec §6.1 对齐项），
-     * 非桩路径暂按默认 UIAbility 处理，HUKS 字段合入后替换为透传。 */
-    abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
+    /* abilityType 透传（HksAbilityInfo 已有该字段；HUKS 查询实现尚未填充时，
+     * 零初始化保持 0 = UIAbility，与存量注册行为一致） */
+    abilityType = static_cast<uint32_t>(abilityInfo.abilityType);
     return CM_SUCCESS;
-#endif
 }
 
 int32_t GetUkeyAbilityInfo(const CmBlob *keyUri, std::string &bundleName,

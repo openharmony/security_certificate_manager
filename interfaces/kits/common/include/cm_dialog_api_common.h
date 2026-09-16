@@ -227,8 +227,7 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, uint32_t scene,
 /* 查询 UKey 驱动注册的自定义 Pin 弹框 ability 信息（bundle/ability 名 + abilityType）。
  * 返回 CM_SUCCESS 且 type 为 CM_UKEY_ABILITY_TYPE_UIEXTENSION 时，调用方可走
  * SA 会话新链路；查询失败返回非 0（视为未注册，走默认弹框或同步拒绝，spec §4.1）。
- * 联调期可经 CERT_MANAGER_UKEY_ABILITY_QUERY_STUB 桩返回（见
- * frameworks/.../common/include/cm_ukey_ability_type.h 与 cm_ukey_dialog_common.h）。 */
+ */
 int32_t GetUkeyAbilityInfo(const CmBlob *keyUri, std::string &bundleName,
     std::string &abilityName, uint32_t &abilityType);
 
