@@ -53,7 +53,7 @@ v1/v2 已交付：无 context 重载经 SA + 系统弹窗服务拉起驱动 UIEx
 |---|---|---|---|
 | D1 | 弹框承载方式 | SA 连接系统弹窗服务拉起 UIExtensionAbility（参考 useriam `widget_context.cpp`） | 调用方无 context，无法走 `CreateModalUIExtension` / `StartAbilityForResult`；系统弹窗服务是既有的无 context 模态弹窗通道 |
 | D2 | 结果回传通道 | **修订（2026-09-11）**：驱动弹框主动上报——SA 生成 requestId 随弹框参数下发，提供方完成后调用 inner API `CmReportUkeyAuthResult(requestId, resultCode)` 上报，SA 校验后回调客户端。**公开 `reportUkeyAuthResult` d.ts/NAPI/ANI 面已删除**，仅保留 inner API（三方驱动的公开上报通道为遗留项 R1） | systemui 转发（改 systemui 仓）与轮询推导被否；公开面经评审收敛为 inner，等驱动侧通道定论后再评估是否公开 |
-| D3 | HUKS 范围 | **v2（2026-09-11）**：SA 与 Kit 侧均消费查询返回的 `abilityType`（0=UIAbility，1=UIExtensionAbility）；本树 HUKS `HksAbilityInfo` 尚无该字段，非桩路径暂返回 UIAbility，联调由桩支撑（D16） | HUKS 字段合入后仅需替换适配处（常量集中 `frameworks/.../common/include/cm_ukey_ability_type.h`） |
+| D3 | HUKS 范围 | **v3（2026-09-16）**：SA 与 Kit 侧均消费查询返回的 `abilityType`（0=UIAbility，1=UIExtensionAbility）；`HksAbilityInfo` 已增 `int32_t abilityType` 字段（huks 仓 `9b396d3b3`，仅加字段），HUKS 查询实现尚未填充——CM 零初始化结构体后透传，未填充时保持 0 = UIAbility（存量注册行为不变）；联调桩已移除（D16 修订） | HUKS 填充该字段后路由自动生效，CM 无需再改 |
 | D4 | systemui 范围 | 系统弹窗服务**只读复用**现有 `COMMAND_START_DIALOG` 协议，仓零改动 | 需求边界明确；宿主对 bundle/ability/parameters 完全通用（含默认弹框与 ukeyAuth 扩展） |
 | D5 | 超时参数 | **修订**：总超时 **10 分钟**（`CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS = 600000`，请求 `timeout`（ms）可指定，超上限 clamp，0=服务端默认最大）；断连后上报宽限期 **10 秒**；客户端兜底 timer 11 分钟 | 评审定值；v1 暂定的 5 分钟被 10 分钟取代 |
 | D6 | 并发约束 | SA 侧全局单飞：同一时刻仅允许一个挂起会话（含三种弹框类型） | 系统弹窗 remote object 按连接方维度共享；模态全屏弹窗互斥 |
@@ -66,7 +66,7 @@ v1/v2 已交付：无 context 重载经 SA + 系统弹窗服务拉起驱动 UIEx
 | D13 | scene 校验时机 | ~~flag=true 时解析期校验 sceneName~~ **被 D9 替代**：`scene` 为纯枚举，解析期校验 ∈{'Login','Custom'}（两重载一致），SA 侧 IPC 到达后对 uint32 值再校验一道（纵深防御） | 纯枚举无自由串，校验简化 |
 | D14 | 默认弹框结果回传 | **修订（2026-09-16，用户裁定）**：默认弹框为 com.ohos.certmanager 新增的 **ukeyAuth 类型 UIExtensionAbility**（`UkeyAuthExtensionAbility`，复用既有 UKeyAuthSheet 页面），与驱动 UIExtension 弹框走**同一 systemui 拉起机制**；其终止经框架 `UkeyAuthExtensionContext.terminateSelf*` 自动完成对 CM SA 的上报（requestId 由 ability_runtime 从 want 注入，含 OnCommandWindow 路径修复）——**无需 app 侧 native 桥** | systemui 宿主对 ukeyAuth 类型已有先例（驱动弹框即走此路），sys/commonUI 经 systemui 无先例的风险（原 R7）随之消除；框架上报通道即 R1 的 UIExtension 答案 |
 | D15 | PC 判定口径 | `OHOS::system::GetDeviceType() == "2in1"` **或** `GetBoolParameter("persist.sceneboard.ispcmode", false)`，**每次调用实时读**（模式可运行时切换）；仅 SA 侧判定，做成可注入 seam 供单测；rk3568 联调用 `param set persist.sceneboard.ispcmode true` 切换分支 | 2in1 为 PC 形态权威值（render_service 亦接受 "pc"，本设计不采纳）；ispcmode 为 WMS/ace/RS/powermgr 共同消费的 PC 模式权威信号 |
-| D16 | 联调桩旋钮 | `CERT_MANAGER_UKEY_ABILITY_QUERY_STUB` 下读 `persist.security.cm.ukey_stub_type`：`uiextension`（缺省/未知值）固定返回 UIExtension 三元组；`uiability` 返回 UIAbility 三元组；`none` 返回查询失败（未注册）。Kit 与 SA 两处桩同源读同一参数；仍由 GN feature `certificate_manager_ukey_ability_stub` 门控（TEMP，上游 PR 前移除） | 一次刷机覆盖全部路由分支，避免逐路径重编重刷 |
+| D16 | ~~联调桩旋钮~~ | **桩已整体移除（2026-09-16，用户裁定）**：`CERT_MANAGER_UKEY_ABILITY_QUERY_STUB` 分支、GN feature `certificate_manager_ukey_ability_stub`、运行时旋钮 `persist.security.cm.ukey_stub_type` 及桩常量全部清理；Kit 与 SA 均走真实 `HksQueryAbilityInfo` | 真机已验证真实查询路径闭环（无驱动注册 → 默认弹框）；桩使命完成 |
 | D17 | ~~sceneType 枚举替代布尔~~ | **被 D19 替代**（中间形态：`UkeyAuthSceneType{Login,Custom}` + `customData` 1MiB） | — |
 | D18 | customData×默认弹框 | `scene=='Login'` 且实际拉起默认弹框时，customData **静默丢弃**（记日志与长度）；默认弹框 want 不携带 customData。拒绝组合方案（报错）被否 | LOGIN 本身声明"可接受默认回退"，回退时数据无消费方；拒绝组合过度约束 |
 | D19 | customData 限额 | **原始字节 ≤ 2048**（base64 后约 2.7KB 字符串）；超限 29700006。1MiB 中间值被否（满尺寸 parcel/JSON 链路风险 + SA 内存峰值） | 用户裁定收窄；2KB 足够驱动业务透传 |
@@ -205,11 +205,11 @@ UIExtension，since-18 既有码仅补描述）；**不新增 29700009/29700010*
 
 - 消费 `HksQueryAbilityInfo(resourceId, &abilityInfo)` 获取 `bundleName`/`abilityName`，
   并读取 `abilityType`（0=UIAbility / 1=UIExtensionAbility）；
-- 本树 `struct HksAbilityInfo` 尚无 abilityType 字段：CM 侧非桩路径暂返回 UIAbility
-  （常量与桩集中于 `frameworks/.../common/include/cm_ukey_ability_type.h`）；
-- **联调桩（D16，TEMP）**：`persist.security.cm.ukey_stub_type` ∈
-  {`uiextension`(缺省), `uiability`, `none`}，Kit 与 SA 两处桩同源；GN feature
-  `certificate_manager_ukey_ability_stub`（cert_manager.gni）仍为总开关。
+- `struct HksAbilityInfo` 已增 `int32_t abilityType` 字段（2026-09-16，huks 仓
+  `9b396d3b3`，仅加字段）；**HUKS 查询实现尚未填充该字段**——CM 查询函数零初始化
+  结构体后透传，未填充时保持 0 = UIAbility（存量注册行为不变），HUKS 填充后路由
+  自动生效；
+- 联调桩已移除（D16 修订）：Kit 与 SA 均走真实查询路径。
 
 ### 6.2 系统弹窗服务（只读复用，D4）
 
@@ -450,7 +450,7 @@ CMNapiOpenUkeyAuthorizeDialog:
   NAPI fuzzer 扩 scene/customData 类型混乱。
 - **构建验证**：`--build-only-gn`；`--build-target cert_manager_service`、
   `certmanager`、`cert_manager_sdk`、`cm_sdk_test`。
-- **真机 E2E**（rk3568，桩旋钮 D16 + `param set persist.sceneboard.ispcmode true/false`）：
+- **真机 E2E**（rk3568，`param set persist.sceneboard.ispcmode true/false`；桩移除后路由由真实查询结果决定，无驱动注册时为默认弹框路径）：
   - UIExtension：PC=true 通、PC=false 回 29700005（新接口与老接口各一）；
   - 默认弹框：新接口 → SA 经 systemui 拉起 `sys/commonUI` 扩展（R7 门禁）→
     certmanager 上报（TEMP 桥）→ 回调 resolve；scene=CUSTOM 同步 29700005；
@@ -538,5 +538,10 @@ CMNapiOpenUkeyAuthorizeDialog:
     致 scene 变布尔 → 显式 std::string（三处 want 构造点）；
   - 联调依赖修复：ability_runtime `3c82a83cd4`（OnCommandWindow 路径注入 requestId，
     否则 ukeyAuth 扩展 terminate 上报被静默跳过）。
+- **桩移除与真实路径验证（2026-09-16）**：联调桩整体移除（D16 修订，CM 仓
+  `29edfee`）；HUKS `HksAbilityInfo` 增 `abilityType` 字段（huks 仓 `9b396d3b3`，
+  仅加字段），CM 两侧查询透传（未填充时零初始化默认 UIAbility）。真机回归：29/29
+  单测 + 真实 HksQueryAbilityInfo 路径 E2E 闭环（无驱动注册 → 查询失败 → 默认弹框
+  拉起 → 框架上报 → 回调恰好一次）。
 - 未完成项：R1 遗留（UIAbility-no-context 上报通道）、R9 SELinux 固化（联调
-  setenforce 0）、demo 应用重编安装（用户侧）——见 §14
+  setenforce 0）、HUKS 查询实现填充 abilityType（HUKS 仓后续项）——见 §14
