@@ -75,7 +75,6 @@ public:
         manager_->SetLauncher(launcher_);
         manager_->SetAbilityQuerier(querier_);
         manager_->SetPcChecker([this]() { return pcMode_; }); /* D15 seam */
-        manager_->SetAbilityStarter(nullptr); /* UIAbility tests inject on demand */
         manager_->SetTimeoutRangeForTest(100, 200, 1000, 100); // min/default/max total, 100ms grace
         manager_->SetKeepAliveIntervalForTest(50); // fast keep-alive for F1 tests
         manager_->SetUnloadRenewal([this]() { renewalCount_++; });
@@ -133,34 +132,12 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, CustomSceneWithoutCustomDialogRejected, te
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogWrongAbilityType, testing::ext::TestSize.Level0)
 {
-    /* rule 5（spec §4.1）：UIAbility 注册 → SA StartAbility 拉起（无系统弹窗连接） */
+    /* spec v4：无 context 接口不支持 UIAbility 弹框——查询到即拒绝 -1021（29700003） */
     abilityType_ = CM_UKEY_ABILITY_TYPE_UIABILITY;
-    auto started = std::make_shared<std::pair<int, AAFwk::Want>>(0, AAFwk::Want{});
-    manager_->SetAbilityStarter([started](const AAFwk::Want &want) -> int32_t {
-        started->first++;
-        started->second = want;
-        return 0;
-    });
-    uint8_t data[1] = { 0xFF };
-    struct CmBlob customData = { 1, data };
-    ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_CUSTOM, &customData), CM_SUCCESS);
-    EXPECT_EQ(started->first, 1);
-    EXPECT_EQ(started->second.GetElement().GetBundleName(), driverBundle_);
-    EXPECT_EQ(started->second.GetElement().GetAbilityName(), driverAbility_);
-    EXPECT_EQ(started->second.GetAction(), "UkeyPINAuth");
-    EXPECT_EQ(launcher_->connectCount_, 0); /* UIAbility 会话不连接系统弹窗服务 */
-    /* 上报责任方为驱动 bundle，正常上报终结会话 */
-    ASSERT_EQ(manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0), CM_SUCCESS);
-    EXPECT_EQ(client_->lastCode_, 0);
-    EXPECT_EQ(launcher_->disconnectCount_, 0);
-}
-
-HWTEST_F(CmUkeyAuthDialogManagerTest, UiAbilityStarterFailRejects, testing::ext::TestSize.Level0)
-{
-    abilityType_ = CM_UKEY_ABILITY_TYPE_UIABILITY;
-    manager_->SetAbilityStarter([](const AAFwk::Want &want) -> int32_t { return 29160333; });
-    ASSERT_EQ(Open(), CMR_DIALOG_ERROR_INTERNAL);
-    EXPECT_EQ(manager_->GetRequestIdForTest(), ""); // session not stored
+    ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_CUSTOM), CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED);
+    ASSERT_EQ(Open(), CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED);
+    EXPECT_EQ(launcher_->connectCount_, 0); /* 未建立任何连接 */
+    EXPECT_EQ(manager_->GetRequestIdForTest(), ""); /* 会话未占用单飞 */
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, PcGateBlocksUiExtensionWhenNotPc, testing::ext::TestSize.Level0)
@@ -417,6 +394,9 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveNotArmedOnSyncFailure, testing::e
     querierRet_ = -51; // not registered + scene=Custom -> reject before session (rule 3)
     ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_CUSTOM), CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED);
     querierRet_ = 0;
+    abilityType_ = CM_UKEY_ABILITY_TYPE_UIABILITY; // UIAbility rejected before session
+    ASSERT_EQ(Open(), CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED);
+    abilityType_ = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
     launcher_->connectRet_ = 29160333; // connect fail -> reject before session
     ASSERT_EQ(Open(), CMR_DIALOG_ERROR_INTERNAL);
     std::this_thread::sleep_for(std::chrono::milliseconds(150));

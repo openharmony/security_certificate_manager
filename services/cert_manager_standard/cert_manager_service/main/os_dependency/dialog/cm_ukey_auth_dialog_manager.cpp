@@ -21,7 +21,6 @@
 #include <cstdio>
 #include <ctime>
 
-#include "ability_manager_client.h"
 #include "cJSON.h"
 #include "hks_api.h"
 #include "ipc_skeleton.h"
@@ -256,49 +255,6 @@ bool BuildDefaultDialogParams(const std::string &requestId, const struct CmBlob 
     return ok;
 }
 
-/* 无 context 的 UIAbility 驱动弹框 want（spec §9.2）：参数键与 Kit 直启路径一致
- * （kits cm_dialog_api_common.cpp GetCustomerAuthCertWant），另附 requestId 供上报。 */
-void BuildDriverUiAbilityWant(const std::string &bundleName, const std::string &abilityName,
-    const std::string &requestId, const struct CmBlob *keyUri, uint32_t callerUid,
-    uint32_t scene, const struct CmBlob *customData, AAFwk::Want &want)
-{
-    want.SetElementName(bundleName, abilityName);
-    want.SetAction(UKEY_DIALOG_ACTION);
-    want.SetParam("appUid", static_cast<int32_t>(callerUid));
-    std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
-    want.SetParam("keyUri", uriStr);
-    want.SetParam("requestId", requestId);
-    /* 显式构造 std::string：const char* 实参会命中 Want::SetParam(string, bool)
-     * 重载（指针→true），场景值会被写成布尔 */
-    want.SetParam(CM_UKEY_DIALOG_PARAM_SCENE, std::string(CmUkeySceneToString(scene)));
-    if (customData != nullptr && customData->size > 0) {
-        want.SetParam(CM_UKEY_DIALOG_PARAM_CUSTOM_DATA,
-            CmBase64Encode(customData->data, customData->size));
-    }
-}
-
-/* 生产装配的 UIAbility 拉起（spec §9.2）：以 SA 身份 StartAbility。 */
-int32_t StartDriverUiAbility(const AAFwk::Want &want)
-{
-    auto client = AAFwk::AbilityManagerClient::GetInstance();
-    if (client == nullptr) {
-        CM_LOG_E("get ability manager client failed");
-        return CMR_DIALOG_ERROR_INTERNAL;
-    }
-    std::string identity = IPCSkeleton::ResetCallingIdentity();
-    ErrCode err = client->Connect();
-    if (err == ERR_OK) {
-        err = client->StartAbility(want);
-    }
-    IPCSkeleton::SetCallingIdentity(identity);
-    if (err != ERR_OK) {
-        CM_LOG_E("start driver uiability failed, err: %d", err);
-        return CMR_DIALOG_ERROR_INTERNAL;
-    }
-    return CM_SUCCESS;
-}
-
-
 /* HUKS ability 查询适配（生产装配，模式对齐 kits 层 cm_dialog_api_common.cpp）：
  * 查询失败即视为"未注册自定义弹框"，由 OpenDialog 路由进系统默认弹框（spec §4.1）；
  */
@@ -402,13 +358,6 @@ void CmUkeyAuthDialogManager::SetPcChecker(PcChecker checker)
     pcChecker_ = std::move(checker);
 }
 
-void CmUkeyAuthDialogManager::SetAbilityStarter(AbilityStarter starter)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    AbortActiveSessionLocked();
-    abilityStarter_ = std::move(starter);
-}
-
 int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid,
     uint32_t timeoutMs, uint32_t scene, const struct CmBlob *customData,
     const sptr<IRemoteObject> &clientCallback)
@@ -465,7 +414,8 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
         bundleName = CM_UKEY_DEFAULT_DIALOG_BUNDLE;
         abilityName = CM_UKEY_DEFAULT_DIALOG_ABILITY;
     } else if (abilityType == CM_UKEY_ABILITY_TYPE_UIABILITY) {
-        kind = UkeyAuthSession::UIABILITY_DIALOG;
+        CM_LOG_E("ukey driver ability type is UIAbility, not supported by sa path");
+        return CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED;
     } else if (abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
         /* rule 6：UIExtension 弹框仅 PC / PC 模式设备（spec D10/D15，29700005）；
          * checker 缺省按非 PC 处理（fail-closed） */
@@ -479,11 +429,7 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
         return CMR_DIALOG_ERROR_INTERNAL;
     }
 
-    if (kind == UkeyAuthSession::UIABILITY_DIALOG && abilityStarter_ == nullptr) {
-        CM_LOG_E("ability starter is null");
-        return CMR_DIALOG_ERROR_INTERNAL;
-    }
-    if (kind != UkeyAuthSession::UIABILITY_DIALOG && launcher_ == nullptr) {
+    if (launcher_ == nullptr) {
         CM_LOG_E("system dialog launcher is null");
         return CMR_DIALOG_ERROR_INTERNAL;
     }
@@ -507,17 +453,7 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
     session->clientCallback = clientCallback;
     session->state = UkeyAuthSession::LAUNCHING;
 
-    if (kind == UkeyAuthSession::UIABILITY_DIALOG) {
-        /* rule 5：无 context 的 UIAbility 弹框经 AbilityManagerClient 拉起（spec §9.2）；
-         * 无连接对象，会话不注册断连/宽限，迟到上报一律忽略 */
-        AAFwk::Want want;
-        BuildDriverUiAbilityWant(bundleName, abilityName, session->requestId, keyUri,
-            callerUid, scene, customData, want);
-        if (abilityStarter_(want) != CM_SUCCESS) {
-            CM_LOG_E("start driver uiability dialog failed");
-            return CMR_DIALOG_ERROR_INTERNAL; // session not stored -> single-flight not occupied
-        }
-    } else {
+    {
         std::string paramsJson;
         bool paramsOk = (kind == UkeyAuthSession::DEFAULT_DIALOG)
             ? BuildDefaultDialogParams(session->requestId, keyUri, callerUid, scene, paramsJson)
@@ -807,7 +743,7 @@ void CmUkeyAuthDialogManager::InitRealDependencies()
 {
     /* 幂等懒初始化：生产装配 RealSystemDialogLauncher + HUKS ability 查询 +
      * PC 判定 + UIAbility 拉起。仅在未初始化时执行；测试注入（SetLauncher/
-     * SetAbilityQuerier/SetPcChecker/SetAbilityStarter）不受影响。 */
+     * SetAbilityQuerier/SetPcChecker）不受影响。 */
     std::lock_guard<std::mutex> lock(mutex_);
     if (realDepsInited_) {
         return;
@@ -817,9 +753,6 @@ void CmUkeyAuthDialogManager::InitRealDependencies()
     querier_ = QueryUkeyDriverAbility;
     if (pcChecker_ == nullptr) {
         pcChecker_ = CmUkeyIsPcOrPcMode; /* spec D15 */
-    }
-    if (abilityStarter_ == nullptr) {
-        abilityStarter_ = StartDriverUiAbility; /* spec §9.2 */
     }
     CM_LOG_I("real dialog dependencies initialized");
 }

@@ -73,6 +73,9 @@ static const std::string UKEY_DIALOG_IN_PROGRESS_MSG =
 static const std::string UKEY_DEFAULT_NOT_SUPPORTED_MSG =
     "the authentication operation failed: "
     "the scene is custom but no custom pin dialog is registered.";
+static const std::string UKEY_UIABILITY_NOT_SUPPORTED_MSG =
+    "the authentication operation failed: "
+    "the no-context interface does not support uiability type pin dialogs.";
 static const std::string UKEY_NOT_PC_DEVICE_MSG =
     "the operation does not comply with the device security policy: "
     "the ukey uiextension pin dialog requires a pc device or pc mode.";
@@ -174,6 +177,7 @@ static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
     { CMR_DIALOG_ERROR_START_UIABILITY_FAILED, DIALOG_ERROR_INSTALL_FAILED },
     { CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED, DIALOG_ERROR_INSTALL_FAILED }, /* 29700003 */
     { CMR_DIALOG_ERROR_NOT_PC_DEVICE, DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY },
+    { CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED, DIALOG_ERROR_INSTALL_FAILED }, /* 29700003 */
     { CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT, DIALOG_ERROR_UKEY_AUTH_REPORT_TIMEOUT },
     { CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS, DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS },
 
@@ -204,6 +208,7 @@ static const std::unordered_map<int32_t, std::string> DIALOG_CODE_TO_MSG_MAP = {
     { CMR_DIALOG_ERROR_START_UIABILITY_FAILED, START_UIABILITY_FAILED_MSG },
     { CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED, UKEY_DEFAULT_NOT_SUPPORTED_MSG },
     { CMR_DIALOG_ERROR_NOT_PC_DEVICE, UKEY_NOT_PC_DEVICE_MSG },
+    { CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED, UKEY_UIABILITY_NOT_SUPPORTED_MSG },
     { CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT, UKEY_AUTH_REPORT_TIMEOUT_MSG },
     { CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS, UKEY_DIALOG_IN_PROGRESS_MSG },
 

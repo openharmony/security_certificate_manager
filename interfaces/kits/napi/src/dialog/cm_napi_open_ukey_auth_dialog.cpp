@@ -439,9 +439,15 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
             return OpenUkeyAuthDialogNoContext(asyncContext, std::move(report), true);
         }
         if (queryRet != CM_SUCCESS && asyncContext->authScene == CM_UKEY_AUTH_SCENE_CUSTOM) {
-            // rule 3 (spec D10)：需默认弹框但 scene=Custom，同步拒绝（无 IPC）
+            // rule 3: Custom scene with nothing registered, sync reject (29700003, no IPC)
             ThrowError(env, DIALOG_ERROR_INSTALL_FAILED,
                 UKEY_DEFAULT_NOT_SUPPORTED_MSG, &report);
+            return nullptr;
+        }
+        if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIABILITY) {
+            // spec v4: no-context interface does not support UIAbility dialogs (29700003)
+            ThrowError(env, DIALOG_ERROR_INSTALL_FAILED,
+                UKEY_UIABILITY_NOT_SUPPORTED_MSG, &report);
             return nullptr;
         }
     }

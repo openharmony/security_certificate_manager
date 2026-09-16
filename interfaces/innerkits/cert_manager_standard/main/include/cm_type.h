@@ -265,6 +265,8 @@ enum CMDialogErrorCode {
     CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS = -1018, /* another ukey pin dialog session is in progress */
     CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED = -1019, /* default dialog needed but scene is Custom (29700005) */
     CMR_DIALOG_ERROR_NOT_PC_DEVICE = -1020, /* UIExtension dialog requires a PC device or PC mode (29700005) */
+
+    CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED = -1021, /* no-context interface does not support UIAbility dialogs (29700003) */
 };
 
 enum CMErrorCode { /* temp use */

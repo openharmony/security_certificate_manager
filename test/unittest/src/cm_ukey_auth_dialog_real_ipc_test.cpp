@@ -49,6 +49,22 @@ public:
     }
 };
 
+/* UIAbility registration probe: the no-context interface rejects UIAbility-type
+ * driver dialogs synchronously with -1021 (spec v4). */
+HWTEST_F(CmUkeyDialogRealIpcTest, OpenDialogUiAbilityRejectedProbe, testing::ext::TestSize.Level0)
+{
+    char uri[] = "ukey-test-uri";
+    struct UkeyAuthRequest req = {};
+    req.keyUri.data = reinterpret_cast<uint8_t *>(uri);
+    req.keyUri.size = sizeof(uri);
+
+    CertmanagerTest::MockHapToken mockHap({ "ohos.permission.ACCESS_CERT_MANAGER" });
+    int32_t ret = CmOpenUkeyAuthDialog(&req, RealIpcResultCallback, nullptr);
+    GTEST_LOG_(INFO) << "CmOpenUkeyAuthDialog(uiability) sync ret = " << ret;
+    sleep(1);
+    EXPECT_FALSE(g_asyncFired.load());
+}
+
 /* code-30 (REPORT, no remote object) probe: distinguishes a general
  * app->SA dialog-code failure from the remote-object path. On a live SA a
  * non-HAP caller reaches the server-side HAP-identity check (business error

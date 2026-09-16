@@ -27,6 +27,7 @@
 #include "cm_open_ukey_auth_dialog_no_context.h"
 #include "cm_supports_ca_cert_dialog.h"
 #include "cm_dialog_api_common.h"
+#include "cm_ukey_dialog_common.h"
 #include "cm_ani_common.h"
 #include "cm_ani_utils.h"
 #include "cm_api_common.h"
@@ -45,6 +46,19 @@ static ani_object GenerateResult(ani_env *env, int32_t code, const char *message
         return nullptr;
     }
     return nativeResult;
+}
+
+/* scene == 'Custom' check for the routing pre-checks (spec v4) */
+static bool IsUkeySceneCustom(ani_env *env, ani_string scene)
+{
+    CmBlob sceneBlob = { 0, nullptr };
+    if (AniUtils::ParseString(env, scene, sceneBlob) != CM_SUCCESS || sceneBlob.size == 0) {
+        CM_FREE_BLOB(sceneBlob);
+        return false;
+    }
+    std::string sceneStr(reinterpret_cast<char *>(sceneBlob.data), sceneBlob.size - 1);
+    CM_FREE_BLOB(sceneBlob);
+    return sceneStr == OHOS::Security::CertManager::CM_UKEY_SCENE_CUSTOM_STR;
 }
 
 static ani_object InvokeCallbackVoid(ani_env *env, ani_object callback)
@@ -189,14 +203,26 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
             std::string driverBundle;
             std::string driverAbility;
             uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
-            if (GetUkeyAbilityInfo(&keyUriBlob, driverBundle, driverAbility, abilityType) == CM_SUCCESS &&
-                abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
+            int32_t queryRet = GetUkeyAbilityInfo(&keyUriBlob, driverBundle, driverAbility, abilityType);
+            if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
                 CM_LOG_I("ukey driver registered a UIExtensionAbility pin dialog, go sa session path");
                 CM_FREE_BLOB(keyUriBlob);
                 auto noContextImpl = std::make_shared<CmOpenUkeyAuthDialogNoContext>(env, keyUri, timeout,
                     scene, customData, callback);
                 noContextImpl->SetLegacyOverload();
                 return noContextImpl->Invoke();
+            }
+            if (queryRet != CM_SUCCESS && scene != nullptr && IsUkeySceneCustom(env, scene)) {
+                // rule 3: Custom scene with nothing registered, sync reject
+                CM_FREE_BLOB(keyUriBlob);
+                return GenerateResult(env, CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED,
+                    UKEY_DEFAULT_NOT_SUPPORTED_MSG.c_str());
+            }
+            if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIABILITY) {
+                // spec v4: no-context interface does not support UIAbility dialogs
+                CM_FREE_BLOB(keyUriBlob);
+                return GenerateResult(env, CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED,
+                    UKEY_UIABILITY_NOT_SUPPORTED_MSG.c_str());
             }
             CM_FREE_BLOB(keyUriBlob);
         }

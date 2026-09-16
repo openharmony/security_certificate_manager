@@ -65,10 +65,6 @@ using AbilityQuerier = std::function<int32_t(const struct CmBlob *keyUri,
 // const.product.devicetype=="2in1" 或 persist.sceneboard.ispcmode）
 using PcChecker = std::function<bool()>;
 
-// UIAbility 拉起注入点（spec §9.2：无 context 的 UIAbility 驱动弹框经
-// AbilityManagerClient::StartAbility(want) 拉起；生产装配见 InitRealDependencies）
-using AbilityStarter = std::function<int32_t(const AAFwk::Want &)>;
-
 class CmUkeyAuthDialogManager {
 public:
     static CmUkeyAuthDialogManager &GetInstance();
@@ -76,7 +72,6 @@ public:
     void SetLauncher(std::shared_ptr<SystemDialogLauncher> launcher);
     void SetAbilityQuerier(AbilityQuerier querier);
     void SetPcChecker(PcChecker checker);
-    void SetAbilityStarter(AbilityStarter starter);
     void SetTimeoutRangeForTest(uint32_t minMs, uint32_t defaultMs, uint32_t maxMs, uint32_t graceMs);
     /* SA 空闲卸载续期钩子（F1）：会话活跃期间由周期保活任务调用；由 SA 侧
      * （cm_sa.cpp Init）注入 DelayUnload，弹框静态库不得依赖 cm_sa.h。 */
@@ -108,7 +103,7 @@ private:
     DISALLOW_COPY_AND_MOVE(CmUkeyAuthDialogManager);
 
     struct UkeyAuthSession {
-        enum DialogKind { DEFAULT_DIALOG, UIABILITY_DIALOG, UIEXTENSION_DIALOG };
+        enum DialogKind { DEFAULT_DIALOG, UIEXTENSION_DIALOG };
         enum State { LAUNCHING, WAITING_REPORT, GRACE_WAITING, DONE };
         std::string requestId;                 // 32 字符 hex（CSPRNG 16 字节）
         DialogKind kind = DEFAULT_DIALOG;      // 拉起策略（spec §4.1 路由矩阵）
@@ -138,7 +133,6 @@ private:
     std::shared_ptr<SystemDialogLauncher> launcher_;
     AbilityQuerier querier_;
     PcChecker pcChecker_;                      // 缺省视为非 PC（fail-closed，spec D15）
-    AbilityStarter abilityStarter_;            // UIAbility 拉起（生产装配见 InitRealDependencies）
     std::function<void()> unloadRenewal_;  // SA 空闲卸载续期钩子（注入，F1）
     bool realDepsInited_ = false;          // InitRealDependencies 幂等标记
     uint32_t minTimeoutMs_ = CM_UKEY_DIALOG_MIN_TOTAL_TIMEOUT_MS;
