@@ -208,10 +208,11 @@ bool BuildUkeyDialogParams(const std::string &requestId, const struct CmBlob *ke
     return ok;
 }
 
-/* 组装系统默认弹框 parameters JSON（spec §6.2，弹框身份见 §9.2）：
- * {"ability.want.params.uiExtensionType":"sys/commonUI","pageType":7,
- *  "keyUri":"<uri>","appUid":<callerUid>,"requestId":"<id>","scene":"Login|Custom"}
- * customData 不下发（D18：回退默认弹框时静默丢弃）。 */
+/* 组装系统默认弹框 parameters JSON（spec §6.2，弹框身份见 §9.2 / D14 修订）：
+ * {"ability.want.params.uiExtensionType":"ukeyAuth","keyUri":"<uri>",
+ *  "appUid":<callerUid>,"requestId":"<id>","scene":"Login|Custom"}
+ * 默认弹框为 com.ohos.certmanager 的 ukeyAuth 类型扩展（复用 UKeyAuthSheet 页面），
+ * 终止时经框架 UkeyAuthExtensionContext 上报；customData 不下发（D18）。 */
 bool BuildDefaultDialogParams(const std::string &requestId, const struct CmBlob *keyUri,
     uint32_t callerUid, uint32_t scene, std::string &paramsJson)
 {
@@ -223,14 +224,13 @@ bool BuildDefaultDialogParams(const std::string &requestId, const struct CmBlob 
 
     std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
     cJSON *items[] = {
-        cJSON_CreateString(UKEY_DIALOG_UI_EXTENSION_TYPE), // uiExtensionType(sys/commonUI)
-        cJSON_CreateNumber(CM_UKEY_DEFAULT_DIALOG_PAGE_TYPE), // pageType
+        cJSON_CreateString(UKEY_DIALOG_UI_EXTENSION_TYPE), // uiExtensionType(ukeyAuth)
         cJSON_CreateString(uriStr.c_str()),                 // keyUri
         cJSON_CreateNumber(static_cast<double>(callerUid)), // appUid
         cJSON_CreateString(requestId.c_str()),              // requestId
         cJSON_CreateString(CmUkeySceneToString(scene)),     // scene
     };
-    const char *names[] = { UKEY_DIALOG_UI_EXTENSION_TYPE_KEY, CM_UKEY_DEFAULT_DIALOG_PAGE_TYPE_KEY,
+    const char *names[] = { UKEY_DIALOG_UI_EXTENSION_TYPE_KEY,
         "keyUri", "appUid", "requestId", CM_UKEY_DIALOG_PARAM_SCENE };
     bool ok = true;
     for (size_t i = 0; i < sizeof(items) / sizeof(items[0]); i++) {
@@ -553,7 +553,7 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
             connection->ReleaseWindow(nullptr);
             connection->ScrubParams();
         }
-        if (launcher_ != nullptr) {
+        if (launcher_ != nullptr && connection != nullptr) {
             launcher_->Disconnect(connection);
         }
         return CMR_DIALOG_ERROR_INTERNAL;
@@ -766,7 +766,7 @@ void CmUkeyAuthDialogManager::FinishSessionLocked(const std::string &requestId, 
         connection->ReleaseWindow(nullptr); // 仅在仍持有弹窗服务代理时发送销毁命令
         connection->ScrubParams();          // 擦除可能含 customData base64 的参数（R10）
     }
-    if (launcher_ != nullptr) {
+    if (launcher_ != nullptr && connection != nullptr) {
         launcher_->Disconnect(connection);
     }
     session_ = nullptr;
@@ -793,7 +793,7 @@ void CmUkeyAuthDialogManager::AbortActiveSessionLocked()
         connection->ReleaseWindow(nullptr);
         connection->ScrubParams();
     }
-    if (launcher_ != nullptr) {
+    if (launcher_ != nullptr && connection != nullptr) {
         launcher_->Disconnect(connection);
     }
     session_ = nullptr;

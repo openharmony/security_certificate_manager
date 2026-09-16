@@ -47,13 +47,12 @@ inline bool CmUkeySceneIsValid(uint32_t scene)
 constexpr const char *CM_UKEY_DIALOG_PARAM_SCENE = "scene";
 constexpr const char *CM_UKEY_DIALOG_PARAM_CUSTOM_DATA = "customData";
 
-/* ---- 系统默认弹框身份（对齐 kits 层 cm_dialog_api_common.h 常量取值；
- * SA 拉起默认弹框（spec D14/§9.2）与 Kit 直启必须是同一 ability）---- */
+/* ---- 系统默认弹框身份（spec v3 D14 修订：com.ohos.certmanager 内新增的
+ * ukeyAuth 类型 UIExtensionAbility，复用既有 UKeyAuthSheet 页面；其
+ * UkeyAuthExtensionContext.terminateSelf* 由框架完成对 CM SA 的上报）---- */
 constexpr const char *CM_UKEY_DEFAULT_DIALOG_BUNDLE = "com.ohos.certmanager";
-constexpr const char *CM_UKEY_DEFAULT_DIALOG_ABILITY = "CertPickerUIExtAbility";
-constexpr const char *CM_UKEY_DEFAULT_DIALOG_EXT_TYPE = "sys/commonUI";
-constexpr int32_t CM_UKEY_DEFAULT_DIALOG_PAGE_TYPE = 7; /* CmDialogPageType::PAGE_UKEY_PIN_AUTHORIZE */
-constexpr const char *CM_UKEY_DEFAULT_DIALOG_PAGE_TYPE_KEY = "pageType";
+constexpr const char *CM_UKEY_DEFAULT_DIALOG_ABILITY = "UkeyAuthExtensionAbility";
+constexpr const char *CM_UKEY_DEFAULT_DIALOG_EXT_TYPE = "ukeyAuth";
 
 /* ---- PC / PC 模式判定（spec D15，仅 SA 消费）---- */
 constexpr const char *CM_UKEY_PARAM_DEVICETYPE = "const.product.devicetype";
