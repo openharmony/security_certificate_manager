@@ -463,7 +463,7 @@ CMNapiOpenUkeyAuthorizeDialog:
 
 | # | 风险/事项 | 缓解 |
 |---|---|---|
-| R1 | **部分解除（2026-09-16）**：UIExtension 驱动弹框经框架 `UkeyAuthExtensionContext.terminateSelf*` 上报（真机已验证）；**遗留**：UIAbility-no-context 驱动弹框仍无上报通道（三方 HAP 无法调 innerkit，无框架基类） | UIAbility 路径 E2E 以 cmtest 探针替代；通道方案随 HUKS/产品侧对齐后单独立项 |
+| R1 | **部分解除（2026-09-16）**：UIExtension 驱动弹框经框架 `UkeyAuthExtensionContext.terminateSelf*` 上报（真机已验证）；**遗留**：UIAbility-no-context 驱动弹框仍无上报通道。**机制调研结论（2026-09-16）**：terminateSelfWithResult 的结果路由绑定 ability 调用方（token + IAbilityScheduler + pending requestCode，见 AbilityContextImpl::StartAbilityForResult）；SA 可用的 AbilityManagerClient 仅 StartAbilityForResultAsCaller（需 ability token、结果回原始调用方 pending 请求，不适用）与 SendResultToAbility（DMS 专用）；StartAbilityByCall 需被拉方实现 Callee 且不传结果码。**候选方案**：(a) 恢复公开 reportUkeyAuthResult（仅 UIAbility 驱动使用，UIExtension 已由框架基类覆盖，推荐）；(b) UIAbility 形态框架基类（侵入大） | UIAbility 路径 E2E 以 cmtest 探针替代；通道方案随产品侧对齐后单独立项 |
 | R2 | 提供方不遵守"先上报后终止"契约：systemui 路径 10s 宽限兜底；UIAbility 路径超时终结 + 迟到上报忽略，孤儿弹窗留待用户关闭 | 契约写入 §6.3；HUKS 驱动文档对齐 |
 | R4 | SA 保活续期与按需卸载策略交互 | 已实现（v1），随 v3 路由回归 |
 | R5 | `appUid` 多用户/多应用并发语义依赖提供方实现 | 契约随 §6.2/6.3 |
@@ -529,8 +529,13 @@ CMNapiOpenUkeyAuthorizeDialog:
     com.ohos.certmanager/UkeyAuthExtensionAbility → UKeyAuthSheet → 框架上报 →
     回调恰好一次（-1000/29700001，占位页预期码）；
   - E2E：scene=Custom + 未注册 → 同步 **-1019**；
-  - E2E：UIAbility（knob=uiability）→ SA StartAbility 尝试（demo 未含新 ability 回
-    -1000，符合预期；完整弹框 E2E 待 demo 重编安装）；
+  - E2E：UIAbility（knob=uiability，demo 重编安装后）→ **全链路通过**：SA StartAbility
+    （cfg 增补的 START_ABILITIES_FROM_BACKGROUND 生效）→ 弹框显示，want 送达
+    requestId/keyUri/appUid/scene("Login")/customData(base64) 全部正确；
+  - 期间发现并修复两个缺陷（`3a7478c`）：① 客户端 CmAddParams 追加 customData 覆写
+    已序列化的 keyUri 且 customData 字节未入列（SA 读到未初始化堆）→ 四参数一次性
+    CmParamsToParamSet；② Want::SetParam(key, const char*) 命中 (string,bool) 重载
+    致 scene 变布尔 → 显式 std::string（三处 want 构造点）；
   - 联调依赖修复：ability_runtime `3c82a83cd4`（OnCommandWindow 路径注入 requestId，
     否则 ukeyAuth 扩展 terminate 上报被静默跳过）。
 - 未完成项：R1 遗留（UIAbility-no-context 上报通道）、R9 SELinux 固化（联调
