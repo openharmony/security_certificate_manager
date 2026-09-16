@@ -362,11 +362,14 @@ void CmUkeyAuthDialogManager::SetAbilityQuerier(AbilityQuerier querier)
     querier_ = querier;
 }
 
-void CmUkeyAuthDialogManager::SetTimeoutForTest(uint32_t totalMs, uint32_t graceMs)
+void CmUkeyAuthDialogManager::SetTimeoutRangeForTest(uint32_t minMs, uint32_t defaultMs,
+    uint32_t maxMs, uint32_t graceMs)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     AbortActiveSessionLocked();
-    totalTimeoutMs_ = totalMs;
+    minTimeoutMs_ = minMs;
+    defaultTimeoutMs_ = defaultMs;
+    maxTimeoutMs_ = maxMs;
     graceTimeoutMs_ = graceMs;
 }
 
@@ -424,17 +427,22 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
         CM_LOG_E("custom data too large: %u", customData->size);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
-    /* timeout 归一化（spec D5 修订）：0（未传）沿用当前配置（生产默认最大值，
-     * 测试可经 SetTimeoutForTest 预置短超时）；超上限 clamp 到最大值 */
-    if (timeoutMs > CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS) {
-        CM_LOG_W("timeout %u exceeds max, clamp to %u", timeoutMs, CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS);
-        timeoutMs = CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS;
-    }
-    if (timeoutMs != 0) {
-        totalTimeoutMs_ = timeoutMs;
-    }
-
     std::lock_guard<std::mutex> lock(mutex_);
+    /* timeoutDuration 归一化（spec D5 v2）：0（未传）取默认值（生产 300s，测试可
+     * 预置短值）；显式值 clamp 到 [min, max]（生产 [3min, 10min]，测试可预置区间） */
+    uint32_t effectiveTimeoutMs = timeoutMs;
+    if (effectiveTimeoutMs == 0) {
+        effectiveTimeoutMs = defaultTimeoutMs_;
+    } else {
+        if (effectiveTimeoutMs < minTimeoutMs_) {
+            CM_LOG_W("timeout %u below min, clamp to %u", effectiveTimeoutMs, minTimeoutMs_);
+            effectiveTimeoutMs = minTimeoutMs_;
+        }
+        if (effectiveTimeoutMs > maxTimeoutMs_) {
+            CM_LOG_W("timeout %u exceeds max, clamp to %u", effectiveTimeoutMs, maxTimeoutMs_);
+            effectiveTimeoutMs = maxTimeoutMs_;
+        }
+    }
     if (session_ != nullptr) {
         CM_LOG_E("another ukey auth dialog session is in progress");
         return CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS;
@@ -513,7 +521,7 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
         std::string paramsJson;
         bool paramsOk = (kind == UkeyAuthSession::DEFAULT_DIALOG)
             ? BuildDefaultDialogParams(session->requestId, keyUri, callerUid, scene, paramsJson)
-            : BuildUkeyDialogParams(session->requestId, keyUri, callerUid, totalTimeoutMs_,
+            : BuildUkeyDialogParams(session->requestId, keyUri, callerUid, effectiveTimeoutMs,
                 scene, customData, paramsJson);
         if (!paramsOk) {
             CM_LOG_E("build dialog params json failed");
@@ -541,7 +549,7 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
     std::string requestId = session->requestId;
     /* 总超时是会话唯一的安全网，投递失败时直接拒绝并回滚已建立的连接
      * （会话不入表 -> 单飞不被占用），避免产生无超时保护的挂起会话（F8）。 */
-    if (!StartTimerLocked(TotalTimeoutTaskName(requestId), totalTimeoutMs_,
+    if (!StartTimerLocked(TotalTimeoutTaskName(requestId), effectiveTimeoutMs,
         [this, requestId] { HandleTotalTimeout(requestId); })) {
         sptr<CmSystemDialogConnection> connection = session->connection;
         if (connection != nullptr) {

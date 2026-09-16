@@ -38,9 +38,11 @@ using OHOS::AAFwk::IAbilityConnection;
 
 class CmSystemDialogConnection; // 生产装配的真实连接对象（T3）
 
-/* 认证超时上限（spec D5 修订：openUkeyAuthDialog 可选 timeout 入参，不传默认取
- * 该最大值；超过该值的服务端 clamp 到最大值） */
-constexpr uint32_t CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS = 600000; // 10 min
+/* 认证超时（spec D5 v2：openUkeyAuthDialog 可选 timeoutDuration 入参，单位 ms）：
+ * 未传（0）取默认 300s；显式值由服务端 clamp 到 [3min, 10min] 区间 */
+constexpr uint32_t CM_UKEY_DIALOG_MIN_TOTAL_TIMEOUT_MS = 180000;   // 3 min
+constexpr uint32_t CM_UKEY_DIALOG_DEFAULT_TOTAL_TIMEOUT_MS = 300000; // 5 min
+constexpr uint32_t CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS = 600000;   // 10 min
 constexpr uint32_t CM_UKEY_DIALOG_GRACE_TIMEOUT_MS = 10000;  // 10s, spec D5
 /* 会话保活周期（spec §9.4）：须小于 SA 空闲卸载延时 60s（cm_sa.cpp DELAY_TIME），
  * 会话期间无 IPC 进来，靠周期续期钩子重置空闲卸载计时。 */
@@ -75,7 +77,7 @@ public:
     void SetAbilityQuerier(AbilityQuerier querier);
     void SetPcChecker(PcChecker checker);
     void SetAbilityStarter(AbilityStarter starter);
-    void SetTimeoutForTest(uint32_t totalMs, uint32_t graceMs);
+    void SetTimeoutRangeForTest(uint32_t minMs, uint32_t defaultMs, uint32_t maxMs, uint32_t graceMs);
     /* SA 空闲卸载续期钩子（F1）：会话活跃期间由周期保活任务调用；由 SA 侧
      * （cm_sa.cpp Init）注入 DelayUnload，弹框静态库不得依赖 cm_sa.h。 */
     void SetUnloadRenewal(std::function<void()> renewal);
@@ -139,7 +141,9 @@ private:
     AbilityStarter abilityStarter_;            // UIAbility 拉起（生产装配见 InitRealDependencies）
     std::function<void()> unloadRenewal_;  // SA 空闲卸载续期钩子（注入，F1）
     bool realDepsInited_ = false;          // InitRealDependencies 幂等标记
-    uint32_t totalTimeoutMs_ = CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS;
+    uint32_t minTimeoutMs_ = CM_UKEY_DIALOG_MIN_TOTAL_TIMEOUT_MS;
+    uint32_t defaultTimeoutMs_ = CM_UKEY_DIALOG_DEFAULT_TOTAL_TIMEOUT_MS;
+    uint32_t maxTimeoutMs_ = CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS;
     uint32_t graceTimeoutMs_ = CM_UKEY_DIALOG_GRACE_TIMEOUT_MS;
     uint32_t keepAliveIntervalMs_ = CM_UKEY_DIALOG_KEEPALIVE_INTERVAL_MS;
     bool timerPostFailForTest_ = false;    // PostTask 故障注入（F8 测试）

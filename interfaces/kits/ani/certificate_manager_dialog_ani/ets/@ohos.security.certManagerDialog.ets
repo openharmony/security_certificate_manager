@@ -138,7 +138,7 @@ export namespace certificateManagerDialog {
 
   export interface UkeyAuthRequest {
     keyUri: string,
-    timeout?: number, /* auth timeout in ms; absent = server default max */
+    timeoutDuration?: number, /* auth timeout in ms; absent = server default 300s */
     scene?: UkeyAuthScene, /* auth scene; absent = LOGIN (default dialog fallback allowed) */
     customData?: Uint8Array /* opaque data (<= 2048 bytes) delivered base64 to custom dialogs only */
   }
@@ -393,7 +393,7 @@ export namespace certificateManagerDialog {
           error.message = 'the input parameters is invalid.';
           throw error;
         }
-        let timeout: number = ukeyAuthRequest.timeout ?? 0; /* 0 = server default max */
+        let timeout: number = ukeyAuthRequest.timeoutDuration ?? 0; /* 0 = server default 300s */
         let scene: string = ukeyAuthRequest.scene ?? UkeyAuthScene.LOGIN;
         let customData: Uint8Array = ukeyAuthRequest.customData ?? new Uint8Array(0);
         let result: NativeResult<void> = openUkeyAuthDialogNative(context, keyUri, timeout, scene,
@@ -424,7 +424,7 @@ export namespace certificateManagerDialog {
             error.message = 'the input parameters is invalid.';
             throw error;
         }
-        let timeout: number = ukeyAuthRequest.timeout ?? 0; /* 0 = server default max */
+        let timeout: number = ukeyAuthRequest.timeoutDuration ?? 0; /* 0 = server default 300s */
         let scene: string = ukeyAuthRequest.scene ?? UkeyAuthScene.LOGIN;
         let customData: Uint8Array = ukeyAuthRequest.customData ?? new Uint8Array(0);
         let result: NativeResult<void> = openUkeyAuthDialogNoContextNative(keyUri, timeout, scene,

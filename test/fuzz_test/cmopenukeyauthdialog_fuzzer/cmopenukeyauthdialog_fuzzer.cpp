@@ -57,7 +57,7 @@ namespace OHOS {
 
         struct UkeyAuthRequest ukeyAuthRequest = {
             .keyUri = { keyUriSize, const_cast<uint8_t *>(payload) },
-            .timeout = timeout,
+            .timeoutDuration = timeout,
             .scene = scene,
             .customData = { customDataSize, const_cast<uint8_t *>(payload) },
         };

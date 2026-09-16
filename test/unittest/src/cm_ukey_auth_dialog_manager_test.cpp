@@ -76,7 +76,7 @@ public:
         manager_->SetAbilityQuerier(querier_);
         manager_->SetPcChecker([this]() { return pcMode_; }); /* D15 seam */
         manager_->SetAbilityStarter(nullptr); /* UIAbility tests inject on demand */
-        manager_->SetTimeoutForTest(200, 100); // 200ms total, 100ms grace
+        manager_->SetTimeoutRangeForTest(100, 200, 1000, 100); // min/default/max total, 100ms grace
         manager_->SetKeepAliveIntervalForTest(50); // fast keep-alive for F1 tests
         manager_->SetUnloadRenewal([this]() { renewalCount_++; });
         manager_->SetTimerPostFailForTest(false); // reset F8 fault injection
@@ -320,10 +320,16 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, ParamsJsonCarriesTimeout, testing::ext::Te
     EXPECT_NE(conn->GetParamsJson().find("\"timeout\":150"), std::string::npos);
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 
-    Open(999999999); // over max -> clamp 600000
+    Open(999999999); // over configured max -> clamp 1000
     conn = launcher_->conn_;
     ASSERT_NE(conn, nullptr);
-    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":600000"), std::string::npos);
+    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":1000"), std::string::npos);
+    manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
+
+    Open(50); // below configured min -> clamp 100
+    conn = launcher_->conn_;
+    ASSERT_NE(conn, nullptr);
+    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":100"), std::string::npos);
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 }
 
@@ -338,8 +344,8 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, CustomTimeoutTakesEffect, testing::ext::Te
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, TimeoutClampedToMax, testing::ext::TestSize.Level0)
 {
-    /* timeout above the server max is clamped: with the preconfigured short
-     * test timeout, a clamped request must NOT fire within the short window */
+    /* timeout above the configured max is clamped: a clamped request must NOT
+     * fire within the short window */
     Open(999999999); // > max -> clamp
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
     EXPECT_EQ(client_->called_, 0); // still waiting (clamped to 10min), not fired
@@ -420,7 +426,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveNotArmedOnSyncFailure, testing::e
 HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveCancelledOnAbort, testing::ext::TestSize.Level0)
 {
     ASSERT_EQ(Open(0), CM_SUCCESS);
-    manager_->SetTimeoutForTest(200, 100); // reconfiguration aborts the active session
+    manager_->SetTimeoutRangeForTest(100, 200, 1000, 100); // reconfiguration aborts the active session
     std::this_thread::sleep_for(std::chrono::milliseconds(150)); // > 50ms interval
     EXPECT_EQ(renewalCount_, 0); // cancelled before the first fire
 }

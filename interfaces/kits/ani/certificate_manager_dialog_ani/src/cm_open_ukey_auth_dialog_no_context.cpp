@@ -238,7 +238,7 @@ int32_t CmOpenUkeyAuthDialogNoContext::InvokeAsyncWork()
      * CmOpenUkeyAuthDialog, so they only need to live until the call returns */
     struct UkeyAuthRequest ukeyAuthRequest = {};
     ukeyAuthRequest.keyUri.data = this->keyUri.data;
-    ukeyAuthRequest.timeout = this->timeoutMs;
+    ukeyAuthRequest.timeoutDuration = this->timeoutMs;
     ukeyAuthRequest.keyUri.size = this->keyUri.size;
     ukeyAuthRequest.scene = this->scene;
     ukeyAuthRequest.customData = this->customData;

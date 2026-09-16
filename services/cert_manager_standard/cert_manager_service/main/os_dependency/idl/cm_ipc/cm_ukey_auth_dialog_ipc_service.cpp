@@ -40,7 +40,7 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
     (void)code;
     struct CmParamSet *paramSet = nullptr;
     struct CmBlob keyUri = { 0, nullptr };
-    uint32_t timeoutMs = 0; /* 0 = 未传，SA 侧取默认最大值 */
+    uint32_t timeoutMs = 0; /* 0 = 未传，SA 侧取默认 300s，显式值 clamp 到 [3min, 10min] */
     uint32_t scene = CM_UKEY_AUTH_SCENE_LOGIN; /* 缺省 Login（spec D9） */
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = &keyUri },

@@ -78,13 +78,13 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
         return nullptr;
     }
 
-    /* optional timeout (ms): absent/undefined keeps 0 (= server default max);
+    /* optional timeoutDuration (ms): absent/undefined keeps 0 (= server default 300s);
      * present but non-number is a parameter error */
     bool hasTimeout = false;
-    status = napi_has_named_property(asyncContext->env, arg, "timeout", &hasTimeout);
+    status = napi_has_named_property(asyncContext->env, arg, "timeoutDuration", &hasTimeout);
     if (status == napi_ok && hasTimeout) {
         napi_value timeoutValue = nullptr;
-        status = napi_get_named_property(asyncContext->env, arg, "timeout", &timeoutValue);
+        status = napi_get_named_property(asyncContext->env, arg, "timeoutDuration", &timeoutValue);
         if (status == napi_ok && timeoutValue != nullptr) {
             napi_valuetype timeoutType = napi_undefined;
             if (napi_typeof(asyncContext->env, timeoutValue, &timeoutType) == napi_ok &&
@@ -356,7 +356,7 @@ static napi_value OpenUkeyAuthDialogNoContext(std::shared_ptr<CmUIExtensionReque
     struct UkeyAuthRequest ukeyAuthRequest = {};
     ukeyAuthRequest.keyUri.size = asyncContext->certUri->size;
     ukeyAuthRequest.keyUri.data = asyncContext->certUri->data;
-    ukeyAuthRequest.timeout = asyncContext->authTimeoutMs;
+    ukeyAuthRequest.timeoutDuration = asyncContext->authTimeoutMs;
     ukeyAuthRequest.scene = asyncContext->authScene;
     if (asyncContext->authCustomData != nullptr) {
         ukeyAuthRequest.customData.size = asyncContext->authCustomData->size;
