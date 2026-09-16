@@ -24,6 +24,8 @@
 #include "napi_base_context.h"
 #include "napi_common_want.h"
 #include "ui_content.h"
+#include "securec.h"
+
 #include "cm_metrics.h"
 #include "cm_type.h"
 #include "cm_mem.h"

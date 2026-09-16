@@ -26,6 +26,9 @@
 #include "cm_napi_dialog_callback_void.h"
 
 namespace CMNapi {
+using OHOS::Security::CertManager::CM_UKEY_SCENE_LOGIN_STR;
+using OHOS::Security::CertManager::CM_UKEY_SCENE_CUSTOM_STR;
+
 /* Result context kept alive from the CmOpenUkeyAuthDialog call until the
  * promise is settled on the JS thread; ownership is handed to the threadsafe
  * function finalizer. */
@@ -220,6 +223,10 @@ static void UvTsfnFinalize(napi_env env, void *finalizeData, void *finalizeHint)
     (void)finalizeHint;
     delete static_cast<CmUkeyAuthResultContext *>(finalizeData);
 }
+
+// fold -1017/-1018 to 29700002/29700003 for the legacy overload (D8 修订)
+static napi_value GenerateUkeyResultError(napi_env env, int32_t resultCode, bool legacyOverload,
+    OHOS::Security::CertManager::CmMetricsReport *metricsReport);
 
 // JS-thread callback invoked through the threadsafe function: settle the
 // promise exactly once with the dialog result delivered by the SA.
