@@ -29,7 +29,11 @@ group("cert_manager_sdk_test") {
 group("cert_manager_napi") {
   if (os_level == "standard") {
     if (support_jsapi) {
-      deps = [ "./interfaces/kits/napi:certmanager" ]
+      deps = [
+        "./interfaces/kits/napi:certmanager",
+        "./interfaces/kits/napi/ukey_auth_extension_ability:ukeyauthextensionability_napi",
+        "./interfaces/kits/napi/ukey_auth_extension_context:ukeyauthextensioncontext_napi",
+      ]
       if (certificate_manager_feature_dialog_enabled) {
         deps += [ "./interfaces/kits/napi:certmanagerdialog" ]
       }
@@ -48,6 +52,7 @@ group("cert_manager_ani") {
     if (support_jsapi) {
       deps = [
         "./interfaces/kits/ani:certmanager_ani_group",
+        "./interfaces/kits/ani/ukey_auth_extension_ability:ukey_auth_extension_ani",
       ]
     }
   }

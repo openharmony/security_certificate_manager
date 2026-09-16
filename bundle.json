@@ -63,7 +63,8 @@
           "selinux_adapter",
           "openssl",
           "runtime_core",
-          "node"
+          "node",
+          "window_manager"
         ]
       },
       "build": {
