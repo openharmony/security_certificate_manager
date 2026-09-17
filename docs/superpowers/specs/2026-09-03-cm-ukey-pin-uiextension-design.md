@@ -15,7 +15,7 @@
 | v1 | 2026-09-03 | 基线设计（无 context 重载 + UIExtensionAbility 经系统弹窗服务） |
 | v2 | 2026-09-11 | D3 修订（abilityType 方案）、D2 修订（公开 report API 收窄为 inner）、超时参数、requestId CSPRNG fail-closed |
 | v3 | 2026-09-15 | 场景路由（D9–D19）：`scene`/`customData` 字段；三分路由（默认/UIAbility/UIExtension）；PC 门禁；删除 29700008 |
-| v4 | 2026-09-17 | **简化方案（D21–D26）**：删 `scene` 字段与 `UkeyAuthScene`；删无 context 重载；`openUkeyAuthDialog(context)` 收窄为仅驱动 UIExtensionAbility（查询失败/UIAbility → 29700003）；默认弹框与 UIAbility 拉起路径整体删除；新增 `openAuthDialogForUkeyDriver(dialogInfo, ukeyAuthRequest)`（CRYPTO_EXTENSION_REGISTER + IPC token 取包名 + BMS 预校验）；新增 `AbilityType`/`UkeyAuthDialogInfo`；D8 折叠逻辑重新归属（专属码 29700009/29700010 移至新接口） |
+| v4 | 2026-09-17 | **简化方案（D21–D26）**：删 `scene` 字段与 `UkeyAuthScene`；删无 context 重载；`openUkeyAuthDialog(context)` 收窄为仅驱动 UIExtensionAbility（查询失败/UIAbility → 29700003）；默认弹框与 UIAbility 拉起路径整体删除；新增 `openAuthDialogForUkeyDriver(dialogInfo, ukeyAuthRequest)`（CRYPTO_EXTENSION_REGISTER + IPC token 取包名 + BMS 预校验）；新增 `AbilityType`/`UkeyAuthDialogInfo`；D8 折叠逻辑重新归属（专属码 29700009/29700010 移至新接口）。**同日增补（D25 v2）**：非 PC/非 PC 模式 + UIExtension 时，openUkeyAuthDialog 在 **Kit 侧回退直启默认弹框**（since-22 既有机制），ForDriver 维持 29700005 |
 
 ## 1. 背景与目标
 
@@ -28,7 +28,8 @@ UIAbility/UIExtension 三分）与 customData 透传。
 1. `UkeyAuthRequest` **删除 `scene` 字段**（`UkeyAuthScene` 枚举整体删除），`customData` 保留；
 2. `openUkeyAuthDialog` **只保留带 context 重载**：Kit 侧查询 `HksQueryAbilityInfo`，
    **仅 abilityType == UIExtensionAbility(1) 时走 SA 拉起**；查询失败与 UIAbility 均拒绝
-   （29700003）。SA 侧同样只拉起 UIExtensionAbility——**默认弹框与 UIAbility 均不再支持**；
+   （29700003）。SA 侧同样只拉起 UIExtensionAbility——**默认弹框与 UIAbility 均不经 SA 拉起**；
+   但**非 PC/非 PC 模式 + UIExtension 时，Kit 侧回退直启系统默认弹框**（D25 v2）；
 3. 新增 `openAuthDialogForUkeyDriver(dialogInfo: UkeyAuthDialogInfo, ukeyAuthRequest)`：
    供 **UKey 驱动应用自己拉起自己的弹框扩展**。不经 HUKS 查询；SA 从 **IPC token** 取调用方
    包名（只能拉起自己 bundle 内的扩展）；校验调用方持有
@@ -63,7 +64,7 @@ v1–v3 决策（D1–D20）保留作轨迹；v4 覆盖项在行内标注，新�
 | D7 | report 权限 | 不加权限：requestId CSPRNG + 上报者 bundleName == 会话 owner 双重校验 | 不变 |
 | D8 | 错误码折叠 | **v4 修订（2026-09-17）**：专属码 **29700009（超时未上报）/ 29700010（单飞）归属 `openAuthDialogForUkeyDriver`**（26 新接口可携带）；`openUkeyAuthDialog`（since-22 已发布）折叠 **-1017→29700002、-1018→29700003**（消息注明原因）。原 v3 "argc==1 无 context 重载携带专属码" 随该重载删除而失效 | API 治理：已发布接口 throws 面不新增成员；新接口可携带 |
 | D9 | ~~请求字段面~~ | ~~`scene`/`customData`~~ → **v4：`UkeyAuthRequest = { keyUri, timeoutDuration?, customData? }`，`scene` 字段与 `UkeyAuthScene` 枚举全链路删除**（D21） | v4 简化方案 |
-| D10 | ~~rule 3/6 错误码~~ | **v4：rule 3（Custom 未注册）随 scene 删除而消失**；rule 6（非 PC 拉 UIExtension → 29700005）保留，适用于两接口（D25） | — |
+| D10 | ~~rule 3/6 错误码~~ | **v4：rule 3（Custom 未注册）随 scene 删除而消失**；rule 6（非 PC 拉 UIExtension → 29700005）**按接口分叉（D25 v2）**：ForDriver 拒 29700005，openUkeyAuthDialog 改为 Kit 回退默认弹框 | — |
 | D11 | 非法参数错误码 | request 解析失败 → 29700006；`abilityType` 非枚举值 → **401**（D23）；argc 不匹配 → 401 | 与既有 NAPI 约定一致 |
 | D12 | 29700008 处置 | 已删除（v3），维持 | — |
 | D13 | ~~scene 校验时机~~ | **v4 失效**（scene 删除） | — |
@@ -75,23 +76,26 @@ v1–v3 决策（D1–D20）保留作轨迹；v4 覆盖项在行内标注，新�
 | D19 | customData 限额 | 原始字节 ≤ 2048，超限 29700006 | 不变 |
 | D20 | 路由权威 | SA 自行查询 ability 信息决定拉起目标，不信任客户端声明。**v4 补充**：`openAuthDialogForUkeyDriver` 的拉起目标由 **IPC token 包名 + 入参 abilityName** 构成（bundle 不可伪造），BMS 校验兜底（D23） | Kit 上传任意 bundle/ability = 提权风险 |
 | D21 | v4 接口面收敛 | **删除**：无 context 重载 `openUkeyAuthDialog(ukeyAuthRequest)`（26 未发布，干净删除）、`UkeyAuthScene` 枚举、`UkeyAuthRequest.scene`、d.ts 老接口中 Custom/默认弹框相关 throws 描述 | 简化方案第 1、2 条 |
-| D22 | openUkeyAuthDialog 语义收窄 | **仅支持驱动注册的 UIExtensionAbility**：Kit 查询失败（未注册）→ 同步 29700003（-1019 改名 `NOT_REGISTERED`）；type=UIAbility(0) → 同步 29700003（-1021，文案去掉 no-context 措辞）；type=UIExtension(1) → 走 SA。SA 复查同矩阵（纵深防御）。**默认弹框拉起（SA）与默认/UIAbility 直启（Kit）代码整体删除** | 简化方案第 2 条 |
+| D22 | openUkeyAuthDialog 语义收窄 | **仅支持驱动注册的 UIExtensionAbility（PC/PC 模式）**：Kit 查询失败（未注册）→ 同步 29700003（-1019 改名 `NOT_REGISTERED`）；type=UIAbility(0) → 同步 29700003（-1021，文案去掉 no-context 措辞）；type=UIExtension(1) 且 PC → 走 SA；**type=UIExtension(1) 且非 PC → Kit 直启默认弹框（D25 v2）**。SA 复查同矩阵（纵深防御，-1020 保留为竞态防御）。**SA 侧默认弹框拉起与 Kit 侧 UIAbility 直启代码删除；Kit 侧默认弹框直启（GetDefaultAuthCertWant + StartUIExtensionAbility，since-22 既有机制）保留专用于非 PC 回退** | 简化方案第 2 条 + 2026-09-17 非 PC 回退增补 |
 | D23 | 新增 openAuthDialogForUkeyDriver | 签名 `openAuthDialogForUkeyDriver(dialogInfo: UkeyAuthDialogInfo, ukeyAuthRequest: UkeyAuthRequest): Promise<void>`。校验链：① NAPI 解析（dialogInfo 两字段必填；abilityType ≠ `UKEY_AUTH_EXTENSION_ABILITY` → **401 同步**；abilityName 非空 ≤128B）② NAPI 预检 `CRYPTO_EXTENSION_REGISTER`（进程内 AccessTokenKit）→ 失败 **201 同步** ③ SA：IPC token 取调用方 bundleName（`GetHapTokenInfo`，模式同 Report）+ 复检权限（纵深防御）④ **BMS 预校验**（用户裁定）：`(bundleName, abilityName)` 存在且类型为 UIExtensionAbility，否则 29700003——坏 abilityName 立即报错而非等 5 分钟总超时 ⑤ PC 门禁 ⑥ systemui 拉起。SA 侧 abilityType 防御拒绝用 -1014（29700006） | 简化方案第 3、4 条 + BMS 裁定（2026-09-17） |
 | D24 | 新增类型面 | `enum AbilityType { UKEY_AUTH_EXTENSION_ABILITY = 1 }`（用户裁定取 1，对齐 HUKS 内部 0=UIAbility/1=UIExtension，免映射）；`interface UkeyAuthDialogInfo { abilityType: AbilityType; abilityName: string }`（abilityType 在前，用户指定）；inner API 镜像 C 结构体 `UkeyAuthDialogInfo { CmBlob abilityName; uint32_t abilityType; }` | 用户裁定（2026-09-17） |
-| D25 | PC 门禁适用范围 | `openUkeyAuthDialog` UIExtension 路径与 `openAuthDialogForUkeyDriver` **统一适用** -1020 → 29700005 | 两接口拉起的是同一类弹框形态 |
+| D25 | PC 门禁适用范围 | **v2（2026-09-17 增补）按接口分叉**：`openUkeyAuthDialog` + UIExtension + **非 PC/非 PC 模式 → Kit 侧回退直启默认弹框**（`CmUkeyIsPcOrPcMode` 共享头函数，Kit 查询后判定；不走 SA、无 29700005；SA 侧 -1020 保留为竞态防御）；`openAuthDialogForUkeyDriver` **任何非 PC/非 PC 模式 → -1020 → 29700005**（驱动自拉起无回退）。v1 的"两接口统一 -1020"作废 | 非 PC 设备上普通应用的认证流程仍需可用（默认弹框兜底）；驱动自拉起场景明确要求 PC 形态 |
 | D26 | 单飞/会话机制共享 | 两接口共用 SA 会话位与全部会话机制（超时/宽限/上报/死亡监听）；`-1018` 在 openUkeyAuthDialog 折叠 29700003、在 openAuthDialogForUkeyDriver 回 29700010（D8 v4） | 不变机制，归属调整 |
 
 ## 4. 总体架构与路由矩阵
 
 ### 4.1 路由矩阵（v4）
 
-**openUkeyAuthDialog(context, ukeyAuthRequest)**（Kit 侧执行 `HksQueryAbilityInfo`）：
+**openUkeyAuthDialog(context, ukeyAuthRequest)**（Kit 侧执行 `HksQueryAbilityInfo` + PC 判定）：
 
-| 查询结果 | Kit 侧行为 | SA 侧复查（收到 IPC 后自行再查询，D20） |
+| 查询结果 | PC / PC 模式 | 非 PC 且非 PC 模式 |
 |---|---|---|
-| 查询失败（未注册） | **同步拒 29700003**（-1019，无 IPC 消耗） | 同拒 -1019 |
-| type = UIAbility (0) | **同步拒 29700003**（-1021，无 IPC 消耗） | 同拒 -1021 |
-| type = UIExtension (1) | 走 SA → SA 复查 → PC 门禁（-1020/29700005）→ systemui 拉起驱动扩展 | 同左 |
+| 查询失败（未注册） | **同步拒 29700003**（-1019，无 IPC 消耗） | 同左 |
+| type = UIAbility (0) | **同步拒 29700003**（-1021，无 IPC 消耗） | 同左 |
+| type = UIExtension (1) | 走 SA → SA 复查（含 -1020 竞态防御）→ systemui 拉起驱动扩展 | **Kit 直启系统默认弹框**（D25 v2：`GetDefaultAuthCertWant` → `com.ohos.certmanager/CertPickerUIExtAbility`（sys/commonUI，pageType=7）→ `StartUIExtensionAbility` 模态拉起；customData 静默丢弃（无消费方，D18 语义）；timeoutDuration 不生效（since-22 直启路径无会话机制）；结果经既有 UIExtension 回调回传 promise） |
+
+SA 侧复查矩阵（收到 IPC 时 Kit 已确认 PC）：查询失败 → -1019；UIAbility → -1021；
+UIExtension → -1020 防御（PC 模式竞态翻转的兜底）→ systemui 拉起。
 
 **openAuthDialogForUkeyDriver(dialogInfo, ukeyAuthRequest)**（不经 HUKS 查询）：
 
@@ -122,8 +126,9 @@ SA:      GetCallingTokenID → GetHapTokenInfo → bundleName（仅 HAP token �
   │ openUkeyAuthDialog(ctx, req)         │                            │                    │
   ├───────────────>│ HksQueryAbilityInfo │                            │                    │
   │                │  ├─失败/UIAbility → 同步 29700003（无 IPC）      │                    │
-  │                │  └─UIExtension → IPC(OPEN: keyUri,timeout,      │                    │
-  │                │        customData, 回调stub)                    │                    │
+  │                │  └─UIExtension: 非PC → Kit 直启默认弹框(D25 v2)  │                    │
+  │                │     PC → IPC(OPEN: keyUri,timeout,customData,   │                    │
+  │                │        回调stub)                                 │                    │
   │                ├─────────────────────>│ 权限/参数/单飞校验         │                    │
   │                │                      │ HksQueryAbilityInfo 复查  │                    │
   │                │                      │  ├─失败 → -1019；UIAbility → -1021             │
@@ -198,9 +203,12 @@ function openAuthDialogForUkeyDriver(dialogInfo: UkeyAuthDialogInfo,
 ```
 
 **修订**：`UkeyAuthRequest` 保留 `{ keyUri, timeoutDuration?, customData? }`（customData
-注释去掉"不下发默认弹框"措辞）；`openUkeyAuthDialog(context, ...)` JSDoc 语义改写为
-"仅拉起驱动注册的 UIExtensionAbility 弹框（PC/PC 模式），未注册或 UIAbility 类型时
-29700003"；`CertificateDialogErrorCode` 的 29700009/29700010 枚举保留（归属新接口 throws 面）。
+注释改写：回退默认弹框时静默丢弃；timeoutDuration 注释注明仅对经系统弹窗服务拉起的
+驱动弹框生效）；`openUkeyAuthDialog(context, ...)` JSDoc 语义改写为"拉起驱动注册的
+UIExtensionAbility 弹框（PC/PC 模式）；非 PC 设备回退系统默认弹框；未注册或 UIAbility
+类型时 29700003"——**其 29700005 throws 描述删除**（正常路径不再抛，-1020 仅存于 SA
+竞态防御；26 未发布的描述变更）；`CertificateDialogErrorCode` 的 29700009/29700010 枚举
+保留（归属新接口 throws 面）。
 
 解析约定（NAPI/ANI 各实现，语义严格一致）：
 
@@ -385,13 +393,14 @@ CommonLaunch: requestId(CSPRNG fail-closed) → 建会话(state=LAUNCHING, owner
 
 ### 10.1 `cm_dialog_api_common`（kits/common）
 
-- **删除**：`GetCustomerAuthCertWant` 直启 want 构造（默认/UIAbility 形态）、
-  `CM_UKEY_DEFAULT_DIALOG_*` 默认弹框常量、`CM_UKEY_SCENE_*`/`CmUkeySceneToString`/
-  `CmUkeySceneIsValid`（迁至 `cm_ukey_dialog_common.h` 的共享常量同步清理）；
-- `GetUkeyAbilityInfo` 保留（查询门禁用）；
+- **删除**：`GetCustomerAuthCertWant` 的 **UIAbility 直启 want 分支**（查询成功分支）与
+  scene 形参、`CM_UKEY_SCENE_*`/`CmUkeySceneToString`/`CmUkeySceneIsValid`（含
+  `cm_ukey_dialog_common.h` 共享常量同步清理）；
+- **保留**：`GetDefaultAuthCertWant` 默认弹框 want 构造（去 scene；D25 v2 回退路径消费）
+  与 `GetUkeyAbilityInfo`（查询门禁用）；
 - 错误码映射：`-1019 → 29700003`（语义改名 NOT_REGISTERED，涵盖"未注册"与"ForDriver
   指定扩展不存在/类型不符"）、`-1021 → 29700003`（文案去 no-context 措辞）、
-  `-1020 → 29700005` 不变。
+  `-1020 → 29700005` 不变（ForDriver 正常路径 + openUkeyAuthDialog SA 竞态防御）。
 
 ### 10.2 NAPI `cm_napi_open_ukey_auth_dialog.cpp`（+ 新增 ForDriver 注册）
 
@@ -403,14 +412,18 @@ CMNapiOpenUkeyAuthorizeDialog:                      /* openUkeyAuthDialog */
     GetUkeyAbilityInfo(keyUri):
       失败       → 同步 reject 29700003（-1019 映射，无 IPC）
       UIAbility  → 同步 reject 29700003（-1021 映射，无 IPC）
-      UIExtension → CmOpenUkeyAuthDialog → IPC → SA
-    结果回调：-1017→29700002、-1018→29700003（D8 v4 折叠，消息注明原因）
+      UIExtension:
+        CmUkeyIsPcOrPcMode() == true  → CmOpenUkeyAuthDialog → IPC → SA
+        CmUkeyIsPcOrPcMode() == false → 默认弹框直启（D25 v2）：GetDefaultAuthCertWant
+                                        → StartUIExtensionAbility → 既有回调回 promise
+                                        （customData 丢弃；无 SA 会话/超时机制）
+    结果回调（SA 路径）：-1017→29700002、-1018→29700003（D8 v4 折叠，消息注明原因）
 
 CMNapiOpenAuthDialogForUkeyDriver:                  /* 新增，cm_napi.cpp 注册表登记 */
     argc 校验（==2）→ 解析 UkeyAuthDialogInfo + UkeyAuthRequest
     abilityType ≠ UKEY_AUTH_EXTENSION_ABILITY → 401 同步
     CRYPTO_EXTENSION_REGISTER 预检（AccessTokenKit，进程内）→ 失败 201 同步
-    → CmOpenUkeyAuthDialogForDriver → IPC → SA
+    → CmOpenUkeyAuthDialogForDriver → IPC → SA（非 PC → -1020 → 29700005，无回退）
     结果回调：29700009/29700010 专属码直通
 ```
 
@@ -425,7 +438,7 @@ CMNapiOpenAuthDialogForUkeyDriver:                  /* 新增，cm_napi.cpp 注�
 | abilityType=UIAbility | -1021 | 29700003（Kit 同步；SA 复查） | — |
 | BMS 校验失败（ability 不存在/非 UIExtension） | -1019 | — | 29700003 |
 | SA 侧 abilityType 防御拒绝 | -1014 | 29700006 | 29700006 |
-| 非 PC 且非 PC 模式 | -1020 | 29700005 | 29700005 |
+| 非 PC 且非 PC 模式 | -1020 | 仅 SA 竞态防御可达（正常路径 Kit 回退默认弹框，不报错） | 29700005（无回退） |
 | 无 CRYPTO_EXTENSION_REGISTER | -1011 | — | **201**（NAPI 同步 + SA 复检） |
 | 提供方超时未上报 | -1017 | 折叠 29700002（消息注明） | **29700009** |
 | 单飞拒绝 | -1018 | 折叠 29700003（消息注明） | **29700010** |
@@ -467,6 +480,9 @@ CMNapiOpenAuthDialogForUkeyDriver:                  /* 新增，cm_napi.cpp 注�
     → SA → BMS 校验 → systemui 拉起 → demo 扩展上报 → 回调 resolve；非 PC → 29700005；
     坏 abilityName → 29700003；无权限（卸 ACL 签名）→ 201；
   - openUkeyAuthDialog：依赖 HUKS 填充 abilityType=1（R12），联调时 HUKS 侧临时配合；
+    PC 模式 → SA → systemui 拉起驱动扩展；**非 PC 模式 → Kit 直启默认弹框**
+    （CertPickerUIExtAbility 模态，customData 不携带，结果经既有回调回 promise）；
+    未注册 → 同步 29700003；
   - 单测真机回归（目标全绿）。
 
 ## 14. 风险与遗留事项
@@ -475,7 +491,7 @@ CMNapiOpenAuthDialogForUkeyDriver:                  /* 新增，cm_napi.cpp 注�
 |---|---|---|
 | ~~R1~~ | UIAbility-no-context 上报通道 | **v4 解决（路径删除）**：UIAbility 形态全面不支持 |
 | R2 | 提供方"先上报后终止"契约 | 10s 宽限兜底；契约 §6.3 |
-| ~~R7/R8~~ | 默认弹框 systemui 拉起/上报桥 | **v4 失效（默认弹框删除）**；user_certificate_manager ukey-auth 分支留作死代码 |
+| ~~R7/R8~~ | 默认弹框 systemui 拉起/上报桥 | **v4 失效（SA 侧默认弹框拉起删除）**；Kit 直启默认弹框（CertPickerUIExtAbility，since-22 既有）随 D25 v2 恢复使用；user_certificate_manager ukey-auth 分支的 UkeyAuthExtensionAbility 留作死代码 |
 | ~~R9~~ | StartAbility SELinux/cfg | **v4 失效（路径删除，ukey-no-uiability 分支已清理 cfg/依赖）** |
 | R10 | customData 隐私 | 不变（§9.3） |
 | ~~R11~~ | UIAbility demo 形态 | **v4 失效** |
@@ -513,7 +529,7 @@ CMNapiOpenAuthDialogForUkeyDriver:                  /* 新增，cm_napi.cpp 注�
 | SA IPC | cm_ukey_auth_dialog_ipc_service.{h,cpp} | OPEN 去 scene；新增 ForDriver 处理器（权限 + token bundle） |
 | SA 构建 | dialog/BUILD.gn | 增 bundleMgr 依赖 |
 | 共享常量 | cm_ukey_dialog_common.h / cm_ukey_ability_type.h | 删 scene 常量/默认弹框常量 |
-| kits/common | cm_dialog_api_common.{h,cpp} | 删直启 want/默认弹框常量；映射表修订 |
+| kits/common | cm_dialog_api_common.{h,cpp} | 删 UIAbility 直启 want 与 scene；保留 GetDefaultAuthCertWant（非 PC 回退）；映射表修订 |
 | NAPI | cm_napi.cpp + cm_napi_open_ukey_auth_dialog.cpp | 路由收敛 + ForDriver 新增 |
 | ANI | cm_dialog_ani.cpp + 删 cm_open_ukey_auth_dialog_no_context.cpp + ets | 同 NAPI |
 | 测试 | cm_ukey_auth_dialog_manager_test.cpp / cm_ukey_auth_dialog_real_ipc_test.cpp / fuzz | §13 增量 |
