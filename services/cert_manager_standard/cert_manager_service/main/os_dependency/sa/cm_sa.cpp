@@ -292,6 +292,7 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     if (code != static_cast<uint32_t>(CM_MSG_GET_UKEY_CERTIFICATE_LIST) &&
         code != static_cast<uint32_t>(CM_MSG_GET_UKEY_CERTIFICATE) &&
         code != static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG) &&
+        code != static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER) &&
         code != static_cast<uint32_t>(CM_MSG_REPORT_UKEY_AUTH_RESULT)) {
         outSize = static_cast<uint32_t>(data.ReadUint32());
     }
@@ -299,7 +300,8 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
      * buffer 之前（WriteBuffer 会补尾 pad 而 ReadBuffer 不跳过，对象须避免写在
      * 非对齐 buffer 之后），因此 OPEN 在通用 GetSrcData 之前自行解析；
      * 应答由处理器经 CmSendResponse(context=reply) 写入。 */
-    if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG)) {
+    if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG) ||
+        code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER)) {
         uint32_t openBlobSize = static_cast<uint32_t>(data.ReadUint32());
         if (IsInvalidLength(openBlobSize)) {
             CM_LOG_E("open dialog srcData size is invalid, size:%u", openBlobSize);
@@ -320,8 +322,13 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
             CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply), openRet, NULL);
             return NO_ERROR;
         }
-        CmIpcServiceOpenUkeyAuthDialog(code, &openSrcData,
-            reinterpret_cast<const struct CmContext *>(&reply), remoteCallback);
+        if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER)) {
+            CmIpcServiceOpenUkeyAuthDialogForDriver(code, &openSrcData,
+                reinterpret_cast<const struct CmContext *>(&reply), remoteCallback);
+        } else {
+            CmIpcServiceOpenUkeyAuthDialog(code, &openSrcData,
+                reinterpret_cast<const struct CmContext *>(&reply), remoteCallback);
+        }
         CM_FREE_BLOB(openSrcData);
         return NO_ERROR;
     }

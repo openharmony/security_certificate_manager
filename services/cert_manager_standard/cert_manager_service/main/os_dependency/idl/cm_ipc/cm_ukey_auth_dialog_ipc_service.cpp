@@ -84,6 +84,67 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
     CmSendResponse(context, ret, NULL);
 }
 
+void CmIpcServiceOpenUkeyAuthDialogForDriver(uint32_t code, const struct CmBlob *paramSetBlob,
+    const struct CmContext *context, const sptr<IRemoteObject> &clientCallback)
+{
+    (void)code;
+    struct CmParamSet *paramSet = nullptr;
+    struct CmBlob abilityName = { 0, nullptr };
+    uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
+    struct CmBlob keyUri = { 0, nullptr };
+    uint32_t timeoutMs = 0;
+    struct CmParamOut params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = &abilityName },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &abilityType },
+        { .tag = CM_TAG_PARAM2_BUFFER, .blob = &keyUri },
+        { .tag = CM_TAG_PARAM3_UINT32, .uint32Param = &timeoutMs },
+    };
+    int32_t ret = CmGetParamSet(reinterpret_cast<struct CmParamSet *>(paramSetBlob->data),
+        paramSetBlob->size, &paramSet);
+    if (ret == CM_SUCCESS) {
+        ret = CmParamSetToParams(paramSet, params, CM_ARRAY_SIZE(params));
+    }
+    struct CmBlob customData = { 0, nullptr };
+    if (ret == CM_SUCCESS) {
+        struct CmParam *customDataParam = nullptr;
+        if (CmGetParam(paramSet, CM_TAG_PARAM4_BUFFER, &customDataParam) == CM_SUCCESS) {
+            customData = customDataParam->blob;
+        }
+    }
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("open driver dialog get params failed, ret = %d", ret);
+        CmFreeParamSet(&paramSet);
+        CmSendResponse(context, CMR_ERROR_INVALID_ARGUMENT, NULL);
+        return;
+    }
+
+    /* 服务端权限校验（spec v4 D23：NAPI 预检之外的纵深防御） */
+    if (AccessTokenKit::VerifyAccessToken(IPCSkeleton::GetCallingTokenID(),
+        "ohos.permission.CRYPTO_EXTENSION_REGISTER") != PERMISSION_GRANTED) {
+        CM_LOG_E("open driver dialog permission denied");
+        CmFreeParamSet(&paramSet);
+        CmSendResponse(context, CMR_DIALOG_ERROR_PERMISSION_DENIED, NULL);
+        return;
+    }
+    /* 调用方包名：仅 HAP token 放行（bundle 只能来自 IPC token，客户端不可声明，D20/D23） */
+    HapTokenInfo hapInfo;
+    if (AccessTokenKit::GetHapTokenInfo(IPCSkeleton::GetCallingTokenID(), hapInfo) != ERR_OK) {
+        CM_LOG_E("open driver dialog caller is not hap token, callingUid = %d",
+            static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
+        CmFreeParamSet(&paramSet);
+        CmSendResponse(context, CMR_DIALOG_ERROR_INTERNAL, NULL);
+        return;
+    }
+
+    CmUkeyAuthDialogManager::GetInstance().InitRealDependencies();
+    /* abilityName/keyUri/customData 指向 paramSet 缓冲，OpenDriverDialog 同步消费后不再引用 */
+    ret = CmUkeyAuthDialogManager::GetInstance().OpenDriverDialog(&abilityName, abilityType,
+        &keyUri, static_cast<uint32_t>(IPCSkeleton::GetCallingUid()), hapInfo.bundleName,
+        timeoutMs, &customData, clientCallback);
+    CmFreeParamSet(&paramSet);
+    CmSendResponse(context, ret, NULL);
+}
+
 void CmIpcServiceReportUkeyAuthResult(uint32_t code, const struct CmBlob *paramSetBlob,
     const struct CmContext *context)
 {

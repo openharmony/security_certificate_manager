@@ -111,6 +111,15 @@ CM_API_EXPORT int32_t CmOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAut
     CmUkeyAuthDialogResultCallback callback, void *userData);
 
 /**
+ * Open the ukey driver's own pin auth dialog (UIExtensionAbility only). The driver
+ * bundle is resolved from the caller identity on the service side. Returns sync
+ * validation result; final dialog result is delivered via callback exactly once.
+ */
+CM_API_EXPORT int32_t CmOpenUkeyAuthDialogForDriver(const struct UkeyAuthDialogInfo *dialogInfo,
+    const struct UkeyAuthRequest *ukeyAuthRequest, CmUkeyAuthDialogResultCallback callback,
+    void *userData);
+
+/**
  * Called by the driver's UIExtensionAbility to report the auth result. Returns sync validation result.
  */
 CM_API_EXPORT int32_t CmReportUkeyAuthResult(const struct CmBlob *requestId, int32_t resultCode);

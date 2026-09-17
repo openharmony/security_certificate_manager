@@ -27,10 +27,13 @@
 #include "cert_manager_api.h"
 #include "cm_test_common.h"
 #include "cm_type.h"
+#include "cm_ukey_ability_type.h"
 
 namespace {
 std::atomic<int32_t> g_asyncResult(0xDEADBEEF);
 std::atomic<bool> g_asyncFired(false);
+/* ForDriver probe sentinel: stays 0xDEADBEEF until the callback fires */
+std::atomic<int32_t> g_driverProbeFired(0xDEADBEEF);
 }
 
 static void RealIpcResultCallback(int32_t resultCode, void *userData)
@@ -38,6 +41,12 @@ static void RealIpcResultCallback(int32_t resultCode, void *userData)
     (void)userData;
     g_asyncResult = resultCode;
     g_asyncFired = true;
+}
+
+static void DriverProbeResultCallback(int32_t resultCode, void *userData)
+{
+    (void)userData;
+    g_driverProbeFired = resultCode;
 }
 
 class CmUkeyDialogRealIpcTest : public testing::Test {
@@ -131,4 +140,54 @@ HWTEST_F(CmUkeyDialogRealIpcTest, OpenDialogRealIpcProbe, testing::ext::TestSize
     EXPECT_TRUE(g_asyncFired.load());
     sleep(2);
     EXPECT_TRUE(g_asyncFired.load()); /* exactly once: no duplicate observed */
+}
+
+/* ForDriver probe: a CRYPTO_EXTENSION_REGISTER HAP caller reaches the SA —
+ * real validation rejects synchronously: on rk3568 (non-PC) the -1020 PC gate
+ * hits before BMS; on a PC the mock bundle has no such extension so BMS
+ * precheck returns -1019. Both prove the ForDriver chain is wired to the SA. */
+HWTEST_F(CmUkeyDialogRealIpcTest, OpenDriverDialogRealIpcProbe, testing::ext::TestSize.Level0)
+{
+    char abilityName[] = "MyUkeyAuthExtensionAbility";
+    struct UkeyAuthDialogInfo dialogInfo = {};
+    dialogInfo.abilityName.data = reinterpret_cast<uint8_t *>(abilityName);
+    dialogInfo.abilityName.size = sizeof(abilityName); /* NUL-terminated */
+    dialogInfo.abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
+
+    char uri[] = "ukey://test/for-driver";
+    struct UkeyAuthRequest req = {};
+    req.keyUri.data = reinterpret_cast<uint8_t *>(uri);
+    req.keyUri.size = sizeof(uri);
+
+    CertmanagerTest::MockHapToken mockHap({ "ohos.permission.CRYPTO_EXTENSION_REGISTER" });
+    int32_t ret = CmOpenUkeyAuthDialogForDriver(&dialogInfo, &req, DriverProbeResultCallback,
+        nullptr);
+    GTEST_LOG_(INFO) << "CmOpenUkeyAuthDialogForDriver sync ret = " << ret;
+    sleep(1);
+    EXPECT_TRUE(ret == CMR_DIALOG_ERROR_NOT_REGISTERED || ret == CMR_DIALOG_ERROR_NOT_PC_DEVICE)
+        << "ret = " << ret;
+    EXPECT_EQ(g_driverProbeFired.load(), 0xDEADBEEF); /* sync rejection never fires */
+}
+
+/* ForDriver no-permission probe: the un-mocked shell identity holds no
+ * CRYPTO_EXTENSION_REGISTER — the SA-side defense-in-depth check rejects
+ * synchronously with -1011 (JS 201). */
+HWTEST_F(CmUkeyDialogRealIpcTest, OpenDriverDialogNoPermissionProbe, testing::ext::TestSize.Level0)
+{
+    char abilityName[] = "MyUkeyAuthExtensionAbility";
+    struct UkeyAuthDialogInfo dialogInfo = {};
+    dialogInfo.abilityName.data = reinterpret_cast<uint8_t *>(abilityName);
+    dialogInfo.abilityName.size = sizeof(abilityName); /* NUL-terminated */
+    dialogInfo.abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
+
+    char uri[] = "ukey://test/for-driver-noperm";
+    struct UkeyAuthRequest req = {};
+    req.keyUri.data = reinterpret_cast<uint8_t *>(uri);
+    req.keyUri.size = sizeof(uri);
+
+    int32_t ret = CmOpenUkeyAuthDialogForDriver(&dialogInfo, &req, DriverProbeResultCallback,
+        nullptr);
+    GTEST_LOG_(INFO) << "CmOpenUkeyAuthDialogForDriver(no-perm) sync ret = " << ret;
+    EXPECT_EQ(ret, CMR_DIALOG_ERROR_PERMISSION_DENIED);
+    EXPECT_EQ(g_driverProbeFired.load(), 0xDEADBEEF); /* sync rejection never fires */
 }

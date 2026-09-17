@@ -35,6 +35,7 @@
 #include "cm_ipc_client_serialization.h"
 #include "cm_log.h"
 #include "cm_param.h"
+#include "cm_ukey_ability_type.h"
 
 namespace OHOS {
 namespace Security {
@@ -250,6 +251,72 @@ int32_t CmClientOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest
 
         stub->HoldSelf(); /* stub manages its own lifetime until Deliver */
         CM_LOG_I("open ukey auth dialog request accepted");
+    } while (0);
+
+    CmFreeParamSet(&sendParamSet);
+    return ret;
+}
+
+int32_t CmClientOpenUkeyAuthDialogForDriver(const struct UkeyAuthDialogInfo *dialogInfo,
+    const struct UkeyAuthRequest *ukeyAuthRequest, CmUkeyAuthDialogResultCallback callback,
+    void *userData)
+{
+    if (dialogInfo == nullptr || ukeyAuthRequest == nullptr || callback == nullptr ||
+        CmCheckBlob(&dialogInfo->abilityName) != CM_SUCCESS ||
+        CmCheckBlob(&ukeyAuthRequest->keyUri) != CM_SUCCESS) {
+        CM_LOG_E("invalid open auth dialog for ukey driver arguments");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if (dialogInfo->abilityType != CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
+        CM_LOG_E("invalid driver dialog ability type: %u", dialogInfo->abilityType);
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+    if (ukeyAuthRequest->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
+        CM_LOG_E("custom data too large: %u", ukeyAuthRequest->customData.size);
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+
+    sptr<CmDialogCallbackStub> stub = new (std::nothrow) CmDialogCallbackStub(callback, userData);
+    if (stub == nullptr) {
+        CM_LOG_E("create ukey dialog callback stub failed");
+        return CMR_ERROR_MALLOC_FAIL;
+    }
+
+    /* 五参数一次性序列化（spec v4 §8.2）：禁止事后 CmAddParams 追加 */
+    struct CmParam params[] = {
+        { .tag = CM_TAG_PARAM0_BUFFER, .blob = dialogInfo->abilityName },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = dialogInfo->abilityType },
+        { .tag = CM_TAG_PARAM2_BUFFER, .blob = ukeyAuthRequest->keyUri },
+        { .tag = CM_TAG_PARAM3_UINT32, .uint32Param = ukeyAuthRequest->timeoutDuration },
+        { .tag = CM_TAG_PARAM4_BUFFER, .blob = ukeyAuthRequest->customData },
+    };
+
+    struct CmParamSet *sendParamSet = nullptr;
+    int32_t ret = CmParamsToParamSet(params, CM_ARRAY_SIZE(params), &sendParamSet);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("open driver dialog pack params failed, ret = %d", ret);
+        CmFreeParamSet(&sendParamSet);
+        return ret;
+    }
+    struct CmBlob parcelBlob = { sendParamSet->paramSetSize, reinterpret_cast<uint8_t *>(sendParamSet) };
+
+    do {
+        if (!stub->StartFallbackTimer()) {
+            CM_LOG_E("arm ukey dialog fallback timer failed");
+            ret = CMR_DIALOG_ERROR_INTERNAL;
+            break;
+        }
+        int32_t replyCode = CM_FAILURE;
+        ret = OHOS::SendRequestWithRemote(CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER, &parcelBlob,
+            stub, &replyCode);
+        if (ret != CM_SUCCESS || replyCode != CM_SUCCESS) {
+            CM_LOG_E("open driver dialog request failed, ret = %d, reply = %d", ret, replyCode);
+            stub->Cancel();
+            ret = (ret != CM_SUCCESS) ? ret : replyCode;
+            break;
+        }
+        stub->HoldSelf();
+        CM_LOG_I("open driver dialog request accepted");
     } while (0);
 
     CmFreeParamSet(&sendParamSet);

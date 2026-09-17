@@ -96,6 +96,10 @@ int32_t CmClientImportUkeyCert(const struct CmBlob *keyUri, const struct CmBlob 
 int32_t CmClientOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest,
     CmUkeyAuthDialogResultCallback callback, void *userData);
 
+int32_t CmClientOpenUkeyAuthDialogForDriver(const struct UkeyAuthDialogInfo *dialogInfo,
+    const struct UkeyAuthRequest *ukeyAuthRequest, CmUkeyAuthDialogResultCallback callback,
+    void *userData);
+
 int32_t CmClientReportUkeyAuthResult(const struct CmBlob *requestId, int32_t resultCode);
 
 #ifdef __cplusplus

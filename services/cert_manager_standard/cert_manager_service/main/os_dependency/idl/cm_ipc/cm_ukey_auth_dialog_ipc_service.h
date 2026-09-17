@@ -31,6 +31,9 @@ namespace OHOS::Security::CertManager {
 void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSetBlob,
     const struct CmContext *context, const sptr<IRemoteObject> &clientCallback);
 
+void CmIpcServiceOpenUkeyAuthDialogForDriver(uint32_t code, const struct CmBlob *paramSetBlob,
+    const struct CmContext *context, const sptr<IRemoteObject> &clientCallback);
+
 void CmIpcServiceReportUkeyAuthResult(uint32_t code, const struct CmBlob *paramSetBlob,
     const struct CmContext *context);
 } // namespace OHOS::Security::CertManager

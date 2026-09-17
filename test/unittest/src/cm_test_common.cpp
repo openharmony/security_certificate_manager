@@ -75,7 +75,8 @@ const std::vector<std::string> PERMISSION_LIST = {
     "ohos.permission.ACCESS_CERT_MANAGER_INTERNAL",
     "ohos.permission.ACCESS_CERT_MANAGER",
     "ohos.permission.ACCESS_USER_TRUSTED_CERT",
-    "ohos.permission.ACCESS_SYSTEM_APP_CERT"
+    "ohos.permission.ACCESS_SYSTEM_APP_CERT",
+    "ohos.permission.CRYPTO_EXTENSION_REGISTER"
 };
 }
 
