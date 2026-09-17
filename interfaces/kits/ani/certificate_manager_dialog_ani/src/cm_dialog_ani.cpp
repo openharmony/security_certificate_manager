@@ -25,6 +25,7 @@
 #include "cm_open_auth_dialog.h"
 #include "cm_open_ukey_auth_dialog.h"
 #include "cm_open_ukey_auth_dialog_no_context.h"
+#include "cm_open_auth_dialog_for_ukey_driver.h"
 #include "cm_supports_ca_cert_dialog.h"
 #include "cm_dialog_api_common.h"
 #include "cm_ukey_dialog_common.h"
@@ -248,6 +249,23 @@ ani_object openUkeyAuthDialogNoContextNative(ani_env *env, ani_string keyUri, an
     return openUkeyAuthDialogNoContextImpl->Invoke();
 }
 
+ani_object openAuthDialogForUkeyDriverNative(ani_env *env, ani_string abilityName,
+    ani_double abilityType, ani_string keyUri, ani_double timeout, ani_object customData,
+    ani_object callback)
+{
+    if (env == nullptr) {
+        CM_LOG_E("check env is nullptr.");
+        return nullptr;
+    }
+    if (!IsSupportDialogSyscap()) {
+        CM_LOG_E("check syscap is not supported.");
+        return InvokeCallbackVoid(env, callback);
+    }
+    auto impl = std::make_shared<CmOpenAuthDialogForUkeyDriver>(env, abilityName, abilityType,
+        keyUri, timeout, customData, callback);
+    return impl->Invoke();
+}
+
 ani_object supportsCACertDialogNative(ani_env *env)
 {
     if (env == nullptr) {
@@ -293,6 +311,8 @@ ANI_EXPORT ani_status ANI_Constructor(ani_vm *vm, uint32_t *result)
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openUkeyAuthDialogNative)},
         ani_native_function {"openUkeyAuthDialogNoContextNative", nullptr,
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openUkeyAuthDialogNoContextNative)},
+        ani_native_function {"openAuthDialogForUkeyDriverNative", nullptr,
+            reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openAuthDialogForUkeyDriverNative)},
         ani_native_function {"supportsCACertDialogNative", nullptr,
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::supportsCACertDialogNative)},
     };

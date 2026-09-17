@@ -84,6 +84,15 @@ native function openUkeyAuthDialogNoContextNative(
   callback: AsyncCallbackWrapper<void>
 ): NativeResult<void>;
 
+native function openAuthDialogForUkeyDriverNative(
+  abilityName: string,
+  abilityType: number,
+  keyUri: string,
+  timeout: number,
+  customData: Uint8Array,
+  callback: AsyncCallbackWrapper<void>
+): NativeResult<void>;
+
 native function supportsCACertDialogNative(): NativeResult<boolean>;
 
 class NativeResult<T> {
@@ -141,6 +150,15 @@ export namespace certificateManagerDialog {
     timeoutDuration?: number, /* auth timeout in ms; absent = server default 300s */
     scene?: UkeyAuthScene, /* auth scene; absent = LOGIN (default dialog fallback allowed) */
     customData?: Uint8Array /* opaque data (<= 2048 bytes) delivered base64 to custom dialogs only */
+  }
+
+  export enum AbilityType {
+    UKEY_AUTH_EXTENSION_ABILITY = 1
+  }
+
+  export interface UkeyAuthDialogInfo {
+    abilityType: AbilityType;
+    abilityName: string;
   }
 
   export enum CertificateDialogErrorCode {
@@ -429,6 +447,45 @@ export namespace certificateManagerDialog {
         let customData: Uint8Array = ukeyAuthRequest.customData ?? new Uint8Array(0);
         let result: NativeResult<void> = openUkeyAuthDialogNoContextNative(keyUri, timeout, scene,
             customData, callback);
+        if (result.code !== 0) {
+            let err = new BusinessError();
+            err.code = result.code;
+            err.message = result.message;
+            reject(err);
+        }
+    });
+  }
+
+  export function openAuthDialogForUkeyDriver(dialogInfo: UkeyAuthDialogInfo,
+    ukeyAuthRequest: UkeyAuthRequest): Promise<void> {
+    return new Promise<void>((resolve, reject: (error: BusinessError) => void) => {
+        let callback = new AsyncCallbackWrapper<void>((err: BusinessError | null) => {
+            if (err?.code !== 0) {
+                reject(err as BusinessError);
+            } else {
+                resolve(undefined);
+            }
+        });
+
+        let abilityName: string = dialogInfo.abilityName;
+        let abilityType: number = dialogInfo.abilityType;
+        if (abilityName === undefined || abilityName === '' || abilityType === undefined) {
+            let error = new BusinessError();
+            error.code = 401;
+            error.message = 'the input parameters is invalid.';
+            throw error;
+        }
+        let keyUri: string = ukeyAuthRequest.keyUri;
+        if (keyUri === undefined || keyUri === '') {
+            let error = new BusinessError();
+            error.code = 401;
+            error.message = 'the input parameters is invalid.';
+            throw error;
+        }
+        let timeout: number = ukeyAuthRequest.timeoutDuration ?? 0; /* 0 = server default 300s */
+        let customData: Uint8Array = ukeyAuthRequest.customData ?? new Uint8Array(0);
+        let result: NativeResult<void> = openAuthDialogForUkeyDriverNative(abilityName,
+            abilityType, keyUri, timeout, customData, callback);
         if (result.code !== 0) {
             let err = new BusinessError();
             err.code = result.code;
