@@ -263,7 +263,7 @@ void CmUkeyAuthDialogManager::SetDriverAbilityChecker(DriverAbilityChecker check
 }
 ```
 
-4d. 从 `OpenDialog` 中抽出两个助手（`GenerateRequestId` 之后的实现区）：把 OpenDialog 中「timeout 归一化」的 10 行搬入 `NormalizeTimeoutMsLocked`；把「launcher null 检查 → EnsureTimerHandlerLocked → 生成 requestId → 建 session → BuildUkeyDialogParams → connection → Connect → StartTimer → 入表 → 死亡监听/保活」整段搬入 `LaunchUiExtensionSessionLocked`（`session->ownerBundleName = bundleName`，删去 kind/scene 赋值中与本助手无关的部分——**本 Task 不动 OpenDialog 的路由逻辑与 scene/kind 字段**，只做机械抽取：OpenDialog 内 `kind == DEFAULT_DIALOG` 分支保持原样调用 `BuildDefaultDialogParams`，`LaunchUiExtensionSessionLocked` 内统一用 `BuildUkeyDialogParams`；OpenDialog 的 DEFAULT_DIALOG 分支在抽取后仍走自己的旧代码路径，即 DEFAULT_DIALOG 分支暂不迁移）。
+4d. 从 `OpenDialog` 中抽出两个助手（`GenerateRequestId` 之后的实现区）：把 OpenDialog 中「timeout 归一化」的 10 行搬入 `NormalizeTimeoutMsLocked`；把「launcher null 检查 → EnsureTimerHandlerLocked → 生成 requestId → 建 session → BuildUkeyDialogParams → connection → Connect → StartTimer → 入表 → 死亡监听/保活」整段搬入 `LaunchUiExtensionSessionLocked`（`session->ownerBundleName = bundleName`，入参）。**`BuildUkeyDialogParams` 在本 Task 内同步去掉 `uint32_t scene` 形参与 items/names 数组中的 scene 项**（抽取后的 helper 是其唯一调用方，驱动弹框 JSON 先行去 scene；`BuildDefaultDialogParams` 不动——默认弹框 JSON 仍含 scene，Task 6 删除）。OpenDialog 的 DEFAULT_DIALOG 分支保持原旧代码路径不迁移。
 
 ```cpp
 uint32_t CmUkeyAuthDialogManager::NormalizeTimeoutMsLocked(uint32_t timeoutMs)
@@ -284,7 +284,9 @@ uint32_t CmUkeyAuthDialogManager::NormalizeTimeoutMsLocked(uint32_t timeoutMs)
 }
 ```
 
-`LaunchUiExtensionSessionLocked` 实现体 = 现 OpenDialog 的 line 432–505 段（launcher 检查起）原样迁移，仅三处改动：`session->ownerBundleName = bundleName;`（入参）；`BuildUkeyDialogParams(session->requestId, keyUri, callerUid, timeoutMs, session->scene, customData, paramsJson)` 中 scene 实参改为 `CM_UKEY_AUTH_SCENE_LOGIN`（本 Task 保持 scene 形参存在的过渡值，Task 6 删除）；成功日志的 `kind` 打印改为固定 `"UIEXTENSION_DIALOG"`。
+`LaunchUiExtensionSessionLocked` 实现体 = 现 OpenDialog 的 line 432–505 段（launcher 检查起）原样迁移，仅三处改动：`session->ownerBundleName = bundleName;`（入参）；`BuildUkeyDialogParams` 调用去 scene 实参（形参已按 4d 删除）；成功日志的 `kind` 打印改为固定 `"UIEXTENSION_DIALOG"`。
+
+同时（既有测试适配 4d 的 scene 先行移除）：`ParamsJsonCarriesSceneAndCustomData` 用例删除 `EXPECT_NE(params.find("\"scene\":\"Custom\""), ...)` 断言行（保留 customData base64 断言；`OpenDialogAbilityQueryFail` 的默认弹框 `"scene":"Login"` 断言保留不动——`BuildDefaultDialogParams` 仍含 scene）。
 
 4e. `OpenDialog` 末尾新增 ForDriver 入口：
 
@@ -1549,7 +1551,7 @@ int32_t GetDefaultUkeyAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want
 7a. `cm_ukey_auth_dialog_manager_test.cpp`：
 - fixture `Open` 包装器去 scene 形参（`Open(uint32_t timeout = 0, const struct CmBlob *customData = nullptr)`，调 `OpenDialog(&keyUri_, 100, timeout, customData, client_)`）；
 - `OpenDialogAbilityQueryFail` 重写：`querierRet_ = -51; ASSERT_EQ(Open(), CMR_DIALOG_ERROR_NOT_REGISTERED); EXPECT_EQ(launcher_->connectCount_, 0);`（不再断言默认弹框）；
-- `CustomSceneWithoutCustomDialogRejected`、`ParamsJsonCarriesSceneAndCustomData` 中 scene 断言删除（后者改名 `ParamsJsonCarriesCustomData`，保留 base64 断言）；
+- `CustomSceneWithoutCustomDialogRejected` 删除；`ParamsJsonCarriesSceneAndCustomData` 改名 `ParamsJsonCarriesCustomData`（scene 断言已在 Task 1 删除，保留 base64 断言）；
 - `SceneAndCustomDataValidated` 改名 `CustomDataValidated`，只留 customData 超限断言；
 - `OpenDialogWrongAbilityType`/`PcGateBlocksUiExtensionWhenNotPc` 的 `Open(0, CM_UKEY_AUTH_SCENE_...)` 调用改 `Open()`；
 - 全文件 `CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED` 残留引用清零（Task 1 已改名）。
@@ -1612,6 +1614,8 @@ git add api/@ohos.security.certManagerDialog.d.ts zh-cn/api/@ohos.security.certM
 ---
 
 ### Task 8: 全量构建 + 真机验证
+
+> 执行顺序说明：Step 1-2（部署 + 单测）先行；**Step 3-4（E2E）依赖 Task 9 的 demo 改造完成后再执行**；Step 5 收尾。
 
 **Files:** 无新改动（验证任务；产出验证记录）
 
