@@ -79,6 +79,10 @@ public:
         manager_->SetKeepAliveIntervalForTest(50); // fast keep-alive for F1 tests
         manager_->SetUnloadRenewal([this]() { renewalCount_++; });
         manager_->SetTimerPostFailForTest(false); // reset F8 fault injection
+        driverChecker_ = [this](const std::string &, const std::string &) -> bool {
+            return bmsOk_;
+        };
+        manager_->SetDriverAbilityChecker(driverChecker_);
     }
     CmUkeyAuthDialogManager *manager_;
     std::shared_ptr<FakeLauncher> launcher_;
@@ -89,11 +93,24 @@ public:
     uint32_t abilityType_ = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
     int renewalCount_ = 0; // keep-alive renewal hook fire count (F1)
     bool pcMode_ = true; // pc checker injection (D15): default allows UIExtension path
+    DriverAbilityChecker driverChecker_;
+    bool bmsOk_ = true;
+    std::string callerBundle_ = "com.example.ukeydriver";
+    std::string driverAbilityName_ = "MyUkeyAuthExtensionAbility";
     /* convenience wrapper for the OpenDialog signature (scene/customData defaults) */
     int32_t Open(uint32_t timeout = 0, uint32_t scene = CM_UKEY_AUTH_SCENE_LOGIN,
         const struct CmBlob *customData = nullptr)
     {
         return manager_->OpenDialog(&keyUri_, 100, timeout, scene, customData, client_);
+    }
+    /* convenience wrapper for OpenDriverDialog (spec v4 §4.1 ForDriver 路由) */
+    int32_t OpenDriver(uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION, uint32_t timeout = 0,
+        const struct CmBlob *customData = nullptr)
+    {
+        struct CmBlob abilityName = { static_cast<uint32_t>(driverAbilityName_.size() + 1),
+            reinterpret_cast<uint8_t *>(const_cast<char *>(driverAbilityName_.c_str())) };
+        return manager_->OpenDriverDialog(&abilityName, abilityType, &keyUri_, 100,
+            callerBundle_, timeout, customData, client_);
     }
     sptr<FakeClientCallback> client_ = sptr<FakeClientCallback>(new FakeClientCallback());
     struct CmBlob keyUri_ = { 8, reinterpret_cast<uint8_t *>(const_cast<char *>("testuri")) };
@@ -126,7 +143,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogAbilityQueryFail, testing::ext::
 HWTEST_F(CmUkeyAuthDialogManagerTest, CustomSceneWithoutCustomDialogRejected, testing::ext::TestSize.Level0)
 {
     querierRet_ = -51; // not registered
-    ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_CUSTOM), CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED);
+    ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_CUSTOM), CMR_DIALOG_ERROR_NOT_REGISTERED);
     EXPECT_EQ(launcher_->connectCount_, 0);
 }
 
@@ -163,14 +180,13 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, SceneAndCustomDataValidated, testing::ext:
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, ParamsJsonCarriesSceneAndCustomData, testing::ext::TestSize.Level0)
 {
-    /* UIExtension 路径：scene 字符串透传，customData 以 base64 写入（spec §6.2/D18） */
+    /* UIExtension 路径：customData 以 base64 写入（spec §6.2/D18）；v4 起 JSON 无 scene */
     uint8_t data[3] = { 'a', 'b', 'c' };
     struct CmBlob customData = { 3, data };
     ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_CUSTOM, &customData), CM_SUCCESS);
     auto conn = launcher_->conn_;
     ASSERT_NE(conn, nullptr);
     const std::string &params = conn->GetParamsJson();
-    EXPECT_NE(params.find("\"scene\":\"Custom\""), std::string::npos);
     EXPECT_NE(params.find("\"customData\":\"YWJj\""), std::string::npos); /* base64("abc") */
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 }
@@ -392,7 +408,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveFiresPeriodicallyAndCancelsOnFini
 HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveNotArmedOnSyncFailure, testing::ext::TestSize.Level0)
 {
     querierRet_ = -51; // not registered + scene=Custom -> reject before session (rule 3)
-    ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_CUSTOM), CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED);
+    ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_CUSTOM), CMR_DIALOG_ERROR_NOT_REGISTERED);
     querierRet_ = 0;
     abilityType_ = CM_UKEY_ABILITY_TYPE_UIABILITY; // UIAbility rejected before session
     ASSERT_EQ(Open(), CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED);
@@ -453,6 +469,70 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, TotalTimeoutPostFailRejectsOpen, testing::
     manager_->SetTimerPostFailForTest(false);
     EXPECT_EQ(Open(0), CM_SUCCESS); // single-flight free
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
+}
+
+/* ---- OpenDriverDialog（spec v4 §4.1 ForDriver 路由，D23）---- */
+HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogWrongAbilityTypeRejected, testing::ext::TestSize.Level0)
+{
+    /* SA 侧 abilityType 防御：仅 UIExtension 放行，其余 -1014（29700006） */
+    ASSERT_EQ(OpenDriver(CM_UKEY_ABILITY_TYPE_UIABILITY), CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED);
+    ASSERT_EQ(OpenDriver(2), CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED);
+    EXPECT_EQ(launcher_->connectCount_, 0);
+    EXPECT_EQ(manager_->GetRequestIdForTest(), "");
+}
+
+HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogBmsCheckFails, testing::ext::TestSize.Level0)
+{
+    /* BMS 预校验失败（ability 不存在/非 UKEY_AUTH 扩展）→ -1019（29700003，D23） */
+    bmsOk_ = false;
+    ASSERT_EQ(OpenDriver(), CMR_DIALOG_ERROR_NOT_REGISTERED);
+    EXPECT_EQ(launcher_->connectCount_, 0);
+}
+
+HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogPcGate, testing::ext::TestSize.Level0)
+{
+    /* ForDriver 无回退：非 PC → -1020（29700005，D25 v2） */
+    pcMode_ = false;
+    ASSERT_EQ(OpenDriver(), CMR_DIALOG_ERROR_NOT_PC_DEVICE);
+    EXPECT_EQ(launcher_->connectCount_, 0);
+    pcMode_ = true;
+    ASSERT_EQ(OpenDriver(), CM_SUCCESS);
+    manager_->OnReport(manager_->GetRequestIdForTest(), callerBundle_, 0); // cleanup
+}
+
+HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogParamsAndOwner, testing::ext::TestSize.Level0)
+{
+    /* 成功路径：owner = 调用方 bundle（IPC token 来源），params JSON 无 scene、
+     * 目标 = callerBundle/driverAbilityName（spec §6.2/D26） */
+    uint8_t data[3] = { 'a', 'b', 'c' };
+    struct CmBlob customData = { 3, data };
+    ASSERT_EQ(OpenDriver(CM_UKEY_ABILITY_TYPE_UIEXTENSION, 0, &customData), CM_SUCCESS);
+    ASSERT_EQ(launcher_->connectCount_, 1);
+    auto conn = launcher_->conn_;
+    ASSERT_NE(conn, nullptr);
+    const std::string &params = conn->GetParamsJson();
+    EXPECT_NE(params.find("\"keyUri\":\"testuri\""), std::string::npos);
+    EXPECT_NE(params.find("\"appUid\":100"), std::string::npos);
+    EXPECT_NE(params.find("\"action\":\"UkeyPINAuth\""), std::string::npos);
+    EXPECT_NE(params.find("\"ability.want.params.uiExtensionType\":\"ukeyAuth\""), std::string::npos);
+    EXPECT_NE(params.find("\"customData\":\"YWJj\""), std::string::npos);
+    EXPECT_EQ(params.find("\"scene\""), std::string::npos); /* v4 无 scene */
+    /* 上报责任方 = 调用方 bundle；他人上报被拒 */
+    std::string reqId = manager_->GetRequestIdForTest();
+    ASSERT_EQ(manager_->OnReport(reqId, driverBundle_, 0), CMR_DIALOG_ERROR_INTERNAL);
+    ASSERT_EQ(manager_->OnReport(reqId, callerBundle_, 0), CM_SUCCESS);
+    EXPECT_EQ(client_->lastCode_, 0);
+}
+
+HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogSharesSingleFlight, testing::ext::TestSize.Level0)
+{
+    /* 两接口共享单飞（D26）：OpenDialog 占位后 ForDriver 拒 -1018，反之亦然 */
+    ASSERT_EQ(Open(), CM_SUCCESS);
+    ASSERT_EQ(OpenDriver(), CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS);
+    manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
+    ASSERT_EQ(OpenDriver(), CM_SUCCESS);
+    ASSERT_EQ(Open(), CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS);
+    manager_->OnReport(manager_->GetRequestIdForTest(), callerBundle_, 0); // cleanup
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, GraceTimerPostFailFinishesSession, testing::ext::TestSize.Level0)

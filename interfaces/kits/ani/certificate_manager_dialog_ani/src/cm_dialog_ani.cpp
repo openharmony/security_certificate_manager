@@ -215,7 +215,7 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
             if (queryRet != CM_SUCCESS && scene != nullptr && IsUkeySceneCustom(env, scene)) {
                 // rule 3: Custom scene with nothing registered, sync reject
                 CM_FREE_BLOB(keyUriBlob);
-                return GenerateResult(env, CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED,
+                return GenerateResult(env, CMR_DIALOG_ERROR_NOT_REGISTERED,
                     UKEY_DEFAULT_NOT_SUPPORTED_MSG.c_str());
             }
             if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIABILITY) {

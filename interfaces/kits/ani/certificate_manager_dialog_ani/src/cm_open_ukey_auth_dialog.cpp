@@ -110,7 +110,7 @@ int32_t CmOpenUkeyAuthDialog::InvokeAsyncWork()
         int32_t queryRet = GetUkeyAbilityInfo(&this->keyUri, driverBundle, driverAbility, abilityType);
         if (queryRet != CM_SUCCESS && this->scene == CM_UKEY_AUTH_SCENE_CUSTOM) {
             CM_LOG_E("no custom dialog registered but scene is Custom");
-            return CMR_DIALOG_ERROR_DEFAULT_NOT_SUPPORTED;
+            return CMR_DIALOG_ERROR_NOT_REGISTERED;
         }
     }
     OHOS::AAFwk::Want want{};

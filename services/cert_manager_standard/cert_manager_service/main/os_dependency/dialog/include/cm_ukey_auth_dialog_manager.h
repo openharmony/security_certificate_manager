@@ -65,6 +65,11 @@ using AbilityQuerier = std::function<int32_t(const struct CmBlob *keyUri,
 // const.product.devicetype=="2in1" 或 persist.sceneboard.ispcmode）
 using PcChecker = std::function<bool()>;
 
+// 驱动弹框扩展 BMS 预校验注入点（spec v4 D23：ForDriver 路径消费；生产装配经
+// BundleMgr 查询 (bundleName, abilityName) 存在且为 UKEY_AUTH 类型扩展）
+using DriverAbilityChecker = std::function<bool(const std::string &bundleName,
+    const std::string &abilityName)>;
+
 class CmUkeyAuthDialogManager {
 public:
     static CmUkeyAuthDialogManager &GetInstance();
@@ -72,6 +77,7 @@ public:
     void SetLauncher(std::shared_ptr<SystemDialogLauncher> launcher);
     void SetAbilityQuerier(AbilityQuerier querier);
     void SetPcChecker(PcChecker checker);
+    void SetDriverAbilityChecker(DriverAbilityChecker checker);
     void SetTimeoutRangeForTest(uint32_t minMs, uint32_t defaultMs, uint32_t maxMs, uint32_t graceMs);
     /* SA 空闲卸载续期钩子（F1）：会话活跃期间由周期保活任务调用；由 SA 侧
      * （cm_sa.cpp Init）注入 DelayUnload，弹框静态库不得依赖 cm_sa.h。 */
@@ -87,6 +93,14 @@ public:
     // customData 仅在同步拉起期间消费（写入弹框参数），不随会话保留
     int32_t OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid, uint32_t timeoutMs,
         uint32_t scene, const struct CmBlob *customData, const sptr<IRemoteObject> &clientCallback);
+    /* openAuthDialogForUkeyDriver 的 SA 入口（spec v4 §4.1/D23）：调用方 bundle 由
+     * IPC 层从 IPC token 解出传入（客户端不可伪造）；abilityType 仅接受
+     * CM_UKEY_ABILITY_TYPE_UIEXTENSION；BMS 校验经 driverAbilityChecker_。
+     * 返回值契约同 OpenDialog。 */
+    int32_t OpenDriverDialog(const struct CmBlob *abilityName, uint32_t abilityType,
+        const struct CmBlob *keyUri, uint32_t callerUid, const std::string &callerBundleName,
+        uint32_t timeoutMs, const struct CmBlob *customData,
+        const sptr<IRemoteObject> &clientCallback);
     // 返回 CM_SUCCESS（已接受）或 CMR_DIALOG_ERROR_INTERNAL（会话不存在/身份不符/终态）
     int32_t OnReport(const std::string &requestId, const std::string &callerBundleName,
         int32_t resultCode);
@@ -128,11 +142,19 @@ private:
     void FinishSessionLocked(const std::string &requestId, int32_t resultCode);
     void HandleTotalTimeout(const std::string &requestId);
     void HandleGraceTimeout(const std::string &requestId);
+    /* 从 OpenDialog/OpenDriverDialog 公共拉起序列抽出（bundle/ability 已定，
+     * PC 门禁已过）：requestId→会话→连接→总超时。返回同步码。 */
+    int32_t LaunchUiExtensionSessionLocked(const std::string &bundleName,
+        const std::string &abilityName, const struct CmBlob *keyUri, uint32_t callerUid,
+        uint32_t timeoutMs, const struct CmBlob *customData,
+        const sptr<IRemoteObject> &clientCallback);
+    uint32_t NormalizeTimeoutMsLocked(uint32_t timeoutMs);
 
     std::mutex mutex_;
     std::shared_ptr<SystemDialogLauncher> launcher_;
     AbilityQuerier querier_;
     PcChecker pcChecker_;                      // 缺省视为非 PC（fail-closed，spec D15）
+    DriverAbilityChecker driverAbilityChecker_;  // 缺省视为校验失败（fail-closed）
     std::function<void()> unloadRenewal_;  // SA 空闲卸载续期钩子（注入，F1）
     bool realDepsInited_ = false;          // InitRealDependencies 幂等标记
     uint32_t minTimeoutMs_ = CM_UKEY_DIALOG_MIN_TOTAL_TIMEOUT_MS;

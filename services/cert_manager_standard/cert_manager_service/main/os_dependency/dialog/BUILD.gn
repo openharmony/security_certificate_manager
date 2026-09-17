@@ -51,6 +51,8 @@ ohos_static_library("libcm_ukey_auth_dialog_static") {
     "ability_runtime:ability_connect_callback_stub",
     "ability_runtime:extension_manager",
     "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
     "cJSON:cjson_static",
     "c_utils:utils",
     "eventhandler:libeventhandler",
