@@ -21,22 +21,20 @@
 #include "cm_open_dialog.h"
 
 namespace OHOS::Security::CertManager::Ani {
+/* 带 context 直启实现（spec v4 D25 v2）：仅承接非 PC 设备的系统默认弹框
+ * 回退路径（PC + UIExtension 已在 cm_dialog_ani.cpp 委托 SA 会话）。 */
 class CmOpenUkeyAuthDialog : public CertManagerAsyncImpl {
 private:
     /* ani params */
     ani_string aniKeyUri = nullptr;
-    ani_string aniScene = nullptr;
     ani_object aniCustomData = nullptr;
     /* parsed params */
     CmBlob keyUri = { 0 };
-    uint32_t scene = CM_UKEY_AUTH_SCENE_LOGIN; /* absent = Login (D9) */
     CmBlob customData = { 0 }; /* raw bytes <= 2048; size 0 = absent (D19) */
-    int32_t StartUkeyPinAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Want& want,
-        std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback);
 
 public:
     CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_string aniKeyUri,
-        ani_string aniScene, ani_object aniCustomData, ani_object callback);
+        ani_object aniCustomData, ani_object callback);
     ~CmOpenUkeyAuthDialog() {};
 
     int32_t GetParamsFromEnv() override;

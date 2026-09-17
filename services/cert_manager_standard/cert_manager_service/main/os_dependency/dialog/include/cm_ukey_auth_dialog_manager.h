@@ -56,8 +56,8 @@ public:
 };
 
 // ability 查询注入点（生产环境由 InitRealDependencies 装配为 HksQueryAbilityInfo
-// 适配函数：返回 bundle/ability 名与 abilityType；查询失败即视为"未注册自定义弹框"，
-// 路由进系统默认弹框（spec §4.1，联调期可经桩固定返回）
+// 适配函数：返回 bundle/ability 名与 abilityType；查询失败即视为"未注册"，
+// 同步拒绝（spec v4 §4.1/D22，联调期可经桩固定返回）
 using AbilityQuerier = std::function<int32_t(const struct CmBlob *keyUri,
     std::string &bundleName, std::string &abilityName, uint32_t &abilityType)>;
 
@@ -89,10 +89,11 @@ public:
     /* 生产装配入口（幂等懒初始化）：RealSystemDialogLauncher + HUKS ability
      * 查询适配；由 SA OnStart/处理器首次调用时触发（T4）。 */
     void InitRealDependencies();
-    // 同步返回校验码（CM_SUCCESS / -1017 / -1018 / -1019 / -1020 / CMR_DIALOG_ERROR_*）；
-    // customData 仅在同步拉起期间消费（写入弹框参数），不随会话保留
+    // 同步返回校验码（CM_SUCCESS / -1017 / -1018 / -1019 未注册 / -1020 /
+    // CMR_DIALOG_ERROR_*）；customData 仅在同步拉起期间消费（写入弹框参数），
+    // 不随会话保留
     int32_t OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid, uint32_t timeoutMs,
-        uint32_t scene, const struct CmBlob *customData, const sptr<IRemoteObject> &clientCallback);
+        const struct CmBlob *customData, const sptr<IRemoteObject> &clientCallback);
     /* openAuthDialogForUkeyDriver 的 SA 入口（spec v4 §4.1/D23）：调用方 bundle 由
      * IPC 层从 IPC token 解出传入（客户端不可伪造）；abilityType 仅接受
      * CM_UKEY_ABILITY_TYPE_UIEXTENSION；BMS 校验经 driverAbilityChecker_。
@@ -117,13 +118,9 @@ private:
     DISALLOW_COPY_AND_MOVE(CmUkeyAuthDialogManager);
 
     struct UkeyAuthSession {
-        enum DialogKind { DEFAULT_DIALOG, UIEXTENSION_DIALOG };
         enum State { LAUNCHING, WAITING_REPORT, GRACE_WAITING, DONE };
         std::string requestId;                 // 32 字符 hex（CSPRNG 16 字节）
-        DialogKind kind = DEFAULT_DIALOG;      // 拉起策略（spec §4.1 路由矩阵）
-        uint32_t scene = CM_UKEY_AUTH_SCENE_LOGIN; // 透传给弹框的场景
-        std::string ownerBundleName;           // 上报责任方 bundle：驱动 bundle 或默认弹框
-                                              // 所属 com.ohos.certmanager（spec §9.2）
+        std::string ownerBundleName;           // 上报责任方 bundle：驱动 bundle（spec §9.2）
         uint32_t callerUid = 0;                // 原客户端 uid（弹框参数 appUid 用）
         sptr<IRemoteObject> clientCallback;    // 客户端回调 stub
         sptr<IRemoteObject::DeathRecipient> clientDeathRecipient; // 客户端死亡监听（F2）

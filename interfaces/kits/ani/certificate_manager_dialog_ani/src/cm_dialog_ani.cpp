@@ -24,7 +24,7 @@
 #include "cm_open_cert_detail_dialog.h"
 #include "cm_open_auth_dialog.h"
 #include "cm_open_ukey_auth_dialog.h"
-#include "cm_open_ukey_auth_dialog_no_context.h"
+#include "cm_open_ukey_auth_dialog_sa_session.h"
 #include "cm_open_auth_dialog_for_ukey_driver.h"
 #include "cm_supports_ca_cert_dialog.h"
 #include "cm_dialog_api_common.h"
@@ -47,19 +47,6 @@ static ani_object GenerateResult(ani_env *env, int32_t code, const char *message
         return nullptr;
     }
     return nativeResult;
-}
-
-/* scene == 'Custom' check for the routing pre-checks (spec v4) */
-static bool IsUkeySceneCustom(ani_env *env, ani_string scene)
-{
-    CmBlob sceneBlob = { 0, nullptr };
-    if (AniUtils::ParseString(env, scene, sceneBlob) != CM_SUCCESS || sceneBlob.size == 0) {
-        CM_FREE_BLOB(sceneBlob);
-        return false;
-    }
-    std::string sceneStr(reinterpret_cast<char *>(sceneBlob.data), sceneBlob.size - 1);
-    CM_FREE_BLOB(sceneBlob);
-    return sceneStr == OHOS::Security::CertManager::CM_UKEY_SCENE_CUSTOM_STR;
 }
 
 static ani_object InvokeCallbackVoid(ani_env *env, ani_object callback)
@@ -184,7 +171,7 @@ ani_object openAuthorizeDialogWithReqNative(ani_env *env, ani_object context, an
 }
 
 ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string keyUri,
-    ani_double timeout, ani_string scene, ani_object customData, ani_object callback)
+    ani_double timeout, ani_object customData, ani_object callback)
 {
     if (env == nullptr) {
         CM_LOG_E("check env is nullptr.");
@@ -194,10 +181,11 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
         CM_LOG_E("check syscap is not supported.");
         return InvokeCallbackVoid(env, callback);
     }
-    /* branch by the registered ability type (spec §4.1): a UIExtensionAbility
-     * registration takes the no-context SA session path (error codes folded
-     * per D8 修订); UIAbility or query failure keeps the legacy context-based
-     * flow, with the scene=Custom + unregistered check inside the impl. */
+    /* branch by the registered ability type (spec v4 §4.1/D21/D22): a
+     * UIExtensionAbility registration on a PC device takes the SA session
+     * path; non-PC falls back to the system default dialog via the
+     * context-based direct launch below (D25 v2); query failure /
+     * UIAbility reject synchronously (29700003). */
     {
         CmBlob keyUriBlob = { 0, nullptr };
         if (AniUtils::ParseString(env, keyUri, keyUriBlob) == CM_SUCCESS) {
@@ -205,48 +193,26 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
             std::string driverAbility;
             uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
             int32_t queryRet = GetUkeyAbilityInfo(&keyUriBlob, driverBundle, driverAbility, abilityType);
-            if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
-                CM_LOG_I("ukey driver registered a UIExtensionAbility pin dialog, go sa session path");
-                CM_FREE_BLOB(keyUriBlob);
-                auto noContextImpl = std::make_shared<CmOpenUkeyAuthDialogNoContext>(env, keyUri, timeout,
-                    scene, customData, callback);
-                noContextImpl->SetLegacyOverload();
-                return noContextImpl->Invoke();
-            }
-            if (queryRet != CM_SUCCESS && scene != nullptr && IsUkeySceneCustom(env, scene)) {
-                // rule 3: Custom scene with nothing registered, sync reject
-                CM_FREE_BLOB(keyUriBlob);
+            CM_FREE_BLOB(keyUriBlob);
+            if (queryRet != CM_SUCCESS) {
                 return GenerateResult(env, CMR_DIALOG_ERROR_NOT_REGISTERED,
-                    UKEY_DEFAULT_NOT_SUPPORTED_MSG.c_str());
+                    UKEY_NOT_REGISTERED_MSG.c_str());
             }
-            if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIABILITY) {
-                // spec v4: no-context interface does not support UIAbility dialogs
-                CM_FREE_BLOB(keyUriBlob);
+            if (abilityType == CM_UKEY_ABILITY_TYPE_UIABILITY) {
                 return GenerateResult(env, CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED,
                     UKEY_UIABILITY_NOT_SUPPORTED_MSG.c_str());
             }
-            CM_FREE_BLOB(keyUriBlob);
+            if (CmUkeyIsPcOrPcMode()) {
+                auto saSessionImpl = std::make_shared<CmOpenUkeyAuthDialogSaSession>(env, keyUri,
+                    timeout, customData, callback);
+                return saSessionImpl->Invoke();
+            }
+            /* 非 PC：回退默认弹框直启（走下方 context 直启实现） */
         }
     }
-    auto openUkeyAuthDialogImpl = std::make_shared<CmOpenUkeyAuthDialog>(env, context, keyUri, scene,
+    auto openUkeyAuthDialogImpl = std::make_shared<CmOpenUkeyAuthDialog>(env, context, keyUri,
         customData, callback);
     return openUkeyAuthDialogImpl->Invoke();
-}
-
-ani_object openUkeyAuthDialogNoContextNative(ani_env *env, ani_string keyUri, ani_double timeout,
-    ani_string scene, ani_object customData, ani_object callback)
-{
-    if (env == nullptr) {
-        CM_LOG_E("check env is nullptr.");
-        return nullptr;
-    }
-    if (!IsSupportDialogSyscap()) {
-        CM_LOG_E("check syscap is not supported.");
-        return InvokeCallbackVoid(env, callback);
-    }
-    auto openUkeyAuthDialogNoContextImpl = std::make_shared<CmOpenUkeyAuthDialogNoContext>(env, keyUri,
-        timeout, scene, customData, callback);
-    return openUkeyAuthDialogNoContextImpl->Invoke();
 }
 
 ani_object openAuthDialogForUkeyDriverNative(ani_env *env, ani_string abilityName,
@@ -309,8 +275,6 @@ ANI_EXPORT ani_status ANI_Constructor(ani_vm *vm, uint32_t *result)
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openAuthorizeDialogWithReqNative)},
         ani_native_function {"openUkeyAuthDialogNative", nullptr,
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openUkeyAuthDialogNative)},
-        ani_native_function {"openUkeyAuthDialogNoContextNative", nullptr,
-            reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openUkeyAuthDialogNoContextNative)},
         ani_native_function {"openAuthDialogForUkeyDriverNative", nullptr,
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openAuthDialogForUkeyDriverNative)},
         ani_native_function {"supportsCACertDialogNative", nullptr,

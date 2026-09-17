@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "cm_open_ukey_auth_dialog_no_context.h"
+#include "cm_open_ukey_auth_dialog_sa_session.h"
 #include "cert_manager_api.h"
 #include "securec.h"
 
@@ -32,12 +32,11 @@ namespace {
 struct CmUkeyAuthDialogAniResultContext {
     ani_vm *vm = nullptr;
     ani_ref globalCallback = nullptr;
-    bool legacyOverload = false; /* D8 修订：-1017/-1018 折叠标记 */
     std::shared_ptr<CmMetricsReport> metricsReport = nullptr;
 };
 
-/* D8 修订：老接口（带 context 重载）委托 SA 会话后可能产生 -1017/-1018，老接口
- * throws 面不新增 since-26 错误码——超时折叠 29700002、单飞折叠 29700003，
+/* D8 修订：SA 会话委托自老接口 openUkeyAuthDialog（since-22 已发布，不新增
+ * since-26 错误码至其 throws 面）——超时折叠 29700002、单飞折叠 29700003，
  * 消息保留具体原因。 */
 static bool IsLegacyFoldCode(int32_t resultCode)
 {
@@ -67,22 +66,16 @@ void ReleaseUkeyAuthResultResources(ani_env *env, CmUkeyAuthDialogAniResultConte
 }
 } // namespace
 
-CmOpenUkeyAuthDialogNoContext::CmOpenUkeyAuthDialogNoContext(ani_env *env, ani_string aniKeyUri,
-    ani_double aniTimeout, ani_string aniScene, ani_object aniCustomData, ani_object callback)
+CmOpenUkeyAuthDialogSaSession::CmOpenUkeyAuthDialogSaSession(ani_env *env, ani_string aniKeyUri,
+    ani_double aniTimeout, ani_object aniCustomData, ani_object callback)
     : CertManagerAsyncImpl(env, nullptr, callback, "openUkeyAuthDialog")
 {
     this->aniKeyUri = aniKeyUri;
     this->aniTimeout = aniTimeout;
-    this->aniScene = aniScene;
     this->aniCustomData = aniCustomData;
 }
 
-void CmOpenUkeyAuthDialogNoContext::SetLegacyOverload()
-{
-    this->legacyOverload = true;
-}
-
-int32_t CmOpenUkeyAuthDialogNoContext::GetParamsFromEnv()
+int32_t CmOpenUkeyAuthDialogSaSession::GetParamsFromEnv()
 {
     int32_t ret = AniUtils::ParseString(env, this->aniKeyUri, this->keyUri);
     if (ret != CM_SUCCESS) {
@@ -106,25 +99,6 @@ int32_t CmOpenUkeyAuthDialogNoContext::GetParamsFromEnv()
         return CMR_DIALOG_ERROR_PARAM_INVALID;
     }
     this->timeoutMs = static_cast<uint32_t>(this->aniTimeout);
-
-    /* optional scene; must be exactly 'Login' or 'Custom' (D9/D11) */
-    CmBlob sceneBlob = { 0 };
-    ret = AniUtils::ParseString(env, this->aniScene, sceneBlob);
-    if (ret != CM_SUCCESS || sceneBlob.size == 0) {
-        CM_LOG_E("parse scene failed, ret = %d", ret);
-        CM_FREE_BLOB(sceneBlob);
-        return CMR_DIALOG_ERROR_PARAM_INVALID;
-    }
-    std::string sceneStr(reinterpret_cast<char *>(sceneBlob.data), sceneBlob.size - 1);
-    CM_FREE_BLOB(sceneBlob);
-    if (sceneStr == CM_UKEY_SCENE_LOGIN_STR) {
-        this->scene = CM_UKEY_AUTH_SCENE_LOGIN;
-    } else if (sceneStr == CM_UKEY_SCENE_CUSTOM_STR) {
-        this->scene = CM_UKEY_AUTH_SCENE_CUSTOM;
-    } else {
-        CM_LOG_E("scene is not a valid UkeyAuthScene value");
-        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
-    }
 
     /* optional customData; Uint8Array <= 2048 raw bytes (D19)，ets 层已归一化为
      * 非 undefined 对象（空数组表示缺省） */
@@ -162,7 +136,7 @@ static void UkeyAuthDialogResultCallback(int32_t resultCode, void *userData)
 
     if (context->metricsReport != nullptr) {
         int32_t metricsCode = TransformDialogErrorCode(resultCode);
-        if (context->legacyOverload && IsLegacyFoldCode(resultCode)) {
+        if (IsLegacyFoldCode(resultCode)) {
             metricsCode = TransformLegacyFoldCode(resultCode);
         }
         context->metricsReport->Finish(metricsCode);
@@ -185,7 +159,7 @@ static void UkeyAuthDialogResultCallback(int32_t resultCode, void *userData)
             ReleaseUkeyAuthResultResources(env, context);
             return;
         }
-    } else if (context->legacyOverload && IsLegacyFoldCode(resultCode)) {
+    } else if (IsLegacyFoldCode(resultCode)) {
         /* D8 修订：折叠码 + 具体原因消息 */
         int32_t jsCode = TransformLegacyFoldCode(resultCode);
         const std::string &msg = (resultCode == CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT)
@@ -221,7 +195,7 @@ static void UkeyAuthDialogResultCallback(int32_t resultCode, void *userData)
     ReleaseUkeyAuthResultResources(env, context);
 }
 
-int32_t CmOpenUkeyAuthDialogNoContext::InvokeAsyncWork()
+int32_t CmOpenUkeyAuthDialogSaSession::InvokeAsyncWork()
 {
     CM_LOG_D("InvokeAsyncWork start");
     auto resultContext = new (std::nothrow) CmUkeyAuthDialogAniResultContext();
@@ -231,7 +205,6 @@ int32_t CmOpenUkeyAuthDialogNoContext::InvokeAsyncWork()
     }
     resultContext->vm = this->vm;
     resultContext->globalCallback = this->globalCallback;
-    resultContext->legacyOverload = this->legacyOverload;
     resultContext->metricsReport = this->metricsReport_;
 
     /* the keyUri/customData blobs are consumed synchronously inside
@@ -240,7 +213,6 @@ int32_t CmOpenUkeyAuthDialogNoContext::InvokeAsyncWork()
     ukeyAuthRequest.keyUri.data = this->keyUri.data;
     ukeyAuthRequest.timeoutDuration = this->timeoutMs;
     ukeyAuthRequest.keyUri.size = this->keyUri.size;
-    ukeyAuthRequest.scene = this->scene;
     ukeyAuthRequest.customData = this->customData;
 
     int32_t ret = CmOpenUkeyAuthDialog(&ukeyAuthRequest, UkeyAuthDialogResultCallback, resultContext);
@@ -255,12 +227,12 @@ int32_t CmOpenUkeyAuthDialogNoContext::InvokeAsyncWork()
     return CM_SUCCESS;
 }
 
-int32_t CmOpenUkeyAuthDialogNoContext::UnpackResult()
+int32_t CmOpenUkeyAuthDialogSaSession::UnpackResult()
 {
     return CM_SUCCESS;
 }
 
-void CmOpenUkeyAuthDialogNoContext::OnFinish()
+void CmOpenUkeyAuthDialogSaSession::OnFinish()
 {
     CM_FREE_BLOB(this->keyUri);
     if (this->customData.data != nullptr && this->customData.size > 0) {

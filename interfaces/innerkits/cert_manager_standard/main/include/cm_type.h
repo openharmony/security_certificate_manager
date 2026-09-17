@@ -567,13 +567,6 @@ struct UkeyInfo {
     enum CmCertificatePurpose certPurpose;
 };
 
-/* Scene of the ukey pin auth dialog request (spec D9): Login (default) allows the
- * system default dialog fallback; Custom restricts to the driver's custom dialog. */
-enum CmUkeyAuthScene {
-    CM_UKEY_AUTH_SCENE_LOGIN = 0,
-    CM_UKEY_AUTH_SCENE_CUSTOM = 1,
-};
-
 /* Opaque caller data delivered (base64-encoded) to custom dialogs only (spec D9/D19). */
 #define CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE 2048
 
@@ -581,7 +574,6 @@ struct UkeyAuthRequest {
     struct CmBlob keyUri; /* ukey credential uri, max 256 bytes */
     uint32_t timeoutDuration; /* auth timeout in ms, 0 = default (server: 300s);
                                   server clamps explicit values to [3min, 10min] */
-    uint32_t scene; /* enum CmUkeyAuthScene, CM_UKEY_AUTH_SCENE_LOGIN by default */
     struct CmBlob customData; /* raw caller data, max CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE bytes;
                                   size 0 / NULL data = absent; never persisted or logged */
 };

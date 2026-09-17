@@ -207,60 +207,8 @@ bool BuildUkeyDialogParams(const std::string &requestId, const struct CmBlob *ke
     return ok;
 }
 
-/* 组装系统默认弹框 parameters JSON（spec §6.2，弹框身份见 §9.2 / D14 修订）：
- * {"ability.want.params.uiExtensionType":"ukeyAuth","keyUri":"<uri>",
- *  "appUid":<callerUid>,"requestId":"<id>","scene":"Login|Custom"}
- * 默认弹框为 com.ohos.certmanager 的 ukeyAuth 类型扩展（复用 UKeyAuthSheet 页面），
- * 终止时经框架 UkeyAuthExtensionContext 上报；customData 不下发（D18）。 */
-bool BuildDefaultDialogParams(const std::string &requestId, const struct CmBlob *keyUri,
-    uint32_t callerUid, uint32_t scene, std::string &paramsJson)
-{
-    cJSON *root = cJSON_CreateObject();
-    if (root == nullptr) {
-        CM_LOG_E("create default dialog params json root failed");
-        return false;
-    }
-
-    std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
-    cJSON *items[] = {
-        cJSON_CreateString(UKEY_DIALOG_UI_EXTENSION_TYPE), // uiExtensionType(ukeyAuth)
-        cJSON_CreateString(uriStr.c_str()),                 // keyUri
-        cJSON_CreateNumber(static_cast<double>(callerUid)), // appUid
-        cJSON_CreateString(requestId.c_str()),              // requestId
-        cJSON_CreateString(CmUkeySceneToString(scene)),     // scene
-    };
-    const char *names[] = { UKEY_DIALOG_UI_EXTENSION_TYPE_KEY,
-        "keyUri", "appUid", "requestId", CM_UKEY_DIALOG_PARAM_SCENE };
-    bool ok = true;
-    for (size_t i = 0; i < sizeof(items) / sizeof(items[0]); i++) {
-        if (items[i] != nullptr && cJSON_AddItemToObject(root, names[i], items[i])) {
-            items[i] = nullptr; // 所有权移交 root
-        } else {
-            ok = false;
-            break;
-        }
-    }
-    if (ok) {
-        char *jsonStr = cJSON_PrintUnformatted(root);
-        if (jsonStr != nullptr) {
-            paramsJson.assign(jsonStr);
-            cJSON_free(jsonStr);
-        } else {
-            ok = false;
-        }
-    }
-    for (size_t i = 0; i < sizeof(items) / sizeof(items[0]); i++) {
-        if (items[i] != nullptr) { // 未被 root 接管的项手工释放
-            cJSON_Delete(items[i]);
-        }
-    }
-    cJSON_Delete(root);
-    return ok;
-}
-
 /* HUKS ability 查询适配（生产装配，模式对齐 kits 层 cm_dialog_api_common.cpp）：
- * 查询失败即视为"未注册自定义弹框"，由 OpenDialog 路由进系统默认弹框（spec §4.1）；
- */
+ * 查询失败即视为"未注册"（spec v4 D22：无默认弹框回退）。 */
 int32_t QueryUkeyDriverAbility(const struct CmBlob *keyUri,
     std::string &bundleName, std::string &abilityName, uint32_t &abilityType)
 {
@@ -454,7 +402,6 @@ int32_t CmUkeyAuthDialogManager::LaunchUiExtensionSessionLocked(const std::strin
         CM_LOG_E("generate request id failed");
         return CMR_DIALOG_ERROR_INTERNAL;
     }
-    session->kind = UkeyAuthSession::UIEXTENSION_DIALOG;
     session->ownerBundleName = bundleName; /* OpenDialog 查询所得 / ForDriver 调用方 bundle */
     session->callerUid = callerUid;
     session->clientCallback = clientCallback;
@@ -500,13 +447,12 @@ int32_t CmUkeyAuthDialogManager::LaunchUiExtensionSessionLocked(const std::strin
     session_ = session;
     RegisterClientDeathRecipientLocked(session); // best-effort，失败仅告警（F2）
     StartKeepAliveLocked(requestId);             // best-effort，失败仅记录（F1）
-    CM_LOG_I("open ukey auth dialog success, kind: UIEXTENSION_DIALOG, request id: %s",
-        requestId.c_str());
+    CM_LOG_I("open ukey auth dialog success, request id: %s", requestId.c_str());
     return CM_SUCCESS;
 }
 
 int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid,
-    uint32_t timeoutMs, uint32_t scene, const struct CmBlob *customData,
+    uint32_t timeoutMs, const struct CmBlob *customData,
     const sptr<IRemoteObject> &clientCallback)
 {
     if (keyUri == nullptr || keyUri->data == nullptr || keyUri->size == 0 ||
@@ -514,11 +460,7 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
         CM_LOG_E("invalid open dialog arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    /* scene / customData 复核（客户端已有校验，纵深防御，spec D13/D19） */
-    if (!CmUkeySceneIsValid(scene)) {
-        CM_LOG_E("invalid scene: %u", scene);
-        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
-    }
+    /* customData 复核（客户端已有校验，纵深防御，spec D19） */
     if (customData != nullptr && customData->size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
         CM_LOG_E("custom data too large: %u", customData->size);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
@@ -530,116 +472,31 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
         return CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS;
     }
 
-    /* 路由（spec §4.1）：查询失败=未注册→默认弹框；成功按 abilityType 分流。
-     * SA 自行查询，不信任客户端声明的 ability 信息（D20）。 */
+    /* 路由（spec v4 §4.1/D22）：SA 自行查询，不信任客户端声明的 ability 信息（D20）；
+     * 仅 UIExtensionAbility + PC 放行 SA 会话路径，未注册/UIAbility 同步拒绝。 */
     std::string bundleName;
     std::string abilityName;
     uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
     int32_t queryRet = (querier_ == nullptr) ? CM_FAILURE : querier_(keyUri, bundleName, abilityName, abilityType);
-    UkeyAuthSession::DialogKind kind;
     if (queryRet != CM_SUCCESS) {
-        if (scene == CM_UKEY_AUTH_SCENE_CUSTOM) {
-            /* rule 3：需默认弹框但调用方声明仅自定义（spec D10，29700005） */
-            CM_LOG_E("no custom dialog registered but scene is Custom");
-            return CMR_DIALOG_ERROR_NOT_REGISTERED;
-        }
-        kind = UkeyAuthSession::DEFAULT_DIALOG;
-        bundleName = CM_UKEY_DEFAULT_DIALOG_BUNDLE;
-        abilityName = CM_UKEY_DEFAULT_DIALOG_ABILITY;
-    } else if (abilityType == CM_UKEY_ABILITY_TYPE_UIABILITY) {
-        CM_LOG_E("ukey driver ability type is UIAbility, not supported by sa path");
+        CM_LOG_E("no ukey driver pin dialog registered for the key uri");
+        return CMR_DIALOG_ERROR_NOT_REGISTERED;
+    }
+    if (abilityType == CM_UKEY_ABILITY_TYPE_UIABILITY) {
+        CM_LOG_E("ukey driver ability type is UIAbility, not supported");
         return CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED;
-    } else if (abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
-        /* rule 6：UIExtension 弹框仅 PC / PC 模式设备（spec D10/D15，29700005）；
-         * checker 缺省按非 PC 处理（fail-closed） */
-        if (pcChecker_ == nullptr || !pcChecker_()) {
-            CM_LOG_E("ukey uiextension dialog requires pc device or pc mode");
-            return CMR_DIALOG_ERROR_NOT_PC_DEVICE;
-        }
-        kind = UkeyAuthSession::UIEXTENSION_DIALOG;
-    } else {
+    }
+    if (abilityType != CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
         CM_LOG_E("unknown ukey ability type: %u", abilityType);
         return CMR_DIALOG_ERROR_INTERNAL;
     }
-
-    if (kind == UkeyAuthSession::UIEXTENSION_DIALOG) {
-        return LaunchUiExtensionSessionLocked(bundleName, abilityName, keyUri, callerUid,
-            effectiveTimeoutMs, customData, clientCallback);
+    /* PC 门禁为竞态防御：Kit 已前置判定，模式翻转时 fail-closed（D25 v2） */
+    if (pcChecker_ == nullptr || !pcChecker_()) {
+        CM_LOG_E("ukey uiextension dialog requires pc device or pc mode");
+        return CMR_DIALOG_ERROR_NOT_PC_DEVICE;
     }
-
-    /* DEFAULT_DIALOG 分支：保持既有内联拉起路径（不迁移，Task 6 移除） */
-    if (launcher_ == nullptr) {
-        CM_LOG_E("system dialog launcher is null");
-        return CMR_DIALOG_ERROR_INTERNAL;
-    }
-
-    /* 总超时是会话唯一的安全网，定时线程创建失败时直接拒绝，避免产生
-     * 无超时保护的挂起会话（单飞被永久占用）。 */
-    if (!EnsureTimerHandlerLocked()) {
-        return CMR_DIALOG_ERROR_INTERNAL;
-    }
-
-    auto session = std::make_shared<UkeyAuthSession>();
-    if (!GenerateRequestId(session->requestId)) {
-        /* fail-closed：requestId 是会话凭证，无 CSPRNG 即拒绝开会话 */
-        CM_LOG_E("generate request id failed");
-        return CMR_DIALOG_ERROR_INTERNAL;
-    }
-    session->kind = kind;
-    session->scene = scene;
-    session->ownerBundleName = bundleName; /* 默认弹框 kind 已指向 com.ohos.certmanager */
-    session->callerUid = callerUid;
-    session->clientCallback = clientCallback;
-    session->state = UkeyAuthSession::LAUNCHING;
-
-    {
-        std::string paramsJson;
-        bool paramsOk = BuildDefaultDialogParams(session->requestId, keyUri, callerUid, scene,
-            paramsJson);
-        if (!paramsOk) {
-            CM_LOG_E("build dialog params json failed");
-            return CMR_DIALOG_ERROR_INTERNAL;
-        }
-        if (customData != nullptr && customData->size > 0) {
-            /* D18：回退默认弹框时 customData 静默丢弃（仅记录长度，spec R10） */
-            CM_LOG_I("custom data dropped for default dialog, size: %u", customData->size);
-        }
-        sptr<CmSystemDialogConnection> connection = new (std::nothrow) CmSystemDialogConnection(
-            session->requestId, bundleName, abilityName, paramsJson);
-        if (connection == nullptr) {
-            CM_LOG_E("create system dialog connection failed");
-            return CMR_ERROR_MALLOC_FAIL;
-        }
-        if (launcher_->Connect(connection) != CM_SUCCESS) {
-            CM_LOG_E("connect system dialog service failed");
-            connection->ScrubParams();
-            return CMR_DIALOG_ERROR_INTERNAL; // session not stored -> single-flight not occupied
-        }
-        session->connection = connection;
-    }
-
-    session->state = UkeyAuthSession::WAITING_REPORT;
-    std::string requestId = session->requestId;
-    /* 总超时是会话唯一的安全网，投递失败时直接拒绝并回滚已建立的连接
-     * （会话不入表 -> 单飞不被占用），避免产生无超时保护的挂起会话（F8）。 */
-    if (!StartTimerLocked(TotalTimeoutTaskName(requestId), effectiveTimeoutMs,
-        [this, requestId] { HandleTotalTimeout(requestId); })) {
-        sptr<CmSystemDialogConnection> connection = session->connection;
-        if (connection != nullptr) {
-            connection->ReleaseWindow(nullptr);
-            connection->ScrubParams();
-        }
-        if (launcher_ != nullptr && connection != nullptr) {
-            launcher_->Disconnect(connection);
-        }
-        return CMR_DIALOG_ERROR_INTERNAL;
-    }
-    session_ = session;
-    RegisterClientDeathRecipientLocked(session); // best-effort，失败仅告警（F2）
-    StartKeepAliveLocked(requestId);             // best-effort，失败仅记录（F1）
-    CM_LOG_I("open ukey auth dialog success, kind: %d, request id: %s",
-        static_cast<int32_t>(kind), requestId.c_str());
-    return CM_SUCCESS;
+    return LaunchUiExtensionSessionLocked(bundleName, abilityName, keyUri, callerUid,
+        effectiveTimeoutMs, customData, clientCallback);
 }
 
 int32_t CmUkeyAuthDialogManager::OpenDriverDialog(const struct CmBlob *abilityName,

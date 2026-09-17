@@ -195,11 +195,6 @@ int32_t CmClientOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     /* 纵深防御：inner API 直调方绕过 NAPI 校验时在此拦截（spec §8.3） */
-    if (ukeyAuthRequest->scene != CM_UKEY_AUTH_SCENE_LOGIN &&
-        ukeyAuthRequest->scene != CM_UKEY_AUTH_SCENE_CUSTOM) {
-        CM_LOG_E("invalid ukey auth scene: %u", ukeyAuthRequest->scene);
-        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
-    }
     if (ukeyAuthRequest->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
         CM_LOG_E("custom data too large: %u", ukeyAuthRequest->customData.size);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
@@ -214,12 +209,11 @@ int32_t CmClientOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest
     /* 全部参数一次性序列化：CmParamsToParamSet 内部 FreshParamSet 会把 blob 数据
      * 写入 paramSet 尾部，事后 CmAddParams 追加 param 会覆写已序列化数据且新
      * param 的 blob 永不入列（SA 侧读到未初始化堆）。customData 缺省（size 0）由
-     * CmParamsToParamSet 的 NULL-blob 标记转换处理，SA 侧按 PARAM3 缺失解析。 */
+     * CmParamsToParamSet 的 NULL-blob 标记转换处理，SA 侧按 PARAM2 缺失解析。 */
     struct CmParam params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = ukeyAuthRequest->keyUri },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = ukeyAuthRequest->timeoutDuration }, /* 0 = server default 300s */
-        { .tag = CM_TAG_PARAM2_UINT32, .uint32Param = ukeyAuthRequest->scene },
-        { .tag = CM_TAG_PARAM3_BUFFER, .blob = ukeyAuthRequest->customData },
+        { .tag = CM_TAG_PARAM2_BUFFER, .blob = ukeyAuthRequest->customData },
     };
 
     struct CmParamSet *sendParamSet = nullptr;

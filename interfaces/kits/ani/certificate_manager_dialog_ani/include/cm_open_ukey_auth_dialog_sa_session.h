@@ -6,46 +6,44 @@
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
+ * Unless required by applicable law or agreed to writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
-#ifndef CM_OPEN_UKEY_AUTH_DIALOG_NO_CONTEXT_H
-#define CM_OPEN_UKEY_AUTH_DIALOG_NO_CONTEXT_H
+#ifndef CM_OPEN_UKEY_AUTH_DIALOG_SA_SESSION_H
+#define CM_OPEN_UKEY_AUTH_DIALOG_SA_SESSION_H
 
 #include "cm_ani_async_impl.h"
 #include "cm_log.h"
 #include "cm_open_dialog.h"
 
 namespace OHOS::Security::CertManager::Ani {
-class CmOpenUkeyAuthDialogNoContext : public CertManagerAsyncImpl {
+/* SA 会话路径实现（spec v4 D21/D22）：无 context、不直启弹框，结果经 SA 异步
+ * 回投。唯一调用方为 openUkeyAuthDialog（带 context 重载委托），D8 修订的
+ * -1017/-1018 折叠恒生效。 */
+class CmOpenUkeyAuthDialogSaSession : public CertManagerAsyncImpl {
 private:
     /* ani params */
     ani_string aniKeyUri = nullptr;
     ani_double aniTimeout = 0;
-    ani_string aniScene = nullptr;
     ani_object aniCustomData = nullptr;
     /* parsed params */
     CmBlob keyUri = { 0 };
     uint32_t timeoutMs = 0; /* 0 = server default */
-    uint32_t scene = CM_UKEY_AUTH_SCENE_LOGIN; /* absent = Login (D9) */
     CmBlob customData = { 0 }; /* raw bytes <= 2048; size 0 = absent (D19) */
-    /* D8 修订：老接口（带 context 重载）委托 SA 会话时折叠 -1017/-1018 */
-    bool legacyOverload = false;
 
 public:
-    CmOpenUkeyAuthDialogNoContext(ani_env *env, ani_string aniKeyUri,
-        ani_double aniTimeout, ani_string aniScene, ani_object aniCustomData, ani_object callback);
-    ~CmOpenUkeyAuthDialogNoContext() {};
+    CmOpenUkeyAuthDialogSaSession(ani_env *env, ani_string aniKeyUri,
+        ani_double aniTimeout, ani_object aniCustomData, ani_object callback);
+    ~CmOpenUkeyAuthDialogSaSession() {};
 
-    void SetLegacyOverload();
     int32_t GetParamsFromEnv() override;
     int32_t UnpackResult() override;
     void OnFinish() override;
     int32_t InvokeAsyncWork() override;
 };
 }
-#endif // CM_OPEN_UKEY_AUTH_DIALOG_NO_CONTEXT_H
+#endif // CM_OPEN_UKEY_AUTH_DIALOG_SA_SESSION_H

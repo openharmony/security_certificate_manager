@@ -28,9 +28,8 @@
 #include "ipc_skeleton.h"
 
 namespace CMNapi {
-using OHOS::Security::CertManager::CM_UKEY_SCENE_LOGIN_STR;
-using OHOS::Security::CertManager::CM_UKEY_SCENE_CUSTOM_STR;
 using OHOS::Security::CertManager::CM_UKEY_ABILITY_NAME_MAX_LEN;
+using OHOS::Security::CertManager::CmUkeyIsPcOrPcMode;
 using OHOS::Security::AccessToken::AccessTokenID;
 
 /* Result context kept alive from the CmOpenUkeyAuthDialog call until the
@@ -110,41 +109,6 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
             }
         }
     }
-    /* optional scene (D9/D11): absent/undefined/null keeps LOGIN; present value must be
-     * exactly 'Login' or 'Custom' (case sensitive), otherwise a parameter error */
-    bool hasScene = false;
-    status = napi_has_named_property(asyncContext->env, arg, "scene", &hasScene);
-    if (status == napi_ok && hasScene) {
-        napi_value sceneValue = nullptr;
-        status = napi_get_named_property(asyncContext->env, arg, "scene", &sceneValue);
-        if (status == napi_ok && sceneValue != nullptr) {
-            napi_valuetype sceneType = napi_undefined;
-            if (napi_typeof(asyncContext->env, sceneValue, &sceneType) == napi_ok &&
-                sceneType != napi_undefined && sceneType != napi_null) {
-                if (sceneType != napi_string) {
-                    CM_LOG_E("type of param scene is not string");
-                    return nullptr;
-                }
-                char sceneBuf[16] = { 0 };
-                size_t copied = 0;
-                if (napi_get_value_string_utf8(asyncContext->env, sceneValue, sceneBuf,
-                    sizeof(sceneBuf), &copied) != napi_ok) {
-                    CM_LOG_E("scene value too long or invalid");
-                    return nullptr;
-                }
-                std::string sceneStr(sceneBuf, copied);
-                if (sceneStr == CM_UKEY_SCENE_LOGIN_STR) {
-                    asyncContext->authScene = CM_UKEY_AUTH_SCENE_LOGIN;
-                } else if (sceneStr == CM_UKEY_SCENE_CUSTOM_STR) {
-                    asyncContext->authScene = CM_UKEY_AUTH_SCENE_CUSTOM;
-                } else {
-                    CM_LOG_E("scene is not a valid UkeyAuthScene value");
-                    return nullptr;
-                }
-            }
-        }
-    }
-
     /* optional customData (D19): absent/undefined/null keeps none; must be a
      * Uint8Array of at most 2048 raw bytes */
     bool hasCustomData = false;
@@ -194,29 +158,17 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
     return GetInt32(asyncContext->env, 0);
 }
 
-static void StartUkeyPinAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
-    OHOS::AAFwk::Want& want, std::shared_ptr<CmUIExtensionCallback> uiExtCallback)
-{
-    std::string action = want.GetAction();
-    if (action.empty() || action != ACTION_UKEY_PIN_AUTH) {
-        StartUIExtensionAbility(asyncContext, want, uiExtCallback);
-    } else {
-        StartUIAbility(asyncContext, want, uiExtCallback);
-    }
-}
-
-// Validate that argc equals PARAM_SIZE_ONE (new SA-path overload) or
-// PARAM_SIZE_TWO (legacy ability-context overload) and emit ThrowError if not.
+// Validate that argc equals PARAM_SIZE_TWO (the only overload, spec v4 D21)
+// and emit ThrowError if not.
 static bool CheckUkeyAuthDialogArgc(napi_env env, size_t argc,
     OHOS::Security::CertManager::CmMetricsReport *report)
 {
-    if (argc == PARAM_SIZE_ONE || argc == PARAM_SIZE_TWO) {
+    if (argc == PARAM_SIZE_TWO) {
         return true;
     }
     CM_LOG_E("params number mismatch");
     std::string errMsg = "Parameter Error. Params number mismatch, need " +
-        std::to_string(PARAM_SIZE_ONE) + " or " + std::to_string(PARAM_SIZE_TWO) +
-        ", given " + std::to_string(argc);
+        std::to_string(PARAM_SIZE_TWO) + ", given " + std::to_string(argc);
     ThrowError(env, PARAM_ERROR, errMsg, report);
     return false;
 }
@@ -323,10 +275,10 @@ static napi_value GenerateUkeyResultError(napi_env env, int32_t resultCode, bool
     return GenerateBusinessError(env, resultCode, metricsReport);
 }
 
-// argc == PARAM_SIZE_ONE overload: no caller ability context, the dialog is
-// driven by the SA-side ukey session and the final result arrives
-// asynchronously on an IPC thread. legacyOverload marks calls delegated from
-// the argc == 2 overload (error-code folding, D8 修订).
+// SA-session delegation: the dialog is driven by the SA-side ukey session and
+// the final result arrives asynchronously on an IPC thread. legacyOverload is
+// always true here (the only caller is the published openUkeyAuthDialog,
+// D8 修订 error-code folding applies unconditionally).
 static napi_value OpenUkeyAuthDialogNoContext(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
     OHOS::Security::CertManager::CmMetricsReport &&report, bool legacyOverload = false)
 {
@@ -368,7 +320,6 @@ static napi_value OpenUkeyAuthDialogNoContext(std::shared_ptr<CmUIExtensionReque
     ukeyAuthRequest.keyUri.size = asyncContext->certUri->size;
     ukeyAuthRequest.keyUri.data = asyncContext->certUri->data;
     ukeyAuthRequest.timeoutDuration = asyncContext->authTimeoutMs;
-    ukeyAuthRequest.scene = asyncContext->authScene;
     if (asyncContext->authCustomData != nullptr) {
         ukeyAuthRequest.customData.size = asyncContext->authCustomData->size;
         ukeyAuthRequest.customData.data = asyncContext->authCustomData->data;
@@ -422,55 +373,50 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
         ThrowError(env, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, "parse UkeyAuthRequest failed", &report);
         return nullptr;
     }
-    if (argc == PARAM_SIZE_ONE) {
-        // new overload: always go through the SA-side session
-        return OpenUkeyAuthDialogNoContext(asyncContext, std::move(report));
-    }
 
-    // argc == PARAM_SIZE_TWO (legacy overload): branch by the registered ability
-    // type (spec §4.1) — UIExtensionAbility registrations take the SA-side
-    // session path (error codes folded per D8 修订); UIAbility / unregistered
-    // keep the legacy direct-launch flow below, with scene + customData
-    // (base64) added to the custom-dialog want (D9/D18).
+    // argc == PARAM_SIZE_TWO (the only overload, spec v4 D21/D22): branch by the
+    // registered ability type — UIExtensionAbility + PC goes to the SA session
+    // path; UIExtensionAbility + non-PC falls back to the system default dialog
+    // (D25 v2); query failure / UIAbility reject synchronously (29700003).
     {
         std::string driverBundle;
         std::string driverAbility;
         uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
         int32_t queryRet = GetUkeyAbilityInfo(asyncContext->certUri, driverBundle, driverAbility,
             abilityType);
-        if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
-            CM_LOG_I("ukey driver registered a UIExtensionAbility pin dialog, go sa session path");
-            return OpenUkeyAuthDialogNoContext(asyncContext, std::move(report), true);
-        }
-        if (queryRet != CM_SUCCESS && asyncContext->authScene == CM_UKEY_AUTH_SCENE_CUSTOM) {
-            // rule 3: Custom scene with nothing registered, sync reject (29700003, no IPC)
-            ThrowError(env, DIALOG_ERROR_INSTALL_FAILED,
-                UKEY_DEFAULT_NOT_SUPPORTED_MSG, &report);
+        if (queryRet != CM_SUCCESS) {
+            CM_LOG_E("no ukey driver pin dialog registered");
+            ThrowError(env, DIALOG_ERROR_INSTALL_FAILED, UKEY_NOT_REGISTERED_MSG, &report);
             return nullptr;
         }
-        if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIABILITY) {
-            // spec v4: no-context interface does not support UIAbility dialogs (29700003)
-            ThrowError(env, DIALOG_ERROR_INSTALL_FAILED,
-                UKEY_UIABILITY_NOT_SUPPORTED_MSG, &report);
+        if (abilityType == CM_UKEY_ABILITY_TYPE_UIABILITY) {
+            CM_LOG_E("ukey driver ability type is UIAbility, not supported");
+            ThrowError(env, DIALOG_ERROR_INSTALL_FAILED, UKEY_UIABILITY_NOT_SUPPORTED_MSG, &report);
             return nullptr;
         }
+        if (!CmUkeyIsPcOrPcMode()) {
+            /* D25 v2：非 PC 回退系统默认弹框（Kit 直启，customData 静默丢弃） */
+            CM_LOG_I("non-pc device, fall back to the system default ukey pin dialog");
+            if (asyncContext->authCustomData != nullptr && asyncContext->authCustomData->size > 0) {
+                CM_LOG_I("custom data dropped for default dialog, size: %u",
+                    asyncContext->authCustomData->size);
+            }
+            NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
+            auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+            asyncContext->metricsReport = reportHolder;
+            auto uiExtCallback = std::make_shared<CmUIExtensionVoidCallback>(asyncContext);
+            OHOS::AAFwk::Want want{};
+            if (GetDefaultUkeyAuthCertWant(asyncContext->certUri, want) != CM_SUCCESS) {
+                ThrowError(env, DIALOG_ERROR_GENERIC, "get default ukey auth cert want failed.",
+                    reportHolder.get());
+                return nullptr;
+            }
+            StartUIExtensionAbility(asyncContext, want, uiExtCallback);
+            return result;
+        }
+        return OpenUkeyAuthDialogNoContext(asyncContext, std::move(report), true);
     }
 
-    NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
-    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
-    asyncContext->metricsReport = reportHolder;
-    auto uiExtCallback = std::make_shared<CmUIExtensionVoidCallback>(asyncContext);
-    OHOS::AAFwk::Want want{};
-    int32_t ret = GetCustomerAuthCertWant(asyncContext->certUri, asyncContext->authScene,
-        asyncContext->authCustomData, want);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("get customer auth cert want failed. ret = %d", ret);
-        ThrowError(env, DIALOG_ERROR_GENERIC, "get customer auth cert want failed.", reportHolder.get());
-        return nullptr;
-    }
-    StartUkeyPinAbility(asyncContext, want, uiExtCallback);
-
-    CM_LOG_I("cert authorize dialog end");
     return result;
 }
 

@@ -662,11 +662,6 @@ CM_API_EXPORT int32_t CmOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAut
         CM_LOG_E("invalid input arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    if (ukeyAuthRequest->scene != CM_UKEY_AUTH_SCENE_LOGIN &&
-        ukeyAuthRequest->scene != CM_UKEY_AUTH_SCENE_CUSTOM) {
-        CM_LOG_E("invalid ukey auth scene: %u", ukeyAuthRequest->scene);
-        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
-    }
     if (ukeyAuthRequest->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
         CM_LOG_E("custom data too large: %u", ukeyAuthRequest->customData.size);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;

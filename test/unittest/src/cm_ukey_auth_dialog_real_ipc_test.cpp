@@ -58,8 +58,9 @@ public:
     }
 };
 
-/* UIAbility registration probe: the no-context interface rejects UIAbility-type
- * driver dialogs synchronously with -1021 (spec v4). */
+/* UIAbility registration probe: openUkeyAuthDialog rejects UIAbility-type
+ * driver dialogs synchronously with -1021 (spec v4); the callback never
+ * fires on sync rejection. */
 HWTEST_F(CmUkeyDialogRealIpcTest, OpenDialogUiAbilityRejectedProbe, testing::ext::TestSize.Level0)
 {
     char uri[] = "ukey-test-uri";
@@ -92,54 +93,23 @@ HWTEST_F(CmUkeyDialogRealIpcTest, ReportRealIpcProbe, testing::ext::TestSize.Lev
     EXPECT_NE(ret, 29201);
 }
 
-/* scene=Custom E2E probe: with no custom dialog registered (stub knob=none /
- * real unregistered key) the SA must reject synchronously with -1019; any
- * other outcome is still logged for on-device inspection. */
-HWTEST_F(CmUkeyDialogRealIpcTest, OpenDialogSceneCustomProbe, testing::ext::TestSize.Level0)
-{
-    char uri[] = "ukey-test-uri";
-    struct UkeyAuthRequest req = {};
-    req.keyUri.data = reinterpret_cast<uint8_t *>(uri);
-    req.keyUri.size = sizeof(uri); /* NUL-terminated, same as the NAPI layer */
-    req.scene = CM_UKEY_AUTH_SCENE_CUSTOM;
-
-    CertmanagerTest::MockHapToken mockHap({ "ohos.permission.ACCESS_CERT_MANAGER" });
-    int32_t ret = CmOpenUkeyAuthDialog(&req, RealIpcResultCallback, nullptr);
-    GTEST_LOG_(INFO) << "CmOpenUkeyAuthDialog(scene=Custom) sync ret = " << ret;
-    sleep(1);
-    EXPECT_FALSE(g_asyncFired.load()); /* sync rejection never fires the callback */
-}
-
+/* unregistered-key probe: with no driver dialog registered (stub knob=none /
+ * real unregistered key) the SA must reject synchronously with -1019
+ * (spec v4 D22: no default-dialog fallback); the callback never fires. */
 HWTEST_F(CmUkeyDialogRealIpcTest, OpenDialogRealIpcProbe, testing::ext::TestSize.Level0)
 {
     char uri[] = "ukey-test-uri";
     struct UkeyAuthRequest req = {};
     req.keyUri.data = reinterpret_cast<uint8_t *>(uri);
     req.keyUri.size = sizeof(uri); /* NUL-terminated, same as the NAPI layer */
-    uint8_t customData[] = { 'a', 'b', 'c' }; /* base64 -> "YWJj", exercises the want param */
+    uint8_t customData[] = { 'a', 'b', 'c' }; /* base64 -> "YWJj", exercises the param packing */
     req.customData.data = customData;
     req.customData.size = sizeof(customData);
 
     CertmanagerTest::MockHapToken mockHap({ "ohos.permission.ACCESS_CERT_MANAGER" });
     int32_t ret = CmOpenUkeyAuthDialog(&req, RealIpcResultCallback, nullptr);
     GTEST_LOG_(INFO) << "CmOpenUkeyAuthDialog sync ret = " << ret;
-    if (ret != CM_SUCCESS) {
-        /* no live SA (qemu/no-SA host) or server-side rejection: the sync
-         * path must not fire the callback */
-        GTEST_LOG_(INFO) << "sync path rejected, async callback must NOT fire";
-        sleep(1);
-        EXPECT_FALSE(g_asyncFired.load());
-        return;
-    }
-    /* live SA accepted the request: wait (bounded) for exactly one delivery */
-    for (int i = 0; i < 30 && !g_asyncFired.load(); i++) {
-        sleep(1);
-    }
-    GTEST_LOG_(INFO) << "async fired = " << g_asyncFired.load()
-                     << ", result = " << g_asyncResult.load();
-    EXPECT_TRUE(g_asyncFired.load());
-    sleep(2);
-    EXPECT_TRUE(g_asyncFired.load()); /* exactly once: no duplicate observed */
+    EXPECT_EQ(ret, CMR_DIALOG_ERROR_NOT_REGISTERED);
 }
 
 /* ForDriver probe: a CRYPTO_EXTENSION_REGISTER HAP caller reaches the SA —

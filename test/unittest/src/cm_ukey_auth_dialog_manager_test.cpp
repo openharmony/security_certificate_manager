@@ -97,11 +97,10 @@ public:
     bool bmsOk_ = true;
     std::string callerBundle_ = "com.example.ukeydriver";
     std::string driverAbilityName_ = "MyUkeyAuthExtensionAbility";
-    /* convenience wrapper for the OpenDialog signature (scene/customData defaults) */
-    int32_t Open(uint32_t timeout = 0, uint32_t scene = CM_UKEY_AUTH_SCENE_LOGIN,
-        const struct CmBlob *customData = nullptr)
+    /* convenience wrapper for the OpenDialog signature (customData optional) */
+    int32_t Open(uint32_t timeout = 0, const struct CmBlob *customData = nullptr)
     {
-        return manager_->OpenDialog(&keyUri_, 100, timeout, scene, customData, client_);
+        return manager_->OpenDialog(&keyUri_, 100, timeout, customData, client_);
     }
     /* convenience wrapper for OpenDriverDialog (spec v4 §4.1 ForDriver 路由) */
     int32_t OpenDriver(uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION, uint32_t timeout = 0,
@@ -116,42 +115,20 @@ public:
     struct CmBlob keyUri_ = { 8, reinterpret_cast<uint8_t *>(const_cast<char *>("testuri")) };
 };
 
-/* 路由矩阵（spec §4.1）：查询失败=未注册 → LOGIN 拉系统默认弹框（com.ohos.certmanager）；
- * CUSTOM 同步拒绝 -1019（rule 3 / D10） */
+/* 路由矩阵（spec v4 §4.1/D22）：查询失败=未注册 → 同步拒绝 -1019（29700003），
+ * SA 不再拉系统默认弹框 */
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogAbilityQueryFail, testing::ext::TestSize.Level0)
 {
-    querierRet_ = -51; // HUKS query error -> treated as not-registered -> default dialog
-    uint8_t data[3] = { 'a', 'b', 'c' };
-    struct CmBlob customData = { 3, data };
-    ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_LOGIN, &customData), CM_SUCCESS);
-    EXPECT_EQ(launcher_->connectCount_, 1);
-    auto conn = launcher_->conn_;
-    ASSERT_NE(conn, nullptr);
-    /* 默认弹框身份与参数（spec §6.2/§9.2，D14 修订）：ukeyAuth 类型扩展
-     * （com.ohos.certmanager/UkeyAuthExtensionAbility），customData 不下发（D18 静默丢弃） */
-    const std::string &params = conn->GetParamsJson();
-    EXPECT_NE(params.find("\"ability.want.params.uiExtensionType\":\"ukeyAuth\""), std::string::npos);
-    EXPECT_NE(params.find("\"scene\":\"Login\""), std::string::npos);
-    EXPECT_EQ(params.find("customData"), std::string::npos);
-    /* 上报责任方为 com.ohos.certmanager（owner 校验，spec §9.2） */
-    std::string reqId = manager_->GetRequestIdForTest();
-    ASSERT_EQ(manager_->OnReport(reqId, driverBundle_, 0), CMR_DIALOG_ERROR_INTERNAL);
-    ASSERT_EQ(manager_->OnReport(reqId, "com.ohos.certmanager", 0), CM_SUCCESS);
-    EXPECT_EQ(client_->lastCode_, 0);
-}
-
-HWTEST_F(CmUkeyAuthDialogManagerTest, CustomSceneWithoutCustomDialogRejected, testing::ext::TestSize.Level0)
-{
-    querierRet_ = -51; // not registered
-    ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_CUSTOM), CMR_DIALOG_ERROR_NOT_REGISTERED);
+    querierRet_ = -51; // HUKS query error -> treated as not-registered -> sync reject
+    ASSERT_EQ(Open(), CMR_DIALOG_ERROR_NOT_REGISTERED);
     EXPECT_EQ(launcher_->connectCount_, 0);
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogWrongAbilityType, testing::ext::TestSize.Level0)
 {
-    /* spec v4：无 context 接口不支持 UIAbility 弹框——查询到即拒绝 -1021（29700003） */
+    /* spec v4：UIAbility 弹框不支持——查询到即拒绝 -1021（29700003） */
     abilityType_ = CM_UKEY_ABILITY_TYPE_UIABILITY;
-    ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_CUSTOM), CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED);
+    ASSERT_EQ(Open(), CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED);
     ASSERT_EQ(Open(), CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED);
     EXPECT_EQ(launcher_->connectCount_, 0); /* 未建立任何连接 */
     EXPECT_EQ(manager_->GetRequestIdForTest(), ""); /* 会话未占用单飞 */
@@ -168,26 +145,25 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, PcGateBlocksUiExtensionWhenNotPc, testing:
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 }
 
-HWTEST_F(CmUkeyAuthDialogManagerTest, SceneAndCustomDataValidated, testing::ext::TestSize.Level0)
+HWTEST_F(CmUkeyAuthDialogManagerTest, CustomDataValidated, testing::ext::TestSize.Level0)
 {
-    ASSERT_EQ(Open(0, 2), CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED); /* 非法 scene */
     uint8_t big[CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE + 1] = { 0 };
     struct CmBlob tooBig = { sizeof(big), big };
-    ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_CUSTOM, &tooBig),
-        CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED);
+    ASSERT_EQ(Open(0, &tooBig), CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED);
     EXPECT_EQ(launcher_->connectCount_, 0);
 }
 
-HWTEST_F(CmUkeyAuthDialogManagerTest, ParamsJsonCarriesSceneAndCustomData, testing::ext::TestSize.Level0)
+HWTEST_F(CmUkeyAuthDialogManagerTest, ParamsJsonCarriesCustomData, testing::ext::TestSize.Level0)
 {
     /* UIExtension 路径：customData 以 base64 写入（spec §6.2/D18）；v4 起 JSON 无 scene */
     uint8_t data[3] = { 'a', 'b', 'c' };
     struct CmBlob customData = { 3, data };
-    ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_CUSTOM, &customData), CM_SUCCESS);
+    ASSERT_EQ(Open(0, &customData), CM_SUCCESS);
     auto conn = launcher_->conn_;
     ASSERT_NE(conn, nullptr);
     const std::string &params = conn->GetParamsJson();
     EXPECT_NE(params.find("\"customData\":\"YWJj\""), std::string::npos); /* base64("abc") */
+    EXPECT_EQ(params.find("\"scene\""), std::string::npos); /* v4 无 scene */
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 }
 
@@ -407,8 +383,8 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveFiresPeriodicallyAndCancelsOnFini
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveNotArmedOnSyncFailure, testing::ext::TestSize.Level0)
 {
-    querierRet_ = -51; // not registered + scene=Custom -> reject before session (rule 3)
-    ASSERT_EQ(Open(0, CM_UKEY_AUTH_SCENE_CUSTOM), CMR_DIALOG_ERROR_NOT_REGISTERED);
+    querierRet_ = -51; // not registered -> reject before session (spec v4 D22)
+    ASSERT_EQ(Open(), CMR_DIALOG_ERROR_NOT_REGISTERED);
     querierRet_ = 0;
     abilityType_ = CM_UKEY_ABILITY_TYPE_UIABILITY; // UIAbility rejected before session
     ASSERT_EQ(Open(), CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED);

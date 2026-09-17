@@ -69,13 +69,13 @@ static const std::string UKEY_AUTH_REPORT_TIMEOUT_MSG =
     "the ukey driver did not report the auth result within the timeout.";
 static const std::string UKEY_DIALOG_IN_PROGRESS_MSG =
     "another ukey pin auth dialog is already in progress.";
-/* 细化文案（spec D10 修订 2：-1019 → 29700003，-1020 → 29700005） */
-static const std::string UKEY_DEFAULT_NOT_SUPPORTED_MSG =
+/* 细化文案（spec v4 D22/D25：-1019 → 29700003，-1020 → 29700005） */
+static const std::string UKEY_NOT_REGISTERED_MSG =
     "the authentication operation failed: "
-    "the scene is custom but no custom pin dialog is registered.";
+    "no ukey driver pin dialog is registered for the key uri.";
 static const std::string UKEY_UIABILITY_NOT_SUPPORTED_MSG =
     "the authentication operation failed: "
-    "the no-context interface does not support uiability type pin dialogs.";
+    "the ukey driver's pin dialog ability is of UIAbility type, which is not supported.";
 static const std::string UKEY_NOT_PC_DEVICE_MSG =
     "the operation does not comply with the device security policy: "
     "the ukey uiextension pin dialog requires a pc device or pc mode.";
@@ -206,7 +206,7 @@ static const std::unordered_map<int32_t, std::string> DIALOG_CODE_TO_MSG_MAP = {
     { CMR_DIALOG_ERROR_NOT_EXIST, DIALOG_OPERATION_FAILED_MSG + NOT_EXIST_MSG },
     { CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, DIALOG_OPERATION_FAILED_MSG + DIALOG_INVALID_PARAMS_MSG },
     { CMR_DIALOG_ERROR_START_UIABILITY_FAILED, START_UIABILITY_FAILED_MSG },
-    { CMR_DIALOG_ERROR_NOT_REGISTERED, UKEY_DEFAULT_NOT_SUPPORTED_MSG },
+    { CMR_DIALOG_ERROR_NOT_REGISTERED, UKEY_NOT_REGISTERED_MSG },
     { CMR_DIALOG_ERROR_NOT_PC_DEVICE, UKEY_NOT_PC_DEVICE_MSG },
     { CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED, UKEY_UIABILITY_NOT_SUPPORTED_MSG },
     { CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT, UKEY_AUTH_REPORT_TIMEOUT_MSG },
@@ -223,15 +223,14 @@ int32_t GetCallerLabelName(std::shared_ptr<OHOS::AbilityRuntime::AbilityContext>
 
 bool IsEnableCACertDialog();
 
-/* 组装 UKey Pin 弹框拉起 want（带 context 直启路径）：scene 透传给弹框；
- * customData 原始字节 base64 后仅写入自定义弹框（UIAbility）want，默认弹框不携带
- * （spec D9/D18/§10.1）。 */
-int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, uint32_t scene,
-    const CmBlob *customData, OHOS::AAFwk::Want &want);
+/* 组装系统默认 UKey Pin 弹框 want（Kit 直启回退路径，spec v4 D22/D25 v2）：
+ * com.ohos.certmanager/CertPickerUIExtAbility（sys/commonUI，pageType=7）。
+ * customData 不下发（默认弹框无消费方，D18 语义）；调用方记日志丢弃。 */
+int32_t GetDefaultUkeyAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want);
 
 /* 查询 UKey 驱动注册的自定义 Pin 弹框 ability 信息（bundle/ability 名 + abilityType）。
  * 返回 CM_SUCCESS 且 type 为 CM_UKEY_ABILITY_TYPE_UIEXTENSION 时，调用方可走
- * SA 会话新链路；查询失败返回非 0（视为未注册，走默认弹框或同步拒绝，spec §4.1）。
+ * SA 会话新链路；查询失败返回非 0（视为未注册，同步拒绝，spec v4 §4.1/D22）。
  */
 int32_t GetUkeyAbilityInfo(const CmBlob *keyUri, std::string &bundleName,
     std::string &abilityName, uint32_t &abilityType);

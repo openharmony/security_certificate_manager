@@ -63,7 +63,6 @@ namespace OHOS {
         struct UkeyAuthRequest ukeyAuthRequest = {
             .keyUri = { keyUriSize, const_cast<uint8_t *>(payload + abilityNameSize) },
             .timeoutDuration = timeout,
-            .scene = CM_UKEY_AUTH_SCENE_LOGIN,   /* Task 6 删除该字段时同步删本行 */
             .customData = { 0, nullptr },
         };
 

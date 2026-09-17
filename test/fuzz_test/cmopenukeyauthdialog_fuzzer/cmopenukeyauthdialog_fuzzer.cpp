@@ -33,20 +33,16 @@ using namespace CmFuzzTest;
 namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
-        /* fuzz layout: [4B scene][4B timeout][rest: keyUri + customData bytes] */
-        uint32_t scene = 0;
+        /* fuzz layout: [4B timeout][rest: keyUri + customData bytes] */
         uint32_t timeout = 0;
         const uint8_t *payload = data;
         size_t payloadSize = size;
-        if (size >= 8) {
-            if (memcpy_s(&scene, sizeof(scene), data, sizeof(scene)) != EOK) {
+        if (size >= 4) {
+            if (memcpy_s(&timeout, sizeof(timeout), data, sizeof(timeout)) != EOK) {
                 return false;
             }
-            if (memcpy_s(&timeout, sizeof(timeout), data + 4, sizeof(timeout)) != EOK) {
-                return false;
-            }
-            payload = data + 8;
-            payloadSize = size - 8;
+            payload = data + 4;
+            payloadSize = size - 4;
         }
 
         uint32_t keyUriSize = (payloadSize > MAX_KEY_URI_LEN) ? MAX_KEY_URI_LEN :
@@ -58,7 +54,6 @@ namespace OHOS {
         struct UkeyAuthRequest ukeyAuthRequest = {
             .keyUri = { keyUriSize, const_cast<uint8_t *>(payload) },
             .timeoutDuration = timeout,
-            .scene = scene,
             .customData = { customDataSize, const_cast<uint8_t *>(payload) },
         };
 

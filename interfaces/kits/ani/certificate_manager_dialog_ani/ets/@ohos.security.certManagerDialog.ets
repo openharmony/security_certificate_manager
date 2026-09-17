@@ -71,15 +71,6 @@ native function openUkeyAuthDialogNative(
   context: common.Context,
   keyUri: string,
   timeout: number,
-  scene: string,
-  customData: Uint8Array,
-  callback: AsyncCallbackWrapper<void>
-): NativeResult<void>;
-
-native function openUkeyAuthDialogNoContextNative(
-  keyUri: string,
-  timeout: number,
-  scene: string,
   customData: Uint8Array,
   callback: AsyncCallbackWrapper<void>
 ): NativeResult<void>;
@@ -140,15 +131,9 @@ export namespace certificateManagerDialog {
     keyUri: string;
   }
 
-  export enum UkeyAuthScene {
-    LOGIN = 'Login',
-    CUSTOM = 'Custom',
-  }
-
   export interface UkeyAuthRequest {
     keyUri: string,
     timeoutDuration?: number, /* auth timeout in ms; absent = server default 300s */
-    scene?: UkeyAuthScene, /* auth scene; absent = LOGIN (default dialog fallback allowed) */
     customData?: Uint8Array /* opaque data (<= 2048 bytes) delivered base64 to custom dialogs only */
   }
 
@@ -412,46 +397,14 @@ export namespace certificateManagerDialog {
           throw error;
         }
         let timeout: number = ukeyAuthRequest.timeoutDuration ?? 0; /* 0 = server default 300s */
-        let scene: string = ukeyAuthRequest.scene ?? UkeyAuthScene.LOGIN;
         let customData: Uint8Array = ukeyAuthRequest.customData ?? new Uint8Array(0);
-        let result: NativeResult<void> = openUkeyAuthDialogNative(context, keyUri, timeout, scene,
+        let result: NativeResult<void> = openUkeyAuthDialogNative(context, keyUri, timeout,
             customData, callback);
         if (result.code !== 0) {
           let err = new BusinessError();
           err.code = result.code;
           err.message = result.message;
           reject(err);
-        }
-    });
-  }
-
-  export function openUkeyAuthDialog(ukeyAuthRequest: UkeyAuthRequest): Promise<void> {
-    return new Promise<void>((resolve, reject: (error: BusinessError) => void) => {
-        let callback = new AsyncCallbackWrapper<void>((err: BusinessError | null) => {
-            if (err?.code !== 0) {
-                reject(err as BusinessError);
-            } else {
-                resolve(undefined);
-            }
-        });
-
-        let keyUri: string = ukeyAuthRequest.keyUri;
-        if (keyUri === undefined || keyUri === '') {
-            let error = new BusinessError();
-            error.code = 401;
-            error.message = 'the input parameters is invalid.';
-            throw error;
-        }
-        let timeout: number = ukeyAuthRequest.timeoutDuration ?? 0; /* 0 = server default 300s */
-        let scene: string = ukeyAuthRequest.scene ?? UkeyAuthScene.LOGIN;
-        let customData: Uint8Array = ukeyAuthRequest.customData ?? new Uint8Array(0);
-        let result: NativeResult<void> = openUkeyAuthDialogNoContextNative(keyUri, timeout, scene,
-            customData, callback);
-        if (result.code !== 0) {
-            let err = new BusinessError();
-            err.code = result.code;
-            err.message = result.message;
-            reject(err);
         }
     });
   }

@@ -29,30 +29,8 @@
 
 namespace OHOS::Security::CertManager {
 
-/* ---- 场景（spec D9：UkeyAuthScene）---- */
-constexpr const char *CM_UKEY_SCENE_LOGIN_STR = "Login";   /* 接受默认弹框回退 */
-constexpr const char *CM_UKEY_SCENE_CUSTOM_STR = "Custom"; /* 仅自定义弹框 */
-
-inline const char *CmUkeySceneToString(uint32_t scene)
-{
-    return (scene == CM_UKEY_AUTH_SCENE_CUSTOM) ? CM_UKEY_SCENE_CUSTOM_STR : CM_UKEY_SCENE_LOGIN_STR;
-}
-
-inline bool CmUkeySceneIsValid(uint32_t scene)
-{
-    return scene == CM_UKEY_AUTH_SCENE_LOGIN || scene == CM_UKEY_AUTH_SCENE_CUSTOM;
-}
-
 /* ---- want / parameters JSON 参数键（弹框提供方契约，spec §6.2/§6.3）---- */
-constexpr const char *CM_UKEY_DIALOG_PARAM_SCENE = "scene";
 constexpr const char *CM_UKEY_DIALOG_PARAM_CUSTOM_DATA = "customData";
-
-/* ---- 系统默认弹框身份（spec v3 D14 修订：com.ohos.certmanager 内新增的
- * ukeyAuth 类型 UIExtensionAbility，复用既有 UKeyAuthSheet 页面；其
- * UkeyAuthExtensionContext.terminateSelf* 由框架完成对 CM SA 的上报）---- */
-constexpr const char *CM_UKEY_DEFAULT_DIALOG_BUNDLE = "com.ohos.certmanager";
-constexpr const char *CM_UKEY_DEFAULT_DIALOG_ABILITY = "UkeyAuthExtensionAbility";
-constexpr const char *CM_UKEY_DEFAULT_DIALOG_EXT_TYPE = "ukeyAuth";
 
 /* ---- PC / PC 模式判定（spec D15，仅 SA 消费）---- */
 constexpr const char *CM_UKEY_PARAM_DEVICETYPE = "const.product.devicetype";
