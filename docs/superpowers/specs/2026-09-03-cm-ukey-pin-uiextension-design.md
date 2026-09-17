@@ -543,14 +543,17 @@ SA 会话机制全量、systemui 拉起、v3 场景路由与 customData 全链�
 ukey-no-uiability 分支的 SA 侧 UIAbility 拒绝（-1021）与 StartAbility 移除、
 29/29 单测 + real-IPC 探针通过。
 
-**v4（简化方案）已实现**——certificate_manager `ukey-kits-migration` 分支 7 个提交
-（`e042d49..fe909aa`，另含最终评审修复提交）：`0631154` SA 侧 ForDriver 开窗 +
+**v4（简化方案）已实现**——certificate_manager `ukey-kits-migration` 分支 8 个提交
+（`e042d49..13ebd22`，含最终评审修复提交）：`0631154` SA 侧 ForDriver 开窗 +
 BMS 预校验、`4008727` openAuthDialogForUkeyDriver inner API + IPC 通道、`db4d18b`
 NAPI ForDriver、`43adc40` DialogInfo 解析错误码按 spec 拆分、`deb3c4b` 超长
 abilityName 前置拒绝、`e226496` ANI ForDriver、`fe909aa` 删除 scene/无 context
-重载（仅 UIExtension 路由）；interface_sdk-js `ukey-auth` 分支 2 个提交
-（`487e40ca2..b044693b8`：ForDriver 声明、scene/无 context 重载移除）。
-真机单测 37/37 通过（32 manager + 5 real-IPC，含 ForDriver/权限探针）。
+重载（仅 UIExtension 路由）、`13ebd22` 最终评审修复（ANI 负路径错误码映射、
+abilityName 边界 129、孤儿常量清理）；interface_sdk-js `ukey-auth` 分支 3 个提交
+（`487e40ca2..8564bfb5a`：ForDriver 声明、scene/无 context 重载移除、29700009
+stale throws 清理）。
+真机单测 38/38 通过（33 manager + 5 real-IPC，含 ForDriver/权限探针与
+abilityName 边界用例；修复波后全量回归）。
 demo 已改造（openAuthDialogForUkeyDriver + CRYPTO_EXTENSION_REGISTER，待 ACL
 签名重打包）。延期项：NAPI/ANI 层 parse 测试按无测试桩现实以真机 JS smoke
 替代（§13 偏差）；E2E 矩阵（ForDriver happy path + 非 PC 回退）待 demo 重打包
