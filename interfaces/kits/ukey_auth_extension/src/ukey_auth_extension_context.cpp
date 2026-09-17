@@ -39,22 +39,6 @@ void ReportToCertManager(const std::string &requestId, int32_t resultCode)
 }
 } // namespace
 
-void UkeyAuthExtensionContext::SetWindow(const sptr<Rosen::Window> &window)
-{
-#ifdef SUPPORT_SCREEN
-    uiWindow_ = window;
-#endif // SUPPORT_SCREEN
-}
-
-sptr<Rosen::Window> UkeyAuthExtensionContext::GetWindow() const
-{
-#ifdef SUPPORT_SCREEN
-    return uiWindow_;
-#else
-    return nullptr;
-#endif // SUPPORT_SCREEN
-}
-
 void UkeyAuthExtensionContext::SetSessionInfo(const sptr<AAFwk::SessionInfo> &sessionInfo)
 {
     sessionInfo_ = sessionInfo;
@@ -69,11 +53,7 @@ ErrCode UkeyAuthExtensionContext::TerminateSelf()
 {
     TAG_LOGD(AAFwkTag::UI_EXT, "begin");
     ReportToCertManager(requestId_, 0);
-    ErrCode err = AAFwk::AbilityManagerClient::GetInstance()->TerminateAbility(GetToken(), -1, nullptr);
-    if (err != ERR_OK) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "ret = %{public}d", err);
-    }
-    return err;
+    return UIExtensionContext::TerminateSelf();
 }
 
 ErrCode UkeyAuthExtensionContext::TerminateSelfWithResult(int32_t resultCode, const AAFwk::Want &want)
@@ -88,11 +68,12 @@ ErrCode UkeyAuthExtensionContext::TerminateSelfWithResult(int32_t resultCode, co
         return err;
     }
 #ifdef SUPPORT_SCREEN
-    if (uiWindow_ == nullptr) {
+    auto uiWindow = GetWindow();
+    if (uiWindow == nullptr) {
         TAG_LOGE(AAFwkTag::UI_EXT, "null uiWindow");
         return AAFwk::INVALID_PARAMETERS_ERR;
     }
-    auto ret = uiWindow_->TransferAbilityResult(resultCode, want);
+    auto ret = uiWindow->TransferAbilityResult(resultCode, want);
     if (ret != Rosen::WMError::WM_OK) {
         TAG_LOGE(AAFwkTag::UI_EXT, "TransferAbilityResult to window failed, ret = %{public}d", ret);
         return AAFwk::INVALID_PARAMETERS_ERR;

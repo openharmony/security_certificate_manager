@@ -19,10 +19,24 @@
 #include "hilog_tag_wrapper.h"
 #include "js_ukey_auth_extension.h"
 #include "runtime.h"
-#include "ui_extension_context.h"
 
 namespace OHOS {
 namespace AbilityRuntime {
+namespace {
+void InjectDialogSessionContext(const AAFwk::Want &want, const sptr<AAFwk::SessionInfo> &sessionInfo,
+    const std::shared_ptr<UkeyAuthExtensionContext> &context)
+{
+    if (sessionInfo == nullptr || context == nullptr) {
+        return;
+    }
+    context->SetSessionInfo(sessionInfo);
+    /* requestId must be injected on every foreground path: dialog launches
+     * driven by OnCommandWindow never see OnForeground, and an empty
+     * requestId silently skips the result report to cert manager */
+    context->SetRequestId(want.GetStringParam("requestId"));
+}
+} // namespace
+
 UkeyAuthExtension *UkeyAuthExtension::Create(const std::unique_ptr<Runtime> &runtime)
 {
     TAG_LOGD(AAFwkTag::EXT, "called");
@@ -39,14 +53,19 @@ UkeyAuthExtension *UkeyAuthExtension::Create(const std::unique_ptr<Runtime> &run
     }
 }
 
-void UkeyAuthExtension::OnForeground(const AAFwk::Want &want, sptr<AAFwk::SessionInfo> sessionInfo)
+void UkeyAuthExtension::OnCommandWindow(const AAFwk::Want &want,
+    const sptr<AAFwk::SessionInfo> &sessionInfo, AAFwk::WindowCommand winCmd)
 {
-    UIExtensionBase<UIExtensionContext>::OnForeground(want, sessionInfo);
+    UIExtensionBase<UkeyAuthExtensionContext>::OnCommandWindow(want, sessionInfo, winCmd);
+    if (winCmd == AAFwk::WIN_CMD_FOREGROUND) {
+        InjectDialogSessionContext(want, sessionInfo, GetContext());
+    }
 }
 
-void UkeyAuthExtension::OnBackground()
+void UkeyAuthExtension::OnForeground(const AAFwk::Want &want, sptr<AAFwk::SessionInfo> sessionInfo)
 {
-    UIExtensionBase<UIExtensionContext>::OnBackground();
+    UIExtensionBase<UkeyAuthExtensionContext>::OnForeground(want, sessionInfo);
+    InjectDialogSessionContext(want, sessionInfo, GetContext());
 }
 } // namespace AbilityRuntime
 } // namespace OHOS

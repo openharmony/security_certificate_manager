@@ -13,7 +13,34 @@
  * limitations under the License.
  */
 
-import UIExtensionAbility from '@ohos.app.ability.UIExtensionAbility';
+import AbilityConstant from '@ohos.app.ability.AbilityConstant';
+import ExtensionAbility from '@ohos.app.ability.ExtensionAbility';
+import Want from '@ohos.app.ability.Want';
+import UIExtensionContentSession from '@ohos.app.ability.UIExtensionContentSession';
+import UkeyAuthExtensionContext from '@ohos.security.UkeyAuthExtensionContext';
 
-export default class UkeyAuthExtensionAbility extends UIExtensionAbility {
+export default class UkeyAuthExtensionAbility extends ExtensionAbility {
+
+  private destroyCallbackPoint: long;
+  private native nativeOnDestroyCallback(): void;
+  public callOnDestroy(): boolean {
+    let p = this.onDestroy();
+    if (p instanceof Promise) {
+      p.then(() => this.nativeOnDestroyCallback());
+      return true;
+    }
+    return false;
+  }
+
+  context: UkeyAuthExtensionContext = {};
+
+  onCreate(launchParam: AbilityConstant.LaunchParam): void {}
+
+  onSessionCreate(want: Want, session: UIExtensionContentSession): void {}
+
+  onSessionDestroy(session: UIExtensionContentSession): void {}
+
+  onDestroy(): Promise<void> | undefined {
+    return undefined;
+  }
 }

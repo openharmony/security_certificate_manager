@@ -15,13 +15,12 @@
 
 #include "js_ukey_auth_extension_base.h"
 
-#include "ability_info.h"
 #include "hilog_tag_wrapper.h"
 #include "js_runtime.h"
 #include "js_runtime_utils.h"
 #include "js_ukey_auth_extension_context.h"
 #include "napi/native_api.h"
-#include "native_engine/impl/ark/ark_native_engine.h"
+#include "ukey_auth_extension_context.h"
 
 namespace OHOS {
 namespace AbilityRuntime {
@@ -44,17 +43,17 @@ void JsUkeyAuthExtensionBase::BindContext()
         TAG_LOGE(AAFwkTag::UI_EXT, "null jsObj_");
         return;
     }
-    if (ukeyContext_ == nullptr) {
-        ukeyContext_ = std::make_shared<UkeyAuthExtensionContext>();
-        ukeyContext_->SetToken(context_ == nullptr ? nullptr : context_->GetToken());
-        ukeyContext_->SetAbilityInfo(abilityInfo_);
+    if (context_ == nullptr) {
+        TAG_LOGE(AAFwkTag::UI_EXT, "null context_");
+        return;
     }
     napi_value obj = jsObj_->GetNapiValue();
     if (!CheckTypeForNapiValue(env, obj, napi_object)) {
         TAG_LOGE(AAFwkTag::UI_EXT, "not object");
         return;
     }
-    napi_value contextObj = JsUkeyAuthExtensionContext::CreateJsUkeyAuthExtensionContext(env, ukeyContext_);
+    auto ukeyContext = std::static_pointer_cast<UkeyAuthExtensionContext>(context_);
+    napi_value contextObj = JsUkeyAuthExtensionContext::CreateJsUkeyAuthExtensionContext(env, ukeyContext);
     if (contextObj == nullptr) {
         TAG_LOGE(AAFwkTag::UI_EXT, "null contextObj");
         return;
@@ -72,51 +71,5 @@ void JsUkeyAuthExtensionBase::BindContext()
     }
     napi_set_named_property(env, obj, "context", contextObj);
 }
-
-void JsUkeyAuthExtensionBase::OnCommandWindow(const AAFwk::Want &want,
-    const sptr<AAFwk::SessionInfo> &sessionInfo, AAFwk::WindowCommand winCmd)
-{
-    JsUIExtensionBase::OnCommandWindow(want, sessionInfo, winCmd);
-    if (winCmd != AAFwk::WIN_CMD_FOREGROUND || sessionInfo == nullptr || ukeyContext_ == nullptr) {
-        return;
-    }
-    auto it = uiWindowMap_.find(sessionInfo->uiExtensionComponentId);
-    if (it != uiWindowMap_.end() && it->second != nullptr) {
-        ukeyContext_->SetWindow(it->second);
-        ukeyContext_->SetSessionInfo(sessionInfo);
-        /* requestId must be injected on every foreground path: dialog launches
-         * driven by OnCommandWindow never see OnForeground, and an empty
-         * requestId silently skips the result report to cert manager */
-        ukeyContext_->SetRequestId(want.GetStringParam("requestId"));
-        TAG_LOGI(AAFwkTag::UI_EXT, "ukey OnCommandWindow: window and session injected, componentId=%{public}llu",
-            static_cast<unsigned long long>(sessionInfo->uiExtensionComponentId));
-    } else {
-        TAG_LOGE(AAFwkTag::UI_EXT, "ukey OnCommandWindow: window not found, componentId=%{public}llu,"
-            " mapSize=%{public}zu", static_cast<unsigned long long>(sessionInfo->uiExtensionComponentId),
-            uiWindowMap_.size());
-    }
-}
-
-void JsUkeyAuthExtensionBase::OnForeground(const AAFwk::Want &want,
-    sptr<AAFwk::SessionInfo> sessionInfo)
-{
-    JsUIExtensionBase::OnForeground(want, sessionInfo);
-    if (sessionInfo == nullptr || ukeyContext_ == nullptr) {
-        return;
-    }
-    auto it = uiWindowMap_.find(sessionInfo->uiExtensionComponentId);
-    if (it != uiWindowMap_.end() && it->second != nullptr) {
-        ukeyContext_->SetWindow(it->second);
-        ukeyContext_->SetSessionInfo(sessionInfo);
-        ukeyContext_->SetRequestId(want.GetStringParam("requestId"));
-        TAG_LOGI(AAFwkTag::UI_EXT, "ukey OnForeground: window and session injected, componentId=%{public}llu",
-            static_cast<unsigned long long>(sessionInfo->uiExtensionComponentId));
-    } else {
-        TAG_LOGE(AAFwkTag::UI_EXT, "ukey OnForeground: window not found, componentId=%{public}llu,"
-            " mapSize=%{public}zu", static_cast<unsigned long long>(sessionInfo->uiExtensionComponentId),
-            uiWindowMap_.size());
-    }
-}
-
 } // namespace AbilityRuntime
 } // namespace OHOS

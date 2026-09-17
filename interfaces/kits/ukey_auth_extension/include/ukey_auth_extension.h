@@ -16,17 +16,17 @@
 #ifndef OHOS_ABILITY_RUNTIME_UKEY_AUTH_UI_EXTENSION_H
 #define OHOS_ABILITY_RUNTIME_UKEY_AUTH_UI_EXTENSION_H
 
+#include "runtime.h"
 #include "ui_extension_base.h"
+#include "ukey_auth_extension_context.h"
 
 namespace OHOS {
 namespace AbilityRuntime {
-class UIExtensionContext;
-class Runtime;
 /**
  * @brief ukey auth UI extension components.
  */
 class UkeyAuthExtension
-    : public UIExtensionBase<UIExtensionContext>, public std::enable_shared_from_this<UkeyAuthExtension> {
+    : public UIExtensionBase<UkeyAuthExtensionContext>, public std::enable_shared_from_this<UkeyAuthExtension> {
 public:
     UkeyAuthExtension() = default;
 
@@ -41,14 +41,13 @@ public:
     static UkeyAuthExtension *Create(const std::unique_ptr<Runtime> &runtime);
 
     /**
-     * @brief Keep base UIExtensionBase behavior (window/session dispatch chain).
+     * @brief Keep base window/session dispatch chain, then refresh the dialog
+     * session context (requestId/sessionInfo) carried by this want.
      */
-    void OnForeground(const AAFwk::Want &want, sptr<AAFwk::SessionInfo> sessionInfo) override;
+    void OnCommandWindow(const AAFwk::Want &want, const sptr<AAFwk::SessionInfo> &sessionInfo,
+        AAFwk::WindowCommand winCmd) override;
 
-    /**
-     * @brief Keep base UIExtensionBase behavior (window/session dispatch chain).
-     */
-    void OnBackground() override;
+    void OnForeground(const AAFwk::Want &want, sptr<AAFwk::SessionInfo> sessionInfo) override;
 };
 } // namespace AbilityRuntime
 } // namespace OHOS

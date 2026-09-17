@@ -16,33 +16,31 @@
 #ifndef OHOS_ABILITY_RUNTIME_UKEY_AUTH_UI_EXTENSION_CONTEXT_H
 #define OHOS_ABILITY_RUNTIME_UKEY_AUTH_UI_EXTENSION_CONTEXT_H
 
-#include "extension_context.h"
 #include "session_info.h"
-#include "want.h"
+#include "ui_extension_context.h"
 
 namespace OHOS {
-namespace Rosen {
-class Window;
-}
 namespace AbilityRuntime {
 
 /**
  * @brief context supply for ukeyAuth UIExtension, with only terminate capabilities.
+ *
+ * Inherits UIExtensionContext so the shared UIExtension machinery manages the
+ * window/token bookkeeping; terminateSelf* additionally reports the auth result
+ * to certManager before terminating (spec D2).
  */
-class UkeyAuthExtensionContext : public ExtensionContext {
+class UkeyAuthExtensionContext : public UIExtensionContext {
 public:
     UkeyAuthExtensionContext() = default;
     ~UkeyAuthExtensionContext() override = default;
 
-    void SetWindow(const sptr<Rosen::Window> &window);
-    sptr<Rosen::Window> GetWindow() const;
     void SetSessionInfo(const sptr<AAFwk::SessionInfo> &sessionInfo);
     void SetRequestId(const std::string &requestId);
 
     /**
      * @brief Destroys the current ukeyAuth extension ability, after reporting to certManager.
      */
-    ErrCode TerminateSelf();
+    ErrCode TerminateSelf() override;
 
     /**
      * @brief Destroys the current ukeyAuth extension ability with result, after reporting to certManager.
@@ -50,9 +48,6 @@ public:
     ErrCode TerminateSelfWithResult(int32_t resultCode, const AAFwk::Want &want);
 
 private:
-#ifdef SUPPORT_SCREEN
-    sptr<Rosen::Window> uiWindow_ = nullptr;
-#endif // SUPPORT_SCREEN
     sptr<AAFwk::SessionInfo> sessionInfo_ = nullptr;
     std::string requestId_;
 };

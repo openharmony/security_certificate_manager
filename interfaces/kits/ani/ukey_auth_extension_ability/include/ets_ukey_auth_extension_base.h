@@ -20,12 +20,15 @@
 
 #include "ets_ui_extension_base.h"
 #include "runtime.h"
-#include "ukey_auth_extension_context.h"
 
 namespace OHOS {
 namespace AbilityRuntime {
 /**
- * @brief EtsUIExtensionBase subclass binding the public UkeyAuthExtensionContext.
+ * @brief EtsUIExtensionBase subclass binding the public UkeyAuthExtensionContext
+ * and the native lifecycle bridges declared by UkeyAuthExtensionAbility.
+ *
+ * Window/session/requestId injection is handled by the shared machinery and
+ * UkeyAuthExtension itself; only the context class binding differs here.
  */
 class EtsUkeyAuthExtensionBase : public EtsUIExtensionBase {
 public:
@@ -33,12 +36,9 @@ public:
     ~EtsUkeyAuthExtensionBase() override = default;
 
     void BindContext() override;
-    void OnCommandWindow(const AAFwk::Want &want, const sptr<AAFwk::SessionInfo> &sessionInfo,
-        AAFwk::WindowCommand winCmd) override;
-    void OnForeground(const AAFwk::Want &want, sptr<AAFwk::SessionInfo> sessionInfo) override;
 
 private:
-    std::shared_ptr<UkeyAuthExtensionContext> ukeyContext_ = nullptr;
+    bool BindNativeMethods();
 };
 } // namespace AbilityRuntime
 } // namespace OHOS

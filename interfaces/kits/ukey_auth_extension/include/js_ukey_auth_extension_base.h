@@ -20,12 +20,14 @@
 
 #include "js_ui_extension_base.h"
 #include "runtime.h"
-#include "ukey_auth_extension_context.h"
 
 namespace OHOS {
 namespace AbilityRuntime {
 /**
  * @brief JsUIExtensionBase subclass binding the public UkeyAuthExtensionContext.
+ *
+ * Window/session/requestId injection is handled by the shared machinery and
+ * UkeyAuthExtension itself; only the context class binding differs here.
  */
 class JsUkeyAuthExtensionBase : public JsUIExtensionBase {
 public:
@@ -33,12 +35,6 @@ public:
     ~JsUkeyAuthExtensionBase() override = default;
 
     void BindContext() override;
-    void OnCommandWindow(const AAFwk::Want &want, const sptr<AAFwk::SessionInfo> &sessionInfo,
-        AAFwk::WindowCommand winCmd) override;
-    void OnForeground(const AAFwk::Want &want, sptr<AAFwk::SessionInfo> sessionInfo) override;
-
-private:
-    std::shared_ptr<UkeyAuthExtensionContext> ukeyContext_ = nullptr;
 };
 } // namespace AbilityRuntime
 } // namespace OHOS

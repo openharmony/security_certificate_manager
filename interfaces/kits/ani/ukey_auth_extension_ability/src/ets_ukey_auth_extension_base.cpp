@@ -15,17 +15,81 @@
 
 #include "ets_ukey_auth_extension_base.h"
 
+#include <array>
+
+#include "ability_transaction_callback_info.h"
 #include "ets_runtime.h"
 #include "ets_ukey_auth_extension_context.h"
 #include "hilog_tag_wrapper.h"
+#include "ukey_auth_extension_context.h"
 
 namespace OHOS {
 namespace AbilityRuntime {
+namespace {
+constexpr const char *UKEY_AUTH_EXTENSION_ABILITY_CLASS_NAME =
+    "@ohos.security.UkeyAuthExtensionAbility.UkeyAuthExtensionAbility";
+
+void OnDestroyPromiseCallback(ani_env *env, ani_object aniObj)
+{
+    TAG_LOGD(AAFwkTag::UI_EXT, "OnDestroyPromiseCallback called");
+    if (env == nullptr || aniObj == nullptr) {
+        TAG_LOGE(AAFwkTag::UI_EXT, "null env or null aniObj");
+        return;
+    }
+    ani_long destroyCallbackPoint = 0;
+    ani_status status = ANI_ERROR;
+    if ((status = env->Object_GetFieldByName_Long(aniObj, "destroyCallbackPoint", &destroyCallbackPoint)) != ANI_OK) {
+        TAG_LOGE(AAFwkTag::UI_EXT, "destroyCallbackPoint GetField status: %{public}d", status);
+        return;
+    }
+    auto *callbackInfo = reinterpret_cast<AppExecFwk::AbilityTransactionCallbackInfo<> *>(destroyCallbackPoint);
+    if (callbackInfo == nullptr) {
+        TAG_LOGE(AAFwkTag::UI_EXT, "null callbackInfo");
+        return;
+    }
+    callbackInfo->Call();
+    AppExecFwk::AbilityTransactionCallbackInfo<>::Destroy(callbackInfo);
+
+    if ((status = env->Object_SetFieldByName_Long(aniObj, "destroyCallbackPoint",
+        static_cast<ani_long>(0))) != ANI_OK) {
+        TAG_LOGE(AAFwkTag::UI_EXT, "destroyCallbackPoint SetField status: %{public}d", status);
+        return;
+    }
+}
+} // namespace
+
 EtsUkeyAuthExtensionBase::EtsUkeyAuthExtensionBase(const std::unique_ptr<Runtime> &runtime)
     : EtsUIExtensionBase(runtime) {}
 
+bool EtsUkeyAuthExtensionBase::BindNativeMethods()
+{
+    auto env = etsRuntime_.GetAniEnv();
+    if (env == nullptr) {
+        TAG_LOGE(AAFwkTag::UI_EXT, "null env");
+        return false;
+    }
+    std::array functions = {
+        ani_native_function { "nativeOnDestroyCallback", ":", reinterpret_cast<void *>(OnDestroyPromiseCallback) },
+    };
+    ani_class cls {};
+    ani_status status = env->FindClass(UKEY_AUTH_EXTENSION_ABILITY_CLASS_NAME, &cls);
+    if (status != ANI_OK) {
+        TAG_LOGE(AAFwkTag::UI_EXT, "FindClass failed status: %{public}d", status);
+        return false;
+    }
+    if ((status = env->Class_BindNativeMethods(cls, functions.data(), functions.size())) != ANI_OK
+        && status != ANI_ALREADY_BINDED) {
+        TAG_LOGE(AAFwkTag::UI_EXT, "Class_BindNativeMethods status: %{public}d", status);
+        return false;
+    }
+    return true;
+}
+
 void EtsUkeyAuthExtensionBase::BindContext()
 {
+    if (!BindNativeMethods()) {
+        TAG_LOGE(AAFwkTag::UI_EXT, "BindNativeMethods failed");
+    }
     EtsUIExtensionBase::BindContext();
     auto env = etsRuntime_.GetAniEnv();
     if (env == nullptr) {
@@ -36,12 +100,12 @@ void EtsUkeyAuthExtensionBase::BindContext()
         TAG_LOGE(AAFwkTag::UI_EXT, "null etsObj_");
         return;
     }
-    if (ukeyContext_ == nullptr) {
-        ukeyContext_ = std::make_shared<UkeyAuthExtensionContext>();
-        ukeyContext_->SetToken(context_ == nullptr ? nullptr : context_->GetToken());
-        ukeyContext_->SetAbilityInfo(abilityInfo_);
+    if (context_ == nullptr) {
+        TAG_LOGE(AAFwkTag::UI_EXT, "null context_");
+        return;
     }
-    ani_object contextObj = CreateEtsUkeyAuthExtensionContext(env, ukeyContext_);
+    auto ukeyContext = std::static_pointer_cast<UkeyAuthExtensionContext>(context_);
+    ani_object contextObj = CreateEtsUkeyAuthExtensionContext(env, ukeyContext);
     if (contextObj == nullptr) {
         TAG_LOGE(AAFwkTag::UI_EXT, "null contextObj");
         return;
@@ -61,44 +125,6 @@ void EtsUkeyAuthExtensionBase::BindContext()
         TAG_LOGE(AAFwkTag::UI_EXT, "status: %{public}d", status);
     }
     env->GlobalReference_Delete(contextRef);
-}
-
-void EtsUkeyAuthExtensionBase::OnCommandWindow(const AAFwk::Want &want,
-    const sptr<AAFwk::SessionInfo> &sessionInfo, AAFwk::WindowCommand winCmd)
-{
-    EtsUIExtensionBase::OnCommandWindow(want, sessionInfo, winCmd);
-    if (winCmd != AAFwk::WIN_CMD_FOREGROUND || sessionInfo == nullptr || ukeyContext_ == nullptr) {
-        return;
-    }
-    auto it = uiWindowMap_.find(sessionInfo->uiExtensionComponentId);
-    if (it != uiWindowMap_.end() && it->second != nullptr) {
-        ukeyContext_->SetWindow(it->second);
-        ukeyContext_->SetSessionInfo(sessionInfo);
-        /* requestId must be injected on every foreground path: dialog launches
-         * driven by OnCommandWindow never see OnForeground, and an empty
-         * requestId silently skips the result report to cert manager */
-        ukeyContext_->SetRequestId(want.GetStringParam("requestId"));
-    }
-}
-
-void EtsUkeyAuthExtensionBase::OnForeground(const AAFwk::Want &want,
-    sptr<AAFwk::SessionInfo> sessionInfo)
-{
-    EtsUIExtensionBase::OnForeground(want, sessionInfo);
-    if (sessionInfo == nullptr || ukeyContext_ == nullptr) {
-        return;
-    }
-    auto it = uiWindowMap_.find(sessionInfo->uiExtensionComponentId);
-    if (it != uiWindowMap_.end() && it->second != nullptr) {
-        ukeyContext_->SetWindow(it->second);
-        ukeyContext_->SetSessionInfo(sessionInfo);
-        ukeyContext_->SetRequestId(want.GetStringParam("requestId"));
-        TAG_LOGI(AAFwkTag::UI_EXT, "ukey ets OnForeground: window and session injected");
-    } else {
-        TAG_LOGE(AAFwkTag::UI_EXT, "ukey ets OnForeground: window not found, componentId=%{public}llu,"
-            " mapSize=%{public}zu", static_cast<unsigned long long>(sessionInfo->uiExtensionComponentId),
-            uiWindowMap_.size());
-    }
 }
 
 } // namespace AbilityRuntime
