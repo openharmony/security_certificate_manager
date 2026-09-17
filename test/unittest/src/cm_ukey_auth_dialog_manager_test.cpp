@@ -79,7 +79,7 @@ public:
         manager_->SetKeepAliveIntervalForTest(50); // fast keep-alive for F1 tests
         manager_->SetUnloadRenewal([this]() { renewalCount_++; });
         manager_->SetTimerPostFailForTest(false); // reset F8 fault injection
-        driverChecker_ = [this](const std::string &, const std::string &) -> bool {
+        driverChecker_ = [this](const std::string &, const std::string &, int32_t) -> bool {
             return bmsOk_;
         };
         manager_->SetDriverAbilityChecker(driverChecker_);
@@ -109,7 +109,7 @@ public:
         struct CmBlob abilityName = { static_cast<uint32_t>(driverAbilityName_.size() + 1),
             reinterpret_cast<uint8_t *>(const_cast<char *>(driverAbilityName_.c_str())) };
         return manager_->OpenDriverDialog(&abilityName, abilityType, &keyUri_, 100,
-            callerBundle_, timeout, customData, client_);
+            callerBundle_, 100, timeout, customData, client_);
     }
     sptr<FakeClientCallback> client_ = sptr<FakeClientCallback>(new FakeClientCallback());
     struct CmBlob keyUri_ = { 8, reinterpret_cast<uint8_t *>(const_cast<char *>("testuri")) };
@@ -467,18 +467,18 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogBmsCheckFails, testing::ex
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogAbilityNameBoundary, testing::ext::TestSize.Level0)
 {
-    /* 128 字符合法名（blob 129 含 NUL）通过长度校验并到达 BMS 检查（spec v4 D23 边界） */
-    std::string longName(128, 'a');
+    /* 256 字符合法名（blob 257 含 NUL）通过长度校验并到达 BMS 检查（spec v4.1 D24 边界） */
+    std::string longName(256, 'a');
     struct CmBlob abilityName = { static_cast<uint32_t>(longName.size() + 1),
         reinterpret_cast<uint8_t *>(const_cast<char *>(longName.c_str())) };
     ASSERT_EQ(manager_->OpenDriverDialog(&abilityName, CM_UKEY_ABILITY_TYPE_UIEXTENSION,
-        &keyUri_, 100, callerBundle_, 0, nullptr, client_), CM_SUCCESS);
+        &keyUri_, 100, callerBundle_, 100, 0, nullptr, client_), CM_SUCCESS);
     manager_->OnReport(manager_->GetRequestIdForTest(), callerBundle_, 0); // cleanup
     /* 仅 NUL 的名字剥离后为空串 → 参数拒绝 */
     const char *nulName = "";
     struct CmBlob nulBlob = { 1, reinterpret_cast<uint8_t *>(const_cast<char *>(nulName)) };
     ASSERT_EQ(manager_->OpenDriverDialog(&nulBlob, CM_UKEY_ABILITY_TYPE_UIEXTENSION,
-        &keyUri_, 100, callerBundle_, 0, nullptr, client_), CMR_ERROR_INVALID_ARGUMENT);
+        &keyUri_, 100, callerBundle_, 100, 0, nullptr, client_), CMR_ERROR_INVALID_ARGUMENT);
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogPcGate, testing::ext::TestSize.Level0)

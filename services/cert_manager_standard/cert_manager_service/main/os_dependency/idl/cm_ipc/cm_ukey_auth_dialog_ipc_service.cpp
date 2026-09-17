@@ -135,10 +135,14 @@ void CmIpcServiceOpenUkeyAuthDialogForDriver(uint32_t code, const struct CmBlob 
     }
 
     CmUkeyAuthDialogManager::GetInstance().InitRealDependencies();
+    /* BMS 查询用 userId：经 CmGetProcessInfoForIPC 解出（模式同 cm_sa.cpp
+     * OnRemoteRequest；入参 context 实为 reply parcel，不得用于此） */
+    struct CmContext procContext = {0};
+    (void)CmGetProcessInfoForIPC(&procContext);
     /* abilityName/keyUri/customData 指向 paramSet 缓冲，OpenDriverDialog 同步消费后不再引用 */
     ret = CmUkeyAuthDialogManager::GetInstance().OpenDriverDialog(&abilityName, abilityType,
         &keyUri, static_cast<uint32_t>(IPCSkeleton::GetCallingUid()), hapInfo.bundleName,
-        timeoutMs, &customData, clientCallback);
+        static_cast<int32_t>(procContext.userId), timeoutMs, &customData, clientCallback);
     CmFreeParamSet(&paramSet);
     CmSendResponse(context, ret, NULL);
 }

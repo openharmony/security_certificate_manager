@@ -30,7 +30,7 @@ private:
     ani_double aniTimeout = 0;
     ani_object aniCustomData = nullptr;
     /* parsed params */
-    CmBlob abilityName = { 0 }; /* driver dialog extension name, 1..128 bytes + NUL */
+    CmBlob abilityName = { 0 }; /* driver dialog extension name, 1..256 bytes + NUL */
     uint32_t abilityType = 0; /* only CM_UKEY_ABILITY_TYPE_UIEXTENSION (D24) */
     CmBlob keyUri = { 0 };
     uint32_t timeoutMs = 0; /* 0 = server default */

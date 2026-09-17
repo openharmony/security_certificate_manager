@@ -16,6 +16,7 @@
 | v2 | 2026-09-11 | D3 修订（abilityType 方案）、D2 修订（公开 report API 收窄为 inner）、超时参数、requestId CSPRNG fail-closed |
 | v3 | 2026-09-15 | 场景路由（D9–D19）：`scene`/`customData` 字段；三分路由（默认/UIAbility/UIExtension）；PC 门禁；删除 29700008 |
 | v4 | 2026-09-17 | **简化方案（D21–D26）**：删 `scene` 字段与 `UkeyAuthScene`；删无 context 重载；`openUkeyAuthDialog(context)` 收窄为仅驱动 UIExtensionAbility（查询失败/UIAbility → 29700003）；默认弹框与 UIAbility 拉起路径整体删除；新增 `openAuthDialogForUkeyDriver(dialogInfo, ukeyAuthRequest)`（CRYPTO_EXTENSION_REGISTER + IPC token 取包名 + BMS 预校验）；新增 `AbilityType`/`UkeyAuthDialogInfo`；D8 折叠逻辑重新归属（专属码 29700009/29700010 移至新接口）。**同日增补（D25 v2）**：非 PC/非 PC 模式 + UIExtension 时，openUkeyAuthDialog 在 **Kit 侧回退直启默认弹框**（since-22 既有机制），ForDriver 维持 29700005 |
+| v4.1 | 2026-09-17 | 用户裁定修正：abilityType 枚举值非法→29700006（仅类型错 401）；abilityName 上限 256 字节；BMS userId 改经 CmGetProcessInfoForIPC |
 
 ## 1. 背景与目标
 
@@ -77,7 +78,7 @@ v1–v3 决策（D1–D20）保留作轨迹；v4 覆盖项在行内标注，新�
 | D20 | 路由权威 | SA 自行查询 ability 信息决定拉起目标，不信任客户端声明。**v4 补充**：`openAuthDialogForUkeyDriver` 的拉起目标由 **IPC token 包名 + 入参 abilityName** 构成（bundle 不可伪造），BMS 校验兜底（D23） | Kit 上传任意 bundle/ability = 提权风险 |
 | D21 | v4 接口面收敛 | **删除**：无 context 重载 `openUkeyAuthDialog(ukeyAuthRequest)`（26 未发布，干净删除）、`UkeyAuthScene` 枚举、`UkeyAuthRequest.scene`、d.ts 老接口中 Custom/默认弹框相关 throws 描述 | 简化方案第 1、2 条 |
 | D22 | openUkeyAuthDialog 语义收窄 | **仅支持驱动注册的 UIExtensionAbility（PC/PC 模式）**：Kit 查询失败（未注册）→ 同步 29700003（-1019 改名 `NOT_REGISTERED`）；type=UIAbility(0) → 同步 29700003（-1021，文案去掉 no-context 措辞）；type=UIExtension(1) 且 PC → 走 SA；**type=UIExtension(1) 且非 PC → Kit 直启默认弹框（D25 v2）**。SA 复查同矩阵（纵深防御，-1020 保留为竞态防御）。**SA 侧默认弹框拉起与 Kit 侧 UIAbility 直启代码删除；Kit 侧默认弹框直启（GetDefaultAuthCertWant + StartUIExtensionAbility，since-22 既有机制）保留专用于非 PC 回退** | 简化方案第 2 条 + 2026-09-17 非 PC 回退增补 |
-| D23 | 新增 openAuthDialogForUkeyDriver | 签名 `openAuthDialogForUkeyDriver(dialogInfo: UkeyAuthDialogInfo, ukeyAuthRequest: UkeyAuthRequest): Promise<void>`。校验链：① NAPI 解析（dialogInfo 两字段必填；abilityType ≠ `UKEY_AUTH_EXTENSION_ABILITY` → **401 同步**；abilityName 非空 ≤128B）② NAPI 预检 `CRYPTO_EXTENSION_REGISTER`（进程内 AccessTokenKit）→ 失败 **201 同步** ③ SA：IPC token 取调用方 bundleName（`GetHapTokenInfo`，模式同 Report）+ 复检权限（纵深防御）④ **BMS 预校验**（用户裁定）：`(bundleName, abilityName)` 存在且类型为 UIExtensionAbility，否则 29700003——坏 abilityName 立即报错而非等 5 分钟总超时 ⑤ PC 门禁 ⑥ systemui 拉起。SA 侧 abilityType 防御拒绝用 -1014（29700006） | 简化方案第 3、4 条 + BMS 裁定（2026-09-17） |
+| D23 | 新增 openAuthDialogForUkeyDriver | 签名 `openAuthDialogForUkeyDriver(dialogInfo: UkeyAuthDialogInfo, ukeyAuthRequest: UkeyAuthRequest): Promise<void>`。校验链：① NAPI 解析（dialogInfo 两字段必填；abilityType 类型错（非 number）→ **401 同步**，number 但非有效枚举值 → **29700006**（v4.1 用户裁定）；abilityName 非空 ≤256B）② NAPI 预检 `CRYPTO_EXTENSION_REGISTER`（进程内 AccessTokenKit）→ 失败 **201 同步** ③ SA：IPC token 取调用方 bundleName（`GetHapTokenInfo`，模式同 Report）+ 复检权限（纵深防御）④ **BMS 预校验**（用户裁定）：`(bundleName, abilityName)` 存在且类型为 UIExtensionAbility，否则 29700003——坏 abilityName 立即报错而非等 5 分钟总超时；BMS 查询 userId 经 `CmGetProcessInfoForIPC` 获取（IPC 层解析传入）⑤ PC 门禁 ⑥ systemui 拉起。SA 侧 abilityType 防御拒绝用 -1014（29700006） | 简化方案第 3、4 条 + BMS 裁定（2026-09-17）+ v4.1 裁定修正 |
 | D24 | 新增类型面 | `enum AbilityType { UKEY_AUTH_EXTENSION_ABILITY = 1 }`（用户裁定取 1，对齐 HUKS 内部 0=UIAbility/1=UIExtension，免映射）；`interface UkeyAuthDialogInfo { abilityType: AbilityType; abilityName: string }`（abilityType 在前，用户指定）；inner API 镜像 C 结构体 `UkeyAuthDialogInfo { CmBlob abilityName; uint32_t abilityType; }` | 用户裁定（2026-09-17） |
 | D25 | PC 门禁适用范围 | **v2（2026-09-17 增补）按接口分叉**：`openUkeyAuthDialog` + UIExtension + **非 PC/非 PC 模式 → Kit 侧回退直启默认弹框**（`CmUkeyIsPcOrPcMode` 共享头函数，Kit 查询后判定；不走 SA、无 29700005；SA 侧 -1020 保留为竞态防御）；`openAuthDialogForUkeyDriver` **任何非 PC/非 PC 模式 → -1020 → 29700005**（驱动自拉起无回退）。v1 的"两接口统一 -1020"作废 | 非 PC 设备上普通应用的认证流程仍需可用（默认弹框兜底）；驱动自拉起场景明确要求 PC 形态 |
 | D26 | 单飞/会话机制共享 | 两接口共用 SA 会话位与全部会话机制（超时/宽限/上报/死亡监听）；`-1018` 在 openUkeyAuthDialog 折叠 29700003、在 openAuthDialogForUkeyDriver 回 29700010（D8 v4） | 不变机制，归属调整 |
@@ -178,11 +179,11 @@ export enum AbilityType {
  */
 export interface UkeyAuthDialogInfo {
     /** Type of the PIN dialog ability. Only AbilityType.UKEY_AUTH_EXTENSION_ABILITY
-     *  is supported; other values cause 401. */
+     *  is supported; other values cause 29700006. */
     abilityType: AbilityType;
     /** Ability name of the driver's own UIExtensionAbility, within the caller's
      *  bundle (the bundle is resolved from the caller identity, not from this
-     *  parameter). Non-empty, up to 128 bytes. */
+     *  parameter). Non-empty, up to 256 bytes. */
     abilityName: string;
 }
 
@@ -214,8 +215,8 @@ UIExtensionAbility 弹框（PC/PC 模式）；非 PC 设备回退系统默认弹
 
 | 字段 | 缺省 | 非法值 |
 |---|---|---|
-| `dialogInfo.abilityType` | 必填 | 非 number / ≠ 1 → **401** |
-| `dialogInfo.abilityName` | 必填 | 非字符串 / 空串 / > 128 字节 → 29700006 |
+| `dialogInfo.abilityType` | 必填 | 非 number → **401**；number ≠ 1 → **29700006**（v4.1） |
+| `dialogInfo.abilityName` | 必填 | 非字符串 / 空串 / > 256 字节 → 29700006 |
 | `keyUri` | 必填 | 既有约定（≤256B） |
 | `timeoutDuration` | 0（服务端默认） | 非 number → 29700006（既有） |
 | `customData` | 无 | 非 Uint8Array / > 2048 → 29700006 |
@@ -274,7 +275,7 @@ UIExtensionAbility 弹框（PC/PC 模式）；非 PC 设备回退系统默认弹
 ```c
 /* UKey 驱动弹框扩展信息（对齐 d.ts UkeyAuthDialogInfo，D24） */
 struct UkeyAuthDialogInfo {
-    struct CmBlob abilityName;   /* 驱动弹框扩展名，非空，≤128 字节，NUL 结尾 */
+    struct CmBlob abilityName;   /* 驱动弹框扩展名，非空，≤256 字节，NUL 结尾 */
     uint32_t abilityType;        /* enum CmUkeyAbilityType，仅 CM_UKEY_ABILITY_TYPE_UIEXTENSION */
 };
 
@@ -446,7 +447,8 @@ CMNapiOpenAuthDialogForUkeyDriver:                  /* 新增，cm_napi.cpp 注�
 | 连接/命令/CSPRNG/上报校验失败 | -1000 | 29700001 | 29700001 |
 | 提供方上报透传 | — | 29700003/29700006 | 29700003/29700006 |
 | request 解析失败 / abilityName 非法 | -1014 | 29700006 | 29700006 |
-| abilityType 非枚举值 / argc 不匹配 | — | 401 | **401** |
+| abilityType 类型错（非 number）/ argc 不匹配 | — | 401 | **401** |
+| abilityType 枚举值非法（number ≠ 1，v4.1） | — | — | **29700006** |
 
 ## 12. 兼容性
 
@@ -468,7 +470,7 @@ CMNapiOpenAuthDialogForUkeyDriver:                  /* 新增，cm_napi.cpp 注�
     false→29700003 映射、PC 门禁、单飞与 OpenDialog 互斥共享、owner=caller bundle
     的上报校验（HUKS bundle 上报被拒）、params JSON 无 scene 断言；
   - 会话机制回归：超时/宽限/死亡监听/保活/requestId CSPRNG；
-  - NAPI/ANI 解析：abilityType 0/1/2/非 number、abilityName 空/129B、customData 边界。
+  - NAPI/ANI 解析：abilityType 0/1/2/非 number、abilityName 空/257B、customData 边界。
 - **real-IPC 探针**（`cm_ukey_auth_dialog_real_ipc_test`）：老探针预期更新
   （无驱动注册 → **同步 -1019**，不再有默认弹框会话）；新增 ForDriver 探针
   （nativetoken 授 `CRYPTO_EXTENSION_REGISTER`）。

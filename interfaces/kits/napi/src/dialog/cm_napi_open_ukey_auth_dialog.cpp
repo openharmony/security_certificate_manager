@@ -490,8 +490,9 @@ static napi_value OpenAuthDialogForUkeyDriverViaSa(
     return result;
 }
 
-/* UkeyAuthDialogInfo 解析（spec v4 D23/D24）：dialogInfo 非对象、abilityType 非数值
- * 或 ≠1 → 401；abilityName 非字符串 / 空串 / >128 字节 → 29700006 */
+/* UkeyAuthDialogInfo 解析（spec v4 D23/D24，v4.1 用户裁定修正）：dialogInfo 非对象、
+ * abilityType 非数值（缺省/非 number）→ 401；abilityType 为 number 但非有效枚举值 1
+ * → 29700006；abilityName 非字符串 / 空串 / >256 字节 → 29700006 */
 static int32_t GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &abilityType,
     std::string &abilityName)
 {
@@ -510,9 +511,11 @@ static int32_t GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &ability
         return PARAM_ERROR;
     }
     double abilityTypeDouble = 0;
-    if (napi_get_value_double(env, abilityTypeValue, &abilityTypeDouble) != napi_ok ||
-        abilityTypeDouble != CM_UKEY_ABILITY_TYPE_UIEXTENSION) { /* 枚举唯一合法值 = 1 */
+    if (napi_get_value_double(env, abilityTypeValue, &abilityTypeDouble) != napi_ok) {
         return PARAM_ERROR;
+    }
+    if (abilityTypeDouble != CM_UKEY_ABILITY_TYPE_UIEXTENSION) { /* 枚举唯一合法值 = 1 */
+        return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
 
@@ -527,7 +530,7 @@ static int32_t GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &ability
         return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     /* 两段式读取：先取精确 UTF-8 字节长度（Ark NAPI 的 buf 路径会静默截断且恒
-     * 返回 napi_ok，超长必须在拷贝前显式拒绝，spec §5.1：>128B → 29700006） */
+     * 返回 napi_ok，超长必须在拷贝前显式拒绝，spec §5.1：>256B → 29700006） */
     size_t nameLen = 0;
     if (napi_get_value_string_utf8(env, abilityNameValue, nullptr, 0, &nameLen) != napi_ok ||
         nameLen == 0 || nameLen > CM_UKEY_ABILITY_NAME_MAX_LEN) {

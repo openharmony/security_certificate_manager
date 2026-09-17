@@ -63,7 +63,7 @@ CmOpenAuthDialogForUkeyDriver::CmOpenAuthDialogForUkeyDriver(ani_env *env, ani_s
 
 int32_t CmOpenAuthDialogForUkeyDriver::GetParamsFromEnv()
 {
-    /* abilityName: non-empty, <= 128 bytes (the blob carries the terminating
+    /* abilityName: non-empty, <= 256 bytes (the blob carries the terminating
      * zero, size 1 means an empty name); AniUtils::ParseString allocates the
      * exact-size buffer so an over-long name is rejected here, not truncated */
     int32_t ret = AniUtils::ParseString(env, this->aniAbilityName, this->abilityName);
@@ -73,10 +73,13 @@ int32_t CmOpenAuthDialogForUkeyDriver::GetParamsFromEnv()
         CM_FREE_BLOB(this->abilityName);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
-    /* abilityType: the enum's only legal value is 1 (UKEY_AUTH_EXTENSION_ABILITY) */
+    /* abilityType: the enum's only legal value is 1 (UKEY_AUTH_EXTENSION_ABILITY);
+     * a number that is not the valid enum value maps to 29700006 (v4.1 user
+     * ruling; ANI type errors are compile-time in ets, the wrapper's
+     * undefined-check stays 401) */
     if (this->aniAbilityType != CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
         CM_LOG_E("invalid driver dialog ability type");
-        return CMR_DIALOG_ERROR_PARAM_INVALID;
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     this->abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
 

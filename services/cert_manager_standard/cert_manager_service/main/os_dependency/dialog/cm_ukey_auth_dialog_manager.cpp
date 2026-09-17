@@ -250,9 +250,11 @@ int32_t QueryUkeyDriverAbility(const struct CmBlob *keyUri,
 
 /* 驱动弹框扩展 BMS 预校验（生产装配，spec v4 D23）：(bundleName, abilityName)
  * 存在且类型为 UKEY_AUTH（ExtensionAbilityType=40）。以 SA 自身身份查询
- * （ResetCallingIdentity，避免线程上残留的 app token 影响 BMS 可见性判定）。 */
+ * （ResetCallingIdentity，避免线程上残留的 app token 影响 BMS 可见性判定）。
+ * userId 由 IPC 层经 CmGetProcessInfoForIPC 解出传入（本静态库不得依赖 idl 层，
+ * GetCallingUid 推导在 SA 入口线程上不可靠）。 */
 bool QueryDriverUkeyExtensionAbility(const std::string &bundleName,
-    const std::string &abilityName)
+    const std::string &abilityName, int32_t userId)
 {
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgr == nullptr) {
@@ -269,10 +271,6 @@ bool QueryDriverUkeyExtensionAbility(const std::string &bundleName,
         CM_LOG_E("cast bundle mgr proxy failed");
         return false;
     }
-    /* 调用方 userId 自 calling uid 推导（uid 高位编码 userId，对齐
-     * print_service/common_event_service 等 SA 的既有模式） */
-    constexpr int32_t UID_TRANSFORM_DIVISOR = 200000;
-    int32_t userId = static_cast<int32_t>(IPCSkeleton::GetCallingUid()) / UID_TRANSFORM_DIVISOR;
     AAFwk::Want want;
     want.SetElementName(bundleName, abilityName);
     std::vector<AppExecFwk::ExtensionAbilityInfo> infos;
@@ -501,7 +499,7 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
 
 int32_t CmUkeyAuthDialogManager::OpenDriverDialog(const struct CmBlob *abilityName,
     uint32_t abilityType, const struct CmBlob *keyUri, uint32_t callerUid,
-    const std::string &callerBundleName, uint32_t timeoutMs,
+    const std::string &callerBundleName, int32_t userId, uint32_t timeoutMs,
     const struct CmBlob *customData, const sptr<IRemoteObject> &clientCallback)
 {
     if (abilityName == nullptr || abilityName->data == nullptr || abilityName->size == 0 ||
@@ -533,7 +531,8 @@ int32_t CmUkeyAuthDialogManager::OpenDriverDialog(const struct CmBlob *abilityNa
         CM_LOG_E("ability name is empty after trailing nul strip");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    if (driverAbilityChecker_ == nullptr || !driverAbilityChecker_(callerBundleName, ability)) {
+    if (driverAbilityChecker_ == nullptr ||
+        !driverAbilityChecker_(callerBundleName, ability, userId)) {
         CM_LOG_E("driver ability check failed, bundle: %s, ability: %s",
             callerBundleName.c_str(), ability.c_str());
         return CMR_DIALOG_ERROR_NOT_REGISTERED;

@@ -46,9 +46,9 @@ inline bool CmUkeyIsPcOrPcMode()
     return OHOS::system::GetBoolParameter(CM_UKEY_PARAM_IS_PC_MODE, false);
 }
 
-/* ---- 驱动弹框扩展名长度上限（spec v4 D24：UkeyAuthDialogInfo.abilityName
- * 非空字符串，≤128 字节）---- */
-constexpr uint32_t CM_UKEY_ABILITY_NAME_MAX_LEN = 128;
+/* ---- 驱动弹框扩展名长度上限（spec v4 D24 / v4.1 用户裁定修正：
+ * UkeyAuthDialogInfo.abilityName 非空字符串，≤256 字节）---- */
+constexpr uint32_t CM_UKEY_ABILITY_NAME_MAX_LEN = 256;
 
 /* ---- base64 编码（spec §8.4：标准字母表 + padding，仅 want/params 构造边界使用；
  * inner API / IPC 全程传原始字节）---- */
