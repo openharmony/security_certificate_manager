@@ -195,11 +195,11 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
             int32_t queryRet = GetUkeyAbilityInfo(&keyUriBlob, driverBundle, driverAbility, abilityType);
             CM_FREE_BLOB(keyUriBlob);
             if (queryRet != CM_SUCCESS) {
-                return GenerateResult(env, CMR_DIALOG_ERROR_NOT_REGISTERED,
+                return GenerateResult(env, DIALOG_ERROR_INSTALL_FAILED,
                     UKEY_NOT_REGISTERED_MSG.c_str());
             }
             if (abilityType == CM_UKEY_ABILITY_TYPE_UIABILITY) {
-                return GenerateResult(env, CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED,
+                return GenerateResult(env, DIALOG_ERROR_INSTALL_FAILED,
                     UKEY_UIABILITY_NOT_SUPPORTED_MSG.c_str());
             }
             if (CmUkeyIsPcOrPcMode()) {

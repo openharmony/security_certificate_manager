@@ -58,9 +58,9 @@ public:
     }
 };
 
-/* UIAbility registration probe: openUkeyAuthDialog rejects UIAbility-type
- * driver dialogs synchronously with -1021 (spec v4); the callback never
- * fires on sync rejection. */
+/* Unregistered-key probe: openUkeyAuthDialog rejects a key uri with no
+ * registered driver pin dialog synchronously with -1019 (spec v4); the
+ * callback never fires on sync rejection. */
 HWTEST_F(CmUkeyDialogRealIpcTest, OpenDialogUiAbilityRejectedProbe, testing::ext::TestSize.Level0)
 {
     char uri[] = "ukey-test-uri";

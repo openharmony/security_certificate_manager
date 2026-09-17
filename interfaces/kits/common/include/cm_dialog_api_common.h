@@ -104,7 +104,6 @@ static const std::string CERT_MANAGER_CERT_PURPOSE = "certPurpose";
 static const std::string CERT_MANAGER_KEY_ALG_IDS = "keyAlgIDs";
 static const std::string CERT_MANAGER_ISSUERS = "issuers";
 static const std::string CERT_MANAGER_SERVER_URL = "uri";
-static const std::string ACTION_UKEY_PIN_AUTH = "UkeyPINAuth";
 
 constexpr int32_t PARAM0 = 0;
 constexpr int32_t PARAM1 = 1;

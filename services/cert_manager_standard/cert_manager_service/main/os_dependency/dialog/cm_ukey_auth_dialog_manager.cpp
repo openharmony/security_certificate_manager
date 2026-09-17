@@ -505,7 +505,7 @@ int32_t CmUkeyAuthDialogManager::OpenDriverDialog(const struct CmBlob *abilityNa
     const struct CmBlob *customData, const sptr<IRemoteObject> &clientCallback)
 {
     if (abilityName == nullptr || abilityName->data == nullptr || abilityName->size == 0 ||
-        abilityName->size > HAP_INFO_MAX_LENGTH || keyUri == nullptr || keyUri->data == nullptr ||
+        abilityName->size > CM_UKEY_ABILITY_NAME_MAX_LEN + 1 || keyUri == nullptr || keyUri->data == nullptr ||
         keyUri->size == 0 || keyUri->size > MAX_LEN_URI || clientCallback == nullptr ||
         callerBundleName.empty()) {
         CM_LOG_E("invalid open driver dialog arguments");
@@ -528,6 +528,10 @@ int32_t CmUkeyAuthDialogManager::OpenDriverDialog(const struct CmBlob *abilityNa
     std::string ability(reinterpret_cast<char *>(abilityName->data), abilityName->size);
     if (ability.back() == '\0') { /* blob 可能带结尾 NUL */
         ability.pop_back();
+    }
+    if (ability.empty()) { /* 剥离 NUL 后为空串：视为非法参数（spec v4 D23） */
+        CM_LOG_E("ability name is empty after trailing nul strip");
+        return CMR_ERROR_INVALID_ARGUMENT;
     }
     if (driverAbilityChecker_ == nullptr || !driverAbilityChecker_(callerBundleName, ability)) {
         CM_LOG_E("driver ability check failed, bundle: %s, ability: %s",

@@ -21,7 +21,6 @@
 #include "cm_ani_common.h"
 #include "cm_log.h"
 #include "cm_dialog_api_common.h"
-#include "cm_ukey_dialog_common.h"
 
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;

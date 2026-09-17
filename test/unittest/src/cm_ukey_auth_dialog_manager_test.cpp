@@ -465,6 +465,22 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogBmsCheckFails, testing::ex
     EXPECT_EQ(launcher_->connectCount_, 0);
 }
 
+HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogAbilityNameBoundary, testing::ext::TestSize.Level0)
+{
+    /* 128 字符合法名（blob 129 含 NUL）通过长度校验并到达 BMS 检查（spec v4 D23 边界） */
+    std::string longName(128, 'a');
+    struct CmBlob abilityName = { static_cast<uint32_t>(longName.size() + 1),
+        reinterpret_cast<uint8_t *>(const_cast<char *>(longName.c_str())) };
+    ASSERT_EQ(manager_->OpenDriverDialog(&abilityName, CM_UKEY_ABILITY_TYPE_UIEXTENSION,
+        &keyUri_, 100, callerBundle_, 0, nullptr, client_), CM_SUCCESS);
+    manager_->OnReport(manager_->GetRequestIdForTest(), callerBundle_, 0); // cleanup
+    /* 仅 NUL 的名字剥离后为空串 → 参数拒绝 */
+    const char *nulName = "";
+    struct CmBlob nulBlob = { 1, reinterpret_cast<uint8_t *>(const_cast<char *>(nulName)) };
+    ASSERT_EQ(manager_->OpenDriverDialog(&nulBlob, CM_UKEY_ABILITY_TYPE_UIEXTENSION,
+        &keyUri_, 100, callerBundle_, 0, nullptr, client_), CMR_ERROR_INVALID_ARGUMENT);
+}
+
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogPcGate, testing::ext::TestSize.Level0)
 {
     /* ForDriver 无回退：非 PC → -1020（29700005，D25 v2） */
