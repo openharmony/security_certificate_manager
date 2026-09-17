@@ -24,10 +24,14 @@
 #include "cm_ukey_dialog_common.h"
 #include "cm_napi_dialog_common.h"
 #include "cm_napi_dialog_callback_void.h"
+#include "accesstoken_kit.h"
+#include "ipc_skeleton.h"
 
 namespace CMNapi {
 using OHOS::Security::CertManager::CM_UKEY_SCENE_LOGIN_STR;
 using OHOS::Security::CertManager::CM_UKEY_SCENE_CUSTOM_STR;
+using OHOS::Security::CertManager::CM_UKEY_ABILITY_NAME_MAX_LEN;
+using OHOS::Security::AccessToken::AccessTokenID;
 
 /* Result context kept alive from the CmOpenUkeyAuthDialog call until the
  * promise is settled on the JS thread; ownership is handed to the threadsafe
@@ -468,5 +472,167 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
 
     CM_LOG_I("cert authorize dialog end");
     return result;
+}
+
+/* CRYPTO_EXTENSION_REGISTER 进程内预检（spec v4 D23：失败同步 201） */
+static bool CheckUkeyDriverPermission(void)
+{
+    AccessTokenID tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
+    return OHOS::Security::AccessToken::AccessTokenKit::VerifyAccessToken(
+        tokenId, "ohos.permission.CRYPTO_EXTENSION_REGISTER") == 0 /* PERMISSION_GRANTED */;
+}
+
+/* ForDriver 的 SA 路径 promise 包装：错误码不折叠（29700009/29700010 直通，D8 v4） */
+static napi_value OpenAuthDialogForUkeyDriverViaSa(
+    std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::Security::CertManager::CmMetricsReport &&report, std::string abilityName,
+    uint32_t abilityType)
+{
+    napi_env env = asyncContext->env;
+    napi_value result = nullptr;
+    napi_deferred deferred = nullptr;
+    NAPI_CALL(env, napi_create_promise(env, &deferred, &result));
+
+    auto resultContext = new (std::nothrow) CmUkeyAuthResultContext();
+    if (resultContext == nullptr) {
+        CM_LOG_E("alloc ukey auth result context failed");
+        napi_value error = GenerateBusinessError(env, DIALOG_ERROR_GENERIC, &report);
+        NAPI_CALL(env, napi_reject_deferred(env, deferred, error));
+        return result;
+    }
+    resultContext->env = env;
+    resultContext->deferred = deferred;
+    resultContext->legacyOverload = false; /* ForDriver：专属码直通 */
+    resultContext->metricsReport =
+        std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+
+    napi_value resourceName = nullptr;
+    NAPI_CALL(env, napi_create_string_latin1(env, "CmUkeyAuthDialogResult", NAPI_AUTO_LENGTH,
+        &resourceName));
+    napi_status status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 0, 1,
+        resultContext, UvTsfnFinalize, resultContext, UvTsfnCallback, &resultContext->tsfn);
+    if (status != napi_ok) {
+        CM_LOG_E("create threadsafe function failed, status = %d", static_cast<int32_t>(status));
+        napi_value error = GenerateBusinessError(env, DIALOG_ERROR_GENERIC,
+            resultContext->metricsReport.get());
+        NAPI_CALL(env, napi_reject_deferred(env, deferred, error));
+        delete resultContext;
+        return result;
+    }
+
+    struct UkeyAuthDialogInfo dialogInfo = {};
+    dialogInfo.abilityName.size = static_cast<uint32_t>(abilityName.size() + 1); /* 含 NUL */
+    dialogInfo.abilityName.data = reinterpret_cast<uint8_t *>(const_cast<char *>(abilityName.c_str()));
+    dialogInfo.abilityType = abilityType;
+    struct UkeyAuthRequest ukeyAuthRequest = {};
+    ukeyAuthRequest.keyUri.size = asyncContext->certUri->size;
+    ukeyAuthRequest.keyUri.data = asyncContext->certUri->data;
+    ukeyAuthRequest.timeoutDuration = asyncContext->authTimeoutMs;
+    if (asyncContext->authCustomData != nullptr) {
+        ukeyAuthRequest.customData.size = asyncContext->authCustomData->size;
+        ukeyAuthRequest.customData.data = asyncContext->authCustomData->data;
+    }
+    int32_t ret = CmOpenUkeyAuthDialogForDriver(&dialogInfo, &ukeyAuthRequest,
+        UkeyAuthDialogResultCallback, resultContext);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("open auth dialog for ukey driver failed, ret = %d", ret);
+        napi_value error = GenerateBusinessError(env, ret, resultContext->metricsReport.get());
+        NAPI_CALL(env, napi_reject_deferred(env, deferred, error));
+        napi_release_threadsafe_function(resultContext->tsfn, napi_tsfn_release);
+        return result;
+    }
+    return result;
+}
+
+/* UkeyAuthDialogInfo 解析（spec v4 D23/D24）：abilityType 必为 1（否则 401），
+ * abilityName 非空字符串 ≤128 字节（否则 29700006） */
+static bool GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &abilityType,
+    std::string &abilityName)
+{
+    napi_valuetype type = napi_undefined;
+    if (napi_typeof(env, arg, &type) != napi_ok || type != napi_object) {
+        return false;
+    }
+    napi_value abilityTypeValue = nullptr;
+    if (napi_get_named_property(env, arg, "abilityType", &abilityTypeValue) != napi_ok ||
+        abilityTypeValue == nullptr) {
+        return false;
+    }
+    napi_valuetype abilityTypeType = napi_undefined;
+    if (napi_typeof(env, abilityTypeValue, &abilityTypeType) != napi_ok ||
+        abilityTypeType != napi_number) {
+        return false;
+    }
+    double abilityTypeDouble = 0;
+    if (napi_get_value_double(env, abilityTypeValue, &abilityTypeDouble) != napi_ok ||
+        abilityTypeDouble != CM_UKEY_ABILITY_TYPE_UIEXTENSION) { /* 枚举唯一合法值 = 1 */
+        return false;
+    }
+    abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
+
+    napi_value abilityNameValue = nullptr;
+    if (napi_get_named_property(env, arg, "abilityName", &abilityNameValue) != napi_ok ||
+        abilityNameValue == nullptr) {
+        return false;
+    }
+    napi_valuetype abilityNameType = napi_undefined;
+    if (napi_typeof(env, abilityNameValue, &abilityNameType) != napi_ok ||
+        abilityNameType != napi_string) {
+        return false;
+    }
+    char nameBuf[CM_UKEY_ABILITY_NAME_MAX_LEN + 1] = { 0 };
+    size_t copied = 0;
+    if (napi_get_value_string_utf8(env, abilityNameValue, nameBuf, sizeof(nameBuf), &copied)
+        != napi_ok || copied == 0) {
+        return false;
+    }
+    abilityName.assign(nameBuf, copied);
+    return true;
+}
+
+napi_value CMNapiOpenAuthDialogForUkeyDriver(napi_env env, napi_callback_info info)
+{
+    CM_LOG_I("cert open auth dialog for ukey driver enter");
+    OHOS::Security::CertManager::CmMetricsReport report("openAuthDialogForUkeyDriver",
+        OHOS::Security::CertManager::CmMetricsKind::DIALOG);
+    report.Start();
+    napi_value result = nullptr;
+    NAPI_CALL(env, napi_get_undefined(env, &result));
+    if (CheckSyscapReturnVoid(env, &result) != CM_SUCCESS) {
+        report.Finish(DIALOG_ERROR_CAPABILITY_NOT_SUPPORTED);
+        return result;
+    }
+    size_t argc = PARAM_SIZE_TWO;
+    napi_value argv[PARAM_SIZE_TWO] = { nullptr };
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+    if (argc != PARAM_SIZE_TWO) {
+        ThrowError(env, PARAM_ERROR, "Parameter Error. Params number mismatch, need 2", &report);
+        return result;
+    }
+    uint32_t abilityType = 0;
+    std::string abilityName;
+    if (!GetUkeyDialogInfo(env, argv[0], abilityType, abilityName)) {
+        CM_LOG_E("parse UkeyAuthDialogInfo failed");
+        ThrowError(env, PARAM_ERROR, "parse UkeyAuthDialogInfo failed", &report);
+        return result;
+    }
+    auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
+    if (IsParamNull(env, argv[1])) {
+        ThrowError(env, PARAM_ERROR, "UkeyAuthRequest is null", &report);
+        return result;
+    }
+    if (GetUkeyAuthRequest(asyncContext, argv[1]) == nullptr) {
+        CM_LOG_E("parse UkeyAuthRequest failed");
+        ThrowError(env, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, "parse UkeyAuthRequest failed",
+            &report);
+        return result;
+    }
+    if (!CheckUkeyDriverPermission()) {
+        CM_LOG_E("caller has no CRYPTO_EXTENSION_REGISTER permission");
+        ThrowError(env, HAS_NO_PERMISSION, DIALOG_NO_PERMISSION_MSG, &report);
+        return result;
+    }
+    return OpenAuthDialogForUkeyDriverViaSa(asyncContext, std::move(report),
+        std::move(abilityName), abilityType);
 }
 }  // namespace CMNapi

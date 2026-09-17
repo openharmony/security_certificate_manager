@@ -112,6 +112,7 @@ static napi_value CMDialogNapiRegister(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("openCertificateDetailDialog", CMNapiOpenDetailDialog),
         DECLARE_NAPI_FUNCTION("openAuthorizeDialog", CMNapiOpenAuthorizeDialog),
         DECLARE_NAPI_FUNCTION("openUkeyAuthDialog", CMNapiOpenUkeyAuthorizeDialog),
+        DECLARE_NAPI_FUNCTION("openAuthDialogForUkeyDriver", CMNapiOpenAuthDialogForUkeyDriver),
         DECLARE_NAPI_FUNCTION("supportsCACertDialog", CMNapiSupportsCACertDialog),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
