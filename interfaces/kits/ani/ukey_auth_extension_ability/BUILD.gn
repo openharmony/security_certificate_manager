@@ -33,6 +33,10 @@ ohos_shared_library("ukey_auth_extension_ani") {
     "src/ets_ukey_auth_extension_context.cpp",
   ]
 
+  deps = [
+    "//base/security/certificate_manager/interfaces/kits/ukey_auth_extension:ukey_auth_extension",
+  ]
+
   external_deps = [
     "ability_base:want",
     "ability_runtime:ability_business_error",
@@ -47,7 +51,6 @@ ohos_shared_library("ukey_auth_extension_ani") {
     "ability_runtime:runtime",
     "ability_runtime:ui_extension",
     "ability_runtime:ui_extension_ani",
-    "ability_runtime:ukey_auth_extension",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",

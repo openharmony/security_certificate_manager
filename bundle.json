@@ -64,7 +64,9 @@
           "openssl",
           "runtime_core",
           "node",
-          "window_manager"
+          "window_manager",
+          "libuv",
+          "hitrace"
         ]
       },
       "build": {

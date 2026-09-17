@@ -1,0 +1,158 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/components/ets_frontend/ets2abc_config.gni")
+import("//build/ohos.gni")
+
+cert_manager_root_dir = "//base/security/certificate_manager"
+ability_runtime_ets_path = "//foundation/ability/ability_runtime/frameworks/ets/ets"
+
+config("ukey_auth_extension_public_config") {
+  include_dirs = [ "include" ]
+}
+
+ohos_shared_library("ukey_auth_extension") {
+  sanitize = {
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    cfi_policy = "adaptive"
+    debug = false
+  }
+  branch_protector_ret = "pac_ret"
+  branch_protector_frt = "bti"
+
+  include_dirs = [ "include" ]
+
+  public_configs = [ ":ukey_auth_extension_public_config" ]
+
+  sources = [
+    "src/ets_ukey_auth_extension_instance.cpp",
+    "src/js_ukey_auth_extension.cpp",
+    "src/js_ukey_auth_extension_base.cpp",
+    "src/js_ukey_auth_extension_context.cpp",
+    "src/ukey_auth_extension.cpp",
+    "src/ukey_auth_extension_context.cpp",
+  ]
+
+  deps = [
+    "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+  ]
+
+  external_deps = [
+    "ability_base:want",
+    "ability_runtime:ability_business_error",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:ability_manager",
+    "ability_runtime:ability_start_options",
+    "ability_runtime:abilitykit_native",
+    "ability_runtime:abilitykit_utils",
+    "ability_runtime:app_context",
+    "ability_runtime:extensionkit_native",
+    "ability_runtime:napi_common",
+    "ability_runtime:runtime",
+    "ability_runtime:ui_extension",
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "hitrace:hitrace_meter",
+    "ipc:ipc_napi",
+    "ipc:ipc_single",
+    "libuv:uv",
+    "napi:ace_napi",
+    "node:node_header_notice",
+    "window_manager:libwm",
+  ]
+
+  subsystem_name = "security"
+  part_name = "certificate_manager"
+}
+
+ohos_shared_library("ukey_auth_extension_module") {
+  sanitize = {
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+    cfi = true
+    cfi_cross_dso = true
+    cfi_vcall_icall_only = true
+    cfi_policy = "adaptive"
+    debug = false
+  }
+  branch_protector_ret = "pac_ret"
+  branch_protector_frt = "bti"
+
+  sources = [ "src/ukey_auth_extension_module_loader.cpp" ]
+
+  deps = [ ":ukey_auth_extension" ]
+
+  external_deps = [
+    "ability_base:configuration",
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_runtime:abilitykit_native",
+    "ability_runtime:runtime",
+    "ability_runtime:ui_extension",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "ipc:ipc_core",
+    "ipc:ipc_napi",
+    "ipc:ipc_single",
+    "libuv:uv",
+    "napi:ace_napi",
+    "node:node_header_notice",
+    "window_manager:libwm",
+  ]
+
+  relative_install_dir = "extensionability/"
+  subsystem_name = "security"
+  part_name = "certificate_manager"
+}
+
+generate_static_abc("ability_runtime_ukey_auth_extension_ability_abc") {
+  base_url = "ets/"
+
+  files = [
+    "ets/@ohos.security.UkeyAuthExtensionAbility.ets",
+    "ets/@ohos.security.UkeyAuthExtensionContext.ets",
+  ]
+
+  paths_keys = [
+    "ability.abilityResult",
+    "application.ExtensionContext",
+    "utils.AbilityUtils",
+  ]
+
+  paths_values = [
+    "${ability_runtime_ets_path}/ability/abilityResult.ets",
+    "${ability_runtime_ets_path}/application/ExtensionContext.ets",
+    "${ability_runtime_ets_path}/utils/AbilityUtils.ets",
+  ]
+
+  is_boot_abc = "True"
+  device_dst_file = "/system/framework/ability_runtime_ukey_auth_extension_ability_abc.abc"
+}
+
+ohos_prebuilt_etc("ability_runtime_ukey_auth_extension_ability_abc_etc") {
+  source = "$target_out_dir/ability_runtime_ukey_auth_extension_ability_abc.abc"
+  module_install_dir = "framework"
+  subsystem_name = "security"
+  part_name = "certificate_manager"
+  deps = [ ":ability_runtime_ukey_auth_extension_ability_abc" ]
+}
