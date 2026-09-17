@@ -544,50 +544,50 @@ static napi_value OpenAuthDialogForUkeyDriverViaSa(
     return result;
 }
 
-/* UkeyAuthDialogInfo 解析（spec v4 D23/D24）：abilityType 必为 1（否则 401），
- * abilityName 非空字符串 ≤128 字节（否则 29700006） */
-static bool GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &abilityType,
+/* UkeyAuthDialogInfo 解析（spec v4 D23/D24）：dialogInfo 非对象、abilityType 非数值
+ * 或 ≠1 → 401；abilityName 非字符串 / 空串 / >128 字节 → 29700006 */
+static int32_t GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &abilityType,
     std::string &abilityName)
 {
     napi_valuetype type = napi_undefined;
     if (napi_typeof(env, arg, &type) != napi_ok || type != napi_object) {
-        return false;
+        return PARAM_ERROR;
     }
     napi_value abilityTypeValue = nullptr;
     if (napi_get_named_property(env, arg, "abilityType", &abilityTypeValue) != napi_ok ||
         abilityTypeValue == nullptr) {
-        return false;
+        return PARAM_ERROR;
     }
     napi_valuetype abilityTypeType = napi_undefined;
     if (napi_typeof(env, abilityTypeValue, &abilityTypeType) != napi_ok ||
         abilityTypeType != napi_number) {
-        return false;
+        return PARAM_ERROR;
     }
     double abilityTypeDouble = 0;
     if (napi_get_value_double(env, abilityTypeValue, &abilityTypeDouble) != napi_ok ||
         abilityTypeDouble != CM_UKEY_ABILITY_TYPE_UIEXTENSION) { /* 枚举唯一合法值 = 1 */
-        return false;
+        return PARAM_ERROR;
     }
     abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
 
     napi_value abilityNameValue = nullptr;
     if (napi_get_named_property(env, arg, "abilityName", &abilityNameValue) != napi_ok ||
         abilityNameValue == nullptr) {
-        return false;
+        return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     napi_valuetype abilityNameType = napi_undefined;
     if (napi_typeof(env, abilityNameValue, &abilityNameType) != napi_ok ||
         abilityNameType != napi_string) {
-        return false;
+        return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     char nameBuf[CM_UKEY_ABILITY_NAME_MAX_LEN + 1] = { 0 };
     size_t copied = 0;
     if (napi_get_value_string_utf8(env, abilityNameValue, nameBuf, sizeof(nameBuf), &copied)
         != napi_ok || copied == 0) {
-        return false;
+        return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     abilityName.assign(nameBuf, copied);
-    return true;
+    return CM_SUCCESS;
 }
 
 napi_value CMNapiOpenAuthDialogForUkeyDriver(napi_env env, napi_callback_info info)
@@ -611,9 +611,10 @@ napi_value CMNapiOpenAuthDialogForUkeyDriver(napi_env env, napi_callback_info in
     }
     uint32_t abilityType = 0;
     std::string abilityName;
-    if (!GetUkeyDialogInfo(env, argv[0], abilityType, abilityName)) {
-        CM_LOG_E("parse UkeyAuthDialogInfo failed");
-        ThrowError(env, PARAM_ERROR, "parse UkeyAuthDialogInfo failed", &report);
+    int32_t dialogInfoErr = GetUkeyDialogInfo(env, argv[0], abilityType, abilityName);
+    if (dialogInfoErr != CM_SUCCESS) {
+        CM_LOG_E("parse UkeyAuthDialogInfo failed, err = %d", dialogInfoErr);
+        ThrowError(env, dialogInfoErr, "parse UkeyAuthDialogInfo failed", &report);
         return result;
     }
     auto asyncContext = std::make_shared<CmUIExtensionRequestContext>(env);
