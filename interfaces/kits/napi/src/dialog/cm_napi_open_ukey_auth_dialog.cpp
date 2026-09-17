@@ -580,10 +580,17 @@ static int32_t GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &ability
         abilityNameType != napi_string) {
         return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
+    /* 两段式读取：先取精确 UTF-8 字节长度（Ark NAPI 的 buf 路径会静默截断且恒
+     * 返回 napi_ok，超长必须在拷贝前显式拒绝，spec §5.1：>128B → 29700006） */
+    size_t nameLen = 0;
+    if (napi_get_value_string_utf8(env, abilityNameValue, nullptr, 0, &nameLen) != napi_ok ||
+        nameLen == 0 || nameLen > CM_UKEY_ABILITY_NAME_MAX_LEN) {
+        return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
     char nameBuf[CM_UKEY_ABILITY_NAME_MAX_LEN + 1] = { 0 };
     size_t copied = 0;
     if (napi_get_value_string_utf8(env, abilityNameValue, nameBuf, sizeof(nameBuf), &copied)
-        != napi_ok || copied == 0) {
+        != napi_ok || copied == 0 || copied != nameLen) {
         return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     abilityName.assign(nameBuf, copied);
