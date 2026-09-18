@@ -35,7 +35,10 @@ ohos_shared_library("ukey_auth_extension") {
   branch_protector_ret = "pac_ret"
   branch_protector_frt = "bti"
 
-  include_dirs = [ "include" ]
+  include_dirs = [
+    "include",
+    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common/include",
+  ]
 
   public_configs = [ ":ukey_auth_extension_public_config" ]
 
@@ -95,9 +98,17 @@ ohos_shared_library("ukey_auth_extension_module") {
   branch_protector_ret = "pac_ret"
   branch_protector_frt = "bti"
 
+  include_dirs = [
+    "include",
+    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common/include",
+  ]
+
   sources = [ "src/ukey_auth_extension_module_loader.cpp" ]
 
-  deps = [ ":ukey_auth_extension" ]
+  deps = [
+    ":ukey_auth_extension",
+    "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+  ]
 
   external_deps = [
     "ability_base:configuration",

@@ -15,8 +15,8 @@
 
 #include "ukey_auth_extension.h"
 
+#include "cm_log.h"
 #include "ets_ukey_auth_extension_instance.h"
-#include "hilog_tag_wrapper.h"
 #include "js_ukey_auth_extension.h"
 #include "runtime.h"
 
@@ -39,7 +39,7 @@ void InjectDialogSessionContext(const AAFwk::Want &want, const sptr<AAFwk::Sessi
 
 UkeyAuthExtension *UkeyAuthExtension::Create(const std::unique_ptr<Runtime> &runtime)
 {
-    TAG_LOGD(AAFwkTag::EXT, "called");
+    CM_LOG_D("called");
     if (runtime == nullptr) {
         return new (std::nothrow) UkeyAuthExtension();
     }

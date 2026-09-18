@@ -15,7 +15,7 @@
 
 #include "ets_ukey_auth_extension.h"
 
-#include "hilog_tag_wrapper.h"
+#include "cm_log.h"
 #include "ets_ukey_auth_extension_base.h"
 
 #ifdef WINDOWS_PLATFORM
@@ -39,7 +39,7 @@ EtsUkeyAuthExtension::EtsUkeyAuthExtension(const std::unique_ptr<Runtime> &runti
 
 EtsUkeyAuthExtension::~EtsUkeyAuthExtension()
 {
-    TAG_LOGD(AAFwkTag::EXT, "destructor");
+    CM_LOG_D("destructor");
 }
 } // namespace AbilityRuntime
 } // namespace OHOS

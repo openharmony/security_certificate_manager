@@ -15,7 +15,7 @@
 
 #include "ukey_auth_extension_module_loader.h"
 #include "ukey_auth_extension.h"
-#include "hilog_tag_wrapper.h"
+#include "cm_log.h"
 
 namespace OHOS {
 namespace AbilityRuntime {
@@ -24,13 +24,13 @@ UkeyAuthExtensionModuleLoader::~UkeyAuthExtensionModuleLoader() = default;
 
 Extension *UkeyAuthExtensionModuleLoader::Create(const std::unique_ptr<Runtime> &runtime) const
 {
-    TAG_LOGD(AAFwkTag::EXT, "called");
+    CM_LOG_D("called");
     return UkeyAuthExtension::Create(runtime);
 }
 
 std::map<std::string, std::string> UkeyAuthExtensionModuleLoader::GetParams()
 {
-    TAG_LOGD(AAFwkTag::EXT, "called");
+    CM_LOG_D("called");
     std::map<std::string, std::string> params;
     // type means extension type in ExtensionAbilityType of extension_ability_info.h, 40 means ukeyAuth.
     params.insert(std::pair<std::string, std::string>("type", "40"));

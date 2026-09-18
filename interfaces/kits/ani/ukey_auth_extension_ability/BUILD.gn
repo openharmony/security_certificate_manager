@@ -25,7 +25,10 @@ ohos_shared_library("ukey_auth_extension_ani") {
 
   branch_protector_ret = "pac_ret"
 
-  include_dirs = [ "include" ]
+  include_dirs = [
+    "include",
+    "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common/include",
+  ]
 
   sources = [
     "src/ets_ukey_auth_extension.cpp",
@@ -34,6 +37,7 @@ ohos_shared_library("ukey_auth_extension_ani") {
   ]
 
   deps = [
+    "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
     "//base/security/certificate_manager/interfaces/kits/ukey_auth_extension:ukey_auth_extension",
   ]
 

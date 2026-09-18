@@ -18,10 +18,10 @@
 #include "ability_manager_client.h"
 #include "ani_common_ability_result.h"
 #include "ani_common_want.h"
+#include "cm_log.h"
 #include "ets_context_utils.h"
 #include "ets_error_utils.h"
 #include "ets_extension_context.h"
-#include "hilog_tag_wrapper.h"
 #include "session_info.h"
 #include "window.h"
 #ifdef SUPPORT_SCREEN
@@ -40,19 +40,19 @@ EtsUkeyAuthExtensionContext *EtsUkeyAuthExtensionContext::GetEtsUkeyAuthExtensio
     ani_env *env, ani_object obj)
 {
     if (env == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "null env");
+        CM_LOG_E("null env");
         return nullptr;
     }
     EtsUkeyAuthExtensionContext *etsContext = nullptr;
     ani_status status = ANI_ERROR;
     ani_long etsContextLong = 0;
     if ((status = env->Object_GetFieldByName_Long(obj, "nativeExtensionContext", &etsContextLong)) != ANI_OK) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "status: %{public}d", status);
+        CM_LOG_E("status: %d", status);
         return nullptr;
     }
     etsContext = reinterpret_cast<EtsUkeyAuthExtensionContext *>(etsContextLong);
     if (etsContext == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "etsContext null");
+        CM_LOG_E("etsContext null");
         return nullptr;
     }
     return etsContext;
@@ -60,14 +60,14 @@ EtsUkeyAuthExtensionContext *EtsUkeyAuthExtensionContext::GetEtsUkeyAuthExtensio
 
 void EtsUkeyAuthExtensionContext::TerminateSelfSync(ani_env *env, ani_object obj, ani_object callback)
 {
-    TAG_LOGD(AAFwkTag::UI_EXT, "TerminateSelfSync called");
+    CM_LOG_D("TerminateSelfSync called");
     if (env == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "null env");
+        CM_LOG_E("null env");
         return;
     }
     auto etsContext = GetEtsUkeyAuthExtensionContext(env, obj);
     if (etsContext == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "null etsContext");
+        CM_LOG_E("null etsContext");
         return;
     }
     etsContext->OnTerminateSelf(env, obj, callback);
@@ -76,14 +76,14 @@ void EtsUkeyAuthExtensionContext::TerminateSelfSync(ani_env *env, ani_object obj
 void EtsUkeyAuthExtensionContext::TerminateSelfWithResultSync(
     ani_env *env, ani_object obj, ani_object abilityResult, ani_object callback)
 {
-    TAG_LOGD(AAFwkTag::UI_EXT, "TerminateSelfWithResultSync called");
+    CM_LOG_D("TerminateSelfWithResultSync called");
     if (env == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "null env");
+        CM_LOG_E("null env");
         return;
     }
     auto etsContext = GetEtsUkeyAuthExtensionContext(env, obj);
     if (etsContext == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "null etsContext");
+        CM_LOG_E("null etsContext");
         return;
     }
     etsContext->OnTerminateSelfWithResult(env, obj, abilityResult, callback);
@@ -93,7 +93,7 @@ void EtsUkeyAuthExtensionContext::OnTerminateSelf(ani_env *env, ani_object obj, 
 {
     auto context = context_.lock();
     if (context == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "context is nullptr");
+        CM_LOG_E("context is nullptr");
         ani_object errObj = AbilityRuntime::EtsErrorUtil::CreateError(
             env, AbilityErrorCode::ERROR_CODE_INVALID_CONTEXT);
         AppExecFwk::AsyncCallback(env, callback, errObj, nullptr);
@@ -109,7 +109,7 @@ void EtsUkeyAuthExtensionContext::OnTerminateSelfWithResult(
 {
     auto context = context_.lock();
     if (context == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "context is nullptr");
+        CM_LOG_E("context is nullptr");
         ani_object errObj = AbilityRuntime::EtsErrorUtil::CreateError(
             env, AbilityErrorCode::ERROR_CODE_INVALID_CONTEXT);
         AppExecFwk::AsyncCallback(env, callback, errObj, nullptr);
@@ -126,13 +126,13 @@ void EtsUkeyAuthExtensionContext::OnTerminateSelfWithResult(
 bool EtsUkeyAuthExtensionContext::BindNativePtrCleaner(ani_env *env)
 {
     if (env == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "nullptr env");
+        CM_LOG_E("nullptr env");
         return false;
     }
     ani_class cleanerCls;
     ani_status status = env->FindClass(UKEY_AUTH_CONTEXT_CLEANER_CLASS_NAME, &cleanerCls);
     if (ANI_OK != status) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "Not found Cleaner. status:%{public}d.", status);
+        CM_LOG_E("Not found Cleaner. status:%d.", status);
         return false;
     }
     std::array methods = {
@@ -140,7 +140,7 @@ bool EtsUkeyAuthExtensionContext::BindNativePtrCleaner(ani_env *env)
     };
     if ((status = env->Class_BindNativeMethods(cleanerCls, methods.data(), methods.size())) != ANI_OK
         && status != ANI_ALREADY_BINDED) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "status: %{public}d", status);
+        CM_LOG_E("status: %d", status);
         return false;
     }
     return true;
@@ -162,24 +162,24 @@ void EtsUkeyAuthExtensionContext::Clean(ani_env *env, ani_object object)
 ani_object CreateEtsUkeyAuthExtensionContext(ani_env *env,
     std::shared_ptr<UkeyAuthExtensionContext> context)
 {
-    TAG_LOGD(AAFwkTag::UI_EXT, "called");
+    CM_LOG_D("called");
     ani_class cls = nullptr;
     ani_status status = ANI_ERROR;
     ani_method method = nullptr;
     ani_object contextObj = nullptr;
     if ((status = env->FindClass(UKEY_AUTH_CONTEXT_CLASS_NAME, &cls)) != ANI_OK) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "status: %{public}d", status);
+        CM_LOG_E("status: %d", status);
         return nullptr;
     }
     if ((status = env->Class_FindMethod(cls, "<ctor>", "l:", &method)) != ANI_OK) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "status: %{public}d", status);
+        CM_LOG_E("status: %d", status);
         return nullptr;
     }
     std::unique_ptr<EtsUkeyAuthExtensionContext> etsContext =
         std::make_unique<EtsUkeyAuthExtensionContext>(context);
     if ((status = env->Object_New(cls, method, &contextObj,
         reinterpret_cast<ani_long>(etsContext.release()))) != ANI_OK) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "status: %{public}d", status);
+        CM_LOG_E("status: %d", status);
         return nullptr;
     }
     std::array functions = {
@@ -190,21 +190,21 @@ ani_object CreateEtsUkeyAuthExtensionContext(ani_env *env,
     };
     if ((status = env->Class_BindNativeMethods(cls, functions.data(), functions.size())) != ANI_OK
         && status != ANI_ALREADY_BINDED) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "BindNativeMethods status: %{public}d", status);
+        CM_LOG_E("BindNativeMethods status: %d", status);
         return nullptr;
     }
     auto workContext = new (std::nothrow) std::weak_ptr<UkeyAuthExtensionContext>(context);
     if (workContext == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "null workContext");
+        CM_LOG_E("null workContext");
         return nullptr;
     }
     if (!ContextUtil::SetNativeContextLong(env, contextObj, (ani_long)workContext)) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "SetNativeContextLong failed");
+        CM_LOG_E("SetNativeContextLong failed");
         delete workContext;
         return nullptr;
     }
     if (!EtsUkeyAuthExtensionContext::BindNativePtrCleaner(env)) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "BindNativePtrCleaner failed");
+        CM_LOG_E("BindNativePtrCleaner failed");
         delete workContext;
         return nullptr;
     }
@@ -212,12 +212,12 @@ ani_object CreateEtsUkeyAuthExtensionContext(ani_env *env,
     OHOS::AbilityRuntime::CreateEtsExtensionContext(env, cls, contextObj, context, context->GetAbilityInfo());
     ani_ref *contextGlobalRef = new (std::nothrow) ani_ref;
     if (contextGlobalRef == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "new contextGlobalRef failed");
+        CM_LOG_E("new contextGlobalRef failed");
         delete workContext;
         return nullptr;
     }
     if ((status = env->GlobalReference_Create(contextObj, contextGlobalRef)) != ANI_OK) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "GlobalReference_Create failed status: %{public}d", status);
+        CM_LOG_E("GlobalReference_Create failed status: %d", status);
         delete contextGlobalRef;
         delete workContext;
         return nullptr;

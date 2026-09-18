@@ -15,7 +15,7 @@
 
 #include "js_ukey_auth_extension_base.h"
 
-#include "hilog_tag_wrapper.h"
+#include "cm_log.h"
 #include "js_runtime.h"
 #include "js_runtime_utils.h"
 #include "js_ukey_auth_extension_context.h"
@@ -36,37 +36,37 @@ void JsUkeyAuthExtensionBase::BindContext()
     HandleScope handleScope(jsRuntime_);
     napi_env env = jsRuntime_.GetNapiEnv();
     if (env == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "null env");
+        CM_LOG_E("null env");
         return;
     }
     if (jsObj_ == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "null jsObj_");
+        CM_LOG_E("null jsObj_");
         return;
     }
     if (context_ == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "null context_");
+        CM_LOG_E("null context_");
         return;
     }
     napi_value obj = jsObj_->GetNapiValue();
     if (!CheckTypeForNapiValue(env, obj, napi_object)) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "not object");
+        CM_LOG_E("not object");
         return;
     }
     auto ukeyContext = std::static_pointer_cast<UkeyAuthExtensionContext>(context_);
     napi_value contextObj = JsUkeyAuthExtensionContext::CreateJsUkeyAuthExtensionContext(env, ukeyContext);
     if (contextObj == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "null contextObj");
+        CM_LOG_E("null contextObj");
         return;
     }
     auto ukeyContextRef = JsRuntime::LoadSystemModuleByEngine(
         env, "security.UkeyAuthExtensionContext", &contextObj, ARGC_ONE);
     if (ukeyContextRef == nullptr) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "get LoadSystemModuleByEngine failed");
+        CM_LOG_E("get LoadSystemModuleByEngine failed");
         return;
     }
     contextObj = ukeyContextRef->GetNapiValue();
     if (!CheckTypeForNapiValue(env, contextObj, napi_object)) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "get object failed");
+        CM_LOG_E("get object failed");
         return;
     }
     napi_set_named_property(env, obj, "context", contextObj);

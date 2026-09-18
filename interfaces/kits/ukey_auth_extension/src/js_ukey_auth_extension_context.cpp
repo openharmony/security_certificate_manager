@@ -17,7 +17,7 @@
 
 #include "ability_business_error.h"
 #include "ability_manager_errors.h"
-#include "hilog_tag_wrapper.h"
+#include "cm_log.h"
 #include "js_error_utils.h"
 #include "js_extension_context.h"
 #include "js_runtime_utils.h"
@@ -37,7 +37,7 @@ constexpr size_t INDEX_ZERO = 0;
 
 void JsUkeyAuthExtensionContext::Finalizer(napi_env env, void *data, void *hint)
 {
-    TAG_LOGD(AAFwkTag::UI_EXT, "called");
+    CM_LOG_D("called");
     if (data == nullptr) {
         return;
     }
@@ -57,7 +57,7 @@ napi_value JsUkeyAuthExtensionContext::TerminateSelfWithResult(napi_env env, nap
 napi_value JsUkeyAuthExtensionContext::CreateJsUkeyAuthExtensionContext(napi_env env,
     std::shared_ptr<UkeyAuthExtensionContext> context)
 {
-    TAG_LOGD(AAFwkTag::UI_EXT, "called");
+    CM_LOG_D("called");
     std::shared_ptr<OHOS::AppExecFwk::AbilityInfo> abilityInfo = nullptr;
     if (context) {
         abilityInfo = context->GetAbilityInfo();
@@ -80,13 +80,13 @@ napi_value JsUkeyAuthExtensionContext::CreateJsUkeyAuthExtensionContext(napi_env
 
 napi_value JsUkeyAuthExtensionContext::OnTerminateSelf(napi_env env, NapiCallbackInfo &info)
 {
-    TAG_LOGI(AAFwkTag::UI_EXT, "called");
+    CM_LOG_I("called");
     napi_value lastParam = (info.argc == ARGC_ZERO) ? nullptr : info.argv[INDEX_ZERO];
     auto innerErrCode = std::make_shared<ErrCode>(ERR_OK);
     NapiAsyncTask::ExecuteCallback execute = [weak = context_, innerErrCode]() {
         auto context = weak.lock();
         if (!context) {
-            TAG_LOGE(AAFwkTag::UI_EXT, "null context");
+            CM_LOG_E("null context");
             *innerErrCode = static_cast<int32_t>(AbilityErrorCode::ERROR_CODE_INVALID_CONTEXT);
             return;
         }
@@ -108,16 +108,16 @@ napi_value JsUkeyAuthExtensionContext::OnTerminateSelf(napi_env env, NapiCallbac
 
 napi_value JsUkeyAuthExtensionContext::OnTerminateSelfWithResult(napi_env env, NapiCallbackInfo &info)
 {
-    TAG_LOGI(AAFwkTag::UI_EXT, "called");
+    CM_LOG_I("called");
     if (info.argc < ARGC_ONE) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "invalid argc");
+        CM_LOG_E("invalid argc");
         ThrowTooFewParametersError(env);
         return CreateJsUndefined(env);
     }
     int32_t resultCode = 0;
     AAFwk::Want want;
     if (!AppExecFwk::UnWrapAbilityResult(env, info.argv[INDEX_ZERO], resultCode, want)) {
-        TAG_LOGE(AAFwkTag::UI_EXT, "parse ability result failed");
+        CM_LOG_E("parse ability result failed");
         ThrowInvalidParamError(env, "Parameter error: Failed to parse parameter! Parameter must be a AbilityResult.");
         return CreateJsUndefined(env);
     }
@@ -126,7 +126,7 @@ napi_value JsUkeyAuthExtensionContext::OnTerminateSelfWithResult(napi_env env, N
     NapiAsyncTask::ExecuteCallback execute = [weak = context_, innerErrCode, resultCode, want]() {
         auto context = weak.lock();
         if (!context) {
-            TAG_LOGE(AAFwkTag::UI_EXT, "null context");
+            CM_LOG_E("null context");
             *innerErrCode = static_cast<int32_t>(AbilityErrorCode::ERROR_CODE_INVALID_CONTEXT);
             return;
         }

@@ -18,8 +18,7 @@
 #include <cstddef>
 #include <dlfcn.h>
 
-#include "hilog_tag_wrapper.h"
-#include "hitrace_meter.h"
+#include "cm_log.h"
 #include "string_wrapper.h"
 
 namespace OHOS {
@@ -38,12 +37,12 @@ UkeyAuthExtension *CreateETSUkeyAuthExtension(const std::unique_ptr<Runtime> &ru
     }
     auto handle = dlopen(ETS_ANI_LIBNAME, RTLD_LAZY);
     if (handle == nullptr) {
-        TAG_LOGE(AAFwkTag::EXT, "dlopen failed %{public}s, %{public}s", ETS_ANI_LIBNAME, dlerror());
+        CM_LOG_E("dlopen failed %s, %s", ETS_ANI_LIBNAME, dlerror());
         return nullptr;
     }
     auto symbol = dlsym(handle, ETS_ANI_CREATE_FUNC);
     if (symbol == nullptr) {
-        TAG_LOGE(AAFwkTag::EXT, "dlsym failed %{public}s, %{public}s", ETS_ANI_CREATE_FUNC, dlerror());
+        CM_LOG_E("dlsym failed %s, %s", ETS_ANI_CREATE_FUNC, dlerror());
         dlclose(handle);
         return nullptr;
     }

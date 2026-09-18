@@ -15,8 +15,8 @@
 
 #include "js_ukey_auth_extension.h"
 
-#include "hilog_tag_wrapper.h"
-#include "hitrace_meter.h"
+#include "cm_log.h"
+
 #include "js_ukey_auth_extension_base.h"
 
 namespace OHOS {
@@ -34,7 +34,7 @@ JsUkeyAuthExtension::JsUkeyAuthExtension(const std::unique_ptr<Runtime> &runtime
 
 JsUkeyAuthExtension::~JsUkeyAuthExtension()
 {
-    TAG_LOGD(AAFwkTag::EXT, "destructor");
+    CM_LOG_D("destructor");
 }
 } // namespace AbilityRuntime
 } // namespace OHOS
