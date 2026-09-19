@@ -15,10 +15,7 @@
 
 #include "native_engine/native_engine.h"
 
-extern const char _binary_ukey_auth_extension_ability_js_start[];
-extern const char _binary_ukey_auth_extension_ability_js_end[];
-extern const char _binary_ukey_auth_extension_ability_abc_start[];
-extern const char _binary_ukey_auth_extension_ability_abc_end[];
+#include "ukey_auth_extension_ability_resource.h"
 
 static napi_module _module = {
     .nm_version = 0,

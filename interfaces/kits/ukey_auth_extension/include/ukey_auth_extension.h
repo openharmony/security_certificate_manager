@@ -35,8 +35,8 @@ public:
     /**
      * @brief Create ukey auth UI extension.
      *
-     * @param runtime The runtime.
-     * @return The ukey auth UI extension instance.
+     * @param runtime The engine runtime (JS or ETS) hosting the extension.
+     * @return The created UkeyAuthExtension instance bound to the runtime.
      */
     static UkeyAuthExtension *Create(const std::unique_ptr<Runtime> &runtime);
 

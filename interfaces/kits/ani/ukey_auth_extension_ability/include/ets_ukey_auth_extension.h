@@ -36,8 +36,8 @@ public:
     /**
      * @brief Create EtsUkeyAuthExtension.
      *
-     * @param runtime The runtime.
-     * @return The EtsUkeyAuthExtension instance.
+     * @param runtime The ETS engine runtime hosting the extension.
+     * @return The created EtsUkeyAuthExtension instance bound to the runtime.
      */
     static EtsUkeyAuthExtension *Create(const std::unique_ptr<Runtime> &runtime);
 };

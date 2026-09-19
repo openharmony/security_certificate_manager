@@ -36,8 +36,8 @@ public:
     /**
      * @brief Create JsUkeyAuthExtension.
      *
-     * @param runtime The runtime.
-     * @return The JsUkeyAuthExtension instance.
+     * @param runtime The JS engine runtime hosting the extension.
+     * @return The created JsUkeyAuthExtension instance bound to the runtime.
      */
     static JsUkeyAuthExtension *Create(const std::unique_ptr<Runtime> &runtime);
 };

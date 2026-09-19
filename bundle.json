@@ -88,6 +88,7 @@
             "header": {
               "header_files": [
                 "cert_manager_api.h",
+                "cm_error_code.h",
                 "cm_type.h"
               ],
               "header_base": "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main/include"

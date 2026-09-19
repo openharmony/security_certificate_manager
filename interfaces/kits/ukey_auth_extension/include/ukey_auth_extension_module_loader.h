@@ -26,10 +26,10 @@ class UkeyAuthExtensionModuleLoader
 
 public:
     /**
-     * @brief Create Extension.
+     * @brief Create the ukeyAuth extension instance for the loaded hap module.
      *
-     * @param runtime The runtime.
-     * @return The Extension instance.
+     * @param runtime The engine runtime (JS or ETS) hosting the extension.
+     * @return The created Extension instance bound to the runtime.
      */
     Extension *Create(const std::unique_ptr<Runtime> &runtime) const override;
 

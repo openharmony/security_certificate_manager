@@ -176,7 +176,11 @@ static int32_t ProcessMessage(uint32_t code, uint32_t outSize, const struct CmBl
                 CM_LOG_E("Malloc outData failed.");
                 return CMR_ERROR_MALLOC_FAIL;
             }
-            (void)memset_s(outData.data, outData.size, 0, outData.size);
+            if (memset_s(outData.data, outData.size, 0, outData.size) != EOK) {
+                CM_LOG_E("clear outData failed.");
+                CM_FREE_BLOB(outData);
+                return CMR_ERROR_MEM_OPERATION_COPY;
+            }
         }
         g_cmIpcHandler[i].handler(static_cast<const struct CmBlob *>(&srcData), &outData,
             reinterpret_cast<const struct CmContext *>(&reply));

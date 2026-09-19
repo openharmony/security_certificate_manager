@@ -51,39 +51,8 @@ inline bool CmUkeyIsPcOrPcMode()
 constexpr uint32_t CM_UKEY_ABILITY_NAME_MAX_LEN = 256;
 
 /* ---- base64 编码（spec §8.4：标准字母表 + padding，仅 want/params 构造边界使用；
- * inner API / IPC 全程传原始字节）---- */
-inline std::string CmBase64Encode(const uint8_t *data, size_t size)
-{
-    static const char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    std::string out;
-    if (data == nullptr || size == 0) {
-        return out;
-    }
-    out.reserve(((size + 2) / 3) * 4);
-    size_t i = 0;
-    for (; i + 3 <= size; i += 3) {
-        uint32_t n = (static_cast<uint32_t>(data[i]) << 16) |
-            (static_cast<uint32_t>(data[i + 1]) << 8) | static_cast<uint32_t>(data[i + 2]);
-        out += table[(n >> 18) & 0x3F];
-        out += table[(n >> 12) & 0x3F];
-        out += table[(n >> 6) & 0x3F];
-        out += table[n & 0x3F];
-    }
-    size_t rem = size - i;
-    if (rem == 1) {
-        uint32_t n = static_cast<uint32_t>(data[i]) << 16;
-        out += table[(n >> 18) & 0x3F];
-        out += table[(n >> 12) & 0x3F];
-        out += "==";
-    } else if (rem == 2) {
-        uint32_t n = (static_cast<uint32_t>(data[i]) << 16) | (static_cast<uint32_t>(data[i + 1]) << 8);
-        out += table[(n >> 18) & 0x3F];
-        out += table[(n >> 12) & 0x3F];
-        out += table[(n >> 6) & 0x3F];
-        out += '=';
-    }
-    return out;
-}
+ * inner API / IPC 全程传原始字节；实现位于 cm_ukey_dialog_common.cpp）---- */
+std::string CmBase64Encode(const uint8_t *data, size_t size);
 
 } // namespace OHOS::Security::CertManager
 

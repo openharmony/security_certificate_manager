@@ -74,7 +74,10 @@ int32_t BuildUkeyReportParamSet(const std::string &requestId, int32_t resultCode
     if (paramSetSize > bufferSize) {
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    (void)memset_s(buffer, bufferSize, 0, paramSetSize);
+    if (memset_s(buffer, bufferSize, 0, paramSetSize) != EOK) {
+        CM_LOG_E("clear report param buffer failed");
+        return CMR_ERROR_MEM_OPERATION_COPY;
+    }
     auto *paramSet = reinterpret_cast<struct CmParamSet *>(buffer);
     paramSet->paramSetSize = paramSetSize;
     paramSet->paramsCnt = UKEY_REPORT_PARAM_CNT;

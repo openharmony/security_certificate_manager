@@ -238,8 +238,11 @@ void CmOpenUkeyAuthDialogSaSession::OnFinish()
 {
     CM_FREE_BLOB(this->keyUri);
     if (this->customData.data != nullptr && this->customData.size > 0) {
-        /* customData 为调用方不透明数据，释放前擦除（spec R10） */
-        (void)memset_s(this->customData.data, this->customData.size, 0, this->customData.size);
+        /* customData 为调用方不透明数据，释放前擦除（spec R10）；擦除失败仅告警，
+         * 不阻断释放（dst/size 自恰，失败仅可能来自入参本身） */
+        if (memset_s(this->customData.data, this->customData.size, 0, this->customData.size) != EOK) {
+            CM_LOG_E("clear customData before free failed");
+        }
     }
     CM_FREE_BLOB(this->customData);
     return;

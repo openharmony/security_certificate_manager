@@ -25,8 +25,8 @@ class Runtime;
 /**
  * @brief Create ETS UkeyAuthExtension instance.
  *
- * @param runtime The runtime.
- * @return The UkeyAuthExtension instance.
+ * @param runtime The ETS engine runtime hosting the extension.
+ * @return The created UkeyAuthExtension instance bound to the runtime.
  */
 UkeyAuthExtension *CreateETSUkeyAuthExtension(const std::unique_ptr<Runtime> &runtime);
 }  // namespace AbilityRuntime

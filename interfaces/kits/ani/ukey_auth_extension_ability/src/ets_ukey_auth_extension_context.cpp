@@ -115,7 +115,15 @@ void EtsUkeyAuthExtensionContext::OnTerminateSelfWithResult(
     }
     OHOS::AAFwk::Want want;
     int resultCode = 0;
-    OHOS::AppExecFwk::UnWrapAbilityResult(env, abilityResult, resultCode, want);
+    /* abilityResult 为跨边界输入，解析失败须检查（对齐 js 版 OnTerminateSelfWithResult）：
+     * 失败以参数错误回调，不得带默认值继续上报 */
+    if (!OHOS::AppExecFwk::UnWrapAbilityResult(env, abilityResult, resultCode, want)) {
+        CM_LOG_E("parse ability result failed");
+        ani_object errObj = AbilityRuntime::EtsErrorUtil::CreateError(
+            env, AbilityErrorCode::ERROR_CODE_INVALID_PARAM);
+        AppExecFwk::AsyncCallback(env, callback, errObj, nullptr);
+        return;
+    }
     auto ret = context->TerminateSelfWithResultAndReport(resultCode, want);
     AppExecFwk::AsyncCallback(env, callback,
         AbilityRuntime::EtsErrorUtil::CreateErrorByNativeErr(env, static_cast<int32_t>(ret)), nullptr);
