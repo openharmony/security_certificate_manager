@@ -49,16 +49,11 @@ void ReleaseUkeyAuthResultResources(ani_env *env, CmUkeyAuthDialogAniResultConte
 }
 } // namespace
 
-CmOpenAuthDialogForUkeyProvider::CmOpenAuthDialogForUkeyProvider(ani_env *env, ani_string aniAbilityName,
-    ani_double aniAbilityType, ani_string aniKeyUri, ani_double aniTimeout, ani_object aniCustomData,
-    ani_object callback)
+CmOpenAuthDialogForUkeyProvider::CmOpenAuthDialogForUkeyProvider(ani_env *env,
+    const UkeyProviderDialogParams &params, ani_object callback)
     : CertManagerAsyncImpl(env, nullptr, callback, "openAuthDialogForUkeyProvider")
 {
-    this->aniAbilityName = aniAbilityName;
-    this->aniAbilityType = aniAbilityType;
-    this->aniKeyUri = aniKeyUri;
-    this->aniTimeout = aniTimeout;
-    this->aniCustomData = aniCustomData;
+    this->aniParams = params;
 }
 
 int32_t CmOpenAuthDialogForUkeyProvider::GetParamsFromEnv()
@@ -66,7 +61,7 @@ int32_t CmOpenAuthDialogForUkeyProvider::GetParamsFromEnv()
     /* abilityName: non-empty, <= 256 bytes (the blob carries the terminating
      * zero, size 1 means an empty name); AniUtils::ParseString allocates the
      * exact-size buffer so an over-long name is rejected here, not truncated */
-    int32_t ret = AniUtils::ParseString(env, this->aniAbilityName, this->abilityName);
+    int32_t ret = AniUtils::ParseString(env, this->aniParams.aniAbilityName, this->abilityName);
     if (ret != CM_SUCCESS || this->abilityName.size <= 1 ||
         this->abilityName.size > CM_UKEY_ABILITY_NAME_MAX_LEN + 1) {
         CM_LOG_E("invalid driver dialog ability name, ret = %d", ret);
@@ -77,13 +72,13 @@ int32_t CmOpenAuthDialogForUkeyProvider::GetParamsFromEnv()
      * a number that is not the valid enum value maps to 29700006 (v4.1 user
      * ruling; ANI type errors are compile-time in ets, the wrapper's
      * undefined-check stays 401) */
-    if (this->aniAbilityType != CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
+    if (this->aniParams.aniAbilityType != CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
         CM_LOG_E("invalid driver dialog ability type");
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     this->abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
 
-    ret = AniUtils::ParseString(env, this->aniKeyUri, this->keyUri);
+    ret = AniUtils::ParseString(env, this->aniParams.aniKeyUri, this->keyUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("parse keyUri failed, ret = %d", ret);
         return ret;
@@ -102,15 +97,15 @@ int32_t CmOpenAuthDialogForUkeyProvider::GetParamsFromEnv()
     }
     /* optional timeout in seconds; non-number/NaN maps to a param error
      * (NaN fails both bounds, so the negated form rejects it) */
-    if (!(this->aniTimeout >= 0 && this->aniTimeout <= UINT32_MAX)) {
+    if (!(this->aniParams.aniTimeout >= 0 && this->aniParams.aniTimeout <= UINT32_MAX)) {
         CM_LOG_E("invalid timeout value");
         return CMR_DIALOG_ERROR_PARAM_INVALID;
     }
-    this->timeoutSec = static_cast<uint32_t>(this->aniTimeout);
+    this->timeoutSec = static_cast<uint32_t>(this->aniParams.aniTimeout);
 
     /* optional customData; Uint8Array <= 2048 raw bytes (D19)，ets 层已归一化为
      * 非 undefined 对象（空数组表示缺省） */
-    ret = AniUtils::ParseUint8Array(env, reinterpret_cast<ani_arraybuffer>(this->aniCustomData),
+    ret = AniUtils::ParseUint8Array(env, reinterpret_cast<ani_arraybuffer>(this->aniParams.aniCustomData),
         this->customData);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("parse customData failed, ret = %d", ret);

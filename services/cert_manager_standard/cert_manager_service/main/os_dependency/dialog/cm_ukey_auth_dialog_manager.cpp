@@ -498,33 +498,41 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
         effectiveTimeoutSec, customData, clientCallback);
 }
 
-int32_t CmUkeyAuthDialogManager::OpenDriverDialog(const struct CmBlob *abilityName,
-    uint32_t abilityType, const struct CmBlob *keyUri, uint32_t callerUid,
-    const std::string &callerBundleName, int32_t userId, uint32_t timeoutSec,
-    const struct CmBlob *customData, const sptr<IRemoteObject> &clientCallback)
+/* OpenDriverDialog 锁前入参校验（D23/D24）：blob 合法性与 customData 上限；
+ * 保持与原实现一致的判定顺序（session 单飞与 abilityType 检查仍在锁内） */
+int32_t CmUkeyAuthDialogManager::ValidateDriverDialogRequest(const UkeyDriverDialogRequest &req)
 {
-    if (abilityName == nullptr || abilityName->data == nullptr || abilityName->size == 0 ||
-        abilityName->size > CM_UKEY_ABILITY_NAME_MAX_LEN + 1 || keyUri == nullptr || keyUri->data == nullptr ||
-        keyUri->size == 0 || keyUri->size > MAX_LEN_URI || clientCallback == nullptr ||
-        callerBundleName.empty()) {
+    if (req.abilityName.data == nullptr || req.abilityName.size == 0 ||
+        req.abilityName.size > CM_UKEY_ABILITY_NAME_MAX_LEN + 1 || req.keyUri.data == nullptr ||
+        req.keyUri.size == 0 || req.keyUri.size > MAX_LEN_URI || req.clientCallback == nullptr ||
+        req.callerBundleName.empty()) {
         CM_LOG_E("invalid open driver dialog arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    if (customData != nullptr && customData->size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
-        CM_LOG_E("custom data too large: %u", customData->size);
+    if (req.customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
+        CM_LOG_E("custom data too large: %u", req.customData.size);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
+    return CM_SUCCESS;
+}
+
+int32_t CmUkeyAuthDialogManager::OpenDriverDialog(const UkeyDriverDialogRequest &req)
+{
+    int32_t ret = ValidateDriverDialogRequest(req);
+    if (ret != CM_SUCCESS) {
+        return ret;
+    }
     std::lock_guard<std::mutex> lock(mutex_);
-    uint32_t effectiveTimeoutSec = NormalizeTimeoutSecLocked(timeoutSec);
+    uint32_t effectiveTimeoutSec = NormalizeTimeoutSecLocked(req.timeoutSec);
     if (session_ != nullptr) {
         CM_LOG_E("another ukey auth dialog session is in progress");
         return CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS;
     }
-    if (abilityType != CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
-        CM_LOG_E("driver dialog only supports uiextension type, got: %u", abilityType);
+    if (req.abilityType != CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
+        CM_LOG_E("driver dialog only supports uiextension type, got: %u", req.abilityType);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
-    std::string ability(reinterpret_cast<char *>(abilityName->data), abilityName->size);
+    std::string ability(reinterpret_cast<char *>(req.abilityName.data), req.abilityName.size);
     if (ability.back() == '\0') { /* blob 可能带结尾 NUL */
         ability.pop_back();
     }
@@ -533,17 +541,20 @@ int32_t CmUkeyAuthDialogManager::OpenDriverDialog(const struct CmBlob *abilityNa
         return CMR_ERROR_INVALID_ARGUMENT;
     }
     if (driverAbilityChecker_ == nullptr ||
-        !driverAbilityChecker_(callerBundleName, ability, userId)) {
+        !driverAbilityChecker_(req.callerBundleName, ability, req.userId)) {
         CM_LOG_E("driver ability check failed, bundle: %s, ability: %s",
-            callerBundleName.c_str(), ability.c_str());
+            req.callerBundleName.c_str(), ability.c_str());
         return CMR_DIALOG_ERROR_NOT_REGISTERED;
     }
     if (pcChecker_ == nullptr || !pcChecker_()) {
         CM_LOG_E("ukey uiextension dialog requires pc device or pc mode");
         return CMR_DIALOG_ERROR_NOT_PC_DEVICE;
     }
-    return LaunchUiExtensionSessionLocked(callerBundleName, ability, keyUri, callerUid,
-        effectiveTimeoutSec, customData, clientCallback);
+    /* customData 指向 IPC 层 paramSet 缓冲，同步消费（写入弹框参数）后不再引用；
+     * size 0 = 缺省（不携带） */
+    const struct CmBlob *customData = (req.customData.size > 0) ? &req.customData : nullptr;
+    return LaunchUiExtensionSessionLocked(req.callerBundleName, ability, &req.keyUri,
+        req.callerUid, effectiveTimeoutSec, customData, req.clientCallback);
 }
 
 int32_t CmUkeyAuthDialogManager::OnReport(const std::string &requestId,

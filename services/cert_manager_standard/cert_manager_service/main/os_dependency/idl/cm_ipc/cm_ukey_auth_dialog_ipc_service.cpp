@@ -140,9 +140,17 @@ void CmIpcServiceOpenUkeyAuthDialogForDriver(uint32_t code, const struct CmBlob 
     struct CmContext procContext = {0};
     (void)CmGetProcessInfoForIPC(&procContext);
     /* abilityName/keyUri/customData 指向 paramSet 缓冲，OpenDriverDialog 同步消费后不再引用 */
-    ret = CmUkeyAuthDialogManager::GetInstance().OpenDriverDialog(&abilityName, abilityType,
-        &keyUri, static_cast<uint32_t>(IPCSkeleton::GetCallingUid()), hapInfo.bundleName,
-        static_cast<int32_t>(procContext.userId), timeoutSec, &customData, clientCallback);
+    UkeyDriverDialogRequest req;
+    req.abilityName = abilityName;
+    req.abilityType = abilityType;
+    req.keyUri = keyUri;
+    req.callerUid = static_cast<uint32_t>(IPCSkeleton::GetCallingUid());
+    req.callerBundleName = hapInfo.bundleName;
+    req.userId = static_cast<int32_t>(procContext.userId);
+    req.timeoutSec = timeoutSec;
+    req.customData = customData;
+    req.clientCallback = clientCallback;
+    ret = CmUkeyAuthDialogManager::GetInstance().OpenDriverDialog(req);
     CmFreeParamSet(&paramSet);
     CmSendResponse(context, ret, NULL);
 }

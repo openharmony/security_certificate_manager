@@ -71,6 +71,21 @@ using PcChecker = std::function<bool()>;
 using DriverAbilityChecker = std::function<bool(const std::string &bundleName,
     const std::string &abilityName, int32_t userId)>;
 
+/* openAuthDialogForUkeyProvider 的 SA 入口参数集（spec v4 §4.1/D23）：拆自原
+ * 9 参签名以控制入参数量；callerBundleName 由 IPC 层从 IPC token 解出（客户端
+ * 不可伪造）；customData.size == 0 表示缺省（不携带） */
+struct UkeyDriverDialogRequest {
+    struct CmBlob abilityName;   /* 驱动弹框扩展名 blob（可能带结尾 NUL） */
+    uint32_t abilityType = 0;    /* 仅 CM_UKEY_ABILITY_TYPE_UIEXTENSION */
+    struct CmBlob keyUri;        /* ukey 凭据 uri */
+    uint32_t callerUid = 0;      /* 原客户端 uid（弹框参数 appUid 用） */
+    std::string callerBundleName; /* 上报责任方 bundle（IPC token 来源） */
+    int32_t userId = 0;          /* BMS 查询用（CmGetProcessInfoForIPC 解出） */
+    uint32_t timeoutSec = 0;     /* 秒，0 = 服务端默认，服务端 clamp */
+    struct CmBlob customData;    /* 可选调用方不透明数据（size 0 = 缺省） */
+    sptr<IRemoteObject> clientCallback; /* 客户端回调 stub */
+};
+
 class CmUkeyAuthDialogManager {
 public:
     static CmUkeyAuthDialogManager &GetInstance();
@@ -95,15 +110,10 @@ public:
     // 不随会话保留
     int32_t OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid, uint32_t timeoutSec,
         const struct CmBlob *customData, const sptr<IRemoteObject> &clientCallback);
-    /* openAuthDialogForUkeyProvider 的 SA 入口（spec v4 §4.1/D23）：调用方 bundle 由
-     * IPC 层从 IPC token 解出传入（客户端不可伪造）；userId 同样由 IPC 层经
-     * CmGetProcessInfoForIPC 解出传入（BMS 查询用）；abilityType 仅接受
-     * CM_UKEY_ABILITY_TYPE_UIEXTENSION；BMS 校验经 driverAbilityChecker_。
-     * 返回值契约同 OpenDialog。 */
-    int32_t OpenDriverDialog(const struct CmBlob *abilityName, uint32_t abilityType,
-        const struct CmBlob *keyUri, uint32_t callerUid, const std::string &callerBundleName,
-        int32_t userId, uint32_t timeoutSec, const struct CmBlob *customData,
-        const sptr<IRemoteObject> &clientCallback);
+    /* openAuthDialogForUkeyProvider 的 SA 入口（spec v4 §4.1/D23）：参数见
+     * UkeyDriverDialogRequest；abilityType 仅接受 CM_UKEY_ABILITY_TYPE_UIEXTENSION，
+     * BMS 校验经 driverAbilityChecker_。返回值契约同 OpenDialog。 */
+    int32_t OpenDriverDialog(const UkeyDriverDialogRequest &req);
     // 返回 CM_SUCCESS（已接受）或 CMR_DIALOG_ERROR_INTERNAL（会话不存在/身份不符/终态）
     int32_t OnReport(const std::string &requestId, const std::string &callerBundleName,
         int32_t resultCode);
@@ -148,6 +158,8 @@ private:
         uint32_t timeoutSec, const struct CmBlob *customData,
         const sptr<IRemoteObject> &clientCallback);
     uint32_t NormalizeTimeoutSecLocked(uint32_t timeoutSec);
+    /* OpenDriverDialog 锁前入参组合校验（spec v4 D23/D24），供主体分摊复杂度 */
+    static int32_t ValidateDriverDialogRequest(const UkeyDriverDialogRequest &req);
 
     std::mutex mutex_;
     std::shared_ptr<SystemDialogLauncher> launcher_;

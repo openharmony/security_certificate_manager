@@ -21,14 +21,20 @@
 #include "cm_open_dialog.h"
 
 namespace OHOS::Security::CertManager::Ani {
-class CmOpenAuthDialogForUkeyProvider : public CertManagerAsyncImpl {
-private:
-    /* ani params */
+/* openAuthDialogForUkeyProvider 的 ets 侧入参集（除 callback 外逐字段对齐 d.ts
+ * 签名，spec v4 D23/D24），拆自原 7 参构造以控制入参数量 */
+struct UkeyProviderDialogParams {
     ani_string aniAbilityName = nullptr;
     ani_double aniAbilityType = 0;
     ani_string aniKeyUri = nullptr;
     ani_double aniTimeout = 0;
     ani_object aniCustomData = nullptr;
+};
+
+class CmOpenAuthDialogForUkeyProvider : public CertManagerAsyncImpl {
+private:
+    /* ani params */
+    UkeyProviderDialogParams aniParams;
     /* parsed params */
     CmBlob abilityName = { 0 }; /* driver dialog extension name, 1..256 bytes + NUL */
     uint32_t abilityType = 0; /* only CM_UKEY_ABILITY_TYPE_UIEXTENSION (D24) */
@@ -37,8 +43,8 @@ private:
     CmBlob customData = { 0 }; /* raw bytes <= 2048; size 0 = absent (D19) */
 
 public:
-    CmOpenAuthDialogForUkeyProvider(ani_env *env, ani_string aniAbilityName, ani_double aniAbilityType,
-        ani_string aniKeyUri, ani_double aniTimeout, ani_object aniCustomData, ani_object callback);
+    CmOpenAuthDialogForUkeyProvider(ani_env *env, const UkeyProviderDialogParams &params,
+        ani_object callback);
     ~CmOpenAuthDialogForUkeyProvider() {};
 
     int32_t GetParamsFromEnv() override;

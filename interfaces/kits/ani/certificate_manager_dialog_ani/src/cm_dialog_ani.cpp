@@ -220,8 +220,13 @@ ani_object openAuthDialogForUkeyProviderNative(ani_env *env, ani_string abilityN
         CM_LOG_E("check syscap is not supported.");
         return InvokeCallbackVoid(env, callback);
     }
-    auto impl = std::make_shared<CmOpenAuthDialogForUkeyProvider>(env, abilityName, abilityType,
-        keyUri, timeout, customData, callback);
+    UkeyProviderDialogParams params;
+    params.aniAbilityName = abilityName;
+    params.aniAbilityType = abilityType;
+    params.aniKeyUri = keyUri;
+    params.aniTimeout = timeout;
+    params.aniCustomData = customData;
+    auto impl = std::make_shared<CmOpenAuthDialogForUkeyProvider>(env, params, callback);
     return impl->Invoke();
 }
 

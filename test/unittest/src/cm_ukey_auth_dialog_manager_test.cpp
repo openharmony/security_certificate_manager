@@ -106,10 +106,20 @@ public:
     int32_t OpenDriver(uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION, uint32_t timeout = 0,
         const struct CmBlob *customData = nullptr)
     {
-        struct CmBlob abilityName = { static_cast<uint32_t>(driverAbilityName_.size() + 1),
+        UkeyDriverDialogRequest req;
+        req.abilityName = { static_cast<uint32_t>(driverAbilityName_.size() + 1),
             reinterpret_cast<uint8_t *>(const_cast<char *>(driverAbilityName_.c_str())) };
-        return manager_->OpenDriverDialog(&abilityName, abilityType, &keyUri_, 100,
-            callerBundle_, 100, timeout, customData, client_);
+        req.abilityType = abilityType;
+        req.keyUri = keyUri_;
+        req.callerUid = 100;
+        req.callerBundleName = callerBundle_;
+        req.userId = 100;
+        req.timeoutSec = timeout;
+        if (customData != nullptr) {
+            req.customData = *customData;
+        }
+        req.clientCallback = client_;
+        return manager_->OpenDriverDialog(req);
     }
     sptr<FakeClientCallback> client_ = sptr<FakeClientCallback>(new FakeClientCallback());
     struct CmBlob keyUri_ = { 8, reinterpret_cast<uint8_t *>(const_cast<char *>("testuri")) };
@@ -480,16 +490,24 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogAbilityNameBoundary, testi
 {
     /* 256 字符合法名（blob 257 含 NUL）通过长度校验并到达 BMS 检查（spec v4.1 D24 边界） */
     std::string longName(256, 'a');
-    struct CmBlob abilityName = { static_cast<uint32_t>(longName.size() + 1),
+    UkeyDriverDialogRequest longReq;
+    longReq.abilityName = { static_cast<uint32_t>(longName.size() + 1),
         reinterpret_cast<uint8_t *>(const_cast<char *>(longName.c_str())) };
-    ASSERT_EQ(manager_->OpenDriverDialog(&abilityName, CM_UKEY_ABILITY_TYPE_UIEXTENSION,
-        &keyUri_, 100, callerBundle_, 100, 0, nullptr, client_), CM_SUCCESS);
+    longReq.abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
+    longReq.keyUri = keyUri_;
+    longReq.callerBundleName = callerBundle_;
+    longReq.clientCallback = client_;
+    ASSERT_EQ(manager_->OpenDriverDialog(longReq), CM_SUCCESS);
     manager_->OnReport(manager_->GetRequestIdForTest(), callerBundle_, 0); // cleanup
     /* 仅 NUL 的名字剥离后为空串 → 参数拒绝 */
     const char *nulName = "";
-    struct CmBlob nulBlob = { 1, reinterpret_cast<uint8_t *>(const_cast<char *>(nulName)) };
-    ASSERT_EQ(manager_->OpenDriverDialog(&nulBlob, CM_UKEY_ABILITY_TYPE_UIEXTENSION,
-        &keyUri_, 100, callerBundle_, 100, 0, nullptr, client_), CMR_ERROR_INVALID_ARGUMENT);
+    UkeyDriverDialogRequest nulReq;
+    nulReq.abilityName = { 1, reinterpret_cast<uint8_t *>(const_cast<char *>(nulName)) };
+    nulReq.abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
+    nulReq.keyUri = keyUri_;
+    nulReq.callerBundleName = callerBundle_;
+    nulReq.clientCallback = client_;
+    ASSERT_EQ(manager_->OpenDriverDialog(nulReq), CMR_ERROR_INVALID_ARGUMENT);
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogPcGate, testing::ext::TestSize.Level0)

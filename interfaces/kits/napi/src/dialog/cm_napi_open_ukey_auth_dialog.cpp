@@ -54,116 +54,142 @@ static void StartUkeyPinAbility(std::shared_ptr<CmUIExtensionRequestContext> asy
     }
 }
 
-static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
+/* keyUri（必填 string）：blob 含结尾 NUL；超长（> MAX_LEN_URI，NUL 计入）在此
+ * 拒绝，调用方报 29700006 而非 SA 侧未映射的泛化错误 */
+static bool ParseUkeyKeyUri(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
 {
     bool hasProperty = false;
     napi_status status = napi_has_named_property(asyncContext->env, arg, CERT_MANAGER_CERT_KEY_URI.c_str(),
         &hasProperty);
     if (status != napi_ok || !hasProperty) {
         CM_LOG_E("Failed to check keyUri");
-        return nullptr;
+        return false;
     }
 
     napi_value value = nullptr;
-    status = napi_get_named_property(asyncContext->env, arg, CERT_MANAGER_CERT_KEY_URI.c_str(),
-        &value);
+    status = napi_get_named_property(asyncContext->env, arg, CERT_MANAGER_CERT_KEY_URI.c_str(), &value);
     if (status != napi_ok || value == nullptr) {
         CM_LOG_E("Failed to get keyUri");
-        return nullptr;
+        return false;
     }
 
     napi_valuetype type = napi_undefined;
-    NAPI_CALL(asyncContext->env, napi_typeof(asyncContext->env, value, &type));
+    if (napi_typeof(asyncContext->env, value, &type) != napi_ok) {
+        CM_LOG_E("check keyUri type failed");
+        return false;
+    }
     if (type != napi_string) {
         CM_LOG_E("type of param ukeyIndex is not string");
-        return nullptr;
+        return false;
     }
 
     int32_t result = ParseString(asyncContext->env, value, asyncContext->certUri);
     if (result != CM_SUCCESS) {
         CM_LOG_E("Failed to get certPurpose value");
-        return nullptr;
+        return false;
     }
-    /* blob carries the terminating zero; the SA rejects a keyUri blob longer
-     * than MAX_LEN_URI (256, NUL included), validate here so the caller reports
-     * 29700006 instead of the unmapped generic error */
     if (asyncContext->certUri->size > MAX_LEN_URI) {
         CM_LOG_E("keyUri is too long, max length: %d", MAX_LEN_URI);
-        return nullptr;
+        return false;
     }
+    return true;
+}
 
-    /* optional timeoutDuration (seconds): absent/undefined keeps 0 (= server default 300s);
-     * present but non-number is a parameter error */
+/* 可选 timeoutDuration（秒）：缺省/undefined/null 保持 0（= 服务端默认 300s）；
+ * 存在但非 number 或非有限值（NaN 落在区间外）为参数错误 */
+static bool ParseUkeyTimeoutDuration(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
+{
     bool hasTimeout = false;
-    status = napi_has_named_property(asyncContext->env, arg, "timeoutDuration", &hasTimeout);
-    if (status == napi_ok && hasTimeout) {
-        napi_value timeoutValue = nullptr;
-        status = napi_get_named_property(asyncContext->env, arg, "timeoutDuration", &timeoutValue);
-        if (status == napi_ok && timeoutValue != nullptr) {
-            napi_valuetype timeoutType = napi_undefined;
-            if (napi_typeof(asyncContext->env, timeoutValue, &timeoutType) == napi_ok &&
-                timeoutType != napi_undefined && timeoutType != napi_null) {
-                if (timeoutType != napi_number) {
-                    CM_LOG_E("type of param timeout is not number");
-                    return nullptr;
-                }
-                double timeoutDouble = 0;
-                /* NaN fails both bounds below (all comparisons with NaN are
-                 * false), so the negated form rejects non-finite values */
-                if (napi_get_value_double(asyncContext->env, timeoutValue, &timeoutDouble) != napi_ok ||
-                    !(timeoutDouble >= 0 && timeoutDouble <= UINT32_MAX)) {
-                    CM_LOG_E("invalid timeout value");
-                    return nullptr;
-                }
-                asyncContext->authTimeoutSec = static_cast<uint32_t>(timeoutDouble);
-            }
-        }
+    napi_status status = napi_has_named_property(asyncContext->env, arg, "timeoutDuration", &hasTimeout);
+    if (status != napi_ok || !hasTimeout) {
+        return true;
     }
-    /* optional customData (D19): absent/undefined/null keeps none; must be a
-     * Uint8Array of at most 2048 raw bytes */
+    napi_value timeoutValue = nullptr;
+    status = napi_get_named_property(asyncContext->env, arg, "timeoutDuration", &timeoutValue);
+    if (status != napi_ok || timeoutValue == nullptr) {
+        return true;
+    }
+    napi_valuetype timeoutType = napi_undefined;
+    if (napi_typeof(asyncContext->env, timeoutValue, &timeoutType) != napi_ok ||
+        timeoutType == napi_undefined || timeoutType == napi_null) {
+        return true;
+    }
+    if (timeoutType != napi_number) {
+        CM_LOG_E("type of param timeout is not number");
+        return false;
+    }
+    double timeoutDouble = 0;
+    /* NaN fails both bounds below (all comparisons with NaN are false), so the
+     * negated form rejects non-finite values */
+    if (napi_get_value_double(asyncContext->env, timeoutValue, &timeoutDouble) != napi_ok ||
+        !(timeoutDouble >= 0 && timeoutDouble <= UINT32_MAX)) {
+        CM_LOG_E("invalid timeout value");
+        return false;
+    }
+    asyncContext->authTimeoutSec = static_cast<uint32_t>(timeoutDouble);
+    return true;
+}
+
+/* 可选 customData（D19）：缺省/undefined/null 保持无；必须为 Uint8Array 且
+ * 至多 2048 原始字节 */
+static bool ParseUkeyCustomData(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
+{
     bool hasCustomData = false;
-    status = napi_has_named_property(asyncContext->env, arg, "customData", &hasCustomData);
-    if (status == napi_ok && hasCustomData) {
-        napi_value customDataValue = nullptr;
-        status = napi_get_named_property(asyncContext->env, arg, "customData", &customDataValue);
-        if (status == napi_ok && customDataValue != nullptr) {
-            napi_valuetype customDataType = napi_undefined;
-            if (napi_typeof(asyncContext->env, customDataValue, &customDataType) == napi_ok &&
-                customDataType != napi_undefined && customDataType != napi_null) {
-                napi_typedarray_type arrayType = napi_int8_array;
-                size_t length = 0;
-                void *data = nullptr;
-                if (napi_get_typedarray_info(asyncContext->env, customDataValue, &arrayType,
-                    &length, &data, nullptr, nullptr) != napi_ok || arrayType != napi_uint8_array) {
-                    CM_LOG_E("type of param customData is not Uint8Array");
-                    return nullptr;
-                }
-                if (length > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
-                    CM_LOG_E("customData is too long, max: %d", CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE);
-                    return nullptr;
-                }
-                if (length > 0) {
-                    asyncContext->authCustomData = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
-                    if (asyncContext->authCustomData == nullptr) {
-                        CM_LOG_E("alloc customData blob failed");
-                        return nullptr;
-                    }
-                    asyncContext->authCustomData->data = static_cast<uint8_t *>(CmMalloc(length));
-                    if (asyncContext->authCustomData->data == nullptr) {
-                        CM_FREE_PTR(asyncContext->authCustomData);
-                        CM_LOG_E("alloc customData buffer failed");
-                        return nullptr;
-                    }
-                    if (memcpy_s(asyncContext->authCustomData->data, length, data, length) != EOK) {
-                        CM_FREE_PTR(asyncContext->authCustomData->data);
-                        CM_FREE_PTR(asyncContext->authCustomData);
-                        CM_LOG_E("copy customData failed");
-                        return nullptr;
-                    }
-                    asyncContext->authCustomData->size = static_cast<uint32_t>(length);
-                }
-            }
-        }
+    napi_status status = napi_has_named_property(asyncContext->env, arg, "customData", &hasCustomData);
+    if (status != napi_ok || !hasCustomData) {
+        return true;
+    }
+    napi_value customDataValue = nullptr;
+    status = napi_get_named_property(asyncContext->env, arg, "customData", &customDataValue);
+    if (status != napi_ok || customDataValue == nullptr) {
+        return true;
+    }
+    napi_valuetype customDataType = napi_undefined;
+    if (napi_typeof(asyncContext->env, customDataValue, &customDataType) != napi_ok ||
+        customDataType == napi_undefined || customDataType == napi_null) {
+        return true;
+    }
+    napi_typedarray_type arrayType = napi_int8_array;
+    size_t length = 0;
+    void *data = nullptr;
+    if (napi_get_typedarray_info(asyncContext->env, customDataValue, &arrayType, &length, &data,
+        nullptr, nullptr) != napi_ok || arrayType != napi_uint8_array) {
+        CM_LOG_E("type of param customData is not Uint8Array");
+        return false;
+    }
+    if (length > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
+        CM_LOG_E("customData is too long, max: %d", CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE);
+        return false;
+    }
+    if (length == 0) {
+        return true;
+    }
+    asyncContext->authCustomData = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
+    if (asyncContext->authCustomData == nullptr) {
+        CM_LOG_E("alloc customData blob failed");
+        return false;
+    }
+    asyncContext->authCustomData->data = static_cast<uint8_t *>(CmMalloc(length));
+    if (asyncContext->authCustomData->data == nullptr) {
+        CM_FREE_PTR(asyncContext->authCustomData);
+        CM_LOG_E("alloc customData buffer failed");
+        return false;
+    }
+    if (memcpy_s(asyncContext->authCustomData->data, length, data, length) != EOK) {
+        CM_FREE_PTR(asyncContext->authCustomData->data);
+        CM_FREE_PTR(asyncContext->authCustomData);
+        CM_LOG_E("copy customData failed");
+        return false;
+    }
+    asyncContext->authCustomData->size = static_cast<uint32_t>(length);
+    return true;
+}
+
+static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
+{
+    if (!ParseUkeyKeyUri(asyncContext, arg) || !ParseUkeyTimeoutDuration(asyncContext, arg) ||
+        !ParseUkeyCustomData(asyncContext, arg)) {
+        return nullptr;
     }
     return GetInt32(asyncContext->env, 0);
 }
@@ -505,16 +531,10 @@ static napi_value OpenAuthDialogForUkeyProviderViaSa(
     return result;
 }
 
-/* UkeyAuthDialogInfo 解析（spec v4 D23/D24，v4.1 用户裁定修正）：dialogInfo 非对象、
- * abilityType 非数值（缺省/非 number）→ 401；abilityType 为 number 但非有效枚举值 1
- * → 29700006；abilityName 非字符串 / 空串 / >256 字节 → 29700006 */
-static int32_t GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &abilityType,
-    std::string &abilityName)
+/* abilityType 解析（v4.1 用户裁定）：缺省/非 number → 401；number 但非唯一
+ * 合法枚举值 1（UIEXTENSION）→ 29700006 */
+static int32_t ParseUkeyAbilityType(napi_env env, napi_value arg, uint32_t &abilityType)
 {
-    napi_valuetype type = napi_undefined;
-    if (napi_typeof(env, arg, &type) != napi_ok || type != napi_object) {
-        return PARAM_ERROR;
-    }
     napi_value abilityTypeValue = nullptr;
     if (napi_get_named_property(env, arg, "abilityType", &abilityTypeValue) != napi_ok ||
         abilityTypeValue == nullptr) {
@@ -533,7 +553,14 @@ static int32_t GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &ability
         return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
+    return CM_SUCCESS;
+}
 
+/* abilityName 解析（spec v4.1 D24）：非字符串 / 空串 / >256 字节 → 29700006。
+ * 两段式读取：先取精确 UTF-8 字节长度（Ark NAPI 的 buf 路径会静默截断且恒
+ * 返回 napi_ok，超长必须在拷贝前显式拒绝，spec §5.1） */
+static int32_t ParseUkeyAbilityName(napi_env env, napi_value arg, std::string &abilityName)
+{
     napi_value abilityNameValue = nullptr;
     if (napi_get_named_property(env, arg, "abilityName", &abilityNameValue) != napi_ok ||
         abilityNameValue == nullptr) {
@@ -544,8 +571,6 @@ static int32_t GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &ability
         abilityNameType != napi_string) {
         return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
-    /* 两段式读取：先取精确 UTF-8 字节长度（Ark NAPI 的 buf 路径会静默截断且恒
-     * 返回 napi_ok，超长必须在拷贝前显式拒绝，spec §5.1：>256B → 29700006） */
     size_t nameLen = 0;
     if (napi_get_value_string_utf8(env, abilityNameValue, nullptr, 0, &nameLen) != napi_ok ||
         nameLen == 0 || nameLen > CM_UKEY_ABILITY_NAME_MAX_LEN) {
@@ -559,6 +584,21 @@ static int32_t GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &ability
     }
     abilityName.assign(nameBuf, copied);
     return CM_SUCCESS;
+}
+
+/* UkeyAuthDialogInfo 解析（spec v4 D23/D24）：dialogInfo 非对象 → 401 */
+static int32_t GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &abilityType,
+    std::string &abilityName)
+{
+    napi_valuetype type = napi_undefined;
+    if (napi_typeof(env, arg, &type) != napi_ok || type != napi_object) {
+        return PARAM_ERROR;
+    }
+    int32_t ret = ParseUkeyAbilityType(env, arg, abilityType);
+    if (ret != CM_SUCCESS) {
+        return ret;
+    }
+    return ParseUkeyAbilityName(env, arg, abilityName);
 }
 
 napi_value CMNapiOpenAuthDialogForUkeyProvider(napi_env env, napi_callback_info info)
