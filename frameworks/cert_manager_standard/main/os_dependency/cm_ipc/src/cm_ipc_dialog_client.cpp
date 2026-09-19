@@ -212,7 +212,7 @@ int32_t CmClientOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest
      * CmParamsToParamSet 的 NULL-blob 标记转换处理，SA 侧按 PARAM2 缺失解析。 */
     struct CmParam params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = ukeyAuthRequest->keyUri },
-        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = ukeyAuthRequest->timeoutDuration }, /* seconds; 0 = server default 300s */
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = ukeyAuthRequest->timeoutDuration }, /* seconds; 0 = default */
         { .tag = CM_TAG_PARAM2_BUFFER, .blob = ukeyAuthRequest->customData },
     };
 
@@ -281,7 +281,7 @@ int32_t CmClientOpenUkeyAuthDialogForDriver(const struct UkeyAuthDialogInfo *dia
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = dialogInfo->abilityName },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = dialogInfo->abilityType },
         { .tag = CM_TAG_PARAM2_BUFFER, .blob = ukeyAuthRequest->keyUri },
-        { .tag = CM_TAG_PARAM3_UINT32, .uint32Param = ukeyAuthRequest->timeoutDuration }, /* seconds; 0 = server default 300s */
+        { .tag = CM_TAG_PARAM3_UINT32, .uint32Param = ukeyAuthRequest->timeoutDuration }, /* seconds; 0 = default */
         { .tag = CM_TAG_PARAM4_BUFFER, .blob = ukeyAuthRequest->customData },
     };
 

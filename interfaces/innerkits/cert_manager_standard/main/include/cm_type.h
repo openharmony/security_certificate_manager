@@ -266,7 +266,7 @@ enum CMDialogErrorCode {
     CMR_DIALOG_ERROR_NOT_REGISTERED = -1019, /* 未注册驱动弹框，或 ForDriver 指定扩展不存在/类型不符（→29700003） */
     CMR_DIALOG_ERROR_NOT_PC_DEVICE = -1020, /* UIExtension dialog requires a PC device or PC mode (29700005) */
 
-    CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED = -1021, /* no-context interface does not support UIAbility dialogs (29700003) */
+    CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED = -1021, /* ukey driver pin dialog is a UIAbility, rejected (29700003) */
 };
 
 enum CMErrorCode { /* temp use */
