@@ -151,6 +151,9 @@ int32_t GetUkeyAbilityInfo(const CmBlob *keyUri, std::string &bundleName,
 int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, const CmBlob *customData,
     OHOS::AAFwk::Want &want)
 {
+    if (keyUri == nullptr || keyUri->data == nullptr || keyUri->size == 0) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     std::string abilityName = "";
     std::string bundleName = "";
     uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
@@ -161,6 +164,14 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, const CmBlob *customData,
      */
     if (ret != HKS_SUCCESS) {
         CM_LOG_E("query ability failed, ret = %d.", ret);
+        GetDefaultUkeyAuthCertWant(keyUri, want);
+        return CM_SUCCESS;
+    }
+    /* UIExtension 注册仅在 PC/PC 模式经 SA 会话拉起（调用方前置判定）；落到本
+     * 直启路径即非 PC 场景，按 D25 v2 回退系统默认弹框——不得对 UIExtension
+     * 类型 ability 走 StartUIAbility（AMS 类型不匹配）。 */
+    if (abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
+        CM_LOG_I("uiextension pin dialog declined by sa path (non-pc), fall back to default");
         GetDefaultUkeyAuthCertWant(keyUri, want);
         return CM_SUCCESS;
     }

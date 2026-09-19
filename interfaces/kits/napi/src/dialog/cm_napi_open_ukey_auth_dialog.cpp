@@ -222,6 +222,36 @@ static void UvTsfnCallback(napi_env env, napi_value jsCallback, void *context, v
     napi_release_threadsafe_function(resultContext->tsfn, napi_tsfn_release);
 }
 
+// ForProvider result callback: dedicated codes pass through unfolded (D8 v4/D26) —
+// 29700009/29700010 must reach JS as-is, never the openUkeyAuthDialog fold.
+static void UvProviderTsfnCallback(napi_env env, napi_value jsCallback, void *context, void *data)
+{
+    (void)jsCallback;
+    (void)context;
+    auto resultContext = static_cast<CmUkeyAuthResultContext *>(data);
+    if (resultContext == nullptr || env == nullptr) {
+        // env == nullptr means the environment is tearing down: nothing left
+        // to settle, the finalizer releases the context.
+        return;
+    }
+
+    if (resultContext->resultCode == CM_SUCCESS) {
+        if (resultContext->metricsReport != nullptr) {
+            resultContext->metricsReport->Finish(CM_SUCCESS);
+        }
+        napi_value undefined = nullptr;
+        NAPI_CALL_RETURN_VOID(env, napi_get_undefined(env, &undefined));
+        NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, resultContext->deferred, undefined));
+    } else {
+        napi_value error = GenerateBusinessError(env, resultContext->resultCode,
+            resultContext->metricsReport.get());
+        NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, resultContext->deferred, error));
+    }
+    // The result is delivered exactly once per open call (inner API contract),
+    // so the threadsafe function can be released right after settling.
+    napi_release_threadsafe_function(resultContext->tsfn, napi_tsfn_release);
+}
+
 // C callback running on an IPC thread: marshal the result code to the JS
 // thread through the threadsafe function.
 static void UkeyAuthDialogResultCallback(int32_t resultCode, void *userData)
@@ -439,7 +469,7 @@ static napi_value OpenAuthDialogForUkeyProviderViaSa(
     NAPI_CALL(env, napi_create_string_latin1(env, "CmUkeyAuthDialogResult", NAPI_AUTO_LENGTH,
         &resourceName));
     napi_status status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 0, 1,
-        resultContext, UvTsfnFinalize, resultContext, UvTsfnCallback, &resultContext->tsfn);
+        resultContext, UvTsfnFinalize, resultContext, UvProviderTsfnCallback, &resultContext->tsfn);
     if (status != napi_ok) {
         CM_LOG_E("create threadsafe function failed, status = %d", static_cast<int32_t>(status));
         napi_value error = GenerateBusinessError(env, DIALOG_ERROR_GENERIC,

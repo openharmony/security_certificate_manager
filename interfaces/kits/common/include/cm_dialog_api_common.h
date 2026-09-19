@@ -230,8 +230,9 @@ int32_t GetDefaultUkeyAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want
 
 /* 组装 UKey Pin 弹框拉起 want（带 context 直启路径，原有实现恢复）：驱动注册
  * UIAbility 时拉起驱动弹框（action=UkeyPINAuth + appUid + keyUri + customData
- * base64）；查询失败（未注册）回退组装系统默认弹框 want（spec §4.1）。customData
- * 原始字节 base64 后仅写入自定义弹框 want，默认弹框不携带（spec D18）。 */
+ * base64）；查询失败（未注册）或注册为 UIExtension 但 SA 路径被调用方拒绝
+ * （非 PC，D25 v2）时回退组装系统默认弹框 want（spec §4.1）。customData 原始
+ * 字节 base64 后仅写入自定义弹框 want，默认弹框不携带（spec D18）。 */
 int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, const CmBlob *customData,
     OHOS::AAFwk::Want &want);
 
