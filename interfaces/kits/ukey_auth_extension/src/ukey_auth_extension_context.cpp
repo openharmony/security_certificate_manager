@@ -56,7 +56,7 @@ ErrCode UkeyAuthExtensionContext::TerminateSelf()
     return UIExtensionContext::TerminateSelf();
 }
 
-ErrCode UkeyAuthExtensionContext::TerminateSelfWithResult(int32_t resultCode, const AAFwk::Want &want)
+ErrCode UkeyAuthExtensionContext::TerminateSelfWithResultAndReport(int32_t resultCode, const AAFwk::Want &want)
 {
     CM_LOG_D("begin");
     ReportToCertManager(requestId_, resultCode);

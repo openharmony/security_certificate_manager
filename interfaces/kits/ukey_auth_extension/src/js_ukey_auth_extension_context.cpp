@@ -130,7 +130,7 @@ napi_value JsUkeyAuthExtensionContext::OnTerminateSelfWithResult(napi_env env, N
             *innerErrCode = static_cast<int32_t>(AbilityErrorCode::ERROR_CODE_INVALID_CONTEXT);
             return;
         }
-        *innerErrCode = context->TerminateSelfWithResult(resultCode, want);
+        *innerErrCode = context->TerminateSelfWithResultAndReport(resultCode, want);
     };
     NapiAsyncTask::CompleteCallback complete =
         [innerErrCode](napi_env env, NapiAsyncTask &task, int32_t status) {

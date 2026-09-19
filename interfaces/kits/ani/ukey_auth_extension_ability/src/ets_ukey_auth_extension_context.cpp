@@ -118,7 +118,7 @@ void EtsUkeyAuthExtensionContext::OnTerminateSelfWithResult(
     OHOS::AAFwk::Want want;
     int resultCode = 0;
     OHOS::AppExecFwk::UnWrapAbilityResult(env, abilityResult, resultCode, want);
-    auto ret = context->TerminateSelfWithResult(resultCode, want);
+    auto ret = context->TerminateSelfWithResultAndReport(resultCode, want);
     AppExecFwk::AsyncCallback(env, callback,
         AbilityRuntime::EtsErrorUtil::CreateErrorByNativeErr(env, static_cast<int32_t>(ret)), nullptr);
 }

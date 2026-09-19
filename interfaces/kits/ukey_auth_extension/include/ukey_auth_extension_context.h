@@ -44,8 +44,11 @@ public:
 
     /**
      * @brief Destroys the current ukeyAuth extension ability with result, after reporting to certManager.
+     *
+     * Named distinctly from UIExtensionContext::TerminateSelfWithResult to avoid hiding the
+     * base-class virtual (-Woverloaded-virtual); this variant reports to certManager first.
      */
-    ErrCode TerminateSelfWithResult(int32_t resultCode, const AAFwk::Want &want);
+    ErrCode TerminateSelfWithResultAndReport(int32_t resultCode, const AAFwk::Want &want);
 
 private:
     sptr<AAFwk::SessionInfo> sessionInfo_ = nullptr;
