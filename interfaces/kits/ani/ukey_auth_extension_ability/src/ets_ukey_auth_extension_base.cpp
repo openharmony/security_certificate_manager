@@ -87,10 +87,13 @@ bool EtsUkeyAuthExtensionBase::BindNativeMethods()
 
 void EtsUkeyAuthExtensionBase::BindContext()
 {
+    /* 模式对齐上游 EtsAutoFillExtension::BindContext：不调基类 BindContext，
+     * 直接以 ukey 上下文对象绑定 context 字段并接管 shellContextRef_（保留
+     * 全局引用，由基类析构释放）——避免产生被替换的基类上下文孤儿对象，且
+     * 配置变更通知（EtsExtensionCommon::ConfigurationUpdated）落在 ukey 上下文上 */
     if (!BindNativeMethods()) {
         CM_LOG_E("BindNativeMethods failed");
     }
-    EtsUIExtensionBase::BindContext();
     auto env = etsRuntime_.GetAniEnv();
     if (env == nullptr) {
         CM_LOG_E("env is null");
@@ -123,8 +126,12 @@ void EtsUkeyAuthExtensionBase::BindContext()
     }
     if ((status = env->Object_SetField_Ref(etsObj_->aniObj, contextField, contextRef)) != ANI_OK) {
         CM_LOG_E("status: %d", status);
+        env->GlobalReference_Delete(contextRef);
+        return;
     }
-    env->GlobalReference_Delete(contextRef);
+    shellContextRef_ = std::make_shared<AppExecFwk::ETSNativeReference>();
+    shellContextRef_->aniObj = contextObj;
+    shellContextRef_->aniRef = contextRef;
 }
 
 } // namespace AbilityRuntime

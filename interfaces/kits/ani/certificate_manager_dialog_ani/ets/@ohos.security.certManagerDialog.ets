@@ -110,7 +110,6 @@ class CertReferenceClass implements certificateManagerDialog.CertReference {
 }
 
 const CRITERIA_MAX_SIZE: int = 20;
-const MAX_REQUEST_ID_LEN: double = 64;
 
 export namespace certificateManagerDialog {
 
@@ -154,6 +153,8 @@ export namespace certificateManagerDialog {
     ERROR_NOT_COMPLY_SECURITY_POLICY = 29700005,
     ERROR_PARAMETER_VALIDATION_FAILED = 29700006,
     ERROR_NO_AVAILABLE_CERTIFICATE = 29700007,
+    ERROR_UKEY_AUTH_REPORT_TIMEOUT = 29700009,
+    ERROR_UKEY_DIALOG_IN_PROGRESS = 29700010,
   }
 
   export enum CertificateDialogPageType {
@@ -422,14 +423,15 @@ export namespace certificateManagerDialog {
 
         let abilityName: string = dialogInfo.abilityName;
         let abilityType: number = dialogInfo.abilityType;
-        if (abilityName === undefined || abilityName === '' || abilityType === undefined) {
+        /* empty strings are rejected by the native layer with 29700006 (spec §5.1) */
+        if (abilityName === undefined || abilityType === undefined) {
             let error = new BusinessError();
             error.code = 401;
             error.message = 'the input parameters is invalid.';
             throw error;
         }
         let keyUri: string = ukeyAuthRequest.keyUri;
-        if (keyUri === undefined || keyUri === '') {
+        if (keyUri === undefined) {
             let error = new BusinessError();
             error.code = 401;
             error.message = 'the input parameters is invalid.';

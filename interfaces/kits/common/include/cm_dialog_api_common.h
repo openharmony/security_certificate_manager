@@ -19,7 +19,6 @@
 #include <string>
 #include "cm_type.h"
 #include "ability_context.h"
-#include "cm_type.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 

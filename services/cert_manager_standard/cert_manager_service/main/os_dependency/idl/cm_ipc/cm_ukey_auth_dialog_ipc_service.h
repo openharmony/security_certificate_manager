@@ -24,8 +24,11 @@
 namespace OHOS::Security::CertManager {
 /* UKey 认证弹框 IPC 处理器（对齐 ukey parcel 系列表模式：context 即 reply parcel，
  * 处理器经 CmSendResponse 写同步应答，ConvertErrorCode 不折叠 -1016/-1018）。
- * 请求 parcel：OPEN   [uint32 size][paramSet: CM_TAG_PARAM0_BUFFER=keyUri][remote object 回调stub]
- *             REPORT [uint32 size][paramSet: CM_TAG_PARAM0_BUFFER=requestId, CM_TAG_PARAM1_UINT32=resultCode]
+ * 请求 parcel：OPEN   [uint32 size][remote object 回调stub][paramSet buffer]
+ *              （remote object 位于 buffer 之前：WriteBuffer 尾部补 4 字节对齐而
+ *               ReadBuffer 不跳过 pad，对象写在非对齐 buffer 之后 SA 侧读不到）
+ *             REPORT [uint32 size][paramSet buffer: CM_TAG_PARAM0_BUFFER=requestId,
+ *              CM_TAG_PARAM1_UINT32=resultCode]
  * OPEN 因需从 data parcel 读取 remote object，由 cm_sa.cpp OnRemoteRequest 分支调用；
  * REPORT 无额外参数，经 g_cmParcelIpcHandler 表分发。 */
 void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSetBlob,

@@ -24,8 +24,6 @@
 #include "ets_extension_context.h"
 #include "session_info.h"
 #include "window.h"
-#ifdef SUPPORT_SCREEN
-#endif // SUPPORT_SCREEN
 
 namespace OHOS {
 namespace AbilityRuntime {

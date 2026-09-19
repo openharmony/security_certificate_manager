@@ -84,10 +84,10 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
         CM_LOG_E("Failed to get certPurpose value");
         return nullptr;
     }
-    /* blob carries the terminating zero; SA rejects keyUri longer than
-     * MAX_LEN_URI, validate here so the caller reports 29700006 instead of
-     * the unmapped generic error */
-    if (asyncContext->certUri->size > MAX_LEN_URI + 1) {
+    /* blob carries the terminating zero; the SA rejects a keyUri blob longer
+     * than MAX_LEN_URI (256, NUL included), validate here so the caller reports
+     * 29700006 instead of the unmapped generic error */
+    if (asyncContext->certUri->size > MAX_LEN_URI) {
         CM_LOG_E("keyUri is too long, max length: %d", MAX_LEN_URI);
         return nullptr;
     }
@@ -108,8 +108,10 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
                     return nullptr;
                 }
                 double timeoutDouble = 0;
+                /* NaN fails both bounds below (all comparisons with NaN are
+                 * false), so the negated form rejects non-finite values */
                 if (napi_get_value_double(asyncContext->env, timeoutValue, &timeoutDouble) != napi_ok ||
-                    timeoutDouble < 0 || timeoutDouble > UINT32_MAX) {
+                    !(timeoutDouble >= 0 && timeoutDouble <= UINT32_MAX)) {
                     CM_LOG_E("invalid timeout value");
                     return nullptr;
                 }

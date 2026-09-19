@@ -85,16 +85,18 @@ int32_t CmOpenUkeyAuthDialogSaSession::GetParamsFromEnv()
     if (this->keyUri.size <= 1) {
         /* blob carries the terminating zero, size 1 means an empty keyUri */
         CM_LOG_E("keyUri is empty");
-        return CMR_DIALOG_ERROR_PARAM_INVALID;
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
-    if (this->keyUri.size > MAX_LEN_URI + 1) {
-        /* blob carries the terminating zero; reject before the SA does so the
-         * error maps to 29700006 instead of the unmapped generic error */
+    if (this->keyUri.size > MAX_LEN_URI) {
+        /* blob carries the terminating zero; the SA rejects a keyUri blob
+         * longer than MAX_LEN_URI (NUL included), reject here so the error
+         * maps to 29700006 instead of the unmapped generic error */
         CM_LOG_E("keyUri is too long, max length: %d", MAX_LEN_URI);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
-    /* optional timeout in seconds; negative / non-finite maps to a param error */
-    if (this->aniTimeout < 0 || this->aniTimeout > UINT32_MAX) {
+    /* optional timeout in seconds; non-number/NaN maps to a param error
+     * (NaN fails both bounds, so the negated form rejects it) */
+    if (!(this->aniTimeout >= 0 && this->aniTimeout <= UINT32_MAX)) {
         CM_LOG_E("invalid timeout value");
         return CMR_DIALOG_ERROR_PARAM_INVALID;
     }

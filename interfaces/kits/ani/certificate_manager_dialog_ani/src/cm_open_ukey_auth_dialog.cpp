@@ -45,7 +45,13 @@ int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
         CM_LOG_E("parse keyUri failed, ret = %d", ret);
         return ret;
     }
-    if (this->keyUri.size > MAX_LEN_URI + 1) {
+    if (this->keyUri.size <= 1) {
+        /* blob carries the terminating zero, size 1 means an empty keyUri;
+         * align with the SA session path (empty keyUri is a param error) */
+        CM_LOG_E("keyUri is empty");
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+    if (this->keyUri.size > MAX_LEN_URI) {
         /* blob carries the terminating zero; over-length keyUri maps to 29700006 */
         CM_LOG_E("keyUri is too long, max length: %d", MAX_LEN_URI);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;

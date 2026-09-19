@@ -28,6 +28,8 @@ ohos_shared_library("ukey_auth_extension_ani") {
   include_dirs = [
     "include",
     "//base/security/certificate_manager/frameworks/cert_manager_standard/main/common/include",
+    # cm_log.h 引用 cm_type.h（头件依赖，不链接 innerkit 库，a1622fa 后无符号依赖）
+    "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main/include",
   ]
 
   sources = [
@@ -37,7 +39,6 @@ ohos_shared_library("ukey_auth_extension_ani") {
   ]
 
   deps = [
-    "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
     "//base/security/certificate_manager/interfaces/kits/ukey_auth_extension:ukey_auth_extension",
   ]
 

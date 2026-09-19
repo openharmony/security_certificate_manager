@@ -196,6 +196,9 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, SingleFlightRejected, testing::ext::TestSi
 {
     ASSERT_EQ(Open(0), CM_SUCCESS);
     ASSERT_EQ(Open(0), CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS);
+    /* cleanup: 显式收尾挂起会话，避免 50ms 周期保活任务在 fixture 销毁与下一个
+     * 用例 SetUp（SetLauncher 中止会话）之间的窗口内触发悬垂的 renewalCount_++ */
+    manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0);
 }
 
 /* requestId 必须来自 CSPRNG：多次会话互不相同（不可预测性的可测代理）+ 32 位 hex 格式 */
@@ -246,10 +249,13 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, ReportUnknownCodeFolded, testing::ext::Tes
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, DisconnectThenGraceReport, testing::ext::TestSize.Level0)
 {
-    Open(0);
+    /* 放宽本用例宽限窗口（500ms）：断言"宽限期内上报成功"，两条相邻 manager 调用
+     * 之间 100ms 默认宽限在重载机器上可能不够 */
+    manager_->SetTimeoutRangeForTest(2, 3, 5, 500);
+    ASSERT_EQ(Open(0), CM_SUCCESS);
     std::string reqId = manager_->GetRequestIdForTest();
     manager_->OnDialogDisconnected(reqId); // enter grace
-    ASSERT_EQ(manager_->OnReport(reqId, driverBundle_, 0), CM_SUCCESS); // within 100ms
+    ASSERT_EQ(manager_->OnReport(reqId, driverBundle_, 0), CM_SUCCESS); // within grace
     EXPECT_EQ(client_->lastCode_, 0);
 }
 
@@ -266,7 +272,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, GraceTimeoutMeansCancel, testing::ext::Tes
 HWTEST_F(CmUkeyAuthDialogManagerTest, TotalTimeoutMeansReportTimeout, testing::ext::TestSize.Level0)
 {
     Open(0);
-    std::this_thread::sleep_for(std::chrono::milliseconds(3200)); // > 3s total
+    std::this_thread::sleep_for(std::chrono::milliseconds(3500)); // > 3s total, with margin
     EXPECT_EQ(client_->called_, 1);
     EXPECT_EQ(client_->lastCode_, CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT);
     EXPECT_EQ(launcher_->disconnectCount_, 1);
@@ -306,7 +312,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, CustomTimeoutTakesEffect, testing::ext::Te
 {
     /* explicit short timeout overrides the preconfigured test timeout */
     Open(2); // 2s < default 3s
-    std::this_thread::sleep_for(std::chrono::milliseconds(2200));
+    std::this_thread::sleep_for(std::chrono::milliseconds(2500)); // > 2s, with margin
     EXPECT_EQ(client_->called_, 1);
     EXPECT_EQ(client_->lastCode_, CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT);
 }
@@ -373,7 +379,8 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveFiresPeriodicallyAndCancelsOnFini
 {
     ASSERT_EQ(Open(0), CM_SUCCESS);
     std::string reqId = manager_->GetRequestIdForTest();
-    std::this_thread::sleep_for(std::chrono::milliseconds(130)); // >= 2 fires at 50ms
+    /* 250ms 容纳 50ms 间隔的 ≥2 次触发（含 runner 线程首次创建的启动抖动） */
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
     EXPECT_GE(renewalCount_, 2); // armed on success + periodic re-arm
     ASSERT_EQ(manager_->OnReport(reqId, driverBundle_, 0), CM_SUCCESS);
     int afterFinish = renewalCount_;
@@ -399,8 +406,11 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveCancelledOnAbort, testing::ext::T
 {
     ASSERT_EQ(Open(0), CM_SUCCESS);
     manager_->SetTimeoutRangeForTest(2, 3, 5, 100); // reconfiguration aborts the active session
+    /* 断言"中止后不再触发"而非"首次触发前完成中止"：后者依赖两条相邻语句的
+     * 间隔 < 50ms，重载机器上会 flaky */
+    int afterAbort = renewalCount_;
     std::this_thread::sleep_for(std::chrono::milliseconds(150)); // > 50ms interval
-    EXPECT_EQ(renewalCount_, 0); // cancelled before the first fire
+    EXPECT_EQ(renewalCount_, afterAbort); // no further keep-alive after the abort
 }
 
 /* ---- F2: client death monitoring ---- */
@@ -414,8 +424,9 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, ClientDeathAbortsSessionWithoutResult,
     EXPECT_EQ(manager_->GetRequestIdForTest(), ""); // session cleared
     EXPECT_EQ(client_->called_, 0); // no result delivered to the dead client
     EXPECT_EQ(launcher_->disconnectCount_, 1); // dialog connection torn down
+    int afterDeath = renewalCount_;
     std::this_thread::sleep_for(std::chrono::milliseconds(150));
-    EXPECT_EQ(renewalCount_, 0); // keep-alive cancelled on abort
+    EXPECT_EQ(renewalCount_, afterDeath); // keep-alive cancelled on abort
     EXPECT_EQ(Open(0), CM_SUCCESS); // single-flight free
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 }

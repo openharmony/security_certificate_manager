@@ -18,9 +18,11 @@
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"
 #include "cm_test_common.h"
+#include "cm_ukey_dialog_common.h"
 
 namespace {
-const uint32_t MAX_ABILITY_NAME_LEN = 128;
+/* 覆盖合法边界（256 字符 + NUL = 257）与超长拒绝分支（> 257，spec v4.1 D24） */
+const uint32_t MAX_ABILITY_NAME_LEN = OHOS::Security::CertManager::CM_UKEY_ABILITY_NAME_MAX_LEN + 2;
 const uint32_t MAX_KEY_URI_LEN = 4096;
 
 void DummyCallback(int32_t resultCode, void *userData)
@@ -34,7 +36,7 @@ using namespace CmFuzzTest;
 namespace OHOS {
     bool DoSomethingInterestingWithMyAPI(const uint8_t* data, size_t size)
     {
-        /* fuzz layout: [4B abilityType][4B timeout][rest: abilityName + keyUri + customData bytes] */
+        /* fuzz layout: [4B abilityType][4B timeout][abilityName][keyUri][customData bytes] */
         uint32_t abilityType = 0;
         uint32_t timeout = 0;
         const uint8_t *payload = data;
@@ -55,6 +57,8 @@ namespace OHOS {
         size_t restSize = payloadSize - abilityNameSize;
         uint32_t keyUriSize = (restSize > MAX_KEY_URI_LEN) ? MAX_KEY_URI_LEN :
             static_cast<uint32_t>(restSize);
+        /* customData 取剩余字节（≤2048 之外被客户端拒绝，属预期路径，spec D19） */
+        uint32_t customDataSize = static_cast<uint32_t>(restSize - keyUriSize);
 
         struct UkeyAuthDialogInfo dialogInfo = {
             .abilityName = { abilityNameSize, const_cast<uint8_t *>(payload) },
@@ -63,7 +67,8 @@ namespace OHOS {
         struct UkeyAuthRequest ukeyAuthRequest = {
             .keyUri = { keyUriSize, const_cast<uint8_t *>(payload + abilityNameSize) },
             .timeoutDuration = timeout,
-            .customData = { 0, nullptr },
+            .customData = { customDataSize,
+                const_cast<uint8_t *>(payload + abilityNameSize + keyUriSize) },
         };
 
         CertmanagerTest::MockHapToken mockHap;

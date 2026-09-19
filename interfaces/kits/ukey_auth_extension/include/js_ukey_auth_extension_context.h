@@ -26,7 +26,8 @@ namespace AbilityRuntime {
 struct NapiCallbackInfo;
 
 /**
- * @brief Js wrapper for UkeyAuthExtensionContext, binding only the four public methods.
+ * @brief Js wrapper for UkeyAuthExtensionContext, binding only the two public
+ * terminate methods (terminateSelf / terminateSelfWithResult).
  */
 class JsUkeyAuthExtensionContext {
 public:
