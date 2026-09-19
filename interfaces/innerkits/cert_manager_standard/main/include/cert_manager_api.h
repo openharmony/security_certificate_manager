@@ -105,6 +105,7 @@ typedef void (*CmUkeyAuthDialogResultCallback)(int32_t resultCode, void *userDat
 
 /**
  * Open the ukey pin auth dialog provided by the driver's custom UIExtensionAbility.
+ * timeoutDuration is in seconds (0 = server default 300s, clamped to [3min, 10min]).
  * Returns sync validation result; final dialog result is delivered via callback exactly once.
  */
 CM_API_EXPORT int32_t CmOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest,
@@ -112,7 +113,8 @@ CM_API_EXPORT int32_t CmOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAut
 
 /**
  * Open the ukey driver's own pin auth dialog (UIExtensionAbility only). The driver
- * bundle is resolved from the caller identity on the service side. Returns sync
+ * bundle is resolved from the caller identity on the service side. timeoutDuration
+ * is in seconds (0 = server default 300s, clamped to [3min, 10min]). Returns sync
  * validation result; final dialog result is delivered via callback exactly once.
  */
 CM_API_EXPORT int32_t CmOpenUkeyAuthDialogForDriver(const struct UkeyAuthDialogInfo *dialogInfo,

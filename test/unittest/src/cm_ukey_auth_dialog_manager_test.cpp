@@ -75,7 +75,7 @@ public:
         manager_->SetLauncher(launcher_);
         manager_->SetAbilityQuerier(querier_);
         manager_->SetPcChecker([this]() { return pcMode_; }); /* D15 seam */
-        manager_->SetTimeoutRangeForTest(100, 200, 1000, 100); // min/default/max total, 100ms grace
+        manager_->SetTimeoutRangeForTest(2, 3, 5, 100); // min/default/max total (s), 100ms grace
         manager_->SetKeepAliveIntervalForTest(50); // fast keep-alive for F1 tests
         manager_->SetUnloadRenewal([this]() { renewalCount_++; });
         manager_->SetTimerPostFailForTest(false); // reset F8 fault injection
@@ -266,7 +266,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, GraceTimeoutMeansCancel, testing::ext::Tes
 HWTEST_F(CmUkeyAuthDialogManagerTest, TotalTimeoutMeansReportTimeout, testing::ext::TestSize.Level0)
 {
     Open(0);
-    std::this_thread::sleep_for(std::chrono::milliseconds(400)); // > 200ms total
+    std::this_thread::sleep_for(std::chrono::milliseconds(3200)); // > 3s total
     EXPECT_EQ(client_->called_, 1);
     EXPECT_EQ(client_->lastCode_, CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT);
     EXPECT_EQ(launcher_->disconnectCount_, 1);
@@ -275,38 +275,38 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, TotalTimeoutMeansReportTimeout, testing::e
 HWTEST_F(CmUkeyAuthDialogManagerTest, ParamsJsonCarriesTimeout, testing::ext::TestSize.Level0)
 {
     /* the normalized session timeout must reach the driver dialog via the
-     * parameters json (spec §6.2): default -> preconfigured test value,
+     * parameters json (spec §6.2, seconds): default -> preconfigured test value,
      * explicit value -> that value, over-max -> clamped to the server max */
-    Open(0); // default -> 200ms (preconfigured)
+    Open(0); // default -> 3s (preconfigured)
     auto conn = launcher_->conn_;
     ASSERT_NE(conn, nullptr);
-    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":200"), std::string::npos);
+    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":3"), std::string::npos);
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 
-    Open(150); // explicit 150ms
+    Open(4); // explicit 4s
     conn = launcher_->conn_;
     ASSERT_NE(conn, nullptr);
-    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":150"), std::string::npos);
+    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":4"), std::string::npos);
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 
-    Open(999999999); // over configured max -> clamp 1000
+    Open(999999999); // over configured max -> clamp 5
     conn = launcher_->conn_;
     ASSERT_NE(conn, nullptr);
-    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":1000"), std::string::npos);
+    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":5"), std::string::npos);
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 
-    Open(50); // below configured min -> clamp 100
+    Open(1); // below configured min -> clamp 2
     conn = launcher_->conn_;
     ASSERT_NE(conn, nullptr);
-    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":100"), std::string::npos);
+    EXPECT_NE(conn->GetParamsJson().find("\"timeout\":2"), std::string::npos);
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, CustomTimeoutTakesEffect, testing::ext::TestSize.Level0)
 {
     /* explicit short timeout overrides the preconfigured test timeout */
-    Open(150); // 150ms
-    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    Open(2); // 2s < default 3s
+    std::this_thread::sleep_for(std::chrono::milliseconds(2200));
     EXPECT_EQ(client_->called_, 1);
     EXPECT_EQ(client_->lastCode_, CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT);
 }
@@ -317,7 +317,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, TimeoutClampedToMax, testing::ext::TestSiz
      * fire within the short window */
     Open(999999999); // > max -> clamp
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
-    EXPECT_EQ(client_->called_, 0); // still waiting (clamped to 10min), not fired
+    EXPECT_EQ(client_->called_, 0); // still waiting (clamped to 5s), not fired
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
     EXPECT_EQ(client_->lastCode_, 0);
 }
@@ -355,7 +355,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, ConnectionParcelFormat, testing::ext::Test
 {
     sptr<FakeDialogService> svc = sptr<FakeDialogService>(new FakeDialogService());
     CmSystemDialogConnection conn("req123", "com.example.ukeydrv", "DrvUIExtAbility",
-        R"({"keyUri":"u1","requestId":"req123","timeout":600000})");
+        R"({"keyUri":"u1","requestId":"req123","timeout":600})");
     conn.OnAbilityConnectDone(AppExecFwk::ElementName(), svc, 0);
     ASSERT_EQ(svc->keys_.size(), 3u);
     EXPECT_EQ(svc->keys_[0], "bundleName");
@@ -363,7 +363,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, ConnectionParcelFormat, testing::ext::Test
     EXPECT_EQ(svc->keys_[1], "abilityName");
     EXPECT_EQ(svc->values_[1], "DrvUIExtAbility");
     EXPECT_EQ(svc->keys_[2], "parameters");
-    EXPECT_EQ(svc->values_[2], R"({"keyUri":"u1","requestId":"req123","timeout":600000})");
+    EXPECT_EQ(svc->values_[2], R"({"keyUri":"u1","requestId":"req123","timeout":600})");
 }
 
 /* ---- F1: SA keep-alive during WAITING_REPORT ---- */
@@ -398,7 +398,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveNotArmedOnSyncFailure, testing::e
 HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveCancelledOnAbort, testing::ext::TestSize.Level0)
 {
     ASSERT_EQ(Open(0), CM_SUCCESS);
-    manager_->SetTimeoutRangeForTest(100, 200, 1000, 100); // reconfiguration aborts the active session
+    manager_->SetTimeoutRangeForTest(2, 3, 5, 100); // reconfiguration aborts the active session
     std::this_thread::sleep_for(std::chrono::milliseconds(150)); // > 50ms interval
     EXPECT_EQ(renewalCount_, 0); // cancelled before the first fire
 }

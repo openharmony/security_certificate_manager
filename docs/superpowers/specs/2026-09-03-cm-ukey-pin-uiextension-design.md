@@ -61,7 +61,7 @@ v1–v3 决策（D1–D20）保留作轨迹；v4 覆盖项在行内标注，新�
 | D2 | 结果回传通道 | 驱动弹框主动上报——SA 生成 requestId 随弹框参数下发，提供方调用 inner API `CmReportUkeyAuthResult(requestId, resultCode)` 上报，SA 校验后回调客户端。公开 report 面不暴露 | v2 裁定，v4 不变（UIExtension 形态经框架 `UkeyAuthExtensionContext.terminateSelf*` 自动上报） |
 | D3 | HUKS 范围 | SA 与 Kit 侧均消费 `HksQueryAbilityInfo` 返回的 `abilityType`（0=UIAbility，1=UIExtensionAbility）；`HksAbilityInfo` 已增字段（huks 仓 `9b396d3b3`），**HUKS 查询实现尚未填充**（零初始化=0） | v4 下 abilityType 成为 openUkeyAuthDialog 的**门禁**（仅 1 放行），HUKS 填充是该接口 E2E 的前置（R12） |
 | D4 | systemui 范围 | 系统弹窗服务**只读复用**现有 `COMMAND_START_DIALOG` 协议，仓零改动 | 不变 |
-| D5 | 超时参数 | `timeoutDuration`（ms）0=默认 300s，显式值 clamp [3min, 10min]；断连宽限 10s | v3 定值，v4 不变 |
+| D5 | 超时参数 | `timeoutDuration`（**秒**，2026-09-19 由 ms 改秒，全链路含 IPC 线上与弹框 JSON）0=默认 300s，显式值 clamp [3min, 10min]；断连宽限 10s | v3 定值，v4 不变 |
 | D6 | 并发约束 | SA 全局单飞（两接口共享同一会话位） | 不变 |
 | D7 | report 权限 | 不加权限：requestId CSPRNG + 上报者 bundleName == 会话 owner 双重校验 | 不变 |
 | D8 | 错误码折叠 | **v4 修订（2026-09-17）**：专属码 **29700009（超时未上报）/ 29700010（单飞）归属 `openAuthDialogForUkeyDriver`**（26 新接口可携带）；`openUkeyAuthDialog`（since-22 已发布）折叠 **-1017→29700002、-1018→29700003**（消息注明原因）。原 v3 "argc==1 无 context 重载携带专属码" 随该重载删除而失效 | API 治理：已发布接口 throws 面不新增成员；新接口可携带 |
@@ -254,7 +254,7 @@ UIExtensionAbility 弹框（PC/PC 模式）；非 PC 设备回退系统默认弹
   "requestId": "<32 字符 hex 会话标识>",
   "action": "UkeyPINAuth",
   "ability.want.params.uiExtensionType": "ukeyAuth",
-  "timeout": <ms，归一化后实际超时>,
+  "timeout": <秒，归一化后实际超时>,
   "customData": "<base64，仅携带时存在>"
 }
 ```
@@ -283,7 +283,7 @@ struct UkeyAuthDialogInfo {
 /* UKey Pin 码认证请求（v4：删 scene 字段） */
 struct UkeyAuthRequest {
     struct CmBlob keyUri;        /* UKey 凭证唯一标识，最大 256 字节 */
-    uint32_t timeoutDuration;    /* ms，0=服务端默认 300s，clamp [3min,10min] */
+    uint32_t timeoutDuration;    /* 秒，0=服务端默认 300s，clamp [3min,10min] */
     struct CmBlob customData;    /* 原始字节，≤2048，可为空 */
 };
 

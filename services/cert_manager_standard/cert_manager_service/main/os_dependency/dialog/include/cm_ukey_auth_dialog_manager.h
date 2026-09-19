@@ -38,11 +38,11 @@ using OHOS::AAFwk::IAbilityConnection;
 
 class CmSystemDialogConnection; // 生产装配的真实连接对象（T3）
 
-/* 认证超时（spec D5 v2：openUkeyAuthDialog 可选 timeoutDuration 入参，单位 ms）：
+/* 认证超时（spec D5 v2：openUkeyAuthDialog 可选 timeoutDuration 入参，单位秒）：
  * 未传（0）取默认 300s；显式值由服务端 clamp 到 [3min, 10min] 区间 */
-constexpr uint32_t CM_UKEY_DIALOG_MIN_TOTAL_TIMEOUT_MS = 180000;   // 3 min
-constexpr uint32_t CM_UKEY_DIALOG_DEFAULT_TOTAL_TIMEOUT_MS = 300000; // 5 min
-constexpr uint32_t CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS = 600000;   // 10 min
+constexpr uint32_t CM_UKEY_DIALOG_MIN_TOTAL_TIMEOUT_SEC = 180;     // 3 min
+constexpr uint32_t CM_UKEY_DIALOG_DEFAULT_TOTAL_TIMEOUT_SEC = 300; // 5 min
+constexpr uint32_t CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_SEC = 600;     // 10 min
 constexpr uint32_t CM_UKEY_DIALOG_GRACE_TIMEOUT_MS = 10000;  // 10s, spec D5
 /* 会话保活周期（spec §9.4）：须小于 SA 空闲卸载延时 60s（cm_sa.cpp DELAY_TIME），
  * 会话期间无 IPC 进来，靠周期续期钩子重置空闲卸载计时。 */
@@ -79,7 +79,7 @@ public:
     void SetAbilityQuerier(AbilityQuerier querier);
     void SetPcChecker(PcChecker checker);
     void SetDriverAbilityChecker(DriverAbilityChecker checker);
-    void SetTimeoutRangeForTest(uint32_t minMs, uint32_t defaultMs, uint32_t maxMs, uint32_t graceMs);
+    void SetTimeoutRangeForTest(uint32_t minSec, uint32_t defaultSec, uint32_t maxSec, uint32_t graceMs);
     /* SA 空闲卸载续期钩子（F1）：会话活跃期间由周期保活任务调用；由 SA 侧
      * （cm_sa.cpp Init）注入 DelayUnload，弹框静态库不得依赖 cm_sa.h。 */
     void SetUnloadRenewal(std::function<void()> renewal);
@@ -93,7 +93,7 @@ public:
     // 同步返回校验码（CM_SUCCESS / -1017 / -1018 / -1019 未注册 / -1020 /
     // CMR_DIALOG_ERROR_*）；customData 仅在同步拉起期间消费（写入弹框参数），
     // 不随会话保留
-    int32_t OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid, uint32_t timeoutMs,
+    int32_t OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid, uint32_t timeoutSec,
         const struct CmBlob *customData, const sptr<IRemoteObject> &clientCallback);
     /* openAuthDialogForUkeyProvider 的 SA 入口（spec v4 §4.1/D23）：调用方 bundle 由
      * IPC 层从 IPC token 解出传入（客户端不可伪造）；userId 同样由 IPC 层经
@@ -102,7 +102,7 @@ public:
      * 返回值契约同 OpenDialog。 */
     int32_t OpenDriverDialog(const struct CmBlob *abilityName, uint32_t abilityType,
         const struct CmBlob *keyUri, uint32_t callerUid, const std::string &callerBundleName,
-        int32_t userId, uint32_t timeoutMs, const struct CmBlob *customData,
+        int32_t userId, uint32_t timeoutSec, const struct CmBlob *customData,
         const sptr<IRemoteObject> &clientCallback);
     // 返回 CM_SUCCESS（已接受）或 CMR_DIALOG_ERROR_INTERNAL（会话不存在/身份不符/终态）
     int32_t OnReport(const std::string &requestId, const std::string &callerBundleName,
@@ -145,9 +145,9 @@ private:
      * PC 门禁已过）：requestId→会话→连接→总超时。返回同步码。 */
     int32_t LaunchUiExtensionSessionLocked(const std::string &bundleName,
         const std::string &abilityName, const struct CmBlob *keyUri, uint32_t callerUid,
-        uint32_t timeoutMs, const struct CmBlob *customData,
+        uint32_t timeoutSec, const struct CmBlob *customData,
         const sptr<IRemoteObject> &clientCallback);
-    uint32_t NormalizeTimeoutMsLocked(uint32_t timeoutMs);
+    uint32_t NormalizeTimeoutSecLocked(uint32_t timeoutSec);
 
     std::mutex mutex_;
     std::shared_ptr<SystemDialogLauncher> launcher_;
@@ -156,9 +156,9 @@ private:
     DriverAbilityChecker driverAbilityChecker_;  // 缺省视为校验失败（fail-closed）
     std::function<void()> unloadRenewal_;  // SA 空闲卸载续期钩子（注入，F1）
     bool realDepsInited_ = false;          // InitRealDependencies 幂等标记
-    uint32_t minTimeoutMs_ = CM_UKEY_DIALOG_MIN_TOTAL_TIMEOUT_MS;
-    uint32_t defaultTimeoutMs_ = CM_UKEY_DIALOG_DEFAULT_TOTAL_TIMEOUT_MS;
-    uint32_t maxTimeoutMs_ = CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_MS;
+    uint32_t minTimeoutSec_ = CM_UKEY_DIALOG_MIN_TOTAL_TIMEOUT_SEC;
+    uint32_t defaultTimeoutSec_ = CM_UKEY_DIALOG_DEFAULT_TOTAL_TIMEOUT_SEC;
+    uint32_t maxTimeoutSec_ = CM_UKEY_DIALOG_MAX_TOTAL_TIMEOUT_SEC;
     uint32_t graceTimeoutMs_ = CM_UKEY_DIALOG_GRACE_TIMEOUT_MS;
     uint32_t keepAliveIntervalMs_ = CM_UKEY_DIALOG_KEEPALIVE_INTERVAL_MS;
     bool timerPostFailForTest_ = false;    // PostTask 故障注入（F8 测试）

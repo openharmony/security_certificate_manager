@@ -99,12 +99,12 @@ int32_t CmOpenAuthDialogForUkeyProvider::GetParamsFromEnv()
         CM_LOG_E("keyUri is too long, max length: %d", MAX_LEN_URI);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
-    /* optional timeout in ms; negative / non-finite maps to a param error */
+    /* optional timeout in seconds; negative / non-finite maps to a param error */
     if (this->aniTimeout < 0 || this->aniTimeout > UINT32_MAX) {
         CM_LOG_E("invalid timeout value");
         return CMR_DIALOG_ERROR_PARAM_INVALID;
     }
-    this->timeoutMs = static_cast<uint32_t>(this->aniTimeout);
+    this->timeoutSec = static_cast<uint32_t>(this->aniTimeout);
 
     /* optional customData; Uint8Array <= 2048 raw bytes (D19)，ets 层已归一化为
      * 非 undefined 对象（空数组表示缺省） */
@@ -207,7 +207,7 @@ int32_t CmOpenAuthDialogForUkeyProvider::InvokeAsyncWork()
     dialogInfo.abilityType = this->abilityType;
     struct UkeyAuthRequest ukeyAuthRequest = {};
     ukeyAuthRequest.keyUri.data = this->keyUri.data;
-    ukeyAuthRequest.timeoutDuration = this->timeoutMs;
+    ukeyAuthRequest.timeoutDuration = this->timeoutSec;
     ukeyAuthRequest.keyUri.size = this->keyUri.size;
     ukeyAuthRequest.customData = this->customData;
 

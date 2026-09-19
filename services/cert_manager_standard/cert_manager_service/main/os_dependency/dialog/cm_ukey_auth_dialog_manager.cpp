@@ -142,12 +142,12 @@ private:
 
 /* 组装驱动 UIExtension 弹框 parameters JSON（spec v4 §6.2）：
  * {"keyUri":"<uri>","appUid":<callerUid>,"requestId":"<id>","action":"UkeyPINAuth",
- *  "ability.want.params.uiExtensionType":"ukeyAuth","timeout":<ms>,
+ *  "ability.want.params.uiExtensionType":"ukeyAuth","timeout":<秒>,
  *  "customData":"<base64，仅携带时存在>"}
- * timeout 为本会话归一化后的实际超时时长（ms）；customData 原始字节仅在此编码消费，
+ * timeout 为本会话归一化后的实际超时时长（秒）；customData 原始字节仅在此编码消费，
  * base64 串随连接对象存活并在会话收尾擦除（spec R10）。 */
 bool BuildUkeyDialogParams(const std::string &requestId, const struct CmBlob *keyUri,
-    uint32_t callerUid, uint32_t timeoutMs,
+    uint32_t callerUid, uint32_t timeoutSec,
     const struct CmBlob *customData, std::string &paramsJson)
 {
     cJSON *root = cJSON_CreateObject();
@@ -163,7 +163,7 @@ bool BuildUkeyDialogParams(const std::string &requestId, const struct CmBlob *ke
         cJSON_CreateString(requestId.c_str()),              // requestId
         cJSON_CreateString(UKEY_DIALOG_ACTION),             // action
         cJSON_CreateString(UKEY_DIALOG_UI_EXTENSION_TYPE), // uiExtensionType
-        cJSON_CreateNumber(static_cast<double>(timeoutMs)), // timeout
+        cJSON_CreateNumber(static_cast<double>(timeoutSec)), // timeout
     };
     const char *names[] = { "keyUri", "appUid", "requestId", "action",
         UKEY_DIALOG_UI_EXTENSION_TYPE_KEY, "timeout" };
@@ -312,14 +312,14 @@ void CmUkeyAuthDialogManager::SetAbilityQuerier(AbilityQuerier querier)
     querier_ = querier;
 }
 
-void CmUkeyAuthDialogManager::SetTimeoutRangeForTest(uint32_t minMs, uint32_t defaultMs,
-    uint32_t maxMs, uint32_t graceMs)
+void CmUkeyAuthDialogManager::SetTimeoutRangeForTest(uint32_t minSec, uint32_t defaultSec,
+    uint32_t maxSec, uint32_t graceMs)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     AbortActiveSessionLocked();
-    minTimeoutMs_ = minMs;
-    defaultTimeoutMs_ = defaultMs;
-    maxTimeoutMs_ = maxMs;
+    minTimeoutSec_ = minSec;
+    defaultTimeoutSec_ = defaultSec;
+    maxTimeoutSec_ = maxSec;
     graceTimeoutMs_ = graceMs;
 }
 
@@ -359,28 +359,28 @@ void CmUkeyAuthDialogManager::SetDriverAbilityChecker(DriverAbilityChecker check
     driverAbilityChecker_ = std::move(checker);
 }
 
-uint32_t CmUkeyAuthDialogManager::NormalizeTimeoutMsLocked(uint32_t timeoutMs)
+uint32_t CmUkeyAuthDialogManager::NormalizeTimeoutSecLocked(uint32_t timeoutSec)
 {
-    /* timeoutDuration 归一化（spec D5 v2）：0（未传）取默认值；显式值 clamp */
-    if (timeoutMs == 0) {
-        return defaultTimeoutMs_;
+    /* timeoutDuration 归一化（spec D5 v2，单位秒）：0（未传）取默认值；显式值 clamp */
+    if (timeoutSec == 0) {
+        return defaultTimeoutSec_;
     }
-    if (timeoutMs < minTimeoutMs_) {
-        CM_LOG_W("timeout %u below min, clamp to %u", timeoutMs, minTimeoutMs_);
-        return minTimeoutMs_;
+    if (timeoutSec < minTimeoutSec_) {
+        CM_LOG_W("timeout %u below min, clamp to %u", timeoutSec, minTimeoutSec_);
+        return minTimeoutSec_;
     }
-    if (timeoutMs > maxTimeoutMs_) {
-        CM_LOG_W("timeout %u exceeds max, clamp to %u", timeoutMs, maxTimeoutMs_);
-        return maxTimeoutMs_;
+    if (timeoutSec > maxTimeoutSec_) {
+        CM_LOG_W("timeout %u exceeds max, clamp to %u", timeoutSec, maxTimeoutSec_);
+        return maxTimeoutSec_;
     }
-    return timeoutMs;
+    return timeoutSec;
 }
 
 /* OpenDialog/OpenDriverDialog 公共拉起序列（spec v4 §4.1）：bundle/ability 已定、
  * PC 门禁已过；requestId→会话→连接→总超时→入表→死亡监听/保活。返回同步码。 */
 int32_t CmUkeyAuthDialogManager::LaunchUiExtensionSessionLocked(const std::string &bundleName,
     const std::string &abilityName, const struct CmBlob *keyUri, uint32_t callerUid,
-    uint32_t timeoutMs, const struct CmBlob *customData,
+    uint32_t timeoutSec, const struct CmBlob *customData,
     const sptr<IRemoteObject> &clientCallback)
 {
     if (launcher_ == nullptr) {
@@ -407,7 +407,7 @@ int32_t CmUkeyAuthDialogManager::LaunchUiExtensionSessionLocked(const std::strin
 
     {
         std::string paramsJson;
-        if (!BuildUkeyDialogParams(session->requestId, keyUri, callerUid, timeoutMs,
+        if (!BuildUkeyDialogParams(session->requestId, keyUri, callerUid, timeoutSec,
             customData, paramsJson)) {
             CM_LOG_E("build dialog params json failed");
             return CMR_DIALOG_ERROR_INTERNAL;
@@ -429,8 +429,9 @@ int32_t CmUkeyAuthDialogManager::LaunchUiExtensionSessionLocked(const std::strin
     session->state = UkeyAuthSession::WAITING_REPORT;
     std::string requestId = session->requestId;
     /* 总超时是会话唯一的安全网，投递失败时直接拒绝并回滚已建立的连接
-     * （会话不入表 -> 单飞不被占用），避免产生无超时保护的挂起会话（F8）。 */
-    if (!StartTimerLocked(TotalTimeoutTaskName(requestId), timeoutMs,
+     * （会话不入表 -> 单飞不被占用），避免产生无超时保护的挂起会话（F8）。
+     * timeoutSec 已归一化（≤ max），* 1000 无溢出。 */
+    if (!StartTimerLocked(TotalTimeoutTaskName(requestId), timeoutSec * 1000, /* sec -> ms */
         [this, requestId] { HandleTotalTimeout(requestId); })) {
         sptr<CmSystemDialogConnection> connection = session->connection;
         if (connection != nullptr) {
@@ -450,7 +451,7 @@ int32_t CmUkeyAuthDialogManager::LaunchUiExtensionSessionLocked(const std::strin
 }
 
 int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid,
-    uint32_t timeoutMs, const struct CmBlob *customData,
+    uint32_t timeoutSec, const struct CmBlob *customData,
     const sptr<IRemoteObject> &clientCallback)
 {
     if (keyUri == nullptr || keyUri->data == nullptr || keyUri->size == 0 ||
@@ -464,7 +465,7 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     std::lock_guard<std::mutex> lock(mutex_);
-    uint32_t effectiveTimeoutMs = NormalizeTimeoutMsLocked(timeoutMs);
+    uint32_t effectiveTimeoutSec = NormalizeTimeoutSecLocked(timeoutSec);
     if (session_ != nullptr) {
         CM_LOG_E("another ukey auth dialog session is in progress");
         return CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS;
@@ -494,12 +495,12 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
         return CMR_DIALOG_ERROR_NOT_PC_DEVICE;
     }
     return LaunchUiExtensionSessionLocked(bundleName, abilityName, keyUri, callerUid,
-        effectiveTimeoutMs, customData, clientCallback);
+        effectiveTimeoutSec, customData, clientCallback);
 }
 
 int32_t CmUkeyAuthDialogManager::OpenDriverDialog(const struct CmBlob *abilityName,
     uint32_t abilityType, const struct CmBlob *keyUri, uint32_t callerUid,
-    const std::string &callerBundleName, int32_t userId, uint32_t timeoutMs,
+    const std::string &callerBundleName, int32_t userId, uint32_t timeoutSec,
     const struct CmBlob *customData, const sptr<IRemoteObject> &clientCallback)
 {
     if (abilityName == nullptr || abilityName->data == nullptr || abilityName->size == 0 ||
@@ -514,7 +515,7 @@ int32_t CmUkeyAuthDialogManager::OpenDriverDialog(const struct CmBlob *abilityNa
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     std::lock_guard<std::mutex> lock(mutex_);
-    uint32_t effectiveTimeoutMs = NormalizeTimeoutMsLocked(timeoutMs);
+    uint32_t effectiveTimeoutSec = NormalizeTimeoutSecLocked(timeoutSec);
     if (session_ != nullptr) {
         CM_LOG_E("another ukey auth dialog session is in progress");
         return CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS;
@@ -542,7 +543,7 @@ int32_t CmUkeyAuthDialogManager::OpenDriverDialog(const struct CmBlob *abilityNa
         return CMR_DIALOG_ERROR_NOT_PC_DEVICE;
     }
     return LaunchUiExtensionSessionLocked(callerBundleName, ability, keyUri, callerUid,
-        effectiveTimeoutMs, customData, clientCallback);
+        effectiveTimeoutSec, customData, clientCallback);
 }
 
 int32_t CmUkeyAuthDialogManager::OnReport(const std::string &requestId,

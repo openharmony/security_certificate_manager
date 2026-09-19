@@ -40,10 +40,10 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
     (void)code;
     struct CmParamSet *paramSet = nullptr;
     struct CmBlob keyUri = { 0, nullptr };
-    uint32_t timeoutMs = 0; /* 0 = 未传，SA 侧取默认 300s，显式值 clamp 到 [3min, 10min] */
+    uint32_t timeoutSec = 0; /* 0 = 未传（秒），SA 侧取默认 300s，显式值 clamp 到 [3min, 10min] */
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = &keyUri },
-        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &timeoutMs },
+        { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &timeoutSec },
     };
     int32_t ret = CmGetParamSet(reinterpret_cast<struct CmParamSet *>(paramSetBlob->data),
         paramSetBlob->size, &paramSet);
@@ -76,7 +76,7 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
     CmUkeyAuthDialogManager::GetInstance().InitRealDependencies();
     /* customData 指向 paramSet 缓冲，OpenDialog 同步消费（写入弹框参数）后即不再引用 */
     ret = CmUkeyAuthDialogManager::GetInstance().OpenDialog(&keyUri,
-        static_cast<uint32_t>(IPCSkeleton::GetCallingUid()), timeoutMs, &customData,
+        static_cast<uint32_t>(IPCSkeleton::GetCallingUid()), timeoutSec, &customData,
         clientCallback);
     CmFreeParamSet(&paramSet);
     CmSendResponse(context, ret, NULL);
@@ -90,12 +90,12 @@ void CmIpcServiceOpenUkeyAuthDialogForDriver(uint32_t code, const struct CmBlob 
     struct CmBlob abilityName = { 0, nullptr };
     uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
     struct CmBlob keyUri = { 0, nullptr };
-    uint32_t timeoutMs = 0;
+    uint32_t timeoutSec = 0; /* 秒，0 = 未传 */
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = &abilityName },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &abilityType },
         { .tag = CM_TAG_PARAM2_BUFFER, .blob = &keyUri },
-        { .tag = CM_TAG_PARAM3_UINT32, .uint32Param = &timeoutMs },
+        { .tag = CM_TAG_PARAM3_UINT32, .uint32Param = &timeoutSec },
     };
     int32_t ret = CmGetParamSet(reinterpret_cast<struct CmParamSet *>(paramSetBlob->data),
         paramSetBlob->size, &paramSet);
@@ -142,7 +142,7 @@ void CmIpcServiceOpenUkeyAuthDialogForDriver(uint32_t code, const struct CmBlob 
     /* abilityName/keyUri/customData 指向 paramSet 缓冲，OpenDriverDialog 同步消费后不再引用 */
     ret = CmUkeyAuthDialogManager::GetInstance().OpenDriverDialog(&abilityName, abilityType,
         &keyUri, static_cast<uint32_t>(IPCSkeleton::GetCallingUid()), hapInfo.bundleName,
-        static_cast<int32_t>(procContext.userId), timeoutMs, &customData, clientCallback);
+        static_cast<int32_t>(procContext.userId), timeoutSec, &customData, clientCallback);
     CmFreeParamSet(&paramSet);
     CmSendResponse(context, ret, NULL);
 }

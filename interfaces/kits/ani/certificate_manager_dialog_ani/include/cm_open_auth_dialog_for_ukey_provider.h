@@ -33,7 +33,7 @@ private:
     CmBlob abilityName = { 0 }; /* driver dialog extension name, 1..256 bytes + NUL */
     uint32_t abilityType = 0; /* only CM_UKEY_ABILITY_TYPE_UIEXTENSION (D24) */
     CmBlob keyUri = { 0 };
-    uint32_t timeoutMs = 0; /* 0 = server default */
+    uint32_t timeoutSec = 0; /* 0 = server default */
     CmBlob customData = { 0 }; /* raw bytes <= 2048; size 0 = absent (D19) */
 
 public:

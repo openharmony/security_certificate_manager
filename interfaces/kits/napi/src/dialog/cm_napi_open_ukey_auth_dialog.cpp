@@ -92,7 +92,7 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
         return nullptr;
     }
 
-    /* optional timeoutDuration (ms): absent/undefined keeps 0 (= server default 300s);
+    /* optional timeoutDuration (seconds): absent/undefined keeps 0 (= server default 300s);
      * present but non-number is a parameter error */
     bool hasTimeout = false;
     status = napi_has_named_property(asyncContext->env, arg, "timeoutDuration", &hasTimeout);
@@ -113,7 +113,7 @@ static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext
                     CM_LOG_E("invalid timeout value");
                     return nullptr;
                 }
-                asyncContext->authTimeoutMs = static_cast<uint32_t>(timeoutDouble);
+                asyncContext->authTimeoutSec = static_cast<uint32_t>(timeoutDouble);
             }
         }
     }
@@ -344,7 +344,7 @@ static napi_value OpenUkeyAuthDialogViaSa(std::shared_ptr<CmUIExtensionRequestCo
     struct UkeyAuthRequest ukeyAuthRequest = {};
     ukeyAuthRequest.keyUri.size = asyncContext->certUri->size;
     ukeyAuthRequest.keyUri.data = asyncContext->certUri->data;
-    ukeyAuthRequest.timeoutDuration = asyncContext->authTimeoutMs;
+    ukeyAuthRequest.timeoutDuration = asyncContext->authTimeoutSec;
     if (asyncContext->authCustomData != nullptr) {
         ukeyAuthRequest.customData.size = asyncContext->authCustomData->size;
         ukeyAuthRequest.customData.data = asyncContext->authCustomData->data;
@@ -486,7 +486,7 @@ static napi_value OpenAuthDialogForUkeyProviderViaSa(
     struct UkeyAuthRequest ukeyAuthRequest = {};
     ukeyAuthRequest.keyUri.size = asyncContext->certUri->size;
     ukeyAuthRequest.keyUri.data = asyncContext->certUri->data;
-    ukeyAuthRequest.timeoutDuration = asyncContext->authTimeoutMs;
+    ukeyAuthRequest.timeoutDuration = asyncContext->authTimeoutSec;
     if (asyncContext->authCustomData != nullptr) {
         ukeyAuthRequest.customData.size = asyncContext->authCustomData->size;
         ukeyAuthRequest.customData.data = asyncContext->authCustomData->data;

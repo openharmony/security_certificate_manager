@@ -572,7 +572,7 @@ struct UkeyInfo {
 
 struct UkeyAuthRequest {
     struct CmBlob keyUri; /* ukey credential uri, max 256 bytes */
-    uint32_t timeoutDuration; /* auth timeout in ms, 0 = default (server: 300s);
+    uint32_t timeoutDuration; /* auth timeout in seconds, 0 = default (server: 300s);
                                   server clamps explicit values to [3min, 10min] */
     struct CmBlob customData; /* raw caller data, max CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE bytes;
                                   size 0 / NULL data = absent; never persisted or logged */
