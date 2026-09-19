@@ -38,6 +38,7 @@ ohos_shared_library("ukey_auth_extension") {
   include_dirs = [
     "include",
     "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common/include",
+    "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main/include",
   ]
 
   public_configs = [ ":ukey_auth_extension_public_config" ]
@@ -49,10 +50,8 @@ ohos_shared_library("ukey_auth_extension") {
     "src/js_ukey_auth_extension_context.cpp",
     "src/ukey_auth_extension.cpp",
     "src/ukey_auth_extension_context.cpp",
-  ]
-
-  deps = [
-    "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
+    "src/ukey_auth_report_client.cpp",
+    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/os_dependency/log/cm_log.c",
   ]
 
   external_deps = [
@@ -68,6 +67,7 @@ ohos_shared_library("ukey_auth_extension") {
     "ability_runtime:napi_common",
     "ability_runtime:runtime",
     "ability_runtime:ui_extension",
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
@@ -77,6 +77,7 @@ ohos_shared_library("ukey_auth_extension") {
     "libuv:uv",
     "napi:ace_napi",
     "node:node_header_notice",
+    "samgr:samgr_proxy",
     "window_manager:libwm",
   ]
 
@@ -101,14 +102,12 @@ ohos_shared_library("ukey_auth_extension_module") {
   include_dirs = [
     "include",
     "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common/include",
+    "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main/include",
   ]
 
   sources = [ "src/ukey_auth_extension_module_loader.cpp" ]
 
-  deps = [
-    ":ukey_auth_extension",
-    "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
-  ]
+  deps = [ ":ukey_auth_extension" ]
 
   external_deps = [
     "ability_base:configuration",

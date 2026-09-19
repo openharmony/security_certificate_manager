@@ -16,8 +16,8 @@
 #include "ukey_auth_extension_context.h"
 
 #include "ability_manager_client.h"
-#include "cert_manager_api.h"
 #include "cm_log.h"
+#include "ukey_auth_report_client.h"
 #ifdef SUPPORT_SCREEN
 #include "window.h"
 #endif // SUPPORT_SCREEN
@@ -32,10 +32,8 @@ void ReportToCertManager(const std::string &requestId, int32_t resultCode)
         CM_LOG_E("requestId is empty, skip report");
         return;
     }
-    struct CmBlob requestIdBlob = { static_cast<uint32_t>(requestId.size()),
-        const_cast<uint8_t *>(reinterpret_cast<const uint8_t *>(requestId.c_str())) };
-    int32_t ret = CmReportUkeyAuthResult(&requestIdBlob, resultCode);
-    CM_LOG_I("CmReportUkeyAuthResult resultCode=%d, ret=%d", resultCode, ret);
+    int32_t ret = ReportUkeyAuthResultViaIpc(requestId, resultCode);
+    CM_LOG_I("ReportUkeyAuthResultViaIpc resultCode=%d, ret=%d", resultCode, ret);
 }
 } // namespace
 
