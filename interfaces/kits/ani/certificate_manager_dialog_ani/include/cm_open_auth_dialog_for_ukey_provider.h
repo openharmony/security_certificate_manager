@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef CM_OPEN_AUTH_DIALOG_FOR_UKEY_DRIVER_H
-#define CM_OPEN_AUTH_DIALOG_FOR_UKEY_DRIVER_H
+#ifndef CM_OPEN_AUTH_DIALOG_FOR_UKEY_PROVIDER_H
+#define CM_OPEN_AUTH_DIALOG_FOR_UKEY_PROVIDER_H
 
 #include "cm_ani_async_impl.h"
 #include "cm_log.h"
 #include "cm_open_dialog.h"
 
 namespace OHOS::Security::CertManager::Ani {
-class CmOpenAuthDialogForUkeyDriver : public CertManagerAsyncImpl {
+class CmOpenAuthDialogForUkeyProvider : public CertManagerAsyncImpl {
 private:
     /* ani params */
     ani_string aniAbilityName = nullptr;
@@ -37,9 +37,9 @@ private:
     CmBlob customData = { 0 }; /* raw bytes <= 2048; size 0 = absent (D19) */
 
 public:
-    CmOpenAuthDialogForUkeyDriver(ani_env *env, ani_string aniAbilityName, ani_double aniAbilityType,
+    CmOpenAuthDialogForUkeyProvider(ani_env *env, ani_string aniAbilityName, ani_double aniAbilityType,
         ani_string aniKeyUri, ani_double aniTimeout, ani_object aniCustomData, ani_object callback);
-    ~CmOpenAuthDialogForUkeyDriver() {};
+    ~CmOpenAuthDialogForUkeyProvider() {};
 
     int32_t GetParamsFromEnv() override;
     int32_t UnpackResult() override;
@@ -47,4 +47,4 @@ public:
     int32_t InvokeAsyncWork() override;
 };
 }
-#endif // CM_OPEN_AUTH_DIALOG_FOR_UKEY_DRIVER_H
+#endif // CM_OPEN_AUTH_DIALOG_FOR_UKEY_PROVIDER_H

@@ -25,7 +25,7 @@
 #include "cm_open_auth_dialog.h"
 #include "cm_open_ukey_auth_dialog.h"
 #include "cm_open_ukey_auth_dialog_sa_session.h"
-#include "cm_open_auth_dialog_for_ukey_driver.h"
+#include "cm_open_auth_dialog_for_ukey_provider.h"
 #include "cm_supports_ca_cert_dialog.h"
 #include "cm_dialog_api_common.h"
 #include "cm_ukey_dialog_common.h"
@@ -215,7 +215,7 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
     return openUkeyAuthDialogImpl->Invoke();
 }
 
-ani_object openAuthDialogForUkeyDriverNative(ani_env *env, ani_string abilityName,
+ani_object openAuthDialogForUkeyProviderNative(ani_env *env, ani_string abilityName,
     ani_double abilityType, ani_string keyUri, ani_double timeout, ani_object customData,
     ani_object callback)
 {
@@ -227,7 +227,7 @@ ani_object openAuthDialogForUkeyDriverNative(ani_env *env, ani_string abilityNam
         CM_LOG_E("check syscap is not supported.");
         return InvokeCallbackVoid(env, callback);
     }
-    auto impl = std::make_shared<CmOpenAuthDialogForUkeyDriver>(env, abilityName, abilityType,
+    auto impl = std::make_shared<CmOpenAuthDialogForUkeyProvider>(env, abilityName, abilityType,
         keyUri, timeout, customData, callback);
     return impl->Invoke();
 }
@@ -275,8 +275,8 @@ ANI_EXPORT ani_status ANI_Constructor(ani_vm *vm, uint32_t *result)
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openAuthorizeDialogWithReqNative)},
         ani_native_function {"openUkeyAuthDialogNative", nullptr,
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openUkeyAuthDialogNative)},
-        ani_native_function {"openAuthDialogForUkeyDriverNative", nullptr,
-            reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openAuthDialogForUkeyDriverNative)},
+        ani_native_function {"openAuthDialogForUkeyProviderNative", nullptr,
+            reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::openAuthDialogForUkeyProviderNative)},
         ani_native_function {"supportsCACertDialogNative", nullptr,
             reinterpret_cast<void *>(OHOS::Security::CertManager::Ani::supportsCACertDialogNative)},
     };

@@ -95,7 +95,7 @@ public:
     // 不随会话保留
     int32_t OpenDialog(const struct CmBlob *keyUri, uint32_t callerUid, uint32_t timeoutMs,
         const struct CmBlob *customData, const sptr<IRemoteObject> &clientCallback);
-    /* openAuthDialogForUkeyDriver 的 SA 入口（spec v4 §4.1/D23）：调用方 bundle 由
+    /* openAuthDialogForUkeyProvider 的 SA 入口（spec v4 §4.1/D23）：调用方 bundle 由
      * IPC 层从 IPC token 解出传入（客户端不可伪造）；userId 同样由 IPC 层经
      * CmGetProcessInfoForIPC 解出传入（BMS 查询用）；abilityType 仅接受
      * CM_UKEY_ABILITY_TYPE_UIEXTENSION；BMS 校验经 driverAbilityChecker_。

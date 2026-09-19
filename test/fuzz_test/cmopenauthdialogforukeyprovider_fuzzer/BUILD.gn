@@ -18,10 +18,10 @@ import("//build/test.gni")
 module_output_path = "certificate_manager/certificate_manager"
 
 ##############################fuzztest##########################################
-ohos_fuzztest("CmOpenAuthDialogForUkeyDriverFuzzTest") {
+ohos_fuzztest("CmOpenAuthDialogForUkeyProviderFuzzTest") {
   module_out_path = module_output_path
   fuzz_config_file =
-      "${cert_manager_root_dir}/test/fuzz_test/cmopenauthdialogforukeydriver_fuzzer"
+      "${cert_manager_root_dir}/test/fuzz_test/cmopenauthdialogforukeyprovider_fuzzer"
 
   cflags = [
     "-g",
@@ -29,7 +29,7 @@ ohos_fuzztest("CmOpenAuthDialogForUkeyDriverFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
   ]
-  sources = [ "cmopenauthdialogforukeydriver_fuzzer.cpp" ]
+  sources = [ "cmopenauthdialogforukeyprovider_fuzzer.cpp" ]
   deps = [
     "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
     "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main:cert_manager_sdk",
@@ -51,7 +51,7 @@ group("fuzztest") {
 
   deps += [
     # deps file
-    ":CmOpenAuthDialogForUkeyDriverFuzzTest",
+    ":CmOpenAuthDialogForUkeyProviderFuzzTest",
   ]
 }
 ###############################################################################

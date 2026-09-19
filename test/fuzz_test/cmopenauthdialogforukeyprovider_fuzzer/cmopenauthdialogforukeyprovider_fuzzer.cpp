@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "cmopenauthdialogforukeydriver_fuzzer.h"
+#include "cmopenauthdialogforukeyprovider_fuzzer.h"
 
 #include "cert_manager_api.h"
 #include "cm_fuzz_test_common.h"

@@ -29,7 +29,7 @@ group("fuzztest") {
       "./cmgetukeycertlist_fuzzer:fuzztest",
       "./cmimportukeycert_fuzzer:fuzztest",
       "./cmopenukeyauthdialog_fuzzer:fuzztest",
-      "./cmopenauthdialogforukeydriver_fuzzer:fuzztest",
+      "./cmopenauthdialogforukeyprovider_fuzzer:fuzztest",
       "./cmreportukeyauthresult_fuzzer:fuzztest",
       "./cmgetusercacertlist_fuzzer:fuzztest",
       "./cmgetusercertinfo_fuzzer:fuzztest",

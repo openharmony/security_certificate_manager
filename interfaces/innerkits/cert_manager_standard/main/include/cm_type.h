@@ -579,7 +579,7 @@ struct UkeyAuthRequest {
 };
 
 /* UKey 驱动弹框扩展信息（对齐 d.ts UkeyAuthDialogInfo，spec v4 D24）：
- * openAuthDialogForUkeyDriver 入参，bundle 由服务端从 IPC token 解出（不可声明） */
+ * openAuthDialogForUkeyProvider 入参，bundle 由服务端从 IPC token 解出（不可声明） */
 struct UkeyAuthDialogInfo {
     struct CmBlob abilityName; /* 驱动弹框扩展名，非空，最大 128 字节，NUL 结尾 */
     uint32_t abilityType;      /* enum 值，仅 CM_UKEY_ABILITY_TYPE_UIEXTENSION */

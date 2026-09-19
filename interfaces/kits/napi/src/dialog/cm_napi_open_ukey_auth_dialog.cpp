@@ -421,15 +421,15 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
 }
 
 /* CRYPTO_EXTENSION_REGISTER 进程内预检（spec v4 D23：失败同步 201） */
-static bool CheckUkeyDriverPermission(void)
+static bool CheckUkeyProviderPermission(void)
 {
     AccessTokenID tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
     return OHOS::Security::AccessToken::AccessTokenKit::VerifyAccessToken(
         tokenId, "ohos.permission.CRYPTO_EXTENSION_REGISTER") == 0 /* PERMISSION_GRANTED */;
 }
 
-/* ForDriver 的 SA 路径 promise 包装：错误码不折叠（29700009/29700010 直通，D8 v4） */
-static napi_value OpenAuthDialogForUkeyDriverViaSa(
+/* ForProvider 的 SA 路径 promise 包装：错误码不折叠（29700009/29700010 直通，D8 v4） */
+static napi_value OpenAuthDialogForUkeyProviderViaSa(
     std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
     OHOS::Security::CertManager::CmMetricsReport &&report, std::string abilityName,
     uint32_t abilityType)
@@ -448,7 +448,7 @@ static napi_value OpenAuthDialogForUkeyDriverViaSa(
     }
     resultContext->env = env;
     resultContext->deferred = deferred;
-    resultContext->legacyOverload = false; /* ForDriver：专属码直通 */
+    resultContext->legacyOverload = false; /* ForProvider：专属码直通 */
     resultContext->metricsReport =
         std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
 
@@ -481,7 +481,7 @@ static napi_value OpenAuthDialogForUkeyDriverViaSa(
     int32_t ret = CmOpenUkeyAuthDialogForDriver(&dialogInfo, &ukeyAuthRequest,
         UkeyAuthDialogResultCallback, resultContext);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("open auth dialog for ukey driver failed, ret = %d", ret);
+        CM_LOG_E("open auth dialog for ukey provider failed, ret = %d", ret);
         napi_value error = GenerateBusinessError(env, ret, resultContext->metricsReport.get());
         NAPI_CALL(env, napi_reject_deferred(env, deferred, error));
         napi_release_threadsafe_function(resultContext->tsfn, napi_tsfn_release);
@@ -546,10 +546,10 @@ static int32_t GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &ability
     return CM_SUCCESS;
 }
 
-napi_value CMNapiOpenAuthDialogForUkeyDriver(napi_env env, napi_callback_info info)
+napi_value CMNapiOpenAuthDialogForUkeyProvider(napi_env env, napi_callback_info info)
 {
-    CM_LOG_I("cert open auth dialog for ukey driver enter");
-    OHOS::Security::CertManager::CmMetricsReport report("openAuthDialogForUkeyDriver",
+    CM_LOG_I("cert open auth dialog for ukey provider enter");
+    OHOS::Security::CertManager::CmMetricsReport report("openAuthDialogForUkeyProvider",
         OHOS::Security::CertManager::CmMetricsKind::DIALOG);
     report.Start();
     napi_value result = nullptr;
@@ -584,12 +584,12 @@ napi_value CMNapiOpenAuthDialogForUkeyDriver(napi_env env, napi_callback_info in
             &report);
         return result;
     }
-    if (!CheckUkeyDriverPermission()) {
+    if (!CheckUkeyProviderPermission()) {
         CM_LOG_E("caller has no CRYPTO_EXTENSION_REGISTER permission");
         ThrowError(env, HAS_NO_PERMISSION, DIALOG_NO_PERMISSION_MSG, &report);
         return result;
     }
-    return OpenAuthDialogForUkeyDriverViaSa(asyncContext, std::move(report),
+    return OpenAuthDialogForUkeyProviderViaSa(asyncContext, std::move(report),
         std::move(abilityName), abilityType);
 }
 }  // namespace CMNapi

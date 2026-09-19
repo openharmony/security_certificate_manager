@@ -14,5 +14,5 @@
  */
 
 #ifndef FUZZ_PROJECT_NAME
-#define FUZZ_PROJECT_NAME "cmopenauthdialogforukeydriver_fuzzer"
+#define FUZZ_PROJECT_NAME "cmopenauthdialogforukeyprovider_fuzzer"
 #endif

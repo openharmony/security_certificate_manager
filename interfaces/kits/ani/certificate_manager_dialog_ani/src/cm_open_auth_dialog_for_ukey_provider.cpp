@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "cm_open_auth_dialog_for_ukey_driver.h"
+#include "cm_open_auth_dialog_for_ukey_provider.h"
 #include "cert_manager_api.h"
 #include "securec.h"
 
@@ -49,10 +49,10 @@ void ReleaseUkeyAuthResultResources(ani_env *env, CmUkeyAuthDialogAniResultConte
 }
 } // namespace
 
-CmOpenAuthDialogForUkeyDriver::CmOpenAuthDialogForUkeyDriver(ani_env *env, ani_string aniAbilityName,
+CmOpenAuthDialogForUkeyProvider::CmOpenAuthDialogForUkeyProvider(ani_env *env, ani_string aniAbilityName,
     ani_double aniAbilityType, ani_string aniKeyUri, ani_double aniTimeout, ani_object aniCustomData,
     ani_object callback)
-    : CertManagerAsyncImpl(env, nullptr, callback, "openAuthDialogForUkeyDriver")
+    : CertManagerAsyncImpl(env, nullptr, callback, "openAuthDialogForUkeyProvider")
 {
     this->aniAbilityName = aniAbilityName;
     this->aniAbilityType = aniAbilityType;
@@ -61,7 +61,7 @@ CmOpenAuthDialogForUkeyDriver::CmOpenAuthDialogForUkeyDriver(ani_env *env, ani_s
     this->aniCustomData = aniCustomData;
 }
 
-int32_t CmOpenAuthDialogForUkeyDriver::GetParamsFromEnv()
+int32_t CmOpenAuthDialogForUkeyProvider::GetParamsFromEnv()
 {
     /* abilityName: non-empty, <= 256 bytes (the blob carries the terminating
      * zero, size 1 means an empty name); AniUtils::ParseString allocates the
@@ -132,7 +132,7 @@ int32_t CmOpenAuthDialogForUkeyDriver::GetParamsFromEnv()
 /* C callback running on an IPC thread: attach the thread to the VM and settle
  * the AsyncCallbackWrapper exactly once with the dialog result delivered by
  * the SA (same mechanism as CmAniUIExtensionCallback::invokeCallback).
- * ForDriver: error codes pass through unfolded (D8 v4). */
+ * ForProvider: error codes pass through unfolded (D8 v4). */
 static void UkeyAuthDialogResultCallback(int32_t resultCode, void *userData)
 {
     auto context = static_cast<CmUkeyAuthDialogAniResultContext *>(userData);
@@ -187,7 +187,7 @@ static void UkeyAuthDialogResultCallback(int32_t resultCode, void *userData)
     ReleaseUkeyAuthResultResources(env, context);
 }
 
-int32_t CmOpenAuthDialogForUkeyDriver::InvokeAsyncWork()
+int32_t CmOpenAuthDialogForUkeyProvider::InvokeAsyncWork()
 {
     CM_LOG_D("InvokeAsyncWork start");
     auto resultContext = new (std::nothrow) CmUkeyAuthDialogAniResultContext();
@@ -217,19 +217,19 @@ int32_t CmOpenAuthDialogForUkeyDriver::InvokeAsyncWork()
         /* sync failure: the result callback never fires (inner API contract),
          * release the context here; the global callback reference is deleted
          * by the base class on the InvokeInnerApi failure path */
-        CM_LOG_E("open auth dialog for ukey driver failed, ret = %d", ret);
+        CM_LOG_E("open auth dialog for ukey provider failed, ret = %d", ret);
         delete resultContext;
         return ret;
     }
     return CM_SUCCESS;
 }
 
-int32_t CmOpenAuthDialogForUkeyDriver::UnpackResult()
+int32_t CmOpenAuthDialogForUkeyProvider::UnpackResult()
 {
     return CM_SUCCESS;
 }
 
-void CmOpenAuthDialogForUkeyDriver::OnFinish()
+void CmOpenAuthDialogForUkeyProvider::OnFinish()
 {
     CM_FREE_BLOB(this->abilityName);
     CM_FREE_BLOB(this->keyUri);

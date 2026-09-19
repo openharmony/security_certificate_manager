@@ -75,7 +75,7 @@ native function openUkeyAuthDialogNative(
   callback: AsyncCallbackWrapper<void>
 ): NativeResult<void>;
 
-native function openAuthDialogForUkeyDriverNative(
+native function openAuthDialogForUkeyProviderNative(
   abilityName: string,
   abilityType: number,
   keyUri: string,
@@ -409,7 +409,7 @@ export namespace certificateManagerDialog {
     });
   }
 
-  export function openAuthDialogForUkeyDriver(dialogInfo: UkeyAuthDialogInfo,
+  export function openAuthDialogForUkeyProvider(dialogInfo: UkeyAuthDialogInfo,
     ukeyAuthRequest: UkeyAuthRequest): Promise<void> {
     return new Promise<void>((resolve, reject: (error: BusinessError) => void) => {
         let callback = new AsyncCallbackWrapper<void>((err: BusinessError | null) => {
@@ -437,7 +437,7 @@ export namespace certificateManagerDialog {
         }
         let timeout: number = ukeyAuthRequest.timeoutDuration ?? 0; /* 0 = server default 300s */
         let customData: Uint8Array = ukeyAuthRequest.customData ?? new Uint8Array(0);
-        let result: NativeResult<void> = openAuthDialogForUkeyDriverNative(abilityName,
+        let result: NativeResult<void> = openAuthDialogForUkeyProviderNative(abilityName,
             abilityType, keyUri, timeout, customData, callback);
         if (result.code !== 0) {
             let err = new BusinessError();
