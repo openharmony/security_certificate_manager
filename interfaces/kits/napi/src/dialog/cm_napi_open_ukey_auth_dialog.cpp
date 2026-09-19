@@ -40,11 +40,19 @@ struct CmUkeyAuthResultContext {
     napi_deferred deferred = nullptr;
     napi_threadsafe_function tsfn = nullptr;
     int32_t resultCode = 0;
-    /* D8 修订：老接口（argc==2）委托 SA 会话时不向已发布 throws 面新增
-     * since-26 错误码，-1017/-1018 在此标记下折叠为 29700002/29700003 */
-    bool legacyOverload = false;
     std::shared_ptr<OHOS::Security::CertManager::CmMetricsReport> metricsReport = nullptr;
 };
+
+static void StartUkeyPinAbility(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::AAFwk::Want& want, std::shared_ptr<CmUIExtensionCallback> uiExtCallback)
+{
+    std::string action = want.GetAction();
+    if (action.empty() || action != ACTION_UKEY_PIN_AUTH) {
+        StartUIExtensionAbility(asyncContext, want, uiExtCallback);
+    } else {
+        StartUIAbility(asyncContext, want, uiExtCallback);
+    }
+}
 
 static napi_value GetUkeyAuthRequest(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
 {
@@ -180,8 +188,8 @@ static void UvTsfnFinalize(napi_env env, void *finalizeData, void *finalizeHint)
     delete static_cast<CmUkeyAuthResultContext *>(finalizeData);
 }
 
-// fold -1017/-1018 to 29700002/29700003 for the legacy overload (D8 修订)
-static napi_value GenerateUkeyResultError(napi_env env, int32_t resultCode, bool legacyOverload,
+// fold -1017/-1018 to 29700002/29700003 (D8 修订, unconditional on the SA path)
+static napi_value GenerateUkeyResultError(napi_env env, int32_t resultCode,
     OHOS::Security::CertManager::CmMetricsReport *metricsReport);
 
 // JS-thread callback invoked through the threadsafe function: settle the
@@ -206,7 +214,7 @@ static void UvTsfnCallback(napi_env env, napi_value jsCallback, void *context, v
         NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, resultContext->deferred, undefined));
     } else {
         napi_value error = GenerateUkeyResultError(env, resultContext->resultCode,
-            resultContext->legacyOverload, resultContext->metricsReport.get());
+            resultContext->metricsReport.get());
         NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, resultContext->deferred, error));
     }
     // The result is delivered exactly once per open call (inner API contract),
@@ -231,16 +239,11 @@ static void UkeyAuthDialogResultCallback(int32_t resultCode, void *userData)
     }
 }
 
-/* D8 修订：老接口（argc==2）委托 SA 会话后可能产生 -1017/-1018。老接口 since-22
+/* D8 修订：openUkeyAuthDialog 委托 SA 会话后可能产生 -1017/-1018。接口 since-22
  * 已发布，不新增 since-26 错误码至其 throws 面——超时折叠 29700002、单飞折叠
- * 29700003，错误消息保留具体原因（超时未上报 / 已有挂起会话）。 */
-static bool IsLegacyFoldCode(int32_t resultCode)
-{
-    return resultCode == CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT ||
-        resultCode == CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS;
-}
-
-static napi_value GenerateLegacyFoldedBusinessError(napi_env env, int32_t resultCode,
+ * 29700003（SA 会话路径唯一可达自该接口，折叠恒生效），错误消息保留具体原因
+ * （超时未上报 / 已有挂起会话）。ForProvider 的专属码不经此函数（不折叠）。 */
+static napi_value GenerateUkeyResultError(napi_env env, int32_t resultCode,
     OHOS::Security::CertManager::CmMetricsReport *metricsReport)
 {
     int32_t jsCode = DIALOG_ERROR_GENERIC;
@@ -251,6 +254,8 @@ static napi_value GenerateLegacyFoldedBusinessError(napi_env env, int32_t result
     } else if (resultCode == CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS) {
         jsCode = DIALOG_ERROR_INSTALL_FAILED; /* 29700003 */
         msg = &UKEY_DIALOG_IN_PROGRESS_MSG;
+    } else {
+        return GenerateBusinessError(env, resultCode, metricsReport);
     }
 
     napi_value code = nullptr;
@@ -266,21 +271,12 @@ static napi_value GenerateLegacyFoldedBusinessError(napi_env env, int32_t result
     return businessError;
 }
 
-static napi_value GenerateUkeyResultError(napi_env env, int32_t resultCode, bool legacyOverload,
-    OHOS::Security::CertManager::CmMetricsReport *metricsReport)
-{
-    if (legacyOverload && IsLegacyFoldCode(resultCode)) {
-        return GenerateLegacyFoldedBusinessError(env, resultCode, metricsReport);
-    }
-    return GenerateBusinessError(env, resultCode, metricsReport);
-}
-
 // SA-session delegation: the dialog is driven by the SA-side ukey session and
-// the final result arrives asynchronously on an IPC thread. legacyOverload is
-// always true here (the only caller is the published openUkeyAuthDialog,
-// D8 修订 error-code folding applies unconditionally).
-static napi_value OpenUkeyAuthDialogNoContext(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
-    OHOS::Security::CertManager::CmMetricsReport &&report, bool legacyOverload = false)
+// the final result arrives asynchronously on an IPC thread. Only reachable
+// from the published openUkeyAuthDialog (the sole, with-context overload),
+// so the D8 修订 error-code folding applies unconditionally.
+static napi_value OpenUkeyAuthDialogViaSa(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::Security::CertManager::CmMetricsReport &&report)
 {
     napi_env env = asyncContext->env;
     napi_value result = nullptr;
@@ -296,7 +292,6 @@ static napi_value OpenUkeyAuthDialogNoContext(std::shared_ptr<CmUIExtensionReque
     }
     resultContext->env = env;
     resultContext->deferred = deferred;
-    resultContext->legacyOverload = legacyOverload;
     resultContext->metricsReport =
         std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
 
@@ -329,7 +324,7 @@ static napi_value OpenUkeyAuthDialogNoContext(std::shared_ptr<CmUIExtensionReque
         // sync failure: the result callback never fires (inner API contract),
         // so settle the promise here and drop the threadsafe function
         CM_LOG_E("open ukey auth dialog failed, ret = %d", ret);
-        napi_value error = GenerateUkeyResultError(env, ret, legacyOverload,
+        napi_value error = GenerateUkeyResultError(env, ret,
             resultContext->metricsReport.get());
         NAPI_CALL(env, napi_reject_deferred(env, deferred, error));
         napi_release_threadsafe_function(resultContext->tsfn, napi_tsfn_release);
@@ -374,49 +369,38 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    // argc == PARAM_SIZE_TWO (the only overload, spec v4 D21/D22): branch by the
-    // registered ability type — UIExtensionAbility + PC goes to the SA session
-    // path; UIExtensionAbility + non-PC falls back to the system default dialog
-    // (D25 v2); query failure / UIAbility reject synchronously (29700003).
+    // The only overload (with context). Branch by the registered ability type:
+    // UIExtension + PC → SA session path; everything else (UIAbility,
+    // UIExtension + non-PC, query failure) direct-launches via the caller's
+    // context (driver UIAbility want, or the system default dialog).
     {
         std::string driverBundle;
         std::string driverAbility;
         uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
         int32_t queryRet = GetUkeyAbilityInfo(asyncContext->certUri, driverBundle, driverAbility,
             abilityType);
-        if (queryRet != CM_SUCCESS) {
-            CM_LOG_E("no ukey driver pin dialog registered");
-            ThrowError(env, DIALOG_ERROR_INSTALL_FAILED, UKEY_NOT_REGISTERED_MSG, &report);
-            return nullptr;
+        if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION &&
+            CmUkeyIsPcOrPcMode()) {
+            CM_LOG_I("ukey driver registered a UIExtensionAbility pin dialog, go sa session path");
+            return OpenUkeyAuthDialogViaSa(asyncContext, std::move(report));
         }
-        if (abilityType == CM_UKEY_ABILITY_TYPE_UIABILITY) {
-            CM_LOG_E("ukey driver ability type is UIAbility, not supported");
-            ThrowError(env, DIALOG_ERROR_INSTALL_FAILED, UKEY_UIABILITY_NOT_SUPPORTED_MSG, &report);
-            return nullptr;
-        }
-        if (!CmUkeyIsPcOrPcMode()) {
-            /* D25 v2：非 PC 回退系统默认弹框（Kit 直启，customData 静默丢弃） */
-            CM_LOG_I("non-pc device, fall back to the system default ukey pin dialog");
-            if (asyncContext->authCustomData != nullptr && asyncContext->authCustomData->size > 0) {
-                CM_LOG_I("custom data dropped for default dialog, size: %u",
-                    asyncContext->authCustomData->size);
-            }
-            NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
-            auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
-            asyncContext->metricsReport = reportHolder;
-            auto uiExtCallback = std::make_shared<CmUIExtensionVoidCallback>(asyncContext);
-            OHOS::AAFwk::Want want{};
-            if (GetDefaultUkeyAuthCertWant(asyncContext->certUri, want) != CM_SUCCESS) {
-                ThrowError(env, DIALOG_ERROR_GENERIC, "get default ukey auth cert want failed.",
-                    reportHolder.get());
-                return nullptr;
-            }
-            StartUIExtensionAbility(asyncContext, want, uiExtCallback);
-            return result;
-        }
-        return OpenUkeyAuthDialogNoContext(asyncContext, std::move(report), true);
+        /* 直启路径（原有实现）：UIAbility / 查询失败(默认弹框) / UIExtension+非PC(默认弹框) */
     }
 
+    NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
+    auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
+    asyncContext->metricsReport = reportHolder;
+    auto uiExtCallback = std::make_shared<CmUIExtensionVoidCallback>(asyncContext);
+    OHOS::AAFwk::Want want{};
+    int32_t ret = GetCustomerAuthCertWant(asyncContext->certUri, asyncContext->authCustomData, want);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("get customer auth cert want failed. ret = %d", ret);
+        ThrowError(env, DIALOG_ERROR_GENERIC, "get customer auth cert want failed.", reportHolder.get());
+        return nullptr;
+    }
+    StartUkeyPinAbility(asyncContext, want, uiExtCallback);
+
+    CM_LOG_I("cert authorize dialog end");
     return result;
 }
 
@@ -448,7 +432,6 @@ static napi_value OpenAuthDialogForUkeyProviderViaSa(
     }
     resultContext->env = env;
     resultContext->deferred = deferred;
-    resultContext->legacyOverload = false; /* ForProvider：专属码直通 */
     resultContext->metricsReport =
         std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
 

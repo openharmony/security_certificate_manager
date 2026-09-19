@@ -17,6 +17,7 @@
 #include "bundle_mgr_proxy.h"
 #include "cm_log.h"
 #include "cm_ukey_ability_type.h"
+#include "cm_ukey_dialog_common.h"
 #include "syspara/parameters.h"
 #include "systemcapability.h"
 #include "hks_api.h"
@@ -89,7 +90,7 @@ bool IsEnableCACertDialog()
 
 /* 组装系统默认 UKey Pin 弹框 want（Kit 直启回退路径，spec v4 D22/D25 v2）：
  * com.ohos.certmanager/CertPickerUIExtAbility（sys/commonUI，pageType=7）。
- * customData 不下发（默认弹框无消费方，D18 语义）；调用方记日志丢弃。 */
+ * customData 不下发（默认弹框无消费方，D18 语义）。 */
 int32_t GetDefaultUkeyAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
 {
     want.SetElementName(CERT_MANAGER_BUNDLENAME, CERT_MANAGER_ABILITYNAME);
@@ -145,6 +146,36 @@ int32_t GetUkeyAbilityInfo(const CmBlob *keyUri, std::string &bundleName,
     }
     abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
     return QueryAbilityInfo(keyUri, abilityName, bundleName, abilityType);
+}
+
+int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, const CmBlob *customData,
+    OHOS::AAFwk::Want &want)
+{
+    std::string abilityName = "";
+    std::string bundleName = "";
+    uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
+    int32_t ret = QueryAbilityInfo(keyUri, abilityName, bundleName, abilityType);
+    /**
+     * When the query for the custom dialog's ability information fails,
+     * launch the default dialog of the certificate manager (spec §4.1).
+     */
+    if (ret != HKS_SUCCESS) {
+        CM_LOG_E("query ability failed, ret = %d.", ret);
+        GetDefaultUkeyAuthCertWant(keyUri, want);
+        return CM_SUCCESS;
+    }
+
+    want.SetElementName(bundleName, abilityName);
+    want.SetAction(ACTION_UKEY_PIN_AUTH);
+    want.SetParam(CERT_MANAGER_CALLER_UID, static_cast<int32_t>(getuid()));
+    std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
+    want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
+    if (customData != nullptr && customData->size > 0) {
+        /* 自定义弹框透传 customData（base64，spec D18） */
+        want.SetParam(CM_UKEY_DIALOG_PARAM_CUSTOM_DATA,
+            CmBase64Encode(customData->data, customData->size));
+    }
+    return CM_SUCCESS;
 }
 
 bool IsSupportDialogSyscap()

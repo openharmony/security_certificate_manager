@@ -181,11 +181,10 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
         CM_LOG_E("check syscap is not supported.");
         return InvokeCallbackVoid(env, callback);
     }
-    /* branch by the registered ability type (spec v4 §4.1/D21/D22): a
-     * UIExtensionAbility registration on a PC device takes the SA session
-     * path; non-PC falls back to the system default dialog via the
-     * context-based direct launch below (D25 v2); query failure /
-     * UIAbility reject synchronously (29700003). */
+    /* The only overload (with context). Branch by the registered ability type:
+     * UIExtension + PC → SA session path; everything else (UIAbility, query
+     * failure, UIExtension + non-PC) direct-launches via the caller's context
+     * below (driver UIAbility want, or the system default dialog). */
     {
         CmBlob keyUriBlob = { 0, nullptr };
         if (AniUtils::ParseString(env, keyUri, keyUriBlob) == CM_SUCCESS) {
@@ -194,20 +193,14 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
             uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
             int32_t queryRet = GetUkeyAbilityInfo(&keyUriBlob, driverBundle, driverAbility, abilityType);
             CM_FREE_BLOB(keyUriBlob);
-            if (queryRet != CM_SUCCESS) {
-                return GenerateResult(env, DIALOG_ERROR_INSTALL_FAILED,
-                    UKEY_NOT_REGISTERED_MSG.c_str());
-            }
-            if (abilityType == CM_UKEY_ABILITY_TYPE_UIABILITY) {
-                return GenerateResult(env, DIALOG_ERROR_INSTALL_FAILED,
-                    UKEY_UIABILITY_NOT_SUPPORTED_MSG.c_str());
-            }
-            if (CmUkeyIsPcOrPcMode()) {
+            if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION &&
+                CmUkeyIsPcOrPcMode()) {
+                CM_LOG_I("ukey driver registered a UIExtensionAbility pin dialog, go sa session path");
                 auto saSessionImpl = std::make_shared<CmOpenUkeyAuthDialogSaSession>(env, keyUri,
                     timeout, customData, callback);
                 return saSessionImpl->Invoke();
             }
-            /* 非 PC：回退默认弹框直启（走下方 context 直启实现） */
+            /* 直启路径（原有实现）：UIAbility / 查询失败 / UIExtension+非PC → 下方 context 实现 */
         }
     }
     auto openUkeyAuthDialogImpl = std::make_shared<CmOpenUkeyAuthDialog>(env, context, keyUri,

@@ -66,26 +66,36 @@ int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
     return CM_SUCCESS;
 }
 
+int32_t CmOpenUkeyAuthDialog::StartUkeyPinAbility(std::shared_ptr<AbilityContext> context,
+    OHOS::AAFwk::Want& want, std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback)
+{
+    std::string action = want.GetAction();
+    if (action.empty() || action != ACTION_UKEY_PIN_AUTH) {
+        return StartUIExtensionAbility(context, want, uiExtCallback);
+    } else {
+        return StartUIAbility(context, want, uiExtCallback);
+    }
+}
+
 int32_t CmOpenUkeyAuthDialog::InvokeAsyncWork()
 {
     CM_LOG_D("InvokeAsyncWork start");
-    /* 非回退路径（PC + UIExtension 委托 SA）已在 cm_dialog_ani.cpp 前置分流，
-     * 此处必为系统默认弹框直启（spec v4 D22/D25 v2）。 */
+    /* 直启路径（原有实现恢复）：UIAbility（驱动弹框）/ 查询失败（默认弹框）/
+     * UIExtension+非PC（默认弹框）。PC + UIExtension 已在 cm_dialog_ani.cpp
+     * 前置分流委托 SA 会话，此处必为直启。 */
     OHOS::AAFwk::Want want{};
-    int32_t ret = GetDefaultUkeyAuthCertWant(&this->keyUri, want);
+    int32_t ret = GetCustomerAuthCertWant(&this->keyUri,
+        (this->customData.data != nullptr && this->customData.size > 0) ? &this->customData : nullptr,
+        want);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("get default ukey auth cert want failed. ret = %d", ret);
+        CM_LOG_E("get customer auth cert want failed. ret = %d", ret);
         return ret;
-    }
-    if (this->customData.data != nullptr && this->customData.size > 0) {
-        /* D18：默认弹框无 customData 消费方，静默丢弃（仅记录长度，spec R10） */
-        CM_LOG_I("custom data dropped for default dialog, size: %u", this->customData.size);
     }
 
     auto uiExtensionCallback = std::make_shared<CmAniUIExtensionCallback>(this->vm, this->abilityContext,
         this->globalCallback, this->metricsReport_);
 
-    return StartUIExtensionAbility(this->abilityContext, want, uiExtensionCallback);
+    return this->StartUkeyPinAbility(this->abilityContext, want, uiExtensionCallback);
 }
 
 int32_t CmOpenUkeyAuthDialog::UnpackResult()

@@ -21,8 +21,9 @@
 #include "cm_open_dialog.h"
 
 namespace OHOS::Security::CertManager::Ani {
-/* 带 context 直启实现（spec v4 D25 v2）：仅承接非 PC 设备的系统默认弹框
- * 回退路径（PC + UIExtension 已在 cm_dialog_ani.cpp 委托 SA 会话）。 */
+/* 带 context 直启实现（原有实现恢复，spec v4.2）：承接驱动 UIAbility 弹框直启与
+ * 系统默认弹框直启（UIAbility / 查询失败 / UIExtension+非PC；PC + UIExtension 已
+ * 在 cm_dialog_ani.cpp 委托 SA 会话）。 */
 class CmOpenUkeyAuthDialog : public CertManagerAsyncImpl {
 private:
     /* ani params */
@@ -31,6 +32,8 @@ private:
     /* parsed params */
     CmBlob keyUri = { 0 };
     CmBlob customData = { 0 }; /* raw bytes <= 2048; size 0 = absent (D19) */
+    int32_t StartUkeyPinAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Want& want,
+        std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback);
 
 public:
     CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_string aniKeyUri,

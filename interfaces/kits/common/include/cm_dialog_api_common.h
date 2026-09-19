@@ -104,6 +104,7 @@ static const std::string CERT_MANAGER_CERT_PURPOSE = "certPurpose";
 static const std::string CERT_MANAGER_KEY_ALG_IDS = "keyAlgIDs";
 static const std::string CERT_MANAGER_ISSUERS = "issuers";
 static const std::string CERT_MANAGER_SERVER_URL = "uri";
+static const std::string ACTION_UKEY_PIN_AUTH = "UkeyPINAuth";
 
 constexpr int32_t PARAM0 = 0;
 constexpr int32_t PARAM1 = 1;
@@ -224,13 +225,20 @@ bool IsEnableCACertDialog();
 
 /* 组装系统默认 UKey Pin 弹框 want（Kit 直启回退路径，spec v4 D22/D25 v2）：
  * com.ohos.certmanager/CertPickerUIExtAbility（sys/commonUI，pageType=7）。
- * customData 不下发（默认弹框无消费方，D18 语义）；调用方记日志丢弃。 */
+ * customData 不下发（默认弹框无消费方，D18 语义）。 */
 int32_t GetDefaultUkeyAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want);
 
+/* 组装 UKey Pin 弹框拉起 want（带 context 直启路径，原有实现恢复）：驱动注册
+ * UIAbility 时拉起驱动弹框（action=UkeyPINAuth + appUid + keyUri + customData
+ * base64）；查询失败（未注册）回退组装系统默认弹框 want（spec §4.1）。customData
+ * 原始字节 base64 后仅写入自定义弹框 want，默认弹框不携带（spec D18）。 */
+int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, const CmBlob *customData,
+    OHOS::AAFwk::Want &want);
+
 /* 查询 UKey 驱动注册的自定义 Pin 弹框 ability 信息（bundle/ability 名 + abilityType）。
- * 返回 CM_SUCCESS 且 type 为 CM_UKEY_ABILITY_TYPE_UIEXTENSION 时，调用方可走
- * SA 会话新链路；查询失败返回非 0（视为未注册，同步拒绝，spec v4 §4.1/D22）。
- */
+ * 返回 CM_SUCCESS 且 type 为 CM_UKEY_ABILITY_TYPE_UIEXTENSION 时，调用方在 PC
+ * 设备走 SA 会话新链路；其余情况（UIAbility / 查询失败）由调用方 context 直启
+ * （驱动 UIAbility 弹框 / 系统默认弹框，spec v4 §4.1 v4.2）。 */
 int32_t GetUkeyAbilityInfo(const CmBlob *keyUri, std::string &bundleName,
     std::string &abilityName, uint32_t &abilityType);
 
