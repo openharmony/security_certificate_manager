@@ -17,6 +17,7 @@
 #include "napi/native_node_api.h"
 
 #include "cm_napi_dialog_common.h"
+#include "cm_ukey_ability_type.h"
 
 #include "cm_napi_open_detail_dialog.h"
 #include "cm_napi_open_dialog.h"
@@ -92,6 +93,16 @@ static napi_value CreateCmCertificateScope(napi_env env)
     return certificateScope;
 }
 
+static napi_value CreateCmAbilityType(napi_env env)
+{
+    napi_value abilityType = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &abilityType));
+
+    AddInt32Property(env, abilityType, "UKEY_AUTH_EXTENSION_ABILITY", CM_UKEY_ABILITY_TYPE_UIEXTENSION);
+
+    return abilityType;
+}
+
 }  // namespace CertManagerNapi
 
 using namespace CMNapi;
@@ -104,6 +115,7 @@ static napi_value CMDialogNapiRegister(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("CertificateDialogPageType", CreateCmDialogPageType(env)),
         DECLARE_NAPI_PROPERTY("CertificateType", CreateCmCertificateType(env)),
         DECLARE_NAPI_PROPERTY("CertificateScope", CreateCmCertificateScope(env)),
+        DECLARE_NAPI_PROPERTY("AbilityType", CreateCmAbilityType(env)),
 
         /* dialog */
         DECLARE_NAPI_FUNCTION("openCertificateManagerDialog", CMNapiOpenCertManagerDialog),
