@@ -21,6 +21,13 @@
 #include "cm_ukey_dialog_common.h"
 
 namespace OHOS::Security::CertManager {
+/* base64 (RFC 4648): every 3 input bytes (24 bits) encode to 4 chars of
+ * 6 bits each, MSB first; a shorter tail is zero-padded and marked with '=' */
+constexpr size_t BASE64_INPUT_GROUP_BYTES = 3;
+constexpr size_t BASE64_OUTPUT_GROUP_CHARS = 4;
+constexpr uint32_t BASE64_BITS_PER_CHAR = 6;
+constexpr uint32_t BASE64_CHAR_MASK = (1U << BASE64_BITS_PER_CHAR) - 1;
+
 /* hidden visibility: this utility is consumed only via the static library
  * (kits/common and the SA dialog module) and must not enter any .so dynamic
  * symbol table - otherwise dependents would bind the reference to an exported
@@ -33,27 +40,31 @@ __attribute__((visibility("hidden"))) std::string CmBase64Encode(const uint8_t *
     if (data == nullptr || size == 0) {
         return out;
     }
-    out.reserve(((size + 2) / 3) * 4);
+    out.reserve(((size + BASE64_INPUT_GROUP_BYTES - 1) / BASE64_INPUT_GROUP_BYTES) *
+        BASE64_OUTPUT_GROUP_CHARS);
     size_t i = 0;
-    for (; i + 3 <= size; i += 3) {
-        uint32_t n = (static_cast<uint32_t>(data[i]) << 16) |
-            (static_cast<uint32_t>(data[i + 1]) << 8) | static_cast<uint32_t>(data[i + 2]);
-        out += table[(n >> 18) & 0x3F];
-        out += table[(n >> 12) & 0x3F];
-        out += table[(n >> 6) & 0x3F];
-        out += table[n & 0x3F];
+    for (; i + BASE64_INPUT_GROUP_BYTES <= size; i += BASE64_INPUT_GROUP_BYTES) {
+        /* pack one 3-byte group big-endian into 24 bits */
+        uint32_t n = (static_cast<uint32_t>(data[i]) << (2 * CM_BITS_PER_BYTE)) |
+            (static_cast<uint32_t>(data[i + 1]) << CM_BITS_PER_BYTE) |
+            static_cast<uint32_t>(data[i + 2]);
+        out += table[(n >> (3 * BASE64_BITS_PER_CHAR)) & BASE64_CHAR_MASK];
+        out += table[(n >> (2 * BASE64_BITS_PER_CHAR)) & BASE64_CHAR_MASK];
+        out += table[(n >> BASE64_BITS_PER_CHAR) & BASE64_CHAR_MASK];
+        out += table[n & BASE64_CHAR_MASK];
     }
     size_t rem = size - i;
     if (rem == 1) {
-        uint32_t n = static_cast<uint32_t>(data[i]) << 16;
-        out += table[(n >> 18) & 0x3F];
-        out += table[(n >> 12) & 0x3F];
+        uint32_t n = static_cast<uint32_t>(data[i]) << (2 * CM_BITS_PER_BYTE);
+        out += table[(n >> (3 * BASE64_BITS_PER_CHAR)) & BASE64_CHAR_MASK];
+        out += table[(n >> (2 * BASE64_BITS_PER_CHAR)) & BASE64_CHAR_MASK];
         out += "==";
     } else if (rem == 2) {
-        uint32_t n = (static_cast<uint32_t>(data[i]) << 16) | (static_cast<uint32_t>(data[i + 1]) << 8);
-        out += table[(n >> 18) & 0x3F];
-        out += table[(n >> 12) & 0x3F];
-        out += table[(n >> 6) & 0x3F];
+        uint32_t n = (static_cast<uint32_t>(data[i]) << (2 * CM_BITS_PER_BYTE)) |
+            (static_cast<uint32_t>(data[i + 1]) << CM_BITS_PER_BYTE);
+        out += table[(n >> (3 * BASE64_BITS_PER_CHAR)) & BASE64_CHAR_MASK];
+        out += table[(n >> (2 * BASE64_BITS_PER_CHAR)) & BASE64_CHAR_MASK];
+        out += table[(n >> BASE64_BITS_PER_CHAR) & BASE64_CHAR_MASK];
         out += '=';
     }
     return out;

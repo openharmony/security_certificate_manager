@@ -53,6 +53,10 @@ constexpr uint32_t HAP_INFO_MAX_LENGTH = 128;
 constexpr uint32_t MS_PER_SECOND = 1000;
 /* requestId CSPRNG random bytes; hex-encoded to a 2x-length string (spec D7) */
 constexpr uint32_t REQUEST_ID_RANDOM_BYTES = 16;
+/* hex encoding: one character per 4-bit nibble, 2 chars per byte */
+constexpr uint32_t HEX_BITS_PER_CHAR = 4;
+constexpr uint8_t HEX_NIBBLE_MASK = 0x0F;
+constexpr uint32_t HEX_CHARS_PER_BYTE = 2;
 /* /dev/urandom short-read retry count (masks occasional IO jitter) */
 constexpr int32_t URANDOM_RETRY_COUNT = 3;
 /* getrandom flags: 0 = default blocking semantics */
@@ -98,10 +102,10 @@ bool GenerateRequestId(std::string &id)
     }
     static const char hex[] = "0123456789abcdef";
     id.clear();
-    id.reserve(REQUEST_ID_RANDOM_BYTES * 2); /* 2 hex chars per byte */
+    id.reserve(REQUEST_ID_RANDOM_BYTES * HEX_CHARS_PER_BYTE);
     for (size_t i = 0; i < sizeof(buf); i++) {
-        id += hex[buf[i] >> 4];
-        id += hex[buf[i] & 0xF];
+        id += hex[buf[i] >> HEX_BITS_PER_CHAR];
+        id += hex[buf[i] & HEX_NIBBLE_MASK];
     }
     return true;
 }
