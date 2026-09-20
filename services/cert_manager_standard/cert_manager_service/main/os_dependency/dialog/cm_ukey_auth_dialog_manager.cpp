@@ -125,7 +125,8 @@ int32_t NormalizeReportCode(int32_t resultCode)
     }
 }
 
-std::string TotalTimeoutTaskName(const std::string &requestId){
+std::string TotalTimeoutTaskName(const std::string &requestId)
+{
     return "ukey_total_timeout_" + requestId;
 }
 
@@ -320,6 +321,26 @@ bool QueryDriverUkeyExtensionAbility(const std::string &bundleName,
     }
     return false;
 }
+
+/* OpenDialog pre-lock argument validation (aligned with the ForDriver
+ * entry's ValidateDriverDialogRequest): blob validity and the customData
+ * cap, same check order as the original inline implementation; session
+ * single-flight and the ability routing stay inside the lock */
+int32_t ValidateOpenDialogArguments(const struct CmBlob *keyUri,
+    const struct CmBlob *customData, const sptr<IRemoteObject> &clientCallback)
+{
+    if (keyUri == nullptr || keyUri->data == nullptr || keyUri->size == 0 ||
+        keyUri->size > MAX_LEN_URI || clientCallback == nullptr) {
+        CM_LOG_E("invalid open dialog arguments");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    /* customData re-check (already validated on the client side; defense in depth, spec D19) */
+    if (customData != nullptr && customData->size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
+        CM_LOG_E("custom data too large: %u", customData->size);
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+    return CM_SUCCESS;
+}
 } // namespace
 
 CmUkeyAuthDialogManager &CmUkeyAuthDialogManager::GetInstance()
@@ -512,15 +533,9 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
     uint32_t timeoutSec, const struct CmBlob *customData,
     const sptr<IRemoteObject> &clientCallback)
 {
-    if (keyUri == nullptr || keyUri->data == nullptr || keyUri->size == 0 ||
-        keyUri->size > MAX_LEN_URI || clientCallback == nullptr) {
-        CM_LOG_E("invalid open dialog arguments");
-        return CMR_ERROR_INVALID_ARGUMENT;
-    }
-    /* customData re-check (already validated on the client side; defense in depth, spec D19) */
-    if (customData != nullptr && customData->size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
-        CM_LOG_E("custom data too large: %u", customData->size);
-        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    int32_t ret = ValidateOpenDialogArguments(keyUri, customData, clientCallback);
+    if (ret != CM_SUCCESS) {
+        return ret;
     }
     std::lock_guard<std::mutex> lock(mutex_);
     uint32_t effectiveTimeoutSec = NormalizeTimeoutSecLocked(timeoutSec);

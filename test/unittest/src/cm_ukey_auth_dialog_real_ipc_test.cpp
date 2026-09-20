@@ -44,13 +44,11 @@ inline bool SaUnavailableOnHost(int32_t ret)
 {
     return ret == CMR_ERROR_NULL_POINTER;
 }
-#define SKIP_IF_NO_SA(ret)                                     \
-    do {                                                       \
-        if (SaUnavailableOnHost(ret)) {                        \
-            GTEST_LOG_(INFO) << "SA unavailable on host, skip strict assertion"; \
-            return;                                            \
-        }                                                      \
-    } while (0)
+
+inline void LogSkipSaUnavailable()
+{
+    GTEST_LOG_(INFO) << "SA unavailable on host, skip strict assertion";
+}
 }
 
 static void RealIpcResultCallback(int32_t resultCode, void *userData)
@@ -89,7 +87,10 @@ HWTEST_F(CmUkeyDialogRealIpcTest, OpenDialogUnregisteredKeyNoCallbackProbe, test
     CertmanagerTest::MockHapToken mockHap({ "ohos.permission.ACCESS_CERT_MANAGER" });
     int32_t ret = CmOpenUkeyAuthDialog(&req, RealIpcResultCallback, nullptr);
     GTEST_LOG_(INFO) << "CmOpenUkeyAuthDialog sync ret = " << ret;
-    SKIP_IF_NO_SA(ret);
+    if (SaUnavailableOnHost(ret)) {
+        LogSkipSaUnavailable();
+        return;
+    }
     sleep(1);
     EXPECT_FALSE(g_asyncFired.load());
 }
@@ -128,7 +129,10 @@ HWTEST_F(CmUkeyDialogRealIpcTest, OpenDialogRealIpcProbe, testing::ext::TestSize
     CertmanagerTest::MockHapToken mockHap({ "ohos.permission.ACCESS_CERT_MANAGER" });
     int32_t ret = CmOpenUkeyAuthDialog(&req, RealIpcResultCallback, nullptr);
     GTEST_LOG_(INFO) << "CmOpenUkeyAuthDialog sync ret = " << ret;
-    SKIP_IF_NO_SA(ret);
+    if (SaUnavailableOnHost(ret)) {
+        LogSkipSaUnavailable();
+        return;
+    }
     EXPECT_EQ(ret, CMR_DIALOG_ERROR_NOT_REGISTERED);
     EXPECT_FALSE(g_asyncFired.load());
 }
@@ -155,7 +159,10 @@ HWTEST_F(CmUkeyDialogRealIpcTest, OpenDriverDialogRealIpcProbe, testing::ext::Te
     int32_t ret = CmOpenUkeyAuthDialogForDriver(&dialogInfo, &req, DriverProbeResultCallback,
         nullptr);
     GTEST_LOG_(INFO) << "CmOpenUkeyAuthDialogForDriver sync ret = " << ret;
-    SKIP_IF_NO_SA(ret);
+    if (SaUnavailableOnHost(ret)) {
+        LogSkipSaUnavailable();
+        return;
+    }
     sleep(1);
     EXPECT_TRUE(ret == CMR_DIALOG_ERROR_NOT_REGISTERED || ret == CMR_DIALOG_ERROR_NOT_PC_DEVICE)
         << "ret = " << ret;
@@ -181,7 +188,10 @@ HWTEST_F(CmUkeyDialogRealIpcTest, OpenDriverDialogNoPermissionProbe, testing::ex
     int32_t ret = CmOpenUkeyAuthDialogForDriver(&dialogInfo, &req, DriverProbeResultCallback,
         nullptr);
     GTEST_LOG_(INFO) << "CmOpenUkeyAuthDialogForDriver(no-perm) sync ret = " << ret;
-    SKIP_IF_NO_SA(ret);
+    if (SaUnavailableOnHost(ret)) {
+        LogSkipSaUnavailable();
+        return;
+    }
     EXPECT_EQ(ret, CMR_DIALOG_ERROR_PERMISSION_DENIED);
     EXPECT_EQ(g_driverProbeFired.load(), 0xDEADBEEF); /* sync rejection never fires */
 }

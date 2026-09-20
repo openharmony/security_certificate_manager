@@ -125,7 +125,7 @@ ani_object openUninstallCertificateDialogNative(ani_env *env, ani_object context
 }
 
 ani_object openCertificateDetailDialogNative(ani_env *env, ani_object context, ani_string cert,
-    ani_boolean showInstallButton,  ani_object callback)
+    ani_boolean showInstallButton, ani_object callback)
 {
     if (env == nullptr) {
         CM_LOG_E("check env is nullptr.");

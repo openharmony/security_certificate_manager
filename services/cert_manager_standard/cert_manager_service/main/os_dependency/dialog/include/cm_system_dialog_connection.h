@@ -25,7 +25,6 @@
 #include "cm_ukey_auth_dialog_manager.h"
 
 namespace OHOS::Security::CertManager {
-
 /* System dialog service connection object: once connected, sends the
  * START_DIALOG command to the service stub in the useriam message format
  * (three key-value pairs: bundleName / abilityName / parameters); on

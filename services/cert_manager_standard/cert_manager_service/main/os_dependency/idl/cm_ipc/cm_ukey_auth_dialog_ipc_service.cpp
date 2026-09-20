@@ -67,6 +67,26 @@ int32_t ParseOpenDriverDialogParams(const struct CmBlob *paramSetBlob,
     }
     return ret;
 }
+
+/* ForDriver caller validation (spec v4 D23): server-side permission check
+ * (defense in depth beyond the NAPI precheck) + caller bundle identity; on
+ * failure returns the response code to send, on success fills hapInfo */
+int32_t CheckDriverDialogCaller(HapTokenInfo &hapInfo)
+{
+    if (AccessTokenKit::VerifyAccessToken(IPCSkeleton::GetCallingTokenID(),
+        "ohos.permission.CRYPTO_EXTENSION_REGISTER") != PERMISSION_GRANTED) {
+        CM_LOG_E("open driver dialog permission denied");
+        return CMR_DIALOG_ERROR_PERMISSION_DENIED;
+    }
+    /* Caller bundle: only HAP tokens pass (the bundle can only come from the
+     * IPC token, not declarable by the client, D20/D23) */
+    if (AccessTokenKit::GetHapTokenInfo(IPCSkeleton::GetCallingTokenID(), hapInfo) != ERR_OK) {
+        CM_LOG_E("open driver dialog caller is not hap token, callingUid = %d",
+            static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
+        return CMR_DIALOG_ERROR_INTERNAL;
+    }
+    return CM_SUCCESS;
+}
 } // namespace
 
 /* Unlike the other handlers in cm_ipc_service.c, the handlers in this file
@@ -101,7 +121,7 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
     if (ret != CM_SUCCESS) {
         CM_LOG_E("open ukey dialog get params failed, ret = %d", ret);
         CmFreeParamSet(&paramSet);
-        CmSendResponse(context, CMR_ERROR_INVALID_ARGUMENT, NULL);
+        CmSendResponse(context, CMR_ERROR_INVALID_ARGUMENT, nullptr);
         return;
     }
 
@@ -110,7 +130,7 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
         "ohos.permission.ACCESS_CERT_MANAGER") != PERMISSION_GRANTED) {
         CM_LOG_E("open ukey dialog permission denied");
         CmFreeParamSet(&paramSet);
-        CmSendResponse(context, CMR_DIALOG_ERROR_PERMISSION_DENIED, NULL);
+        CmSendResponse(context, CMR_DIALOG_ERROR_PERMISSION_DENIED, nullptr);
         return;
     }
 
@@ -121,7 +141,7 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
         static_cast<uint32_t>(IPCSkeleton::GetCallingUid()), timeoutSec, &customData,
         clientCallback);
     CmFreeParamSet(&paramSet);
-    CmSendResponse(context, ret, NULL);
+    CmSendResponse(context, ret, nullptr);
 }
 
 void CmIpcServiceOpenUkeyAuthDialogForDriver(uint32_t code, const struct CmBlob *paramSetBlob,
@@ -134,26 +154,16 @@ void CmIpcServiceOpenUkeyAuthDialogForDriver(uint32_t code, const struct CmBlob 
     if (ret != CM_SUCCESS) {
         CM_LOG_E("open driver dialog get params failed, ret = %d", ret);
         CmFreeParamSet(&paramSet); /* non-null when CmGetParamSet succeeded but a later parse step failed */
-        CmSendResponse(context, CMR_ERROR_INVALID_ARGUMENT, NULL);
+        CmSendResponse(context, CMR_ERROR_INVALID_ARGUMENT, nullptr);
         return;
     }
 
-    /* Server-side permission check (spec v4 D23: defense in depth beyond the NAPI precheck) */
-    if (AccessTokenKit::VerifyAccessToken(IPCSkeleton::GetCallingTokenID(),
-        "ohos.permission.CRYPTO_EXTENSION_REGISTER") != PERMISSION_GRANTED) {
-        CM_LOG_E("open driver dialog permission denied");
-        CmFreeParamSet(&paramSet);
-        CmSendResponse(context, CMR_DIALOG_ERROR_PERMISSION_DENIED, NULL);
-        return;
-    }
-    /* Caller bundle: only HAP tokens pass (the bundle can only come from the
-     * IPC token, not declarable by the client, D20/D23) */
+    /* Server-side caller validation (spec v4 D23) */
     HapTokenInfo hapInfo;
-    if (AccessTokenKit::GetHapTokenInfo(IPCSkeleton::GetCallingTokenID(), hapInfo) != ERR_OK) {
-        CM_LOG_E("open driver dialog caller is not hap token, callingUid = %d",
-            static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
+    int32_t callerRet = CheckDriverDialogCaller(hapInfo);
+    if (callerRet != CM_SUCCESS) {
         CmFreeParamSet(&paramSet);
-        CmSendResponse(context, CMR_DIALOG_ERROR_INTERNAL, NULL);
+        CmSendResponse(context, callerRet, nullptr);
         return;
     }
 
@@ -177,7 +187,7 @@ void CmIpcServiceOpenUkeyAuthDialogForDriver(uint32_t code, const struct CmBlob 
     req.clientCallback = clientCallback;
     ret = CmUkeyAuthDialogManager::GetInstance().OpenDriverDialog(req);
     CmFreeParamSet(&paramSet);
-    CmSendResponse(context, ret, NULL);
+    CmSendResponse(context, ret, nullptr);
 }
 
 void CmIpcServiceReportUkeyAuthResult(uint32_t code, const struct CmBlob *paramSetBlob,
@@ -199,7 +209,7 @@ void CmIpcServiceReportUkeyAuthResult(uint32_t code, const struct CmBlob *paramS
     if (ret != CM_SUCCESS) {
         CM_LOG_E("report ukey result get params failed, ret = %d", ret);
         CmFreeParamSet(&paramSet);
-        CmSendResponse(context, CMR_ERROR_INVALID_ARGUMENT, NULL);
+        CmSendResponse(context, CMR_ERROR_INVALID_ARGUMENT, nullptr);
         return;
     }
 
@@ -209,7 +219,7 @@ void CmIpcServiceReportUkeyAuthResult(uint32_t code, const struct CmBlob *paramS
         CM_LOG_E("report ukey result caller is not hap token, callingUid = %d",
             static_cast<int32_t>(IPCSkeleton::GetCallingUid()));
         CmFreeParamSet(&paramSet);
-        CmSendResponse(context, CMR_DIALOG_ERROR_INTERNAL, NULL);
+        CmSendResponse(context, CMR_DIALOG_ERROR_INTERNAL, nullptr);
         return;
     }
 
@@ -217,6 +227,6 @@ void CmIpcServiceReportUkeyAuthResult(uint32_t code, const struct CmBlob *paramS
     ret = CmUkeyAuthDialogManager::GetInstance().OnReport(reqId, hapInfo.bundleName,
         static_cast<int32_t>(resultCode));
     CmFreeParamSet(&paramSet);
-    CmSendResponse(context, ret, NULL);
+    CmSendResponse(context, ret, nullptr);
 }
 } // namespace OHOS::Security::CertManager

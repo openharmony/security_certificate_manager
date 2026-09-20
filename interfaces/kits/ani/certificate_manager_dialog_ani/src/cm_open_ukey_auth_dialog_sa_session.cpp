@@ -54,6 +54,52 @@ CmOpenUkeyAuthDialogSaSession::CmOpenUkeyAuthDialogSaSession(ani_env *env, ani_o
     this->aniRequest = aniRequest;
 }
 
+/* keyUri field parse (per-field helper split out of GetParamsFromEnv):
+ * blob carries the terminating NUL; empty and over-long values are rejected
+ * here so the error maps to 29700006 instead of the unmapped generic error */
+static int32_t ParseUkeyKeyUriField(ani_env *env, const CmUkeyAniRequest &req, struct CmBlob &keyUri)
+{
+    int32_t ret = AniUtils::ParseString(env, req.keyUri, keyUri);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("parse keyUri failed, ret = %d", ret);
+        return ret;
+    }
+    if (keyUri.size <= 1) {
+        /* blob carries the terminating zero, size 1 means an empty keyUri */
+        CM_LOG_E("keyUri is empty");
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+    if (keyUri.size > MAX_LEN_URI) {
+        /* blob carries the terminating zero; the SA rejects a keyUri blob
+         * longer than MAX_LEN_URI (NUL included), reject here so the error
+         * maps to 29700006 instead of the unmapped generic error */
+        CM_LOG_E("keyUri is too long, max length: %d", MAX_LEN_URI);
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+    return CM_SUCCESS;
+}
+
+/* optional customData field (D19): Uint8Array <= 2048 raw bytes; nullptr = absent */
+static int32_t ParseUkeyCustomDataField(ani_env *env, const CmUkeyAniRequest &req,
+    struct CmBlob &customData)
+{
+    if (req.customData == nullptr) {
+        return CM_SUCCESS;
+    }
+    int32_t ret = AniUtils::ParseUint8Array(env, reinterpret_cast<ani_arraybuffer>(req.customData),
+        customData);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("parse customData failed, ret = %d", ret);
+        return ret;
+    }
+    if (customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
+        CM_LOG_E("customData is too long, max: %d", CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE);
+        CM_FREE_BLOB(customData);
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+    return CM_SUCCESS;
+}
+
 int32_t CmOpenUkeyAuthDialogSaSession::GetParamsFromEnv()
 {
     CmUkeyAniRequest req;
@@ -62,22 +108,9 @@ int32_t CmOpenUkeyAuthDialogSaSession::GetParamsFromEnv()
         CM_LOG_E("parse ukey auth request object failed, ret = %d", ret);
         return ret;
     }
-    ret = AniUtils::ParseString(env, req.keyUri, this->keyUri);
+    ret = ParseUkeyKeyUriField(env, req, this->keyUri);
     if (ret != CM_SUCCESS) {
-        CM_LOG_E("parse keyUri failed, ret = %d", ret);
         return ret;
-    }
-    if (this->keyUri.size <= 1) {
-        /* blob carries the terminating zero, size 1 means an empty keyUri */
-        CM_LOG_E("keyUri is empty");
-        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
-    }
-    if (this->keyUri.size > MAX_LEN_URI) {
-        /* blob carries the terminating zero; the SA rejects a keyUri blob
-         * longer than MAX_LEN_URI (NUL included), reject here so the error
-         * maps to 29700006 instead of the unmapped generic error */
-        CM_LOG_E("keyUri is too long, max length: %d", MAX_LEN_URI);
-        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     /* optional timeout in seconds; non-number/NaN maps to a param error
      * (NaN fails both bounds, so the negated form rejects it) */
@@ -87,19 +120,9 @@ int32_t CmOpenUkeyAuthDialogSaSession::GetParamsFromEnv()
     }
     this->timeoutSec = static_cast<uint32_t>(req.timeout);
 
-    /* optional customData; Uint8Array <= 2048 raw bytes (D19); nullptr = absent */
-    if (req.customData != nullptr) {
-        ret = AniUtils::ParseUint8Array(env, reinterpret_cast<ani_arraybuffer>(req.customData),
-            this->customData);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("parse customData failed, ret = %d", ret);
-            return ret;
-        }
-        if (this->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
-            CM_LOG_E("customData is too long, max: %d", CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE);
-            CM_FREE_BLOB(this->customData);
-            return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
-        }
+    ret = ParseUkeyCustomDataField(env, req, this->customData);
+    if (ret != CM_SUCCESS) {
+        return ret;
     }
 
     ani_status status = env->GlobalReference_Create(reinterpret_cast<ani_ref>(this->callback),

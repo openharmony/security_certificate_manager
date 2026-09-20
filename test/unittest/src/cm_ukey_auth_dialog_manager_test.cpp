@@ -40,7 +40,9 @@ public:
     {
         disconnectCount_++;
     }
-    int32_t connectRet_ = 0; int connectCount_ = 0; int disconnectCount_ = 0;
+    int32_t connectRet_ = 0;
+    int connectCount_ = 0;
+    int disconnectCount_ = 0;
     sptr<CmSystemDialogConnection> conn_; // needed to access paramsJson for verification
 };
 
@@ -56,10 +58,14 @@ public:
     int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
         MessageOption &option) override
     {
-        if (code == CM_UKEY_DIALOG_CALLBACK_CMD) { lastCode_ = data.ReadInt32(); called_++; }
+        if (code == CM_UKEY_DIALOG_CALLBACK_CMD) {
+            lastCode_ = data.ReadInt32();
+            called_++;
+        }
         return 0;
     }
-    int32_t lastCode_ = -1; int called_ = 0;
+    int32_t lastCode_ = -1;
+    int called_ = 0;
 };
 
 class CmUkeyAuthDialogManagerTest : public testing::Test {
@@ -70,7 +76,10 @@ public:
         launcher_ = std::make_shared<FakeLauncher>();
         querier_ = [this](const struct CmBlob *keyUri, std::string &bundle,
                       std::string &ability, uint32_t &type) -> int32_t {
-            bundle = driverBundle_; ability = driverAbility_; type = abilityType_; return querierRet_;
+            bundle = driverBundle_;
+            ability = driverAbility_;
+            type = abilityType_;
+            return querierRet_;
         };
         manager_->SetLauncher(launcher_);
         manager_->SetAbilityQuerier(querier_);

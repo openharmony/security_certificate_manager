@@ -107,7 +107,6 @@ int32_t GetDefaultUkeyAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want
 static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName,
     std::string &bundleName, uint32_t &abilityType)
 {
-
     struct HksAbilityInfo abilityInfo{};
     abilityInfo.abilityName.data = (uint8_t*)CmMalloc(HAP_INFO_MAX_LENGTH);
     abilityInfo.bundleName.data = (uint8_t*)CmMalloc(HAP_INFO_MAX_LENGTH);
@@ -198,5 +197,4 @@ bool IsSupportDialogSyscap()
 {
     return HasSystemCapability(CERT_MGR_DIALOG_SYSCAP.c_str());
 }
-
 }

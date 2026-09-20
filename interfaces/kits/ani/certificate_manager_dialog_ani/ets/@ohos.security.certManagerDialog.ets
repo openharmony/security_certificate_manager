@@ -107,7 +107,6 @@ class CertReferenceClass implements certificateManagerDialog.CertReference {
 const CRITERIA_MAX_SIZE: int = 20;
 
 export namespace certificateManagerDialog {
-
   static {
     loadLibrary("certmanager_dialog_ani.z");
   }

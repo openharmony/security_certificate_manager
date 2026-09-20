@@ -287,20 +287,20 @@ static void HandleOpenUkeyAuthDialogRequest(uint32_t code, MessageParcel &data, 
     if (IsInvalidLength(openBlobSize)) {
         CM_LOG_E("open dialog srcData size is invalid, size:%u", openBlobSize);
         CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply),
-            CMR_ERROR_IPC_PARAM_SIZE_INVALID, NULL);
+            CMR_ERROR_IPC_PARAM_SIZE_INVALID, nullptr);
         return;
     }
     sptr<IRemoteObject> remoteCallback = data.ReadRemoteObject();
     if (remoteCallback == nullptr) {
         CM_LOG_E("open ukey dialog read remote callback null");
-        CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply), CMR_ERROR_NULL_POINTER, NULL);
+        CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply), CMR_ERROR_NULL_POINTER, nullptr);
         return;
     }
     struct CmBlob openSrcData = { 0, nullptr };
     int32_t openRet = GetSrcDataBody(data, openBlobSize, &openSrcData);
     if (openRet != CM_SUCCESS) {
         CM_LOG_E("open dialog GetSrcDataBody failed!");
-        CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply), openRet, NULL);
+        CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply), openRet, nullptr);
         return;
     }
     if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER)) {
