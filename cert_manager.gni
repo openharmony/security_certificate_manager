@@ -24,6 +24,9 @@ declare_args() {
   certificate_manager_feature_credential_enabled = true
 
   certificate_manager_feature_dialog_enabled = false
+
+  certificate_manager_feature_ukey_auth_ext_enabled = false
+
   if (defined(global_parts_info) &&
       defined(global_parts_info.arkui_ace_engine)) {
     certificate_manager_feature_dialog_enabled = true

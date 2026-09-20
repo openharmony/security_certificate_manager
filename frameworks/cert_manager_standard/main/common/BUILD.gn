@@ -16,7 +16,7 @@ import("//build/ohos.gni")
 
 config("cert_manager_config") {
   include_dirs = [ "include" ]
-  if (target_platform == "pc") {
+  if (certificate_manager_feature_ukey_auth_ext_enabled == true) {
     # PC 平台构建（编译期宏）：CmUkeyIsPcPlatformOrPcMode 第一级直接放行；
     # 非 PC 平台构建不定义此宏，运行时读 PC 模式参数
     # （persist.sceneboard.ispcmode）判定。
