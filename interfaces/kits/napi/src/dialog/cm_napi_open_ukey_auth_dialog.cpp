@@ -29,7 +29,7 @@
 
 namespace CMNapi {
 using OHOS::Security::CertManager::CM_UKEY_ABILITY_NAME_MAX_LEN;
-using OHOS::Security::CertManager::CmUkeyIsPcOrPcMode;
+using OHOS::Security::CertManager::CmUkeyIsPcPlatformOrPcMode;
 using OHOS::Security::AccessToken::AccessTokenID;
 
 /* Result context kept alive from the CmOpenUkeyAuthDialog call until the
@@ -438,7 +438,7 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
         int32_t queryRet = GetUkeyAbilityInfo(asyncContext->certUri, driverBundle, driverAbility,
             abilityType);
         if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION &&
-            CmUkeyIsPcOrPcMode()) {
+            CmUkeyIsPcPlatformOrPcMode()) {
             CM_LOG_I("ukey driver registered a UIExtensionAbility pin dialog, go sa session path");
             return OpenUkeyAuthDialogViaSa(asyncContext, std::move(report));
         }

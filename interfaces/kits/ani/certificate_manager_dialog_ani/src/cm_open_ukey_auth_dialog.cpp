@@ -21,15 +21,15 @@
 #include "cm_ani_common.h"
 #include "cm_log.h"
 #include "cm_dialog_api_common.h"
+#include "cm_ukey_ani_request.h"
 
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
-CmOpenUkeyAuthDialog::CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_string aniKeyUri,
-    ani_object aniCustomData, ani_object callback)
+CmOpenUkeyAuthDialog::CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_object aniRequest,
+    ani_object callback)
     : CertManagerAsyncImpl(env, aniContext, callback, "openUkeyAuthDialog")
 {
-    this->aniKeyUri = aniKeyUri;
-    this->aniCustomData = aniCustomData;
+    this->aniRequest = aniRequest;
 }
 
 int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
@@ -40,7 +40,14 @@ int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
         return ret;
     }
 
-    ret = AniUtils::ParseString(env, this->aniKeyUri, this->keyUri);
+    CmUkeyAniRequest req;
+    ret = ParseUkeyAniRequest(env, this->aniRequest, req);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("parse ukey auth request object failed, ret = %d", ret);
+        return ret;
+    }
+
+    ret = AniUtils::ParseString(env, req.keyUri, this->keyUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("parse keyUri failed, ret = %d", ret);
         return ret;
@@ -57,17 +64,19 @@ int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
 
-    /* optional customData; Uint8Array <= 2048 raw bytes (D19), ets layer normalized */
-    ret = AniUtils::ParseUint8Array(env, reinterpret_cast<ani_arraybuffer>(this->aniCustomData),
-        this->customData);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("parse customData failed. ret = %d", ret);
-        return ret;
-    }
-    if (this->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
-        CM_LOG_E("customData is too long, max: %d", CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE);
-        CM_FREE_BLOB(this->customData);
-        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    /* optional customData; Uint8Array <= 2048 raw bytes (D19); nullptr = 缺省 */
+    if (req.customData != nullptr) {
+        ret = AniUtils::ParseUint8Array(env, reinterpret_cast<ani_arraybuffer>(req.customData),
+            this->customData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("parse customData failed. ret = %d", ret);
+            return ret;
+        }
+        if (this->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
+            CM_LOG_E("customData is too long, max: %d", CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE);
+            CM_FREE_BLOB(this->customData);
+            return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+        }
     }
     return CM_SUCCESS;
 }

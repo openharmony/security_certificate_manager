@@ -165,6 +165,44 @@ void EtsUkeyAuthExtensionContext::Clean(ani_env *env, ani_object object)
     }
 }
 
+/* 尾段装配：workContext 弱指针挂载 + Cleaner 绑定 + 基类上下文构造 + 全局引用
+ * Bind（自 CreateEtsUkeyAuthExtensionContext 拆出以控制函数行数） */
+static bool AttachEtsContextBaseAndRef(ani_env *env, ani_class &cls, ani_object &contextObj,
+    const std::shared_ptr<UkeyAuthExtensionContext> &context)
+{
+    auto workContext = new (std::nothrow) std::weak_ptr<UkeyAuthExtensionContext>(context);
+    if (workContext == nullptr) {
+        CM_LOG_E("null workContext");
+        return false;
+    }
+    if (!ContextUtil::SetNativeContextLong(env, contextObj, (ani_long)workContext)) {
+        CM_LOG_E("SetNativeContextLong failed");
+        delete workContext;
+        return false;
+    }
+    if (!EtsUkeyAuthExtensionContext::BindNativePtrCleaner(env)) {
+        CM_LOG_E("BindNativePtrCleaner failed");
+        delete workContext;
+        return false;
+    }
+    OHOS::AbilityRuntime::ContextUtil::CreateEtsBaseContext(env, cls, contextObj, context);
+    OHOS::AbilityRuntime::CreateEtsExtensionContext(env, cls, contextObj, context, context->GetAbilityInfo());
+    ani_ref *contextGlobalRef = new (std::nothrow) ani_ref;
+    if (contextGlobalRef == nullptr) {
+        CM_LOG_E("new contextGlobalRef failed");
+        delete workContext;
+        return false;
+    }
+    if (env->GlobalReference_Create(contextObj, contextGlobalRef) != ANI_OK) {
+        CM_LOG_E("GlobalReference_Create failed");
+        delete contextGlobalRef;
+        delete workContext;
+        return false;
+    }
+    context->Bind(contextGlobalRef);
+    return true;
+}
+
 ani_object CreateEtsUkeyAuthExtensionContext(ani_env *env,
     std::shared_ptr<UkeyAuthExtensionContext> context)
 {
@@ -199,36 +237,9 @@ ani_object CreateEtsUkeyAuthExtensionContext(ani_env *env,
         CM_LOG_E("BindNativeMethods status: %d", status);
         return nullptr;
     }
-    auto workContext = new (std::nothrow) std::weak_ptr<UkeyAuthExtensionContext>(context);
-    if (workContext == nullptr) {
-        CM_LOG_E("null workContext");
+    if (!AttachEtsContextBaseAndRef(env, cls, contextObj, context)) {
         return nullptr;
     }
-    if (!ContextUtil::SetNativeContextLong(env, contextObj, (ani_long)workContext)) {
-        CM_LOG_E("SetNativeContextLong failed");
-        delete workContext;
-        return nullptr;
-    }
-    if (!EtsUkeyAuthExtensionContext::BindNativePtrCleaner(env)) {
-        CM_LOG_E("BindNativePtrCleaner failed");
-        delete workContext;
-        return nullptr;
-    }
-    OHOS::AbilityRuntime::ContextUtil::CreateEtsBaseContext(env, cls, contextObj, context);
-    OHOS::AbilityRuntime::CreateEtsExtensionContext(env, cls, contextObj, context, context->GetAbilityInfo());
-    ani_ref *contextGlobalRef = new (std::nothrow) ani_ref;
-    if (contextGlobalRef == nullptr) {
-        CM_LOG_E("new contextGlobalRef failed");
-        delete workContext;
-        return nullptr;
-    }
-    if ((status = env->GlobalReference_Create(contextObj, contextGlobalRef)) != ANI_OK) {
-        CM_LOG_E("GlobalReference_Create failed status: %d", status);
-        delete contextGlobalRef;
-        delete workContext;
-        return nullptr;
-    }
-    context->Bind(contextGlobalRef);
     return contextObj;
 }
 } // namespace AbilityRuntime

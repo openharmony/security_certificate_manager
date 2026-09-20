@@ -23,12 +23,12 @@
 namespace OHOS::Security::CertManager::Ani {
 /* 带 context 直启实现（原有实现恢复，spec v4.2）：承接驱动 UIAbility 弹框直启与
  * 系统默认弹框直启（UIAbility / 查询失败 / UIExtension+非PC；PC + UIExtension 已
- * 在 cm_dialog_ani.cpp 委托 SA 会话）。 */
+ * 在 cm_dialog_ani.cpp 委托 SA 会话）。aniRequest 为调用方传入的 UkeyAuthRequest
+ * ets 对象（字段解包见 cm_ukey_ani_request.h）。 */
 class CmOpenUkeyAuthDialog : public CertManagerAsyncImpl {
 private:
     /* ani params */
-    ani_string aniKeyUri = nullptr;
-    ani_object aniCustomData = nullptr;
+    ani_object aniRequest = nullptr;
     /* parsed params */
     CmBlob keyUri = { 0 };
     CmBlob customData = { 0 }; /* raw bytes <= 2048; size 0 = absent (D19) */
@@ -36,8 +36,8 @@ private:
         std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback);
 
 public:
-    CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_string aniKeyUri,
-        ani_object aniCustomData, ani_object callback);
+    CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_object aniRequest,
+        ani_object callback);
     ~CmOpenUkeyAuthDialog() {};
 
     int32_t GetParamsFromEnv() override;

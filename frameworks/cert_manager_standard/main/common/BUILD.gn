@@ -16,6 +16,13 @@ import("//build/ohos.gni")
 
 config("cert_manager_config") {
   include_dirs = [ "include" ]
+  if (target_platform == "pc") {
+    # PC 平台构建（编译期宏）：CmUkeyIsPcPlatformOrPcMode 第一级直接放行；
+    # 非 PC 平台构建不定义此宏，运行时读 PC 模式参数
+    # （persist.sceneboard.ispcmode）判定。
+    # 经 public_configs 传播给所有依赖本静态库的目标（SA/kits/测试）。
+    defines = [ "CM_TARGET_PLATFORM_PC" ]
+  }
 }
 
 ohos_static_library("libcert_manager_common_standard_static") {

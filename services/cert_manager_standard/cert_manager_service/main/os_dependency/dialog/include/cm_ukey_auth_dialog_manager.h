@@ -61,8 +61,11 @@ public:
 using AbilityQuerier = std::function<int32_t(const struct CmBlob *keyUri,
     std::string &bundleName, std::string &abilityName, uint32_t &abilityType)>;
 
-// PC / PC 模式判定注入点（spec D15：仅 UIExtension 路径消费；生产装配读
-// const.product.devicetype=="2in1" 或 persist.sceneboard.ispcmode）
+// PC 门禁注入点（spec D15：仅 UIExtension 路径消费；生产装配为两级判定
+// CmUkeyIsPcPlatformOrPcMode——PC 平台构建（CM_TARGET_PLATFORM_PC 宏，经
+// frameworks/common public config 传播）编译期放行，非 PC 平台构建读 PC 模式
+// 参数（persist.sceneboard.ispcmode）判定，不读 devicetype（neverallow 管控）；
+// 测试可注入自定义 checker）
 using PcChecker = std::function<bool()>;
 
 // 驱动弹框扩展 BMS 预校验注入点（spec v4 D23：ForDriver 路径消费；生产装配经
@@ -71,20 +74,33 @@ using PcChecker = std::function<bool()>;
 using DriverAbilityChecker = std::function<bool(const std::string &bundleName,
     const std::string &abilityName, int32_t userId)>;
 
-/* openAuthDialogForUkeyProvider 的 SA 入口参数集（spec v4 §4.1/D23）：拆自原
- * 9 参签名以控制入参数量；callerBundleName 由 IPC 层从 IPC token 解出（客户端
- * 不可伪造）；customData.size == 0 表示缺省（不携带） */
-struct UkeyDriverDialogRequest {
-    struct CmBlob abilityName;   /* 驱动弹框扩展名 blob（可能带结尾 NUL） */
-    uint32_t abilityType = 0;    /* 仅 CM_UKEY_ABILITY_TYPE_UIEXTENSION */
-    struct CmBlob keyUri;        /* ukey 凭据 uri */
-    uint32_t callerUid = 0;      /* 原客户端 uid（弹框参数 appUid 用） */
-    std::string callerBundleName; /* 上报责任方 bundle（IPC token 来源） */
-    int32_t userId = 0;          /* BMS 查询用（CmGetProcessInfoForIPC 解出） */
-    uint32_t timeoutSec = 0;     /* 秒，0 = 服务端默认，服务端 clamp */
-    struct CmBlob customData;    /* 可选调用方不透明数据（size 0 = 缺省） */
-    sptr<IRemoteObject> clientCallback; /* 客户端回调 stub */
-};
+    /* openAuthDialogForUkeyProvider 的 SA 入口参数集（spec v4 §4.1/D23）：拆自原
+     * 9 参签名以控制入参数量；callerBundleName 由 IPC 层从 IPC token 解出（客户端
+     * 不可伪造）；customData.size == 0 表示缺省（不携带） */
+    struct UkeyDriverDialogRequest {
+        struct CmBlob abilityName;   /* 驱动弹框扩展名 blob（可能带结尾 NUL） */
+        uint32_t abilityType = 0;    /* 仅 CM_UKEY_ABILITY_TYPE_UIEXTENSION */
+        struct CmBlob keyUri;        /* ukey 凭据 uri */
+        uint32_t callerUid = 0;      /* 原客户端 uid（弹框参数 appUid 用） */
+        std::string callerBundleName; /* 上报责任方 bundle（IPC token 来源） */
+        int32_t userId = 0;          /* BMS 查询用（CmGetProcessInfoForIPC 解出） */
+        uint32_t timeoutSec = 0;     /* 秒，0 = 服务端默认，服务端 clamp */
+        struct CmBlob customData;    /* 可选调用方不透明数据（size 0 = 缺省） */
+        sptr<IRemoteObject> clientCallback; /* 客户端回调 stub */
+    };
+
+    /* UIExtension 弹窗会话公共拉起参数（OpenDialog/OpenDriverDialog 汇聚后传入
+     * LaunchUiExtensionSessionLocked）：目标 bundle/ability 已定、PC 门禁已过；
+     * timeoutSec 已归一化；customData.size == 0 表示缺省 */
+    struct UkeyDialogLaunchParams {
+        std::string bundleName;      /* 目标扩展 bundle */
+        std::string abilityName;     /* 目标 UIExtension ability 名（已剥 NUL） */
+        struct CmBlob keyUri;        /* ukey 凭据 uri */
+        uint32_t callerUid = 0;      /* 原客户端 uid（弹框参数 appUid 用） */
+        uint32_t timeoutSec = 0;     /* 已归一化的会话超时（秒） */
+        struct CmBlob customData;    /* 可选调用方不透明数据（size 0 = 缺省） */
+        sptr<IRemoteObject> clientCallback; /* 客户端回调 stub */
+    };
 
 class CmUkeyAuthDialogManager {
 public:
@@ -151,12 +167,9 @@ private:
     void FinishSessionLocked(const std::string &requestId, int32_t resultCode);
     void HandleTotalTimeout(const std::string &requestId);
     void HandleGraceTimeout(const std::string &requestId);
-    /* 从 OpenDialog/OpenDriverDialog 公共拉起序列抽出（bundle/ability 已定，
+    /* 从 OpenDialog/OpenDriverDialog 公共拉起序列抽出（目标 bundle/ability 已定，
      * PC 门禁已过）：requestId→会话→连接→总超时。返回同步码。 */
-    int32_t LaunchUiExtensionSessionLocked(const std::string &bundleName,
-        const std::string &abilityName, const struct CmBlob *keyUri, uint32_t callerUid,
-        uint32_t timeoutSec, const struct CmBlob *customData,
-        const sptr<IRemoteObject> &clientCallback);
+    int32_t LaunchUiExtensionSessionLocked(const UkeyDialogLaunchParams &params);
     uint32_t NormalizeTimeoutSecLocked(uint32_t timeoutSec);
     /* OpenDriverDialog 锁前入参组合校验（spec v4 D23/D24），供主体分摊复杂度 */
     static int32_t ValidateDriverDialogRequest(const UkeyDriverDialogRequest &req);

@@ -23,21 +23,19 @@
 namespace OHOS::Security::CertManager::Ani {
 /* SA 会话路径实现（spec v4 D21/D22）：无 context、不直启弹框，结果经 SA 异步
  * 回投。唯一调用方为 openUkeyAuthDialog（带 context 重载委托），D8 修订的
- * -1017/-1018 折叠恒生效。 */
+ * -1017/-1018 折叠恒生效。aniRequest 为调用方传入的 UkeyAuthRequest ets 对象
+ * （字段解包见 cm_ukey_ani_request.h）。 */
 class CmOpenUkeyAuthDialogSaSession : public CertManagerAsyncImpl {
 private:
     /* ani params */
-    ani_string aniKeyUri = nullptr;
-    ani_double aniTimeout = 0;
-    ani_object aniCustomData = nullptr;
+    ani_object aniRequest = nullptr;
     /* parsed params */
     CmBlob keyUri = { 0 };
     uint32_t timeoutSec = 0; /* 0 = server default */
     CmBlob customData = { 0 }; /* raw bytes <= 2048; size 0 = absent (D19) */
 
 public:
-    CmOpenUkeyAuthDialogSaSession(ani_env *env, ani_string aniKeyUri,
-        ani_double aniTimeout, ani_object aniCustomData, ani_object callback);
+    CmOpenUkeyAuthDialogSaSession(ani_env *env, ani_object aniRequest, ani_object callback);
     ~CmOpenUkeyAuthDialogSaSession() {};
 
     int32_t GetParamsFromEnv() override;

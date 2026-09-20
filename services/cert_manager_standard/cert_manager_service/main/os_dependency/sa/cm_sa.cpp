@@ -273,6 +273,42 @@ static int32_t GetSrcData(MessageParcel &data, struct CmBlob *srcData)
     return GetSrcDataBody(data, size, srcData);
 }
 
+/* OPEN 请求布局 [uint32 size][remote object][buffer]：客户端回调 stub 位于
+ * buffer 之前（WriteBuffer 会补尾 pad 而 ReadBuffer 不跳过，对象须避免写在
+ * 非对齐 buffer 之后），因此 OPEN 在通用 GetSrcData 之前自行解析；
+ * 应答由处理器经 CmSendResponse(context=reply) 写入。 */
+static void HandleOpenUkeyAuthDialogRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t openBlobSize = static_cast<uint32_t>(data.ReadUint32());
+    if (IsInvalidLength(openBlobSize)) {
+        CM_LOG_E("open dialog srcData size is invalid, size:%u", openBlobSize);
+        CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply),
+            CMR_ERROR_IPC_PARAM_SIZE_INVALID, NULL);
+        return;
+    }
+    sptr<IRemoteObject> remoteCallback = data.ReadRemoteObject();
+    if (remoteCallback == nullptr) {
+        CM_LOG_E("open ukey dialog read remote callback null");
+        CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply), CMR_ERROR_NULL_POINTER, NULL);
+        return;
+    }
+    struct CmBlob openSrcData = { 0, nullptr };
+    int32_t openRet = GetSrcDataBody(data, openBlobSize, &openSrcData);
+    if (openRet != CM_SUCCESS) {
+        CM_LOG_E("open dialog GetSrcDataBody failed!");
+        CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply), openRet, NULL);
+        return;
+    }
+    if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER)) {
+        CmIpcServiceOpenUkeyAuthDialogForDriver(code, &openSrcData,
+            reinterpret_cast<const struct CmContext *>(&reply), remoteCallback);
+    } else {
+        CmIpcServiceOpenUkeyAuthDialog(code, &openSrcData,
+            reinterpret_cast<const struct CmContext *>(&reply), remoteCallback);
+    }
+    CM_FREE_BLOB(openSrcData);
+}
+
 int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     MessageParcel &reply, MessageOption &option)
 {
@@ -300,40 +336,9 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
         code != static_cast<uint32_t>(CM_MSG_REPORT_UKEY_AUTH_RESULT)) {
         outSize = static_cast<uint32_t>(data.ReadUint32());
     }
-    /* OPEN 请求布局 [uint32 size][remote object][buffer]：客户端回调 stub 位于
-     * buffer 之前（WriteBuffer 会补尾 pad 而 ReadBuffer 不跳过，对象须避免写在
-     * 非对齐 buffer 之后），因此 OPEN 在通用 GetSrcData 之前自行解析；
-     * 应答由处理器经 CmSendResponse(context=reply) 写入。 */
     if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG) ||
         code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER)) {
-        uint32_t openBlobSize = static_cast<uint32_t>(data.ReadUint32());
-        if (IsInvalidLength(openBlobSize)) {
-            CM_LOG_E("open dialog srcData size is invalid, size:%u", openBlobSize);
-            CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply),
-                CMR_ERROR_IPC_PARAM_SIZE_INVALID, NULL);
-            return NO_ERROR;
-        }
-        sptr<IRemoteObject> remoteCallback = data.ReadRemoteObject();
-        if (remoteCallback == nullptr) {
-            CM_LOG_E("open ukey dialog read remote callback null");
-            CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply), CMR_ERROR_NULL_POINTER, NULL);
-            return NO_ERROR;
-        }
-        struct CmBlob openSrcData = { 0, nullptr };
-        int32_t openRet = GetSrcDataBody(data, openBlobSize, &openSrcData);
-        if (openRet != CM_SUCCESS) {
-            CM_LOG_E("open dialog GetSrcDataBody failed!");
-            CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply), openRet, NULL);
-            return NO_ERROR;
-        }
-        if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER)) {
-            CmIpcServiceOpenUkeyAuthDialogForDriver(code, &openSrcData,
-                reinterpret_cast<const struct CmContext *>(&reply), remoteCallback);
-        } else {
-            CmIpcServiceOpenUkeyAuthDialog(code, &openSrcData,
-                reinterpret_cast<const struct CmContext *>(&reply), remoteCallback);
-        }
-        CM_FREE_BLOB(openSrcData);
+        HandleOpenUkeyAuthDialogRequest(code, data, reply);
         return NO_ERROR;
     }
     struct CmBlob srcData = { 0, nullptr };

@@ -29,6 +29,7 @@
 #include "cm_supports_ca_cert_dialog.h"
 #include "cm_dialog_api_common.h"
 #include "cm_ukey_dialog_common.h"
+#include "cm_ukey_ani_request.h"
 #include "cm_ani_common.h"
 #include "cm_ani_utils.h"
 #include "cm_api_common.h"
@@ -170,8 +171,8 @@ ani_object openAuthorizeDialogWithReqNative(ani_env *env, ani_object context, an
     return openAuthDialogWithReqImpl->Invoke();
 }
 
-ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string keyUri,
-    ani_double timeout, ani_object customData, ani_object callback)
+ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_object ukeyAuthRequest,
+    ani_object callback)
 {
     if (env == nullptr) {
         CM_LOG_E("check env is nullptr.");
@@ -186,31 +187,32 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_string
      * failure, UIExtension + non-PC) direct-launches via the caller's context
      * below (driver UIAbility want, or the system default dialog). */
     {
+        CmUkeyAniRequest req;
         CmBlob keyUriBlob = { 0, nullptr };
-        if (AniUtils::ParseString(env, keyUri, keyUriBlob) == CM_SUCCESS) {
+        if (ParseUkeyAniRequest(env, ukeyAuthRequest, req) == CM_SUCCESS &&
+            AniUtils::ParseString(env, req.keyUri, keyUriBlob) == CM_SUCCESS) {
             std::string driverBundle;
             std::string driverAbility;
             uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
             int32_t queryRet = GetUkeyAbilityInfo(&keyUriBlob, driverBundle, driverAbility, abilityType);
             CM_FREE_BLOB(keyUriBlob);
             if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION &&
-                CmUkeyIsPcOrPcMode()) {
+                CmUkeyIsPcPlatformOrPcMode()) {
                 CM_LOG_I("ukey driver registered a UIExtensionAbility pin dialog, go sa session path");
-                auto saSessionImpl = std::make_shared<CmOpenUkeyAuthDialogSaSession>(env, keyUri,
-                    timeout, customData, callback);
+                auto saSessionImpl = std::make_shared<CmOpenUkeyAuthDialogSaSession>(env,
+                    ukeyAuthRequest, callback);
                 return saSessionImpl->Invoke();
             }
             /* 直启路径（原有实现）：UIAbility / 查询失败 / UIExtension+非PC → 下方 context 实现 */
         }
     }
-    auto openUkeyAuthDialogImpl = std::make_shared<CmOpenUkeyAuthDialog>(env, context, keyUri,
-        customData, callback);
+    auto openUkeyAuthDialogImpl = std::make_shared<CmOpenUkeyAuthDialog>(env, context,
+        ukeyAuthRequest, callback);
     return openUkeyAuthDialogImpl->Invoke();
 }
 
-ani_object openAuthDialogForUkeyProviderNative(ani_env *env, ani_string abilityName,
-    ani_double abilityType, ani_string keyUri, ani_double timeout, ani_object customData,
-    ani_object callback)
+ani_object openAuthDialogForUkeyProviderNative(ani_env *env, ani_object dialogInfo,
+    ani_object ukeyAuthRequest, ani_object callback)
 {
     if (env == nullptr) {
         CM_LOG_E("check env is nullptr.");
@@ -221,11 +223,8 @@ ani_object openAuthDialogForUkeyProviderNative(ani_env *env, ani_string abilityN
         return InvokeCallbackVoid(env, callback);
     }
     UkeyProviderDialogParams params;
-    params.aniAbilityName = abilityName;
-    params.aniAbilityType = abilityType;
-    params.aniKeyUri = keyUri;
-    params.aniTimeout = timeout;
-    params.aniCustomData = customData;
+    params.aniDialogInfo = dialogInfo;
+    params.aniRequest = ukeyAuthRequest;
     auto impl = std::make_shared<CmOpenAuthDialogForUkeyProvider>(env, params, callback);
     return impl->Invoke();
 }

@@ -69,18 +69,13 @@ export interface ReqestAuthDialogParams {
 
 native function openUkeyAuthDialogNative(
   context: common.Context,
-  keyUri: string,
-  timeout: number,
-  customData: Uint8Array,
+  ukeyAuthRequest: certificateManagerDialog.UkeyAuthRequest,
   callback: AsyncCallbackWrapper<void>
 ): NativeResult<void>;
 
 native function openAuthDialogForUkeyProviderNative(
-  abilityName: string,
-  abilityType: number,
-  keyUri: string,
-  timeout: number,
-  customData: Uint8Array,
+  dialogInfo: certificateManagerDialog.UkeyAuthDialogInfo,
+  ukeyAuthRequest: certificateManagerDialog.UkeyAuthRequest,
   callback: AsyncCallbackWrapper<void>
 ): NativeResult<void>;
 
@@ -397,10 +392,7 @@ export namespace certificateManagerDialog {
           error.message = 'the input parameters is invalid.';
           throw error;
         }
-        let timeout: number = ukeyAuthRequest.timeoutDuration ?? 0; /* 0 = server default 300s */
-        let customData: Uint8Array = ukeyAuthRequest.customData ?? new Uint8Array(0);
-        let result: NativeResult<void> = openUkeyAuthDialogNative(context, keyUri, timeout,
-            customData, callback);
+        let result: NativeResult<void> = openUkeyAuthDialogNative(context, ukeyAuthRequest, callback);
         if (result.code !== 0) {
           let err = new BusinessError();
           err.code = result.code;
@@ -432,15 +424,13 @@ export namespace certificateManagerDialog {
         }
         let keyUri: string = ukeyAuthRequest.keyUri;
         if (keyUri === undefined) {
-            let error = new BusinessError();
-            error.code = 401;
-            error.message = 'the input parameters is invalid.';
-            throw error;
+          let error = new BusinessError();
+          error.code = 401;
+          error.message = 'the input parameters is invalid.';
+          throw error;
         }
-        let timeout: number = ukeyAuthRequest.timeoutDuration ?? 0; /* 0 = server default 300s */
-        let customData: Uint8Array = ukeyAuthRequest.customData ?? new Uint8Array(0);
-        let result: NativeResult<void> = openAuthDialogForUkeyProviderNative(abilityName,
-            abilityType, keyUri, timeout, customData, callback);
+        let result: NativeResult<void> = openAuthDialogForUkeyProviderNative(dialogInfo,
+            ukeyAuthRequest, callback);
         if (result.code !== 0) {
             let err = new BusinessError();
             err.code = result.code;

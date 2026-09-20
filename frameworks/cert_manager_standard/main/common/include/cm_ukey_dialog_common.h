@@ -32,18 +32,23 @@ namespace OHOS::Security::CertManager {
 /* ---- want / parameters JSON 参数键（弹框提供方契约，spec §6.2/§6.3）---- */
 constexpr const char *CM_UKEY_DIALOG_PARAM_CUSTOM_DATA = "customData";
 
-/* ---- PC / PC 模式判定（spec D15，仅 SA 消费）---- */
-constexpr const char *CM_UKEY_PARAM_DEVICETYPE = "const.product.devicetype";
-constexpr const char *CM_UKEY_DEVICETYPE_PC = "2in1";
+/* ---- PC 平台 / PC 模式判定（spec D15，用户裁定）----
+ * 第一级（编译期）：PC 平台构建（BUILD.gn target_platform == "pc" 注入
+ * CM_TARGET_PLATFORM_PC 宏，经 frameworks/common 的 public config 传播）放行；
+ * 第二级（运行时，仅非 PC 平台构建）：读 persist.sceneboard.ispcmode 判定
+ * PC 模式。不读 const.product.devicetype——SA 域对该参数受 SELinux
+ * neverallow 管控。
+ * 消费方：kits 直启路由（NAPI/ANI 的 SA 会话分流）与 SA 服务端 PC 门禁。 */
 constexpr const char *CM_UKEY_PARAM_IS_PC_MODE = "persist.sceneboard.ispcmode";
 
-inline bool CmUkeyIsPcOrPcMode()
+inline bool CmUkeyIsPcPlatformOrPcMode()
 {
-    /* 每次调用实时读（模式可运行时切换）；2in1 为 PC 形态权威值 */
-    if (OHOS::system::GetParameter(CM_UKEY_PARAM_DEVICETYPE, "default") == CM_UKEY_DEVICETYPE_PC) {
-        return true;
-    }
+#ifdef CM_TARGET_PLATFORM_PC
+    return true; /* PC 平台构建：编译期放行，不读系统参数 */
+#else
+    /* 每次调用实时读（模式可运行时切换）；读取失败按非 PC 模式处理 */
     return OHOS::system::GetBoolParameter(CM_UKEY_PARAM_IS_PC_MODE, false);
+#endif
 }
 
 /* ---- 驱动弹框扩展名长度上限（spec v4 D24 / v4.1 用户裁定修正：

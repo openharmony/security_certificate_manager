@@ -22,6 +22,7 @@
 #include "cm_ani_common.h"
 #include "cm_log.h"
 #include "cm_ukey_dialog_common.h"
+#include "cm_ukey_ani_request.h"
 
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
@@ -66,18 +67,22 @@ void ReleaseUkeyAuthResultResources(ani_env *env, CmUkeyAuthDialogAniResultConte
 }
 } // namespace
 
-CmOpenUkeyAuthDialogSaSession::CmOpenUkeyAuthDialogSaSession(ani_env *env, ani_string aniKeyUri,
-    ani_double aniTimeout, ani_object aniCustomData, ani_object callback)
+CmOpenUkeyAuthDialogSaSession::CmOpenUkeyAuthDialogSaSession(ani_env *env, ani_object aniRequest,
+    ani_object callback)
     : CertManagerAsyncImpl(env, nullptr, callback, "openUkeyAuthDialog")
 {
-    this->aniKeyUri = aniKeyUri;
-    this->aniTimeout = aniTimeout;
-    this->aniCustomData = aniCustomData;
+    this->aniRequest = aniRequest;
 }
 
 int32_t CmOpenUkeyAuthDialogSaSession::GetParamsFromEnv()
 {
-    int32_t ret = AniUtils::ParseString(env, this->aniKeyUri, this->keyUri);
+    CmUkeyAniRequest req;
+    int32_t ret = ParseUkeyAniRequest(env, this->aniRequest, req);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("parse ukey auth request object failed, ret = %d", ret);
+        return ret;
+    }
+    ret = AniUtils::ParseString(env, req.keyUri, this->keyUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("parse keyUri failed, ret = %d", ret);
         return ret;
@@ -96,24 +101,25 @@ int32_t CmOpenUkeyAuthDialogSaSession::GetParamsFromEnv()
     }
     /* optional timeout in seconds; non-number/NaN maps to a param error
      * (NaN fails both bounds, so the negated form rejects it) */
-    if (!(this->aniTimeout >= 0 && this->aniTimeout <= UINT32_MAX)) {
+    if (!(req.timeout >= 0 && req.timeout <= UINT32_MAX)) {
         CM_LOG_E("invalid timeout value");
         return CMR_DIALOG_ERROR_PARAM_INVALID;
     }
-    this->timeoutSec = static_cast<uint32_t>(this->aniTimeout);
+    this->timeoutSec = static_cast<uint32_t>(req.timeout);
 
-    /* optional customData; Uint8Array <= 2048 raw bytes (D19)，ets 层已归一化为
-     * 非 undefined 对象（空数组表示缺省） */
-    ret = AniUtils::ParseUint8Array(env, reinterpret_cast<ani_arraybuffer>(this->aniCustomData),
-        this->customData);
-    if (ret != CM_SUCCESS) {
-        CM_LOG_E("parse customData failed, ret = %d", ret);
-        return ret;
-    }
-    if (this->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
-        CM_LOG_E("customData is too long, max: %d", CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE);
-        CM_FREE_BLOB(this->customData);
-        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    /* optional customData; Uint8Array <= 2048 raw bytes (D19)；nullptr = 缺省 */
+    if (req.customData != nullptr) {
+        ret = AniUtils::ParseUint8Array(env, reinterpret_cast<ani_arraybuffer>(req.customData),
+            this->customData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("parse customData failed, ret = %d", ret);
+            return ret;
+        }
+        if (this->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
+            CM_LOG_E("customData is too long, max: %d", CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE);
+            CM_FREE_BLOB(this->customData);
+            return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+        }
     }
 
     ani_status status = env->GlobalReference_Create(reinterpret_cast<ani_ref>(this->callback),
