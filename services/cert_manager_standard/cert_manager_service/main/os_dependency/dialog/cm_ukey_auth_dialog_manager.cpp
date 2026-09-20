@@ -49,6 +49,16 @@ constexpr int32_t REPORT_CODE_PARAM_INVALID = 29700006;
 
 /* HUKS ability query buffer length (aligned with the kits-layer cm_dialog_api_common.cpp convention) */
 constexpr uint32_t HAP_INFO_MAX_LENGTH = 128;
+/* sec -> ms conversion for timer posting (PostTask delays are in ms) */
+constexpr uint32_t MS_PER_SECOND = 1000;
+/* requestId CSPRNG random bytes; hex-encoded to a 2x-length string (spec D7) */
+constexpr uint32_t REQUEST_ID_RANDOM_BYTES = 16;
+/* /dev/urandom short-read retry count (masks occasional IO jitter) */
+constexpr int32_t URANDOM_RETRY_COUNT = 3;
+/* getrandom flags: 0 = default blocking semantics */
+constexpr unsigned int GETRANDOM_FLAGS_NONE = 0;
+/* BMS extension query flag: 0 = no extra filter (exact want + type match) */
+constexpr int32_t BMS_QUERY_FLAG_DEFAULT = 0;
 /* action value of the dialog parameters JSON (spec §6.2) */
 constexpr const char *UKEY_DIALOG_ACTION = "UkeyPINAuth";
 /* Launching an extension from UIExtensionComponent requires this want
@@ -62,19 +72,19 @@ constexpr const char *UKEY_DIALOG_UI_EXTENSION_TYPE = "ukeyAuth";
  * design D7) and must come from the kernel CSPRNG. If no random source is
  * available, refuse to open a session (fail-closed) - no predictable
  * downgraded seeds allowed.
- * 16 random bytes -> 32 hex chars */
+ * REQUEST_ID_RANDOM_BYTES random bytes -> 2x hex chars */
 bool GenerateRequestId(std::string &id)
 {
-    uint8_t buf[16] = {0};
+    uint8_t buf[REQUEST_ID_RANDOM_BYTES] = {0};
     bool randomOk = false;
     /* Prefer the getrandom syscall (no filesystem dependency, blocks until
      * the kernel finishes entropy initialization) */
-    ssize_t got = getrandom(buf, sizeof(buf), 0);
+    ssize_t got = getrandom(buf, sizeof(buf), GETRANDOM_FLAGS_NONE);
     if (got == static_cast<ssize_t>(sizeof(buf))) {
         randomOk = true;
     } else {
         /* Fall back to /dev/urandom; short retries mask occasional IO jitter */
-        for (int attempt = 0; attempt < 3 && !randomOk; attempt++) {
+        for (int attempt = 0; attempt < URANDOM_RETRY_COUNT && !randomOk; attempt++) {
             FILE *f = fopen("/dev/urandom", "rb");
             if (f != nullptr) {
                 randomOk = (fread(buf, 1, sizeof(buf), f) == sizeof(buf));
@@ -88,7 +98,7 @@ bool GenerateRequestId(std::string &id)
     }
     static const char hex[] = "0123456789abcdef";
     id.clear();
-    id.reserve(sizeof(buf) * 2);
+    id.reserve(REQUEST_ID_RANDOM_BYTES * 2); /* 2 hex chars per byte */
     for (size_t i = 0; i < sizeof(buf); i++) {
         id += hex[buf[i] >> 4];
         id += hex[buf[i] & 0xF];
@@ -296,7 +306,7 @@ bool QueryDriverUkeyExtensionAbility(const std::string &bundleName,
     std::vector<AppExecFwk::ExtensionAbilityInfo> infos;
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     bool ok = bundleMgr->QueryExtensionAbilityInfos(want,
-        AppExecFwk::ExtensionAbilityType::UKEY_AUTH, 0, userId, infos);
+        AppExecFwk::ExtensionAbilityType::UKEY_AUTH, BMS_QUERY_FLAG_DEFAULT, userId, infos);
     IPCSkeleton::SetCallingIdentity(identity);
     if (!ok) {
         CM_LOG_E("query extension ability infos failed, bundle: %s, ability: %s",
@@ -429,11 +439,11 @@ sptr<CmSystemDialogConnection> CmUkeyAuthDialogManager::CreateDialogConnectionLo
  * LaunchUiExtensionSessionLocked): on post failure, roll back the established
  * connection (session not in the table -> single-flight not occupied), to
  * avoid a pending session without timeout protection (F8). timeoutSec is
- * already normalized (<= max), * 1000 does not overflow. */
+ * already normalized (<= max), * MS_PER_SECOND does not overflow. */
 bool CmUkeyAuthDialogManager::ArmTotalTimeoutLocked(const std::shared_ptr<UkeyAuthSession> &session,
     const std::string &requestId, uint32_t timeoutSec)
 {
-    if (StartTimerLocked(TotalTimeoutTaskName(requestId), timeoutSec * 1000, /* sec -> ms */
+    if (StartTimerLocked(TotalTimeoutTaskName(requestId), timeoutSec * MS_PER_SECOND, /* sec -> ms */
         [this, requestId] { HandleTotalTimeout(requestId); })) {
         return true;
     }
