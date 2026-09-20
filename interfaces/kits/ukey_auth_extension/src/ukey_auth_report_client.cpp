@@ -38,8 +38,7 @@ const std::u16string CM_SA_DESCRIPTOR = u"ohos.security.cm.service";
 constexpr uint32_t UKEY_REPORT_REQUEST_ID_MAX_LEN = 64;
 constexpr uint32_t UKEY_REPORT_PARAM_CNT = 2;
 /* On-demand cold-start race: the SA may report this binder error for the
- * first request; wait and retry once (aligned with the frameworks-side
- * SendRequestWithRemote) */
+ * first request; wait and retry once */
 constexpr int32_t IPC_ERR_SA_STARTING = 29201;
 constexpr int32_t UKEY_REPORT_RETRY_WAIT_MS = 500;
 

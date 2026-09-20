@@ -16,9 +16,7 @@
 #include "cm_request.h"
 #include "cm_request_dialog.h"
 
-#include <chrono>
 #include <string>
-#include <thread>
 
 #include "securec.h"
 
@@ -189,11 +187,6 @@ int32_t SendRequestParcel(enum CertManagerInterfaceCode type, const struct CmBlo
     return parcelProcessor.ReadFromParcel(reply, data);
 }
 namespace {
-    /* On-demand SA cold start: the first request may fail with this binder
-     * error a few hundred ms before OnStart/Publish finishes. */
-    constexpr int32_t IPC_ERR_SA_STARTING = 29201;
-    constexpr int32_t CM_DIALOG_RETRY_WAIT_MS = 500;
-
     int32_t SendDialogParcelOnce(enum CertManagerInterfaceCode type, const struct CmBlob *inBlob,
         const sptr<IRemoteObject> &remoteObject, int32_t *replyCode)
     {
@@ -248,14 +241,6 @@ int32_t SendRequestWithRemote(enum CertManagerInterfaceCode type, const struct C
     if (inBlob == nullptr || replyCode == nullptr) {
         return CMR_ERROR_NULL_POINTER;
     }
-    int32_t ret = SendDialogParcelOnce(type, inBlob, remoteObject, replyCode);
-    if (ret != IPC_ERR_SA_STARTING) {
-        return ret;
-    }
-    /* cold-start race: wait for the SA to finish OnStart/Publish, re-acquire
-     * the proxy (the early handle may stay unusable) and retry once */
-    CM_LOG_W("SendRequest error:%d, sa may be starting, retry once", ret);
-    std::this_thread::sleep_for(std::chrono::milliseconds(CM_DIALOG_RETRY_WAIT_MS));
     return SendDialogParcelOnce(type, inBlob, remoteObject, replyCode);
 }
 }
