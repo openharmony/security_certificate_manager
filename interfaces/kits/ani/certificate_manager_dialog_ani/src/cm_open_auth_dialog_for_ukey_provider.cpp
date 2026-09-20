@@ -23,32 +23,10 @@
 #include "cm_log.h"
 #include "cm_ukey_dialog_common.h"
 #include "cm_ukey_ani_request.h"
+#include "cm_ukey_ani_result_context.h"
 
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
-namespace {
-/* Result context kept alive from the CmOpenUkeyAuthDialogForDriver call until
- * the AsyncCallbackWrapper is invoked on the IPC thread; ownership is handed to
- * the result callback which deletes it after settling. */
-struct CmUkeyAuthDialogAniResultContext {
-    ani_vm *vm = nullptr;
-    ani_ref globalCallback = nullptr;
-    std::shared_ptr<CmMetricsReport> metricsReport = nullptr;
-};
-
-void ReleaseUkeyAuthResultResources(ani_env *env, CmUkeyAuthDialogAniResultContext *context)
-{
-    ani_status status = env->GlobalReference_Delete(context->globalCallback);
-    if (status != ANI_OK) {
-        CM_LOG_E("delete global reference failed. status = %d", static_cast<int32_t>(status));
-    }
-    status = DetachCurrentThreadEnv(context->vm);
-    if (status != ANI_OK) {
-        CM_LOG_E("DetachCurrentThreadEnv failed. status = %d", static_cast<int32_t>(status));
-    }
-    delete context;
-}
-} // namespace
 
 CmOpenAuthDialogForUkeyProvider::CmOpenAuthDialogForUkeyProvider(ani_env *env,
     const UkeyProviderDialogParams &params, ani_object callback)

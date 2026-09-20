@@ -23,19 +23,11 @@
 #include "cm_log.h"
 #include "cm_ukey_dialog_common.h"
 #include "cm_ukey_ani_request.h"
+#include "cm_ukey_ani_result_context.h"
 
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
 namespace {
-/* Result context kept alive from the CmOpenUkeyAuthDialog call until the
- * AsyncCallbackWrapper is invoked on the IPC thread; ownership is handed to
- * the result callback which deletes it after settling. */
-struct CmUkeyAuthDialogAniResultContext {
-    ani_vm *vm = nullptr;
-    ani_ref globalCallback = nullptr;
-    std::shared_ptr<CmMetricsReport> metricsReport = nullptr;
-};
-
 /* D8 revision: the SA session is delegated from the legacy openUkeyAuthDialog
  * (published since-22; no since-26 error codes are added to its throws
  * surface) - timeout folds to 29700002, single-flight folds to 29700003,
@@ -52,19 +44,6 @@ static int32_t TransformLegacyFoldCode(int32_t resultCode)
         return DIALOG_ERROR_OPERATION_CANCELED; /* 29700002 */
     }
     return DIALOG_ERROR_INSTALL_FAILED; /* 29700003 */
-}
-
-void ReleaseUkeyAuthResultResources(ani_env *env, CmUkeyAuthDialogAniResultContext *context)
-{
-    ani_status status = env->GlobalReference_Delete(context->globalCallback);
-    if (status != ANI_OK) {
-        CM_LOG_E("delete global reference failed. status = %d", static_cast<int32_t>(status));
-    }
-    status = DetachCurrentThreadEnv(context->vm);
-    if (status != ANI_OK) {
-        CM_LOG_E("DetachCurrentThreadEnv failed. status = %d", static_cast<int32_t>(status));
-    }
-    delete context;
 }
 } // namespace
 
