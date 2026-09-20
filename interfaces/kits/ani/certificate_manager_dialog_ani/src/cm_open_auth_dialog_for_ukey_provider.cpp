@@ -153,6 +153,18 @@ int32_t CmOpenAuthDialogForUkeyProvider::GetParamsFromEnv()
     return CM_SUCCESS;
 }
 
+/* 按结果码生成 businessError（自 UkeyAuthDialogResultCallback 拆出）：
+ * 成功 → 无错误对象；其余（含 29700009/29700010 直通码，D8 v4 不折叠）→ 常规映射 */
+static bool GenerateProviderResultBusinessError(ani_env *env, int32_t resultCode,
+    ani_object &businessError)
+{
+    if (resultCode == CM_SUCCESS) {
+        return AniUtils::GenerateBusinessError(env, CM_SUCCESS, "", businessError) == CM_SUCCESS;
+    }
+    businessError = GetDialogAniErrorResult(env, resultCode);
+    return businessError != nullptr;
+}
+
 /* C callback running on an IPC thread: attach the thread to the VM and settle
  * the AsyncCallbackWrapper exactly once with the dialog result delivered by
  * the SA (same mechanism as CmAniUIExtensionCallback::invokeCallback).
@@ -179,20 +191,10 @@ static void UkeyAuthDialogResultCallback(int32_t resultCode, void *userData)
     }
 
     ani_object businessError{};
-    if (resultCode == CM_SUCCESS) {
-        int32_t ret = AniUtils::GenerateBusinessError(env, CM_SUCCESS, "", businessError);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("generate businessError failed, ret = %d", ret);
-            ReleaseUkeyAuthResultResources(env, context);
-            return;
-        }
-    } else {
-        businessError = GetDialogAniErrorResult(env, resultCode);
-        if (businessError == nullptr) {
-            CM_LOG_E("generate businessError failed");
-            ReleaseUkeyAuthResultResources(env, context);
-            return;
-        }
+    if (!GenerateProviderResultBusinessError(env, resultCode, businessError)) {
+        CM_LOG_E("generate businessError failed, code = %d", resultCode);
+        ReleaseUkeyAuthResultResources(env, context);
+        return;
     }
 
     ani_ref nullRef{};

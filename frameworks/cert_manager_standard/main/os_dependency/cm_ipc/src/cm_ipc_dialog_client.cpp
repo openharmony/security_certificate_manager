@@ -186,6 +186,36 @@ void CmDialogCallbackStub::Deliver(int32_t result)
 using namespace OHOS;
 using namespace OHOS::Security::CertManager;
 
+/* OPEN 请求公共发送序列（两个入口共用）：arm 客户端兜底定时器 → 发送 →
+ * 同步失败 Cancel 销毁 stub（不回调）/ 成功 HoldSelf 自持至 Deliver；返回同步码 */
+static int32_t SendOpenDialogRequest(enum CertManagerInterfaceCode type,
+    const sptr<CmDialogCallbackStub> &stub, const struct CmParamSet *sendParamSet)
+{
+    int32_t ret = CM_SUCCESS;
+    int32_t replyCode = CM_FAILURE;
+    do {
+        if (!stub->StartFallbackTimer()) {
+            /* reject rather than leave a callback that can hang forever */
+            CM_LOG_E("arm ukey dialog fallback timer failed");
+            ret = CMR_DIALOG_ERROR_INTERNAL;
+            break;
+        }
+        struct CmBlob parcelBlob = { sendParamSet->paramSetSize,
+            reinterpret_cast<uint8_t *>(const_cast<struct CmParamSet *>(sendParamSet)) };
+        ret = OHOS::SendRequestWithRemote(type, &parcelBlob, stub, &replyCode);
+        if (ret != CM_SUCCESS || replyCode != CM_SUCCESS) {
+            /* sync error: destroy the stub without invoking the callback (spec 4) */
+            CM_LOG_E("ukey dialog request failed, ret = %d, reply = %d", ret, replyCode);
+            stub->Cancel();
+            ret = (ret != CM_SUCCESS) ? ret : replyCode;
+            break;
+        }
+        stub->HoldSelf(); /* stub manages its own lifetime until Deliver */
+        CM_LOG_I("ukey dialog request accepted");
+    } while (0);
+    return ret;
+}
+
 int32_t CmClientOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest,
     CmUkeyAuthDialogResultCallback callback, void *userData)
 {
@@ -223,30 +253,8 @@ int32_t CmClientOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest
         CmFreeParamSet(&sendParamSet);
         return ret;
     }
-    struct CmBlob parcelBlob = { sendParamSet->paramSetSize, reinterpret_cast<uint8_t *>(sendParamSet) };
 
-    do {
-        if (!stub->StartFallbackTimer()) {
-            /* reject rather than leave a callback that can hang forever */
-            CM_LOG_E("arm ukey dialog fallback timer failed");
-            ret = CMR_DIALOG_ERROR_INTERNAL;
-            break;
-        }
-
-        int32_t replyCode = CM_FAILURE;
-        ret = OHOS::SendRequestWithRemote(CM_MSG_OPEN_UKEY_AUTH_DIALOG, &parcelBlob, stub, &replyCode);
-        if (ret != CM_SUCCESS || replyCode != CM_SUCCESS) {
-            /* sync error: destroy the stub without invoking the callback (spec 4) */
-            CM_LOG_E("open ukey auth dialog request failed, ret = %d, reply = %d", ret, replyCode);
-            stub->Cancel();
-            ret = (ret != CM_SUCCESS) ? ret : replyCode;
-            break;
-        }
-
-        stub->HoldSelf(); /* stub manages its own lifetime until Deliver */
-        CM_LOG_I("open ukey auth dialog request accepted");
-    } while (0);
-
+    ret = SendOpenDialogRequest(CM_MSG_OPEN_UKEY_AUTH_DIALOG, stub, sendParamSet);
     CmFreeParamSet(&sendParamSet);
     return ret;
 }
@@ -292,27 +300,8 @@ int32_t CmClientOpenUkeyAuthDialogForDriver(const struct UkeyAuthDialogInfo *dia
         CmFreeParamSet(&sendParamSet);
         return ret;
     }
-    struct CmBlob parcelBlob = { sendParamSet->paramSetSize, reinterpret_cast<uint8_t *>(sendParamSet) };
 
-    do {
-        if (!stub->StartFallbackTimer()) {
-            CM_LOG_E("arm ukey dialog fallback timer failed");
-            ret = CMR_DIALOG_ERROR_INTERNAL;
-            break;
-        }
-        int32_t replyCode = CM_FAILURE;
-        ret = OHOS::SendRequestWithRemote(CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER, &parcelBlob,
-            stub, &replyCode);
-        if (ret != CM_SUCCESS || replyCode != CM_SUCCESS) {
-            CM_LOG_E("open driver dialog request failed, ret = %d, reply = %d", ret, replyCode);
-            stub->Cancel();
-            ret = (ret != CM_SUCCESS) ? ret : replyCode;
-            break;
-        }
-        stub->HoldSelf();
-        CM_LOG_I("open driver dialog request accepted");
-    } while (0);
-
+    ret = SendOpenDialogRequest(CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER, stub, sendParamSet);
     CmFreeParamSet(&sendParamSet);
     return ret;
 }

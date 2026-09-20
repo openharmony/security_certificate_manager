@@ -131,6 +131,23 @@ int32_t CmOpenUkeyAuthDialogSaSession::GetParamsFromEnv()
     return CM_SUCCESS;
 }
 
+/* 按结果码生成 businessError（自 UkeyAuthDialogResultCallback 拆出）：
+ * 成功 → 无错误对象；D8 修订折叠码 → 折叠码 + 具体原因消息；其余 → 常规映射 */
+static bool GenerateUkeyResultBusinessError(ani_env *env, int32_t resultCode, ani_object &businessError)
+{
+    if (resultCode == CM_SUCCESS) {
+        return AniUtils::GenerateBusinessError(env, CM_SUCCESS, "", businessError) == CM_SUCCESS;
+    }
+    if (IsLegacyFoldCode(resultCode)) {
+        int32_t jsCode = TransformLegacyFoldCode(resultCode);
+        const std::string &msg = (resultCode == CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT)
+            ? UKEY_AUTH_REPORT_TIMEOUT_MSG : UKEY_DIALOG_IN_PROGRESS_MSG;
+        return AniUtils::GenerateBusinessError(env, jsCode, msg.c_str(), businessError) == CM_SUCCESS;
+    }
+    businessError = GetDialogAniErrorResult(env, resultCode);
+    return businessError != nullptr;
+}
+
 /* C callback running on an IPC thread: attach the thread to the VM and settle
  * the AsyncCallbackWrapper exactly once with the dialog result delivered by
  * the SA (same mechanism as CmAniUIExtensionCallback::invokeCallback). */
@@ -160,31 +177,10 @@ static void UkeyAuthDialogResultCallback(int32_t resultCode, void *userData)
     }
 
     ani_object businessError{};
-    if (resultCode == CM_SUCCESS) {
-        int32_t ret = AniUtils::GenerateBusinessError(env, CM_SUCCESS, "", businessError);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("generate businessError failed, ret = %d", ret);
-            ReleaseUkeyAuthResultResources(env, context);
-            return;
-        }
-    } else if (IsLegacyFoldCode(resultCode)) {
-        /* D8 修订：折叠码 + 具体原因消息 */
-        int32_t jsCode = TransformLegacyFoldCode(resultCode);
-        const std::string &msg = (resultCode == CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT)
-            ? UKEY_AUTH_REPORT_TIMEOUT_MSG : UKEY_DIALOG_IN_PROGRESS_MSG;
-        int32_t ret = AniUtils::GenerateBusinessError(env, jsCode, msg.c_str(), businessError);
-        if (ret != CM_SUCCESS) {
-            CM_LOG_E("generate businessError failed, ret = %d", ret);
-            ReleaseUkeyAuthResultResources(env, context);
-            return;
-        }
-    } else {
-        businessError = GetDialogAniErrorResult(env, resultCode);
-        if (businessError == nullptr) {
-            CM_LOG_E("generate businessError failed");
-            ReleaseUkeyAuthResultResources(env, context);
-            return;
-        }
+    if (!GenerateUkeyResultBusinessError(env, resultCode, businessError)) {
+        CM_LOG_E("generate businessError failed, code = %d", resultCode);
+        ReleaseUkeyAuthResultResources(env, context);
+        return;
     }
 
     ani_ref nullRef{};

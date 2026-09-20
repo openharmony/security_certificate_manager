@@ -130,6 +130,10 @@ static bool ParseUkeyTimeoutDuration(std::shared_ptr<CmUIExtensionRequestContext
     return true;
 }
 
+/* 分配并拷贝 customData blob（ParseUkeyCustomData 的后半段，定义在其后） */
+static bool AllocCustomDataBlob(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    const void *data, size_t length);
+
 /* 可选 customData（D19）：缺省/undefined/null 保持无；必须为 Uint8Array 且
  * 至多 2048 原始字节 */
 static bool ParseUkeyCustomData(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
@@ -161,9 +165,12 @@ static bool ParseUkeyCustomData(std::shared_ptr<CmUIExtensionRequestContext> asy
         CM_LOG_E("customData is too long, max: %d", CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE);
         return false;
     }
-    if (length == 0) {
-        return true;
-    }
+    return (length == 0) ? true : AllocCustomDataBlob(asyncContext, data, length);
+}
+
+static bool AllocCustomDataBlob(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    const void *data, size_t length)
+{
     asyncContext->authCustomData = static_cast<CmBlob *>(CmMalloc(sizeof(CmBlob)));
     if (asyncContext->authCustomData == nullptr) {
         CM_LOG_E("alloc customData blob failed");
@@ -329,6 +336,67 @@ static napi_value GenerateUkeyResultError(napi_env env, int32_t resultCode,
     return businessError;
 }
 
+static napi_value OpenUkeyAuthDialogViaSa(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::Security::CertManager::CmMetricsReport &&report);
+
+/* SA 会话路由分流（spec v4 §4.1）：注册类型为 UIExtension 且 PC（两级判定，
+ * CmUkeyIsPcPlatformOrPcMode）时委托 SA 会话路径；返回 nullptr 表示走 context
+ * 直启路径（UIAbility / 查询失败 / UIExtension+非PC） */
+static napi_value TryOpenUkeyAuthDialogViaSa(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::Security::CertManager::CmMetricsReport &report)
+{
+    std::string driverBundle;
+    std::string driverAbility;
+    uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
+    int32_t queryRet = GetUkeyAbilityInfo(asyncContext->certUri, driverBundle, driverAbility,
+        abilityType);
+    if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION &&
+        CmUkeyIsPcPlatformOrPcMode()) {
+        CM_LOG_I("ukey driver registered a UIExtensionAbility pin dialog, go sa session path");
+        return OpenUkeyAuthDialogViaSa(asyncContext, std::move(report));
+    }
+    return nullptr;
+}
+
+/* 建立 ukey 弹窗结果的 threadsafe function（两个 SA 委托入口共用）：
+ * 失败返回 false（context 释放由调用方处理） */
+static bool CreateUkeyResultTsfn(napi_env env, CmUkeyAuthResultContext *resultContext,
+    napi_threadsafe_function_call_js callJs)
+{
+    napi_value resourceName = nullptr;
+    if (napi_create_string_latin1(env, "CmUkeyAuthDialogResult", NAPI_AUTO_LENGTH,
+        &resourceName) != napi_ok) {
+        CM_LOG_E("create resource name failed");
+        return false;
+    }
+    napi_status status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 0, 1,
+        resultContext, UvTsfnFinalize, resultContext, callJs, &resultContext->tsfn);
+    if (status != napi_ok) {
+        CM_LOG_E("create threadsafe function failed, status = %d", static_cast<int32_t>(status));
+        return false;
+    }
+    return true;
+}
+
+/* tsfn 建立失败收尾：以泛化错误 reject promise 并释放结果上下文 */
+static void RejectUkeyResultTsfnError(napi_env env, napi_deferred deferred,
+    CmUkeyAuthResultContext *resultContext)
+{
+    napi_value error = GenerateBusinessError(env, DIALOG_ERROR_GENERIC,
+        resultContext->metricsReport.get());
+    if (napi_reject_deferred(env, deferred, error) != napi_ok) {
+        CM_LOG_E("reject deferred failed");
+    }
+    /* 清理路径无条件执行：tsfn 已建立（创建过程部分失败残留句柄）时必须先
+     * release（随后由 UvTsfnFinalize 释放 context，不得在此 double free）；
+     * 未建立时直接 delete */
+    if (resultContext->tsfn != nullptr) {
+        napi_release_threadsafe_function(resultContext->tsfn, napi_tsfn_release);
+        return;
+    }
+    delete resultContext;
+}
+
 // SA-session delegation: the dialog is driven by the SA-side ukey session and
 // the final result arrives asynchronously on an IPC thread. Only reachable
 // from the published openUkeyAuthDialog (the sole, with-context overload),
@@ -353,17 +421,8 @@ static napi_value OpenUkeyAuthDialogViaSa(std::shared_ptr<CmUIExtensionRequestCo
     resultContext->metricsReport =
         std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
 
-    napi_value resourceName = nullptr;
-    NAPI_CALL(env, napi_create_string_latin1(env, "CmUkeyAuthDialogResult", NAPI_AUTO_LENGTH,
-        &resourceName));
-    napi_status status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 0, 1,
-        resultContext, UvTsfnFinalize, resultContext, UvTsfnCallback, &resultContext->tsfn);
-    if (status != napi_ok) {
-        CM_LOG_E("create threadsafe function failed, status = %d", static_cast<int32_t>(status));
-        napi_value error = GenerateBusinessError(env, DIALOG_ERROR_GENERIC,
-            resultContext->metricsReport.get());
-        NAPI_CALL(env, napi_reject_deferred(env, deferred, error));
-        delete resultContext;
+    if (!CreateUkeyResultTsfn(env, resultContext, UvTsfnCallback)) {
+        RejectUkeyResultTsfnError(env, deferred, resultContext);
         return result;
     }
 
@@ -389,6 +448,11 @@ static napi_value OpenUkeyAuthDialogViaSa(std::shared_ptr<CmUIExtensionRequestCo
     }
     return result;
 }
+
+/* context 直启序列（CMNapiOpenUkeyAuthorizeDialog 尾段，定义在其后）：组 want
+ * （驱动 UIAbility / 系统默认弹框，spec v4 §4.2）并拉起 */
+static napi_value DirectLaunchUkeyAuthDialog(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::Security::CertManager::CmMetricsReport &&report);
 
 napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
 {
@@ -427,24 +491,21 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    // The only overload (with context). Branch by the registered ability type:
-    // UIExtension + PC → SA session path; everything else (UIAbility,
-    // UIExtension + non-PC, query failure) direct-launches via the caller's
-    // context (driver UIAbility want, or the system default dialog).
-    {
-        std::string driverBundle;
-        std::string driverAbility;
-        uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
-        int32_t queryRet = GetUkeyAbilityInfo(asyncContext->certUri, driverBundle, driverAbility,
-            abilityType);
-        if (queryRet == CM_SUCCESS && abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION &&
-            CmUkeyIsPcPlatformOrPcMode()) {
-            CM_LOG_I("ukey driver registered a UIExtensionAbility pin dialog, go sa session path");
-            return OpenUkeyAuthDialogViaSa(asyncContext, std::move(report));
-        }
-        /* 直启路径（原有实现）：UIAbility / 查询失败(默认弹框) / UIExtension+非PC(默认弹框) */
+    // The only overload (with context); the SA-session routing probe runs first.
+    napi_value saResult = TryOpenUkeyAuthDialogViaSa(asyncContext, report);
+    if (saResult != nullptr) {
+        return saResult;
     }
+    /* 直启路径（原有实现）：UIAbility / 查询失败(默认弹框) / UIExtension+非PC(默认弹框) */
+    CM_LOG_I("cert authorize dialog end");
+    return DirectLaunchUkeyAuthDialog(asyncContext, std::move(report));
+}
 
+static napi_value DirectLaunchUkeyAuthDialog(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
+    OHOS::Security::CertManager::CmMetricsReport &&report)
+{
+    napi_env env = asyncContext->env;
+    napi_value result = nullptr;
     NAPI_CALL(env, napi_create_promise(env, &asyncContext->deferred, &result));
     auto reportHolder = std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
     asyncContext->metricsReport = reportHolder;
@@ -457,8 +518,6 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
         return nullptr;
     }
     StartUkeyPinAbility(asyncContext, want, uiExtCallback);
-
-    CM_LOG_I("cert authorize dialog end");
     return result;
 }
 
@@ -493,17 +552,8 @@ static napi_value OpenAuthDialogForUkeyProviderViaSa(
     resultContext->metricsReport =
         std::make_shared<OHOS::Security::CertManager::CmMetricsReport>(std::move(report));
 
-    napi_value resourceName = nullptr;
-    NAPI_CALL(env, napi_create_string_latin1(env, "CmUkeyAuthDialogResult", NAPI_AUTO_LENGTH,
-        &resourceName));
-    napi_status status = napi_create_threadsafe_function(env, nullptr, nullptr, resourceName, 0, 1,
-        resultContext, UvTsfnFinalize, resultContext, UvProviderTsfnCallback, &resultContext->tsfn);
-    if (status != napi_ok) {
-        CM_LOG_E("create threadsafe function failed, status = %d", static_cast<int32_t>(status));
-        napi_value error = GenerateBusinessError(env, DIALOG_ERROR_GENERIC,
-            resultContext->metricsReport.get());
-        NAPI_CALL(env, napi_reject_deferred(env, deferred, error));
-        delete resultContext;
+    if (!CreateUkeyResultTsfn(env, resultContext, UvProviderTsfnCallback)) {
+        RejectUkeyResultTsfnError(env, deferred, resultContext);
         return result;
     }
 

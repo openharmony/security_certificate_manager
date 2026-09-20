@@ -109,8 +109,7 @@ int32_t NormalizeReportCode(int32_t resultCode)
     }
 }
 
-std::string TotalTimeoutTaskName(const std::string &requestId)
-{
+std::string TotalTimeoutTaskName(const std::string &requestId){
     return "ukey_total_timeout_" + requestId;
 }
 
@@ -139,6 +138,23 @@ public:
 private:
     std::string requestId_;
 };
+
+/* customData base64 编码挂载（spec D18/R10：base64 串为 customData 派生敏感
+ * 数据，用后即擦） */
+bool AppendCustomDataToJson(cJSON *root, const struct CmBlob *customData)
+{
+    std::string customDataB64 = CmBase64Encode(customData->data, customData->size);
+    cJSON *customItem = cJSON_CreateString(customDataB64.c_str());
+    if (customItem == nullptr || !cJSON_AddItemToObject(root, CM_UKEY_DIALOG_PARAM_CUSTOM_DATA,
+        customItem)) {
+        if (customItem != nullptr) {
+            cJSON_Delete(customItem);
+        }
+        return false;
+    }
+    std::fill(customDataB64.begin(), customDataB64.end(), '\0');
+    return true;
+}
 
 /* 组装驱动 UIExtension 弹框 parameters JSON（spec v4 §6.2）：
  * {"keyUri":"<uri>","appUid":<callerUid>,"requestId":"<id>","action":"UkeyPINAuth",
@@ -176,17 +192,7 @@ bool BuildUkeyDialogParams(const std::string &requestId, const UkeyDialogLaunchP
         }
     }
     if (ok && params.customData.size > 0) {
-        std::string customDataB64 = CmBase64Encode(params.customData.data, params.customData.size);
-        cJSON *customItem = cJSON_CreateString(customDataB64.c_str());
-        if (customItem == nullptr || !cJSON_AddItemToObject(root, CM_UKEY_DIALOG_PARAM_CUSTOM_DATA,
-            customItem)) {
-            if (customItem != nullptr) {
-                cJSON_Delete(customItem);
-            }
-            ok = false;
-        }
-        /* base64 串为 customData 派生敏感数据，用后即擦（spec R10） */
-        std::fill(customDataB64.begin(), customDataB64.end(), '\0');
+        ok = AppendCustomDataToJson(root, &params.customData);
     }
     if (ok) {
         char *jsonStr = cJSON_PrintUnformatted(root);
@@ -375,6 +381,53 @@ uint32_t CmUkeyAuthDialogManager::NormalizeTimeoutSecLocked(uint32_t timeoutSec)
     return timeoutSec;
 }
 
+/* 组装弹框参数并建立系统弹窗连接（自 LaunchUiExtensionSessionLocked 拆出）：
+ * 失败时返回 nullptr（Connect 失败已擦除参数；会话未入表，单飞不占用） */
+sptr<CmSystemDialogConnection> CmUkeyAuthDialogManager::CreateDialogConnectionLocked(
+    const std::shared_ptr<UkeyAuthSession> &session, const UkeyDialogLaunchParams &params,
+    int32_t &ret)
+{
+    std::string paramsJson;
+    if (!BuildUkeyDialogParams(session->requestId, params, paramsJson)) {
+        CM_LOG_E("build dialog params json failed");
+        return nullptr;
+    }
+    sptr<CmSystemDialogConnection> connection = new (std::nothrow) CmSystemDialogConnection(
+        session->requestId, params.bundleName, params.abilityName, paramsJson);
+    if (connection == nullptr) {
+        CM_LOG_E("create system dialog connection failed");
+        ret = CMR_ERROR_MALLOC_FAIL;
+        return nullptr;
+    }
+    if (launcher_->Connect(connection) != CM_SUCCESS) {
+        CM_LOG_E("connect system dialog service failed");
+        connection->ScrubParams();
+        return nullptr;
+    }
+    return connection;
+}
+
+/* 投递会话总超时定时器（自 LaunchUiExtensionSessionLocked 拆出）：投递失败时
+ * 回滚已建立的连接（会话不入表 -> 单飞不被占用），避免无超时保护的挂起会话
+ * （F8）。timeoutSec 已归一化（≤ max），* 1000 无溢出。 */
+bool CmUkeyAuthDialogManager::ArmTotalTimeoutLocked(const std::shared_ptr<UkeyAuthSession> &session,
+    const std::string &requestId, uint32_t timeoutSec)
+{
+    if (StartTimerLocked(TotalTimeoutTaskName(requestId), timeoutSec * 1000, /* sec -> ms */
+        [this, requestId] { HandleTotalTimeout(requestId); })) {
+        return true;
+    }
+    sptr<CmSystemDialogConnection> connection = session->connection;
+    if (connection != nullptr) {
+        connection->ReleaseWindow(nullptr);
+        connection->ScrubParams();
+    }
+    if (launcher_ != nullptr && connection != nullptr) {
+        launcher_->Disconnect(connection);
+    }
+    return false;
+}
+
 /* OpenDialog/OpenDriverDialog 公共拉起序列（spec v4 §4.1）：bundle/ability 已定、
  * PC 门禁已过；requestId→会话→连接→总超时→入表→死亡监听/保活。返回同步码。 */
 int32_t CmUkeyAuthDialogManager::LaunchUiExtensionSessionLocked(const UkeyDialogLaunchParams &params)
@@ -401,41 +454,16 @@ int32_t CmUkeyAuthDialogManager::LaunchUiExtensionSessionLocked(const UkeyDialog
     session->clientCallback = params.clientCallback;
     session->state = UkeyAuthSession::LAUNCHING;
 
-    {
-        std::string paramsJson;
-        if (!BuildUkeyDialogParams(session->requestId, params, paramsJson)) {
-            CM_LOG_E("build dialog params json failed");
-            return CMR_DIALOG_ERROR_INTERNAL;
-        }
-        sptr<CmSystemDialogConnection> connection = new (std::nothrow) CmSystemDialogConnection(
-            session->requestId, params.bundleName, params.abilityName, paramsJson);
-        if (connection == nullptr) {
-            CM_LOG_E("create system dialog connection failed");
-            return CMR_ERROR_MALLOC_FAIL;
-        }
-        if (launcher_->Connect(connection) != CM_SUCCESS) {
-            CM_LOG_E("connect system dialog service failed");
-            connection->ScrubParams();
-            return CMR_DIALOG_ERROR_INTERNAL; // session not stored -> single-flight not occupied
-        }
-        session->connection = connection;
+    int32_t connRet = CMR_DIALOG_ERROR_INTERNAL;
+    session->connection = CreateDialogConnectionLocked(session, params, connRet);
+    if (session->connection == nullptr) {
+        return connRet; /* 参数构造/分配/Connect 失败（会话未入表，单飞不占用） */
     }
 
     session->state = UkeyAuthSession::WAITING_REPORT;
     std::string requestId = session->requestId;
-    /* 总超时是会话唯一的安全网，投递失败时直接拒绝并回滚已建立的连接
-     * （会话不入表 -> 单飞不被占用），避免产生无超时保护的挂起会话（F8）。
-     * timeoutSec 已归一化（≤ max），* 1000 无溢出。 */
-    if (!StartTimerLocked(TotalTimeoutTaskName(requestId), params.timeoutSec * 1000, /* sec -> ms */
-        [this, requestId] { HandleTotalTimeout(requestId); })) {
-        sptr<CmSystemDialogConnection> connection = session->connection;
-        if (connection != nullptr) {
-            connection->ReleaseWindow(nullptr);
-            connection->ScrubParams();
-        }
-        if (launcher_ != nullptr && connection != nullptr) {
-            launcher_->Disconnect(connection);
-        }
+    /* 总超时是会话唯一的安全网，投递失败时回滚连接并拒绝（F8，见 ArmTotalTimeout） */
+    if (!ArmTotalTimeoutLocked(session, requestId, params.timeoutSec)) {
         return CMR_DIALOG_ERROR_INTERNAL;
     }
     session_ = session;

@@ -170,6 +170,15 @@ private:
     /* 从 OpenDialog/OpenDriverDialog 公共拉起序列抽出（目标 bundle/ability 已定，
      * PC 门禁已过）：requestId→会话→连接→总超时。返回同步码。 */
     int32_t LaunchUiExtensionSessionLocked(const UkeyDialogLaunchParams &params);
+    /* 组装弹框参数并建立系统弹窗连接（自 LaunchUiExtensionSessionLocked 拆出）；
+     * 失败返回 nullptr 且 ret 带回具体错误码 */
+    sptr<CmSystemDialogConnection> CreateDialogConnectionLocked(
+        const std::shared_ptr<UkeyAuthSession> &session, const UkeyDialogLaunchParams &params,
+        int32_t &ret);
+    /* 投递会话总超时定时器（自 LaunchUiExtensionSessionLocked 拆出）：失败时
+     * 回滚已建立的连接并返回 false */
+    bool ArmTotalTimeoutLocked(const std::shared_ptr<UkeyAuthSession> &session,
+        const std::string &requestId, uint32_t timeoutSec);
     uint32_t NormalizeTimeoutSecLocked(uint32_t timeoutSec);
     /* OpenDriverDialog 锁前入参组合校验（spec v4 D23/D24），供主体分摊复杂度 */
     static int32_t ValidateDriverDialogRequest(const UkeyDriverDialogRequest &req);
