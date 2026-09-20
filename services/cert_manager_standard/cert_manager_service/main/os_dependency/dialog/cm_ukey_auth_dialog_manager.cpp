@@ -46,6 +46,7 @@ constexpr int32_t REPORT_CODE_GENERIC_ERROR = 29700001;
 constexpr int32_t REPORT_CODE_OPERATION_CANCELED = 29700002;
 constexpr int32_t REPORT_CODE_INSTALL_FAILED = 29700003;
 constexpr int32_t REPORT_CODE_PARAM_INVALID = 29700006;
+constexpr int32_t EXTENSION_TYPE_UKEY_AUTH = 40;
 
 /* HUKS ability query buffer length (aligned with the kits-layer cm_dialog_api_common.cpp convention) */
 constexpr uint32_t HAP_INFO_MAX_LENGTH = 128;
@@ -310,8 +311,7 @@ bool QueryDriverUkeyExtensionAbility(const std::string &bundleName,
     want.SetElementName(bundleName, abilityName);
     std::vector<AppExecFwk::ExtensionAbilityInfo> infos;
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    bool ok = bundleMgr->QueryExtensionAbilityInfos(want,
-        AppExecFwk::ExtensionAbilityType::UKEY_AUTH, BMS_QUERY_FLAG_DEFAULT, userId, infos);
+    bool ok = bundleMgr->QueryExtensionAbilityInfos(want, EXTENSION_TYPE_UKEY_AUTH, 0, userId, infos);
     IPCSkeleton::SetCallingIdentity(identity);
     if (!ok) {
         CM_LOG_E("query extension ability infos failed, bundle: %s, ability: %s",
