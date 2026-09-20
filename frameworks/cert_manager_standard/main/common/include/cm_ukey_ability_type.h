@@ -16,10 +16,12 @@
 #ifndef CM_UKEY_ABILITY_TYPE_H
 #define CM_UKEY_ABILITY_TYPE_H
 
-/* UKey 驱动注册的自定义 Pin 弹框 ability 类型（对齐 HUKS HksAbilityInfo.abilityType
- * 取值约定：0 = UIAbility，1 = UIExtensionAbility；v4 起 openUkeyAuthDialog 仅放行 1）。
- * 注：本源码树 HUKS 的 HksAbilityInfo 尚未合入 abilityType 字段，非桩路径
- * 暂固定返回 UIAbility，待 HUKS 字段合入后替换为透传。 */
+/* Custom Pin dialog ability type registered by a UKey driver (aligned with the
+ * HUKS HksAbilityInfo.abilityType value convention: 0 = UIAbility,
+ * 1 = UIExtensionAbility; since v4 openUkeyAuthDialog only admits 1).
+ * Note: HksAbilityInfo in this source tree has not yet merged the
+ * abilityType field, so the non-stub path temporarily returns UIAbility;
+ * switch to pass-through once the HUKS field lands. */
 #define CM_UKEY_ABILITY_TYPE_UIABILITY   0
 #define CM_UKEY_ABILITY_TYPE_UIEXTENSION 1
 

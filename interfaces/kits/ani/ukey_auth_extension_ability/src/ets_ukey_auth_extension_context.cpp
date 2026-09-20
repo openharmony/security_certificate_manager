@@ -115,8 +115,10 @@ void EtsUkeyAuthExtensionContext::OnTerminateSelfWithResult(
     }
     OHOS::AAFwk::Want want;
     int resultCode = 0;
-    /* abilityResult 为跨边界输入，解析失败须检查（对齐 js 版 OnTerminateSelfWithResult）：
-     * 失败以参数错误回调，不得带默认值继续上报 */
+    /* abilityResult is cross-boundary input; a parse failure must be checked
+     * (aligned with the js version of OnTerminateSelfWithResult): on failure
+     * report back with a parameter error; never continue reporting with
+     * default values */
     if (!OHOS::AppExecFwk::UnWrapAbilityResult(env, abilityResult, resultCode, want)) {
         CM_LOG_E("parse ability result failed");
         ani_object errObj = AbilityRuntime::EtsErrorUtil::CreateError(
@@ -165,8 +167,9 @@ void EtsUkeyAuthExtensionContext::Clean(ani_env *env, ani_object object)
     }
 }
 
-/* 尾段装配：workContext 弱指针挂载 + Cleaner 绑定 + 基类上下文构造 + 全局引用
- * Bind（自 CreateEtsUkeyAuthExtensionContext 拆出以控制函数行数） */
+/* Tail assembly: workContext weak-pointer attachment + Cleaner binding + base
+ * context construction + global-reference Bind (split out of
+ * CreateEtsUkeyAuthExtensionContext to cap function line count) */
 static bool AttachEtsContextBaseAndRef(ani_env *env, ani_class &cls, ani_object &contextObj,
     const std::shared_ptr<UkeyAuthExtensionContext> &context)
 {

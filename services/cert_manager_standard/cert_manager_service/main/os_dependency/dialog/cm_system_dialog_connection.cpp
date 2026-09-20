@@ -28,7 +28,7 @@
 
 namespace OHOS::Security::CertManager {
 namespace {
-/* START_DIALOG 报文 key-value 组数，对齐 useriam SIGNAL_NUM */
+/* Key-value pair count of the START_DIALOG message, aligned with useriam SIGNAL_NUM */
 constexpr int32_t START_DIALOG_SIGNAL_NUM = 3;
 constexpr const char *SYSTEM_DIALOG_BUNDLE = "com.ohos.systemui";
 constexpr const char *SYSTEM_DIALOG_ABILITY = "com.ohos.systemui.dialog";
@@ -49,16 +49,17 @@ void CmSystemDialogConnection::OnAbilityConnectDone(const AppExecFwk::ElementNam
         return;
     }
 
-    /* 与 ScrubParams 互斥地快照参数与代理：收尾擦除后不再补发启动命令 */
+    /* Snapshot params and proxy mutually exclusive with ScrubParams: no more
+     * start command after the tail-end scrub */
     std::string paramsSnapshot;
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        if (released_) { return; } /* ReleaseWindow 之后不再补发启动命令 */
+        if (released_) { return; } /* no more start command after ReleaseWindow */
         paramsSnapshot = paramsJson_;
         dialogRemoteObject_ = remoteObject;
     }
 
-    /* 报文格式逐字段对齐 useriam ui_extension_ability_connection.cpp:47-57 */
+    /* Message format aligned field-by-field with useriam ui_extension_ability_connection.cpp:47-57 */
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -123,7 +124,7 @@ int32_t RealSystemDialogLauncher::Connect(const sptr<IAbilityConnection> &conn)
     }
     AAFwk::Want want;
     want.SetElementName(SYSTEM_DIALOG_BUNDLE, SYSTEM_DIALOG_ABILITY);
-    /* 以 SA 身份发起连接（对齐 useriam widget_context.cpp:552-558） */
+    /* Connect under the SA identity (aligned with useriam widget_context.cpp:552-558) */
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     auto ret = AAFwk::ExtensionManagerClient::GetInstance().ConnectServiceExtensionAbility(
         want, conn->AsObject(), nullptr, -1);
@@ -141,7 +142,7 @@ void RealSystemDialogLauncher::Disconnect(const sptr<IAbilityConnection> &conn)
     }
     auto ret = AAFwk::ExtensionManagerClient::GetInstance().DisconnectAbility(conn->AsObject());
     if (ret != ERR_OK) {
-        /* 已断连（服务死亡/从未连接成功）等错误安全，可忽略 */
+        /* Errors such as already disconnected (service dead / never connected) are safe to ignore */
         CM_LOG_W("disconnect system dialog service ret: %d", ret);
     }
 }

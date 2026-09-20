@@ -34,7 +34,7 @@ declare_args() {
 
 }
 
-# 当且仅当底层存在 hiviewdfx_api_metrics_ext 部件�?才打开 cert_manager �?NAPI/ANI 打点
+# Enable cert_manager NAPI/ANI API metrics only when the hiviewdfx_api_metrics_ext part exists
 cm_api_metrics_enable = false
 if (defined(global_parts_info) &&
     defined(global_parts_info.hiviewdfx_api_metrics_ext)) {

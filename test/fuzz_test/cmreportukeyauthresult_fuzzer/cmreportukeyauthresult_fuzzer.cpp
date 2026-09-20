@@ -30,8 +30,9 @@ namespace OHOS {
         uint32_t requestIdSize = (size > MAX_REQUEST_ID_LEN) ? MAX_REQUEST_ID_LEN :
             static_cast<uint32_t>(size);
 
-        /* resultCode 取满 4 字节：覆盖 JS 协议码（29700001/2/3/6）、负值与未知值
-         * 的白名单折叠路径（spec §9.3），而非仅 0..255 */
+        /* resultCode takes a full 4 bytes: covers the whitelist folding path
+         * for JS protocol codes (29700001/2/3/6), negative and unknown
+         * values (spec §9.3), not just 0..255 */
         int32_t resultCode = 0;
         if (size >= MAX_REQUEST_ID_LEN + sizeof(resultCode)) {
             if (memcpy_s(&resultCode, sizeof(resultCode), data + MAX_REQUEST_ID_LEN,

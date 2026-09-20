@@ -21,10 +21,12 @@
 #include "cm_open_dialog.h"
 
 namespace OHOS::Security::CertManager::Ani {
-/* 带 context 直启实现（原有实现恢复，spec v4.2）：承接驱动 UIAbility 弹框直启与
- * 系统默认弹框直启（UIAbility / 查询失败 / UIExtension+非PC；PC + UIExtension 已
- * 在 cm_dialog_ani.cpp 委托 SA 会话）。aniRequest 为调用方传入的 UkeyAuthRequest
- * ets 对象（字段解包见 cm_ukey_ani_request.h）。 */
+/* Context-carrying direct-launch implementation (original implementation
+ * restored, spec v4.2): handles direct launch of the driver UIAbility dialog
+ * and of the system default dialog (UIAbility / query failure /
+ * UIExtension + non-PC; PC + UIExtension already delegates to the SA session
+ * in cm_dialog_ani.cpp). aniRequest is the caller-provided UkeyAuthRequest
+ * ets object (field unpacking in cm_ukey_ani_request.h). */
 class CmOpenUkeyAuthDialog : public CertManagerAsyncImpl {
 private:
     /* ani params */

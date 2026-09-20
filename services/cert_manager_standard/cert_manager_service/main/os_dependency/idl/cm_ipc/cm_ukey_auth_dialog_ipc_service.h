@@ -22,15 +22,19 @@
 #include "cm_response.h"
 
 namespace OHOS::Security::CertManager {
-/* UKey 认证弹框 IPC 处理器（对齐 ukey parcel 系列表模式：context 即 reply parcel，
- * 处理器经 CmSendResponse 写同步应答，ConvertErrorCode 不折叠 -1016/-1018）。
- * 请求 parcel：OPEN   [uint32 size][remote object 回调stub][paramSet buffer]
- *              （remote object 位于 buffer 之前：WriteBuffer 尾部补 4 字节对齐而
- *               ReadBuffer 不跳过 pad，对象写在非对齐 buffer 之后 SA 侧读不到）
- *             REPORT [uint32 size][paramSet buffer: CM_TAG_PARAM0_BUFFER=requestId,
- *              CM_TAG_PARAM1_UINT32=resultCode]
- * OPEN 因需从 data parcel 读取 remote object，由 cm_sa.cpp OnRemoteRequest 分支调用；
- * REPORT 无额外参数，经 g_cmParcelIpcHandler 表分发。 */
+/* UKey auth dialog IPC handlers (aligned with the ukey parcel-series table
+ * pattern: context is the reply parcel; handlers write the sync response via
+ * CmSendResponse; ConvertErrorCode does not fold -1016/-1018).
+ * Request parcels: OPEN   [uint32 size][remote object callback stub][paramSet buffer]
+ *                  (the remote object sits before the buffer: WriteBuffer
+ *                   pads the tail to 4-byte alignment while ReadBuffer does
+ *                   not skip the pad, so an object written after a
+ *                   non-aligned buffer cannot be read on the SA side)
+ *                 REPORT [uint32 size][paramSet buffer: CM_TAG_PARAM0_BUFFER=requestId,
+ *                  CM_TAG_PARAM1_UINT32=resultCode]
+ * OPEN is dispatched from a branch of cm_sa.cpp OnRemoteRequest because it
+ * must read the remote object from the data parcel; REPORT has no extra
+ * params and is dispatched via the g_cmParcelIpcHandler table. */
 void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSetBlob,
     const struct CmContext *context, const sptr<IRemoteObject> &clientCallback);
 

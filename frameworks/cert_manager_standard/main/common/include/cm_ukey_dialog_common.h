@@ -24,39 +24,44 @@
 #include "cm_ukey_ability_type.h"
 #include "syspara/parameters.h"
 
-/* UKey Pin 弹框链路共享常量与工具（Kit 直启 / SA 拉起两侧同源，spec v3 §6/§8.4）。
- * 本头文件仅供 C++ 消费（kits/common 与 SA dialog 模块）。 */
+/* Shared constants and utilities for the UKey Pin dialog chain (single source
+ * for both the kit direct-launch and SA-launch sides, spec v3 §6/§8.4).
+ * This header is for C++ consumers only (kits/common and the SA dialog module). */
 
 namespace OHOS::Security::CertManager {
 
-/* ---- want / parameters JSON 参数键（弹框提供方契约，spec §6.2/§6.3）---- */
+/* ---- want / parameters JSON keys (dialog provider contract, spec §6.2/§6.3) ---- */
 constexpr const char *CM_UKEY_DIALOG_PARAM_CUSTOM_DATA = "customData";
 
-/* ---- PC 平台 / PC 模式判定（spec D15，用户裁定）----
- * 第一级（编译期）：PC 平台构建（BUILD.gn target_platform == "pc" 注入
- * CM_TARGET_PLATFORM_PC 宏，经 frameworks/common 的 public config 传播）放行；
- * 第二级（运行时，仅非 PC 平台构建）：读 persist.sceneboard.ispcmode 判定
- * PC 模式。不读 const.product.devicetype——SA 域对该参数受 SELinux
- * neverallow 管控。
- * 消费方：kits 直启路由（NAPI/ANI 的 SA 会话分流）与 SA 服务端 PC 门禁。 */
+/* ---- PC platform / PC mode check (spec D15, user ruling) ----
+ * Level 1 (compile time): PC platform builds (BUILD.gn target_platform == "pc"
+ * injects the CM_TARGET_PLATFORM_PC macro, propagated through the
+ * frameworks/common public config) pass directly;
+ * Level 2 (runtime, non-PC builds only): read persist.sceneboard.ispcmode to
+ * decide PC mode. const.product.devicetype is not read - that parameter is
+ * governed by a SELinux neverallow rule in the SA domain.
+ * Consumers: kit direct-launch routing (NAPI/ANI SA-session branching) and the
+ * SA-side PC gate. */
 constexpr const char *CM_UKEY_PARAM_IS_PC_MODE = "persist.sceneboard.ispcmode";
 
 inline bool CmUkeyIsPcPlatformOrPcMode()
 {
 #ifdef CM_TARGET_PLATFORM_PC
-    return true; /* PC 平台构建：编译期放行，不读系统参数 */
+    return true; /* PC platform build: pass at compile time, no system parameter read */
 #else
-    /* 每次调用实时读（模式可运行时切换）；读取失败按非 PC 模式处理 */
+    /* Read live on every call (mode can switch at runtime); read failure counts as non-PC mode */
     return OHOS::system::GetBoolParameter(CM_UKEY_PARAM_IS_PC_MODE, false);
 #endif
 }
 
-/* ---- 驱动弹框扩展名长度上限（spec v4 D24 / v4.1 用户裁定修正：
- * UkeyAuthDialogInfo.abilityName 非空字符串，≤256 字节）---- */
+/* ---- Driver dialog extension name length limit (spec v4 D24 / v4.1 user
+ * ruling amendment: UkeyAuthDialogInfo.abilityName is a non-empty string,
+ * <= 256 bytes) ---- */
 constexpr uint32_t CM_UKEY_ABILITY_NAME_MAX_LEN = 256;
 
-/* ---- base64 编码（spec §8.4：标准字母表 + padding，仅 want/params 构造边界使用；
- * inner API / IPC 全程传原始字节；实现位于 cm_ukey_dialog_common.cpp）---- */
+/* ---- base64 encoding (spec §8.4: standard alphabet + padding, used only at
+ * the want/params construction boundary; raw bytes travel over inner API /
+ * IPC the whole way; implementation lives in cm_ukey_dialog_common.cpp) ---- */
 std::string CmBase64Encode(const uint8_t *data, size_t size);
 
 } // namespace OHOS::Security::CertManager

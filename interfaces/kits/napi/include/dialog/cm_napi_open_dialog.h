@@ -55,7 +55,7 @@ struct CmUIExtensionRequestContext : public CommonAsyncContext {
             CM_FREE_PTR(certUri);
         }
         if (authCustomData != nullptr) {
-            /* customData 为调用方不透明数据，释放前擦除（spec R10） */
+            /* customData is caller-opaque data; scrub before free (spec R10) */
             if (authCustomData->data != nullptr && authCustomData->size > 0) {
                 (void)memset_s(authCustomData->data, authCustomData->size, 0, authCustomData->size);
             }

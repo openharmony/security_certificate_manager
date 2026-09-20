@@ -20,21 +20,23 @@
 
 namespace OHOS::Security::CertManager::Ani {
 
-/* openUkeyAuthDialog / openAuthDialogForUkeyProvider 的 ets 入参对象在 native
- * 侧的解析结果（自扁平多参 native 签名改为对象传参后，字段解包收口于此，
- * 控制原生绑定入口的入参数量） */
+/* Native-side parse result of the ets input objects of openUkeyAuthDialog /
+ * openAuthDialogForUkeyProvider (after switching from a flat multi-arg
+ * native signature to object passing, field unpacking is centralized here to
+ * cap the argument count of the native binding entry) */
 struct CmUkeyAniRequest {
-    ani_string keyUri = nullptr;      /* 必填 string（ets 层已 401 校验 undefined） */
-    ani_double timeout = 0;           /* 可选 number，缺省 0 = 服务端默认 300s */
-    ani_object customData = nullptr;  /* 可选 Uint8Array，nullptr = 缺省 */
+    ani_string keyUri = nullptr;      /* required string (undefined already 401-checked at the ets layer) */
+    ani_double timeout = 0;           /* optional number, default 0 = server default 300s */
+    ani_object customData = nullptr;  /* optional Uint8Array, nullptr = absent */
 };
 
-/* 解析 UkeyAuthRequest ets 对象：keyUri 缺失/undefined → 401（PARAM_INVALID）；
- * timeoutDuration / customData 可选（undefined/缺失保持缺省值） */
+/* Parse the UkeyAuthRequest ets object: keyUri missing/undefined -> 401
+ * (PARAM_INVALID); timeoutDuration / customData are optional
+ * (undefined/missing keeps the default value) */
 int32_t ParseUkeyAniRequest(ani_env *env, ani_object request, CmUkeyAniRequest &out);
 
-/* 解析 UkeyAuthDialogInfo ets 对象（abilityName 必填 string，abilityType 必填
- * number；缺失/undefined → 401） */
+/* Parse the UkeyAuthDialogInfo ets object (abilityName required string,
+ * abilityType required number; missing/undefined -> 401) */
 int32_t ParseUkeyAniDialogInfo(ani_env *env, ani_object dialogInfo, ani_string &abilityName,
     ani_double &abilityType);
 

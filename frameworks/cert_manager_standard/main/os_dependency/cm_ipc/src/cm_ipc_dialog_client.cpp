@@ -186,8 +186,10 @@ void CmDialogCallbackStub::Deliver(int32_t result)
 using namespace OHOS;
 using namespace OHOS::Security::CertManager;
 
-/* OPEN 请求公共发送序列（两个入口共用）：arm 客户端兜底定时器 → 发送 →
- * 同步失败 Cancel 销毁 stub（不回调）/ 成功 HoldSelf 自持至 Deliver；返回同步码 */
+/* Common send sequence for OPEN requests (shared by both entries): arm the
+ * client fallback timer -> send -> on sync failure Cancel destroys the stub
+ * (no callback) / on success HoldSelf keeps it alive until Deliver; returns
+ * the sync code */
 static int32_t SendOpenDialogRequest(enum CertManagerInterfaceCode type,
     const sptr<CmDialogCallbackStub> &stub, const struct CmParamSet *sendParamSet)
 {
@@ -224,7 +226,7 @@ int32_t CmClientOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest
         CM_LOG_E("invalid open ukey auth dialog arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    /* 纵深防御：inner API 直调方绕过 NAPI 校验时在此拦截（spec §8.3） */
+    /* Defense in depth: intercept inner API callers that bypass NAPI validation (spec §8.3) */
     if (ukeyAuthRequest->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
         CM_LOG_E("custom data too large: %u", ukeyAuthRequest->customData.size);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
@@ -236,10 +238,13 @@ int32_t CmClientOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest
         return CMR_ERROR_MALLOC_FAIL;
     }
 
-    /* 全部参数一次性序列化：CmParamsToParamSet 内部 FreshParamSet 会把 blob 数据
-     * 写入 paramSet 尾部，事后 CmAddParams 追加 param 会覆写已序列化数据且新
-     * param 的 blob 永不入列（SA 侧读到未初始化堆）。customData 缺省（size 0）由
-     * CmParamsToParamSet 的 NULL-blob 标记转换处理，SA 侧按 PARAM2 缺失解析。 */
+    /* Serialize all params in one pass: the FreshParamSet inside
+     * CmParamsToParamSet writes blob data to the tail of the paramSet; a
+     * later CmAddParams append would overwrite the already-serialized data
+     * and the new param's blob would never enter the list (the SA side then
+     * reads uninitialized heap). An omitted customData (size 0) is handled by
+     * CmParamsToParamSet's NULL-blob marker conversion, and the SA side
+     * parses it as a missing PARAM2. */
     struct CmParam params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = ukeyAuthRequest->keyUri },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = ukeyAuthRequest->timeoutDuration }, /* seconds; 0 = default */
@@ -284,7 +289,7 @@ int32_t CmClientOpenUkeyAuthDialogForDriver(const struct UkeyAuthDialogInfo *dia
         return CMR_ERROR_MALLOC_FAIL;
     }
 
-    /* 五参数一次性序列化（spec v4 §8.2）：禁止事后 CmAddParams 追加 */
+    /* Five params serialized in one pass (spec v4 §8.2): no later CmAddParams append */
     struct CmParam params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = dialogInfo->abilityName },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = dialogInfo->abilityType },

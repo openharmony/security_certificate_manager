@@ -20,8 +20,9 @@
 
 namespace OHOS::Security::CertManager::Ani {
 namespace {
-/* 读取对象引用字段：返回 false 表示字段缺失；outRef 为 undefined 时返回 true
- * 且 isUndefined 置位（调用方按需处理缺省语义） */
+/* Read an object reference field: false means the field is missing; when
+ * outRef is undefined, returns true with isUndefined set (the caller applies
+ * its own default semantics) */
 bool GetRefField(ani_env *env, ani_object obj, const char *fieldName, ani_ref &outRef,
     bool &isUndefined)
 {
@@ -60,12 +61,12 @@ int32_t ParseUkeyAniRequest(ani_env *env, ani_object request, CmUkeyAniRequest &
             CM_LOG_E("read timeoutDuration failed");
             return CMR_DIALOG_ERROR_PARAM_INVALID;
         }
-    } /* 缺省/undefined 保持 0（= 服务端默认 300s） */
+    } /* absent/undefined keeps 0 (= server default 300s) */
 
     ani_ref customRef = nullptr;
     if (GetRefField(env, request, "customData", customRef, isUndefined) && !isUndefined) {
         out.customData = static_cast<ani_object>(customRef);
-    } /* 缺省/undefined 保持 nullptr（不携带） */
+    } /* absent/undefined keeps nullptr (not carried) */
     return CM_SUCCESS;
 }
 

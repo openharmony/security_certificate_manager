@@ -36,9 +36,10 @@ struct CmUkeyAuthDialogAniResultContext {
     std::shared_ptr<CmMetricsReport> metricsReport = nullptr;
 };
 
-/* D8 修订：SA 会话委托自老接口 openUkeyAuthDialog（since-22 已发布，不新增
- * since-26 错误码至其 throws 面）——超时折叠 29700002、单飞折叠 29700003，
- * 消息保留具体原因。 */
+/* D8 revision: the SA session is delegated from the legacy openUkeyAuthDialog
+ * (published since-22; no since-26 error codes are added to its throws
+ * surface) - timeout folds to 29700002, single-flight folds to 29700003,
+ * and the message keeps the specific reason. */
 static bool IsLegacyFoldCode(int32_t resultCode)
 {
     return resultCode == CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT ||
@@ -107,7 +108,7 @@ int32_t CmOpenUkeyAuthDialogSaSession::GetParamsFromEnv()
     }
     this->timeoutSec = static_cast<uint32_t>(req.timeout);
 
-    /* optional customData; Uint8Array <= 2048 raw bytes (D19)；nullptr = 缺省 */
+    /* optional customData; Uint8Array <= 2048 raw bytes (D19); nullptr = absent */
     if (req.customData != nullptr) {
         ret = AniUtils::ParseUint8Array(env, reinterpret_cast<ani_arraybuffer>(req.customData),
             this->customData);
@@ -131,8 +132,10 @@ int32_t CmOpenUkeyAuthDialogSaSession::GetParamsFromEnv()
     return CM_SUCCESS;
 }
 
-/* 按结果码生成 businessError（自 UkeyAuthDialogResultCallback 拆出）：
- * 成功 → 无错误对象；D8 修订折叠码 → 折叠码 + 具体原因消息；其余 → 常规映射 */
+/* Build the businessError from the result code (split out of
+ * UkeyAuthDialogResultCallback): success -> no error object; D8-revised
+ * folded codes -> folded code + specific-reason message; anything else ->
+ * regular mapping */
 static bool GenerateUkeyResultBusinessError(ani_env *env, int32_t resultCode, ani_object &businessError)
 {
     if (resultCode == CM_SUCCESS) {
@@ -240,8 +243,9 @@ void CmOpenUkeyAuthDialogSaSession::OnFinish()
 {
     CM_FREE_BLOB(this->keyUri);
     if (this->customData.data != nullptr && this->customData.size > 0) {
-        /* customData 为调用方不透明数据，释放前擦除（spec R10）；擦除失败仅告警，
-         * 不阻断释放（dst/size 自恰，失败仅可能来自入参本身） */
+        /* customData is caller-opaque data; scrub before free (spec R10); a
+         * scrub failure only logs and does not block the free (dst/size are
+         * self-consistent, so a failure can only come from the inputs) */
         if (memset_s(this->customData.data, this->customData.size, 0, this->customData.size) != EOK) {
             CM_LOG_E("clear customData before free failed");
         }

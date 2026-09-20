@@ -13,15 +13,19 @@
  * limitations under the License.
  */
 
-/* UKey Pin 弹框链路共享工具实现（声明见 cm_ukey_dialog_common.h，spec §8.4）。
- * base64 自 header 内联实现移出：内联函数不得超 10 行。 */
+/* Shared utility implementation for the UKey Pin dialog chain (declarations in
+ * cm_ukey_dialog_common.h, spec §8.4).
+ * base64 moved out of the inline implementation in the header: inline
+ * functions must not exceed 10 lines. */
 
 #include "cm_ukey_dialog_common.h"
 
 namespace OHOS::Security::CertManager {
-/* hidden 可见性：该工具仅随静态库消费（kits/common 与 SA dialog 模块），不得
- * 进入任何 .so 动态符号表——否则依赖方会把引用绑定到 .so 导出符号（如
- * libcert_manager_sdk.z.so），旧版 so 部署场景下运行时解析失败 */
+/* hidden visibility: this utility is consumed only via the static library
+ * (kits/common and the SA dialog module) and must not enter any .so dynamic
+ * symbol table - otherwise dependents would bind the reference to an exported
+ * .so symbol (e.g. libcert_manager_sdk.z.so) and runtime resolution would
+ * fail when an older .so is deployed */
 __attribute__((visibility("hidden"))) std::string CmBase64Encode(const uint8_t *data, size_t size)
 {
     static const char table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

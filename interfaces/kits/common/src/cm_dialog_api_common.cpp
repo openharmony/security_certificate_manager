@@ -24,7 +24,7 @@
 #include "cm_mem.h"
 
 namespace OHOS::Security::CertManager::Dialog {
-/* HUKS ability 查询缓冲区长度 */
+/* HUKS ability query buffer length */
 constexpr static uint32_t HAP_INFO_MAX_LENGTH = 128;
 
 static OHOS::sptr<OHOS::AppExecFwk::IBundleMgr> GetBundleMgrProxy()
@@ -88,9 +88,11 @@ bool IsEnableCACertDialog()
     return isSupportSyscap && (isPc || isEnableCACertDialog);
 }
 
-/* 组装系统默认 UKey Pin 弹框 want（Kit 直启回退路径，spec v4 D22/D25 v2）：
- * com.ohos.certmanager/CertPickerUIExtAbility（sys/commonUI，pageType=7）。
- * customData 不下发（默认弹框无消费方，D18 语义）。 */
+/* Assemble the system default UKey Pin dialog want (kit direct-launch
+ * fallback path, spec v4 D22/D25 v2):
+ * com.ohos.certmanager/CertPickerUIExtAbility (sys/commonUI, pageType=7).
+ * customData is not delivered (the default dialog has no consumer, D18
+ * semantics). */
 int32_t GetDefaultUkeyAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
 {
     want.SetElementName(CERT_MANAGER_BUNDLENAME, CERT_MANAGER_ABILITYNAME);
@@ -132,8 +134,9 @@ static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName,
     bundleName.assign(reinterpret_cast<char *>(abilityInfo.bundleName.data), abilityInfo.bundleName.size);
     CM_FREE_PTR(abilityInfo.abilityName.data);
     CM_FREE_PTR(abilityInfo.bundleName.data);
-    /* abilityType 透传（HksAbilityInfo 已有该字段；HUKS 查询实现尚未填充时，
-     * 零初始化保持 0 = UIAbility，与存量注册行为一致） */
+    /* abilityType pass-through (HksAbilityInfo already has the field; when
+     * the HUKS query implementation does not fill it yet, zero-initialization
+     * keeps 0 = UIAbility, consistent with existing registration behavior) */
     abilityType = static_cast<uint32_t>(abilityInfo.abilityType);
     return CM_SUCCESS;
 }
@@ -167,9 +170,11 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, const CmBlob *customData,
         GetDefaultUkeyAuthCertWant(keyUri, want);
         return CM_SUCCESS;
     }
-    /* UIExtension 注册仅在 PC/PC 模式经 SA 会话拉起（调用方前置判定）；落到本
-     * 直启路径即非 PC 场景，按 D25 v2 回退系统默认弹框——不得对 UIExtension
-     * 类型 ability 走 StartUIAbility（AMS 类型不匹配）。 */
+    /* A UIExtension registration is launched via the SA session only on
+     * PC/PC mode (caller-side precheck); reaching this direct-launch path
+     * means a non-PC scenario, so fall back to the system default dialog per
+     * D25 v2 - StartUIAbility must not be used on a UIExtension-type ability
+     * (AMS type mismatch). */
     if (abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
         CM_LOG_I("uiextension pin dialog declined by sa path (non-pc), fall back to default");
         GetDefaultUkeyAuthCertWant(keyUri, want);
@@ -182,7 +187,7 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, const CmBlob *customData,
     std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
     want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
     if (customData != nullptr && customData->size > 0) {
-        /* 自定义弹框透传 customData（base64，spec D18） */
+        /* Custom dialog passes customData through (base64, spec D18) */
         want.SetParam(CM_UKEY_DIALOG_PARAM_CUSTOM_DATA,
             CmBase64Encode(customData->data, customData->size));
     }

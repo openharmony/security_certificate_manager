@@ -13,10 +13,13 @@
  * limitations under the License.
  */
 
-/* 错误码定义（自 cm_type.h 拆出以控制单头行数；cm_type.h 继续透出本头，
- * 既有 include 路径与取值不变，二进制/源码兼容）。新增错误码先查分段
- * （-10000~-19999 非法参数段 / -20000~-29999 密钥操作段 / -30000~-39999
- * 授权段；CMR_DIALOG_ERROR_* 为弹框专用段，不参与 ConvertErrorCode 折叠）。 */
+/* Error code definitions (split out of cm_type.h to cap single-header line
+ * count; cm_type.h keeps re-exporting this header, existing include paths and
+ * values unchanged, binary/source compatible). Before adding a new error
+ * code, check the ranges first (-10000~-19999 invalid-argument range /
+ * -20000~-29999 key-operation range / -30000~-39999 authorization range;
+ * CMR_DIALOG_ERROR_* is the dialog-specific range and does not take part in
+ * ConvertErrorCode folding). */
 
 #ifndef CM_ERROR_CODE_H
 #define CM_ERROR_CODE_H
@@ -158,7 +161,8 @@ enum CMDialogErrorCode {
     CMR_DIALOG_ERROR_START_UIABILITY_FAILED = -1015,
     CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT = -1017, /* provider did not report result within total timeout */
     CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS = -1018, /* another ukey pin dialog session is in progress */
-    CMR_DIALOG_ERROR_NOT_REGISTERED = -1019, /* 未注册驱动弹框，或 ForDriver 指定扩展不存在/类型不符（→29700003） */
+    /* No driver dialog registered, or the extension named by ForDriver does not exist / type mismatch (->29700003) */
+    CMR_DIALOG_ERROR_NOT_REGISTERED = -1019,
     CMR_DIALOG_ERROR_NOT_PC_DEVICE = -1020, /* UIExtension dialog requires a PC device or PC mode (29700005) */
 
     CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED = -1021, /* ukey driver pin dialog is a UIAbility, rejected (29700003) */

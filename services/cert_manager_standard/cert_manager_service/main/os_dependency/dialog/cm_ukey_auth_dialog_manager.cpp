@@ -37,38 +37,43 @@
 
 namespace OHOS::Security::CertManager {
 namespace {
-/* 驱动弹窗上报的结果码白名单（JS 层协议，spec §9.3）：
- * 0 成功 / 29700001 通用失败 / 29700002 用户取消 / 29700003 操作失败 /
- * 29700006 参数校验失败；未知值折叠为 29700001。 */
+/* Result-code whitelist reported by the driver dialog (JS-layer protocol,
+ * spec §9.3): 0 success / 29700001 generic failure / 29700002 user cancel /
+ * 29700003 operation failure / 29700006 param validation failure; unknown
+ * values fold to 29700001. */
 constexpr int32_t REPORT_CODE_SUCCESS = 0;
 constexpr int32_t REPORT_CODE_GENERIC_ERROR = 29700001;
 constexpr int32_t REPORT_CODE_OPERATION_CANCELED = 29700002;
 constexpr int32_t REPORT_CODE_INSTALL_FAILED = 29700003;
 constexpr int32_t REPORT_CODE_PARAM_INVALID = 29700006;
 
-/* HUKS ability 查询缓冲区长度（对齐 kits 层 cm_dialog_api_common.cpp 约定） */
+/* HUKS ability query buffer length (aligned with the kits-layer cm_dialog_api_common.cpp convention) */
 constexpr uint32_t HAP_INFO_MAX_LENGTH = 128;
-/* 弹框 parameters JSON 的 action 值（spec §6.2） */
+/* action value of the dialog parameters JSON (spec §6.2) */
 constexpr const char *UKEY_DIALOG_ACTION = "UkeyPINAuth";
-/* UIExtensionComponent 拉起扩展需以该 want 参数标识扩展类型（ukeyAuth = type 40
- * UKEY_AUTH），缺失时 AMS 侧无法识别为 ukeyAuth 扩展（checkOptExtensionAbility
- * error），驱动 ability 不会被拉起 */
+/* Launching an extension from UIExtensionComponent requires this want
+ * parameter to identify the extension type (ukeyAuth = type 40 UKEY_AUTH);
+ * when missing, AMS cannot recognize it as a ukeyAuth extension
+ * (checkOptExtensionAbility error) and the driver ability is not launched */
 constexpr const char *UKEY_DIALOG_UI_EXTENSION_TYPE_KEY = "ability.want.params.uiExtensionType";
 constexpr const char *UKEY_DIALOG_UI_EXTENSION_TYPE = "ukeyAuth";
 
-/* requestId 是会话凭证（安全设计 D7 的第一道防线），必须来自内核 CSPRNG。
- * 任何随机源不可用都拒绝开会话（fail-closed）——禁止可预测的降级种子。
+/* requestId is the session credential (the first line of defense in security
+ * design D7) and must come from the kernel CSPRNG. If no random source is
+ * available, refuse to open a session (fail-closed) - no predictable
+ * downgraded seeds allowed.
  * 16 random bytes -> 32 hex chars */
 bool GenerateRequestId(std::string &id)
 {
     uint8_t buf[16] = {0};
     bool randomOk = false;
-    /* 优先 getrandom 系统调用（不依赖文件系统，阻塞直至内核完成熵初始化） */
+    /* Prefer the getrandom syscall (no filesystem dependency, blocks until
+     * the kernel finishes entropy initialization) */
     ssize_t got = getrandom(buf, sizeof(buf), 0);
     if (got == static_cast<ssize_t>(sizeof(buf))) {
         randomOk = true;
     } else {
-        /* 回退 /dev/urandom，短重试掩盖偶发 IO 抖动 */
+        /* Fall back to /dev/urandom; short retries mask occasional IO jitter */
         for (int attempt = 0; attempt < 3 && !randomOk; attempt++) {
             FILE *f = fopen("/dev/urandom", "rb");
             if (f != nullptr) {
@@ -91,7 +96,8 @@ bool GenerateRequestId(std::string &id)
     return true;
 }
 
-/* 白名单校验 + 未知码折叠为通用失败（映射为内部 CMR_DIALOG_ERROR_* 码下发客户端） */
+/* Whitelist validation + unknown-code folding to generic failure (mapped to
+ * internal CMR_DIALOG_ERROR_* codes sent down to the client) */
 int32_t NormalizeReportCode(int32_t resultCode)
 {
     switch (resultCode) {
@@ -123,7 +129,8 @@ std::string KeepAliveTaskName(const std::string &requestId)
     return "ukey_keepalive_" + requestId;
 }
 
-/* 客户端死亡监听（F2）：持有会话 requestId，死亡通知转入 manager 的小型可测入口 */
+/* Client death watch (F2): holds the session requestId; the death
+ * notification goes through a small testable manager entry */
 class CmUkeyClientDeathRecipient : public IRemoteObject::DeathRecipient {
 public:
     explicit CmUkeyClientDeathRecipient(const std::string &requestId) : requestId_(requestId) {}
@@ -139,8 +146,9 @@ private:
     std::string requestId_;
 };
 
-/* customData base64 编码挂载（spec D18/R10：base64 串为 customData 派生敏感
- * 数据，用后即擦） */
+/* customData base64 encoding and attachment (spec D18/R10: the base64
+ * string is sensitive data derived from customData, scrubbed right after
+ * use) */
 bool AppendCustomDataToJson(cJSON *root, const struct CmBlob *customData)
 {
     std::string customDataB64 = CmBase64Encode(customData->data, customData->size);
@@ -156,12 +164,14 @@ bool AppendCustomDataToJson(cJSON *root, const struct CmBlob *customData)
     return true;
 }
 
-/* 组装驱动 UIExtension 弹框 parameters JSON（spec v4 §6.2）：
+/* Assemble the driver UIExtension dialog parameters JSON (spec v4 §6.2):
  * {"keyUri":"<uri>","appUid":<callerUid>,"requestId":"<id>","action":"UkeyPINAuth",
- *  "ability.want.params.uiExtensionType":"ukeyAuth","timeout":<秒>,
- *  "customData":"<base64，仅携带时存在>"}
- * timeout 为本会话归一化后的实际超时时长（秒）；customData 原始字节仅在此编码消费，
- * base64 串随连接对象存活并在会话收尾擦除（spec R10）。 */
+ *  "ability.want.params.uiExtensionType":"ukeyAuth","timeout":<seconds>,
+ *  "customData":"<base64, present only when carried>"}
+ * timeout is the actual session timeout (seconds) after normalization;
+ * customData raw bytes are consumed only by this encoding, the base64 string
+ * lives with the connection object and is scrubbed at session end (spec
+ * R10). */
 bool BuildUkeyDialogParams(const std::string &requestId, const UkeyDialogLaunchParams &params,
     std::string &paramsJson)
 {
@@ -185,7 +195,7 @@ bool BuildUkeyDialogParams(const std::string &requestId, const UkeyDialogLaunchP
     bool ok = true;
     for (size_t i = 0; i < sizeof(items) / sizeof(items[0]); i++) {
         if (items[i] != nullptr && cJSON_AddItemToObject(root, names[i], items[i])) {
-            items[i] = nullptr; // 所有权移交 root
+            items[i] = nullptr; // ownership transferred to root
         } else {
             ok = false;
             break;
@@ -204,7 +214,7 @@ bool BuildUkeyDialogParams(const std::string &requestId, const UkeyDialogLaunchP
         }
     }
     for (size_t i = 0; i < sizeof(items) / sizeof(items[0]); i++) {
-        if (items[i] != nullptr) { // 未被 root 接管的项手工释放
+        if (items[i] != nullptr) { // items not taken over by root are freed manually
             cJSON_Delete(items[i]);
         }
     }
@@ -212,8 +222,9 @@ bool BuildUkeyDialogParams(const std::string &requestId, const UkeyDialogLaunchP
     return ok;
 }
 
-/* HUKS ability 查询适配（生产装配，模式对齐 kits 层 cm_dialog_api_common.cpp）：
- * 查询失败即视为"未注册"（spec v4 D22：无默认弹框回退）。 */
+/* HUKS ability query adapter (production assembly, pattern aligned with the
+ * kits-layer cm_dialog_api_common.cpp): a query failure counts as "not
+ * registered" (spec v4 D22: no default-dialog fallback). */
 int32_t QueryUkeyDriverAbility(const struct CmBlob *keyUri,
     std::string &bundleName, std::string &abilityName, uint32_t &abilityType)
 {
@@ -241,23 +252,27 @@ int32_t QueryUkeyDriverAbility(const struct CmBlob *keyUri,
         CM_LOG_E("HksQueryAbilityInfo failed, ret: %d", ret);
         CM_FREE_PTR(abilityInfo.abilityName.data);
         CM_FREE_PTR(abilityInfo.bundleName.data);
-        return ret; // 查询失败 == 未注册，调用方路由进默认弹框
+        return ret; // query failure == not registered; the caller routes into the default dialog
     }
     abilityName.assign(reinterpret_cast<char *>(abilityInfo.abilityName.data), abilityInfo.abilityName.size);
     bundleName.assign(reinterpret_cast<char *>(abilityInfo.bundleName.data), abilityInfo.bundleName.size);
     CM_FREE_PTR(abilityInfo.abilityName.data);
     CM_FREE_PTR(abilityInfo.bundleName.data);
-    /* abilityType 透传（HksAbilityInfo 已有该字段；HUKS 查询实现尚未填充时，
-     * 零初始化保持 0 = UIAbility，与存量注册行为一致） */
+    /* abilityType pass-through (HksAbilityInfo already has the field; when
+     * the HUKS query implementation does not fill it yet, zero-initialization
+     * keeps 0 = UIAbility, consistent with existing registration behavior) */
     abilityType = static_cast<uint32_t>(abilityInfo.abilityType);
     return CM_SUCCESS;
 }
 
-/* 驱动弹框扩展 BMS 预校验（生产装配，spec v4 D23）：(bundleName, abilityName)
- * 存在且类型为 UKEY_AUTH（ExtensionAbilityType=40）。以 SA 自身身份查询
- * （ResetCallingIdentity，避免线程上残留的 app token 影响 BMS 可见性判定）。
- * userId 由 IPC 层经 CmGetProcessInfoForIPC 解出传入（本静态库不得依赖 idl 层，
- * GetCallingUid 推导在 SA 入口线程上不可靠）。 */
+/* Driver dialog extension BMS precheck (production assembly, spec v4 D23):
+ * (bundleName, abilityName) exists and is of type UKEY_AUTH
+ * (ExtensionAbilityType=40). Query under the SA's own identity
+ * (ResetCallingIdentity, so a leftover app token on the thread cannot affect
+ * the BMS visibility decision). userId is resolved by the IPC layer via
+ * CmGetProcessInfoForIPC and passed in (this static library must not depend
+ * on the idl layer; deriving it from GetCallingUid is unreliable on the SA
+ * entry thread). */
 bool QueryDriverUkeyExtensionAbility(const std::string &bundleName,
     const std::string &abilityName, int32_t userId)
 {
@@ -330,7 +345,7 @@ void CmUkeyAuthDialogManager::SetTimeoutRangeForTest(uint32_t minSec, uint32_t d
 
 void CmUkeyAuthDialogManager::SetUnloadRenewal(std::function<void()> renewal)
 {
-    /* 环境重新装配语义与 SetLauncher 一致：绑定旧钩子的挂起会话先行中止 */
+    /* Same reassembly semantics as SetLauncher: pending sessions bound to the old hook are aborted first */
     std::lock_guard<std::mutex> lock(mutex_);
     AbortActiveSessionLocked();
     unloadRenewal_ = std::move(renewal);
@@ -345,7 +360,7 @@ void CmUkeyAuthDialogManager::SetKeepAliveIntervalForTest(uint32_t intervalMs)
 
 void CmUkeyAuthDialogManager::SetTimerPostFailForTest(bool fail)
 {
-    /* 故障注入开关：需可在存活会话前后切换，故不中止会话 */
+    /* Fault-injection switch: must be toggleable around a live session, so the session is not aborted */
     std::lock_guard<std::mutex> lock(mutex_);
     timerPostFailForTest_ = fail;
 }
@@ -366,7 +381,8 @@ void CmUkeyAuthDialogManager::SetDriverAbilityChecker(DriverAbilityChecker check
 
 uint32_t CmUkeyAuthDialogManager::NormalizeTimeoutSecLocked(uint32_t timeoutSec)
 {
-    /* timeoutDuration 归一化（spec D5 v2，单位秒）：0（未传）取默认值；显式值 clamp */
+    /* timeoutDuration normalization (spec D5 v2, unit seconds): 0 (not
+     * passed) takes the default; explicit values are clamped */
     if (timeoutSec == 0) {
         return defaultTimeoutSec_;
     }
@@ -381,8 +397,10 @@ uint32_t CmUkeyAuthDialogManager::NormalizeTimeoutSecLocked(uint32_t timeoutSec)
     return timeoutSec;
 }
 
-/* 组装弹框参数并建立系统弹窗连接（自 LaunchUiExtensionSessionLocked 拆出）：
- * 失败时返回 nullptr（Connect 失败已擦除参数；会话未入表，单飞不占用） */
+/* Assemble dialog params and establish the system dialog connection (split
+ * out of LaunchUiExtensionSessionLocked): returns nullptr on failure
+ * (params already scrubbed on Connect failure; the session is not in the
+ * table, so single-flight is not occupied) */
 sptr<CmSystemDialogConnection> CmUkeyAuthDialogManager::CreateDialogConnectionLocked(
     const std::shared_ptr<UkeyAuthSession> &session, const UkeyDialogLaunchParams &params,
     int32_t &ret)
@@ -407,9 +425,11 @@ sptr<CmSystemDialogConnection> CmUkeyAuthDialogManager::CreateDialogConnectionLo
     return connection;
 }
 
-/* 投递会话总超时定时器（自 LaunchUiExtensionSessionLocked 拆出）：投递失败时
- * 回滚已建立的连接（会话不入表 -> 单飞不被占用），避免无超时保护的挂起会话
- * （F8）。timeoutSec 已归一化（≤ max），* 1000 无溢出。 */
+/* Post the session total-timeout timer (split out of
+ * LaunchUiExtensionSessionLocked): on post failure, roll back the established
+ * connection (session not in the table -> single-flight not occupied), to
+ * avoid a pending session without timeout protection (F8). timeoutSec is
+ * already normalized (<= max), * 1000 does not overflow. */
 bool CmUkeyAuthDialogManager::ArmTotalTimeoutLocked(const std::shared_ptr<UkeyAuthSession> &session,
     const std::string &requestId, uint32_t timeoutSec)
 {
@@ -428,8 +448,10 @@ bool CmUkeyAuthDialogManager::ArmTotalTimeoutLocked(const std::shared_ptr<UkeyAu
     return false;
 }
 
-/* OpenDialog/OpenDriverDialog 公共拉起序列（spec v4 §4.1）：bundle/ability 已定、
- * PC 门禁已过；requestId→会话→连接→总超时→入表→死亡监听/保活。返回同步码。 */
+/* Common launch sequence of OpenDialog/OpenDriverDialog (spec v4 §4.1):
+ * bundle/ability already fixed and the PC gate already passed;
+ * requestId -> session -> connection -> total timeout -> insert into table ->
+ * death watch / keep-alive. Returns the sync code. */
 int32_t CmUkeyAuthDialogManager::LaunchUiExtensionSessionLocked(const UkeyDialogLaunchParams &params)
 {
     if (launcher_ == nullptr) {
@@ -437,19 +459,20 @@ int32_t CmUkeyAuthDialogManager::LaunchUiExtensionSessionLocked(const UkeyDialog
         return CMR_DIALOG_ERROR_INTERNAL;
     }
 
-    /* 总超时是会话唯一的安全网，定时线程创建失败时直接拒绝，避免产生
-     * 无超时保护的挂起会话（单飞被永久占用）。 */
+    /* The total timeout is the session's only safety net; when creating the
+     * timer thread fails, reject outright to avoid a pending session without
+     * timeout protection (single-flight permanently occupied). */
     if (!EnsureTimerHandlerLocked()) {
         return CMR_DIALOG_ERROR_INTERNAL;
     }
 
     auto session = std::make_shared<UkeyAuthSession>();
     if (!GenerateRequestId(session->requestId)) {
-        /* fail-closed：requestId 是会话凭证，无 CSPRNG 即拒绝开会话 */
+        /* fail-closed: requestId is the session credential; no CSPRNG, no session */
         CM_LOG_E("generate request id failed");
         return CMR_DIALOG_ERROR_INTERNAL;
     }
-    session->ownerBundleName = params.bundleName; /* OpenDialog 查询所得 / ForDriver 调用方 bundle */
+    session->ownerBundleName = params.bundleName; /* query result of OpenDialog / caller bundle of ForDriver */
     session->callerUid = params.callerUid;
     session->clientCallback = params.clientCallback;
     session->state = UkeyAuthSession::LAUNCHING;
@@ -457,18 +480,20 @@ int32_t CmUkeyAuthDialogManager::LaunchUiExtensionSessionLocked(const UkeyDialog
     int32_t connRet = CMR_DIALOG_ERROR_INTERNAL;
     session->connection = CreateDialogConnectionLocked(session, params, connRet);
     if (session->connection == nullptr) {
-        return connRet; /* 参数构造/分配/Connect 失败（会话未入表，单飞不占用） */
+        return connRet; /* params assembly / alloc / Connect failure (session
+                          not in the table, single-flight not occupied) */
     }
 
     session->state = UkeyAuthSession::WAITING_REPORT;
     std::string requestId = session->requestId;
-    /* 总超时是会话唯一的安全网，投递失败时回滚连接并拒绝（F8，见 ArmTotalTimeout） */
+    /* The total timeout is the session's only safety net; on post failure,
+     * roll back the connection and reject (F8, see ArmTotalTimeout) */
     if (!ArmTotalTimeoutLocked(session, requestId, params.timeoutSec)) {
         return CMR_DIALOG_ERROR_INTERNAL;
     }
     session_ = session;
-    RegisterClientDeathRecipientLocked(session); // best-effort，失败仅告警（F2）
-    StartKeepAliveLocked(requestId);             // best-effort，失败仅记录（F1）
+    RegisterClientDeathRecipientLocked(session); // best-effort, failure only warns (F2)
+    StartKeepAliveLocked(requestId);             // best-effort, failure only logs (F1)
     CM_LOG_I("open ukey auth dialog success, request id: %s", requestId.c_str());
     return CM_SUCCESS;
 }
@@ -482,7 +507,7 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
         CM_LOG_E("invalid open dialog arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    /* customData 复核（客户端已有校验，纵深防御，spec D19） */
+    /* customData re-check (already validated on the client side; defense in depth, spec D19) */
     if (customData != nullptr && customData->size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
         CM_LOG_E("custom data too large: %u", customData->size);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
@@ -494,8 +519,10 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
         return CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS;
     }
 
-    /* 路由（spec v4 §4.1/D22）：SA 自行查询，不信任客户端声明的 ability 信息（D20）；
-     * 仅 UIExtensionAbility + PC 放行 SA 会话路径，未注册/UIAbility 同步拒绝。 */
+    /* Routing (spec v4 §4.1/D22): the SA queries by itself and does not
+     * trust the client-declared ability info (D20); only UIExtensionAbility
+     * + PC is admitted to the SA session path; not registered / UIAbility
+     * is rejected synchronously. */
     std::string bundleName;
     std::string abilityName;
     uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
@@ -512,7 +539,7 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
         CM_LOG_E("unknown ukey ability type: %u", abilityType);
         return CMR_DIALOG_ERROR_INTERNAL;
     }
-    /* PC 门禁为竞态防御：Kit 已前置判定，模式翻转时 fail-closed（D25 v2） */
+    /* The PC gate is race defense: the kit has pre-checked; if the mode flips, fail-closed (D25 v2) */
     if (pcChecker_ == nullptr || !pcChecker_()) {
         CM_LOG_E("ukey uiextension dialog requires pc device or pc mode");
         return CMR_DIALOG_ERROR_NOT_PC_DEVICE;
@@ -530,8 +557,10 @@ int32_t CmUkeyAuthDialogManager::OpenDialog(const struct CmBlob *keyUri, uint32_
     return LaunchUiExtensionSessionLocked(params);
 }
 
-/* OpenDriverDialog 锁前入参校验（D23/D24）：blob 合法性与 customData 上限；
- * 保持与原实现一致的判定顺序（session 单飞与 abilityType 检查仍在锁内） */
+/* OpenDriverDialog pre-lock argument validation (D23/D24): blob validity and
+ * the customData cap; keeps the same check order as the original
+ * implementation (session single-flight and the abilityType check stay
+ * inside the lock) */
 int32_t CmUkeyAuthDialogManager::ValidateDriverDialogRequest(const UkeyDriverDialogRequest &req)
 {
     if (req.abilityName.data == nullptr || req.abilityName.size == 0 ||
@@ -565,10 +594,10 @@ int32_t CmUkeyAuthDialogManager::OpenDriverDialog(const UkeyDriverDialogRequest 
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     std::string ability(reinterpret_cast<char *>(req.abilityName.data), req.abilityName.size);
-    if (ability.back() == '\0') { /* blob 可能带结尾 NUL */
+    if (ability.back() == '\0') { /* the blob may carry a trailing NUL */
         ability.pop_back();
     }
-    if (ability.empty()) { /* 剥离 NUL 后为空串：视为非法参数（spec v4 D23） */
+    if (ability.empty()) { /* empty string after stripping the NUL: invalid argument (spec v4 D23) */
         CM_LOG_E("ability name is empty after trailing nul strip");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
@@ -582,8 +611,9 @@ int32_t CmUkeyAuthDialogManager::OpenDriverDialog(const UkeyDriverDialogRequest 
         CM_LOG_E("ukey uiextension dialog requires pc device or pc mode");
         return CMR_DIALOG_ERROR_NOT_PC_DEVICE;
     }
-    /* keyUri/customData 指向 IPC 层 paramSet 缓冲，同步消费（写入弹框参数）后不再引用；
-     * customData.size 0 = 缺省（不携带） */
+    /* keyUri/customData point into the IPC-layer paramSet buffer; consumed
+     * synchronously (written into dialog params) and never referenced after;
+     * customData.size 0 = absent (not carried) */
     UkeyDialogLaunchParams params;
     params.bundleName = req.callerBundleName;
     params.abilityName = ability;
@@ -628,7 +658,8 @@ void CmUkeyAuthDialogManager::OnDialogDisconnected(const std::string &requestId)
     }
     if (!StartTimerLocked(GraceTimeoutTaskName(requestId), graceTimeoutMs_,
         [this, requestId] { HandleGraceTimeout(requestId); })) {
-        /* 宽限期投递失败：已无任何超时兜底，按用户取消收尾而非悬挂会话（F8） */
+        /* Grace timer post failure: no timeout safety net is left, so finish
+         * as user cancel instead of leaving a hanging session (F8) */
         FinishSessionLocked(requestId, CMR_DIALOG_ERROR_OPERATION_CANCELS);
         return;
     }
@@ -639,9 +670,10 @@ void CmUkeyAuthDialogManager::OnClientDied(const std::string &requestId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (session_ == nullptr || session_->requestId != requestId) {
-        return; // 未知/过期 requestId：no-op
+        return; // unknown/stale requestId: no-op
     }
-    /* 客户端已死：结果无处投递，直接按 Abort 语义收尾（不回投、释放单飞） */
+    /* Client already dead: the result has nowhere to deliver, so finish with
+     * Abort semantics directly (no report-back, free the single-flight) */
     CM_LOG_W("client died during ukey dialog session, abort without result, request id: %s",
         requestId.c_str());
     AbortActiveSessionLocked();
@@ -719,7 +751,8 @@ void CmUkeyAuthDialogManager::RegisterClientDeathRecipientLocked(
         return;
     }
     if (!session->clientCallback->AddDeathRecipient(recipient)) {
-        /* 本地对象/注册失败：死亡监控尽力而为，总超时仍是安全网 */
+        /* Local object / registration failure: the death watch is
+         * best-effort, the total timeout remains the safety net */
         CM_LOG_W("add client death recipient failed, request id: %s",
             session->requestId.c_str());
         return;
@@ -739,11 +772,11 @@ void CmUkeyAuthDialogManager::RemoveClientDeathRecipientLocked(
 void CmUkeyAuthDialogManager::StartKeepAliveLocked(const std::string &requestId)
 {
     if (unloadRenewal_ == nullptr || !EnsureTimerHandlerLocked()) {
-        return; // 未注册续期钩子或线程不可用：无保活任务
+        return; // no renewal hook registered or thread unavailable: no keep-alive task
     }
     if (!timerHandler_->PostTask([this, requestId] { HandleKeepAlive(requestId); },
         KeepAliveTaskName(requestId), static_cast<int64_t>(keepAliveIntervalMs_))) {
-        /* 续期尽力而为：失败仅记录，总超时仍是安全网 */
+        /* Renewal is best-effort: failure only logs, the total timeout remains the safety net */
         CM_LOG_E("post keepalive task failed, request id: %s", requestId.c_str());
     }
 }
@@ -752,12 +785,12 @@ void CmUkeyAuthDialogManager::HandleKeepAlive(const std::string &requestId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (session_ == nullptr || session_->requestId != requestId) {
-        return; // 会话已结束：不再续期（迟到的周期任务）
+        return; // session already finished: no more renewal (late periodic task)
     }
     if (unloadRenewal_ != nullptr) {
-        unloadRenewal_(); // 重置 SA 空闲卸载计时（spec §9.4）
+        unloadRenewal_(); // reset the SA idle-unload timer (spec §9.4)
     }
-    StartKeepAliveLocked(requestId); // 周期任务：会话仍活跃时重新投递
+    StartKeepAliveLocked(requestId); // periodic task: re-post while the session is still active
 }
 
 void CmUkeyAuthDialogManager::FinishSessionLocked(const std::string &requestId, int32_t resultCode)
@@ -766,8 +799,9 @@ void CmUkeyAuthDialogManager::FinishSessionLocked(const std::string &requestId, 
         return;
     }
 
-    /* 结果分发：经 clientCallback SendRequest(CM_UKEY_DIALOG_CALLBACK_CMD, [int32 code], TF_ASYNC)，
-     * 随后清理（停定时器 -> 通知弹窗服务销毁窗口 -> 断连 -> 删会话）。 */
+    /* Result delivery: via clientCallback SendRequest(CM_UKEY_DIALOG_CALLBACK_CMD,
+     * [int32 code], TF_ASYNC), followed by cleanup (stop timers -> ask the
+     * dialog service to destroy the window -> disconnect -> drop the session). */
     sptr<IRemoteObject> clientCallback = session_->clientCallback;
     if (clientCallback != nullptr) {
         MessageParcel data;
@@ -792,8 +826,8 @@ void CmUkeyAuthDialogManager::FinishSessionLocked(const std::string &requestId, 
     RemoveClientDeathRecipientLocked(session_);
     sptr<CmSystemDialogConnection> connection = session_->connection;
     if (connection != nullptr) {
-        connection->ReleaseWindow(nullptr); // 仅在仍持有弹窗服务代理时发送销毁命令
-        connection->ScrubParams();          // 擦除可能含 customData base64 的参数（R10）
+        connection->ReleaseWindow(nullptr); // send the destroy command only while the dialog service proxy is held
+        connection->ScrubParams();          // scrub params that may contain customData base64 (R10)
     }
     if (launcher_ != nullptr && connection != nullptr) {
         launcher_->Disconnect(connection);
@@ -804,8 +838,10 @@ void CmUkeyAuthDialogManager::FinishSessionLocked(const std::string &requestId, 
 
 void CmUkeyAuthDialogManager::AbortActiveSessionLocked()
 {
-    /* 环境被重新装配（测试注入/重新初始化）：绑定旧环境的挂起会话直接丢弃
-     * （不回调客户端），停定时器、销毁弹窗并断连旧 launcher。 */
+    /* Environment reassembled (test injection / re-init): pending sessions
+     * bound to the old environment are dropped outright (no client
+     * callback); stop timers, destroy the dialog, and disconnect the old
+     * launcher. */
     if (session_ == nullptr) {
         return;
     }
@@ -831,9 +867,10 @@ void CmUkeyAuthDialogManager::AbortActiveSessionLocked()
 
 void CmUkeyAuthDialogManager::InitRealDependencies()
 {
-    /* 幂等懒初始化：生产装配 RealSystemDialogLauncher + HUKS ability 查询 +
-     * PC 判定 + UIAbility 拉起。仅在未初始化时执行；测试注入（SetLauncher/
-     * SetAbilityQuerier/SetPcChecker）不受影响。 */
+    /* Idempotent lazy init: production assembly of RealSystemDialogLauncher +
+     * HUKS ability query + PC check + UIAbility launch. Runs only when not
+     * yet initialized; test injections (SetLauncher / SetAbilityQuerier /
+     * SetPcChecker) are unaffected. */
     std::lock_guard<std::mutex> lock(mutex_);
     if (realDepsInited_) {
         return;
@@ -842,9 +879,10 @@ void CmUkeyAuthDialogManager::InitRealDependencies()
     launcher_ = std::make_shared<RealSystemDialogLauncher>();
     querier_ = QueryUkeyDriverAbility;
     if (pcChecker_ == nullptr) {
-        /* PC 门禁两级判定（spec D15，用户裁定）：PC 平台构建编译期放行，
-         * 非 PC 平台构建读 PC 模式参数（persist.sceneboard.ispcmode）判定，
-         * 不读 const.product.devicetype（SELinux neverallow 管控） */
+        /* Two-level PC gate (spec D15, user ruling): PC platform builds pass
+         * at compile time; non-PC builds read the PC mode parameter
+         * (persist.sceneboard.ispcmode); const.product.devicetype is not
+         * read (governed by a SELinux neverallow rule) */
         pcChecker_ = CmUkeyIsPcPlatformOrPcMode;
     }
     if (driverAbilityChecker_ == nullptr) {

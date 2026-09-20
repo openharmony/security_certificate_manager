@@ -34,17 +34,19 @@ namespace {
 constexpr int32_t CM_SA_ID = 3512;
 constexpr int32_t LOAD_SA_TIMEOUT_SECONDS = 3;
 const std::u16string CM_SA_DESCRIPTOR = u"ohos.security.cm.service";
-/* SA 侧 requestId 为 16 字节 CSPRNG 的 32 字符 hex，上限留冗余防御 */
+/* The SA-side requestId is a 32-char hex of 16 CSPRNG bytes; the cap leaves defensive headroom */
 constexpr uint32_t UKEY_REPORT_REQUEST_ID_MAX_LEN = 64;
 constexpr uint32_t UKEY_REPORT_PARAM_CNT = 2;
-/* 按需启动冷启动竞态：SA 首次请求可能报该 binder 错，等待后重试一次
- * （对齐 frameworks 侧 SendRequestWithRemote） */
+/* On-demand cold-start race: the SA may report this binder error for the
+ * first request; wait and retry once (aligned with the frameworks-side
+ * SendRequestWithRemote) */
 constexpr int32_t IPC_ERR_SA_STARTING = 29201;
 constexpr int32_t UKEY_REPORT_RETRY_WAIT_MS = 500;
 
-/* 线格式与 cm_param.c 的 CmFreshParamSet(isCopy=true) 输出一致：
- * [CmParamSet 头][CmParam x2][requestId 字节]，blob 数据紧贴 params 之后；
- * blob.data 为绝对地址占位（SA 侧 FreshParamSet 覆写，不读取该值） */
+/* Wire format identical to the CmFreshParamSet(isCopy=true) output in
+ * cm_param.c: [CmParamSet header][CmParam x2][requestId bytes], blob data
+ * right after the params; blob.data is an absolute-address placeholder
+ * (overwritten by the SA-side FreshParamSet, the value is not read) */
 constexpr uint32_t UKEY_REPORT_PARAM_SET_BUFFER_SIZE = sizeof(struct CmParamSet) +
     UKEY_REPORT_PARAM_CNT * sizeof(struct CmParam) + UKEY_REPORT_REQUEST_ID_MAX_LEN;
 

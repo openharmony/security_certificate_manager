@@ -47,7 +47,8 @@ namespace OHOS {
 
         uint32_t keyUriSize = (payloadSize > MAX_KEY_URI_LEN) ? MAX_KEY_URI_LEN :
             static_cast<uint32_t>(payloadSize);
-        /* customData 长度取剩余数据的模糊前缀（≤2048 之外必被客户端拒绝，属预期路径） */
+        /* customData length takes a fuzzed prefix of the remaining data
+         * (beyond <=2048 the client always rejects it, an expected path) */
         uint32_t customDataSize = (payloadSize > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE)
             ? CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE : static_cast<uint32_t>(payloadSize);
 

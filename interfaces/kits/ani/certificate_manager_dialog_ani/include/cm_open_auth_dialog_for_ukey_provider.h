@@ -21,9 +21,10 @@
 #include "cm_open_dialog.h"
 
 namespace OHOS::Security::CertManager::Ani {
-/* openAuthDialogForUkeyProvider 的 ets 入参对象集（dialogInfo / ukeyAuthRequest
- * 逐一对齐 d.ts 签名，spec v4 D23/D24）：native 绑定入口改为对象传参以控制
- * 入参数量，字段解包见 cm_ukey_ani_request.h */
+/* ets input object set of openAuthDialogForUkeyProvider (dialogInfo /
+ * ukeyAuthRequest aligned one-by-one with the d.ts signature, spec v4
+ * D23/D24): the native binding entry takes objects as parameters to cap the
+ * argument count; field unpacking lives in cm_ukey_ani_request.h */
 struct UkeyProviderDialogParams {
     ani_object aniDialogInfo = nullptr;
     ani_object aniRequest = nullptr;
@@ -49,7 +50,7 @@ public:
     int32_t UnpackResult() override;
     void OnFinish() override;
     int32_t InvokeAsyncWork() override;
-    /* dialogInfo 对象解包与校验（spec v4 D23/D24），自 GetParamsFromEnv 拆出 */
+    /* dialogInfo object unpacking and validation (spec v4 D23/D24), split out of GetParamsFromEnv */
     int32_t ParseDialogInfoFromEnv();
 };
 }

@@ -41,7 +41,7 @@ ohos_fuzztest("CmOpenAuthDialogForUkeyProviderFuzzTest") {
     "access_token:libtoken_setproc",
     "bounds_checking_function:libsec_static",
     "c_utils:utils",
-    # cm_ukey_dialog_common.h 引用 syspara/parameters.h（CM_UKEY_ABILITY_NAME_MAX_LEN）
+    # cm_ukey_dialog_common.h references syspara/parameters.h (CM_UKEY_ABILITY_NAME_MAX_LEN)
     "init:libbegetutil",
   ]
 }

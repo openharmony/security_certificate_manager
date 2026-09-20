@@ -64,7 +64,7 @@ int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
 
-    /* optional customData; Uint8Array <= 2048 raw bytes (D19); nullptr = 缺省 */
+    /* optional customData; Uint8Array <= 2048 raw bytes (D19); nullptr = absent */
     if (req.customData != nullptr) {
         ret = AniUtils::ParseUint8Array(env, reinterpret_cast<ani_arraybuffer>(req.customData),
             this->customData);
@@ -95,9 +95,11 @@ int32_t CmOpenUkeyAuthDialog::StartUkeyPinAbility(std::shared_ptr<AbilityContext
 int32_t CmOpenUkeyAuthDialog::InvokeAsyncWork()
 {
     CM_LOG_D("InvokeAsyncWork start");
-    /* 直启路径（原有实现恢复）：UIAbility（驱动弹框）/ 查询失败（默认弹框）/
-     * UIExtension+非PC（默认弹框）。PC + UIExtension 已在 cm_dialog_ani.cpp
-     * 前置分流委托 SA 会话，此处必为直启。 */
+    /* Direct-launch path (original implementation restored): UIAbility
+     * (driver dialog) / query failure (default dialog) / UIExtension +
+     * non-PC (default dialog). PC + UIExtension was branched off to the SA
+     * session earlier in cm_dialog_ani.cpp, so this is always a direct
+     * launch. */
     OHOS::AAFwk::Want want{};
     int32_t ret = GetCustomerAuthCertWant(&this->keyUri,
         (this->customData.data != nullptr && this->customData.size > 0) ? &this->customData : nullptr,
@@ -122,8 +124,9 @@ void CmOpenUkeyAuthDialog::OnFinish()
 {
     CM_FREE_BLOB(this->keyUri);
     if (this->customData.data != nullptr && this->customData.size > 0) {
-        /* customData 为调用方不透明数据，释放前擦除（spec R10）；擦除失败仅告警，
-         * 不阻断释放（dst/size 自恰，失败仅可能来自入参本身） */
+        /* customData is caller-opaque data; scrub before free (spec R10); a
+         * scrub failure only logs and does not block the free (dst/size are
+         * self-consistent, so a failure can only come from the inputs) */
         if (memset_s(this->customData.data, this->customData.size, 0, this->customData.size) != EOK) {
             CM_LOG_E("clear customData before free failed");
         }

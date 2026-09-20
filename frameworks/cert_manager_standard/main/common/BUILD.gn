@@ -17,10 +17,12 @@ import("//build/ohos.gni")
 config("cert_manager_config") {
   include_dirs = [ "include" ]
   if (certificate_manager_feature_ukey_auth_ext_enabled == true) {
-    # PC 平台构建（编译期宏）：CmUkeyIsPcPlatformOrPcMode 第一级直接放行；
-    # 非 PC 平台构建不定义此宏，运行时读 PC 模式参数
-    # （persist.sceneboard.ispcmode）判定。
-    # 经 public_configs 传播给所有依赖本静态库的目标（SA/kits/测试）。
+    # PC-platform build (compile-time macro): the first level of
+    # CmUkeyIsPcPlatformOrPcMode passes directly; non-PC builds do not
+    # define this macro and decide at runtime via the PC-mode parameter
+    # (persist.sceneboard.ispcmode).
+    # Propagated via public_configs to every target depending on this
+    # static library (SA/kits/tests).
     defines = [ "CM_TARGET_PLATFORM_PC" ]
   }
 }

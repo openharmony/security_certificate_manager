@@ -21,7 +21,7 @@
 #include "cm_ukey_dialog_common.h"
 
 namespace {
-/* 覆盖合法边界（256 字符 + NUL = 257）与超长拒绝分支（> 257，spec v4.1 D24） */
+/* Covers the legal boundary (256 chars + NUL = 257) and the over-long rejection branch (> 257, spec v4.1 D24) */
 const uint32_t MAX_ABILITY_NAME_LEN = OHOS::Security::CertManager::CM_UKEY_ABILITY_NAME_MAX_LEN + 2;
 const uint32_t MAX_KEY_URI_LEN = 4096;
 
@@ -57,7 +57,7 @@ namespace OHOS {
         size_t restSize = payloadSize - abilityNameSize;
         uint32_t keyUriSize = (restSize > MAX_KEY_URI_LEN) ? MAX_KEY_URI_LEN :
             static_cast<uint32_t>(restSize);
-        /* customData 取剩余字节（≤2048 之外被客户端拒绝，属预期路径，spec D19） */
+        /* customData takes the remaining bytes (beyond <=2048 the client rejects it, an expected path, spec D19) */
         uint32_t customDataSize = static_cast<uint32_t>(restSize - keyUriSize);
 
         struct UkeyAuthDialogInfo dialogInfo = {

@@ -26,9 +26,10 @@
 
 namespace OHOS::Security::CertManager {
 
-/* 系统弹窗服务连接对象：连接成功后按 useriam 报文格式（bundleName/abilityName/
- * parameters 三组 key-value）向服务 stub 发送 START_DIALOG 命令；断连时通知
- * manager 进入宽限期。 */
+/* System dialog service connection object: once connected, sends the
+ * START_DIALOG command to the service stub in the useriam message format
+ * (three key-value pairs: bundleName / abilityName / parameters); on
+ * disconnect, notifies the manager to enter the grace period. */
 class CmSystemDialogConnection : public AAFwk::AbilityConnectionStub {
 public:
     CmSystemDialogConnection(const std::string &requestId, const std::string &bundle,
@@ -39,14 +40,16 @@ public:
         const sptr<IRemoteObject> &remoteObject, int32_t resultCode) override;
     void OnAbilityDisconnectDone(const AppExecFwk::ElementName &element,
         int32_t resultCode) override;
-    /* 会话收尾（总超时/正常结束）时通知弹窗服务销毁窗口：ON_REMOTE_STATE_CHANGED。
-     * remoteObject 为空时使用连接成功时保存的服务代理（不再持有则不发）。 */
+    /* At session end (total timeout / normal finish), ask the dialog service
+     * to destroy the window: ON_REMOTE_STATE_CHANGED. When remoteObject is
+     * null, use the service proxy saved at connect time (if no longer held,
+     * send nothing). */
     void ReleaseWindow(const sptr<IRemoteObject> &remoteObject);
 
-    /* 隐私（spec R10）：parameters JSON 可能含 customData base64，会话收尾前擦除。 */
+    /* Privacy (spec R10): the parameters JSON may contain customData base64; scrub before session end. */
     void ScrubParams();
 
-    /* 下发给驱动弹窗的 parameters JSON（含 timeout），测试用于验证内容 */
+    /* parameters JSON sent down to the driver dialog (including timeout); tests use it to verify content */
     const std::string &GetParamsJson() const { return paramsJson_; }
 
 private:
@@ -55,11 +58,11 @@ private:
     std::string ability_;
     std::string paramsJson_;
     sptr<IRemoteObject> dialogRemoteObject_;
-    bool released_ = false; /* 会话收尾后忽略迟到的连接回调（R8） */
+    bool released_ = false; /* ignore late connection callbacks after session end (R8) */
     std::mutex mutex_;
 };
 
-/* 生产装配的 launcher：固定连接 com.ohos.systemui / com.ohos.systemui.dialog。 */
+/* Production launcher: connects fixedly to com.ohos.systemui / com.ohos.systemui.dialog. */
 class RealSystemDialogLauncher : public SystemDialogLauncher {
 public:
     int32_t Connect(const sptr<IAbilityConnection> &conn) override;

@@ -13,10 +13,13 @@
  * limitations under the License.
  */
 
-/* 嵌入资源符号声明（ukeyAuth 扩展 context 模块的 js/abc 资源）：
- * 符号由构建期 gen_js_obj / es2abc_gen_abc 将资源编入目标文件生成，
- * 无对应头文件可 include，统一收敛到本声明头（禁止在源文件中裸写 extern
- * 引用外部变量）。符号区间 [_start, _end) 为资源内容。 */
+/* Embedded resource symbol declarations (js/abc resources of the ukeyAuth
+ * extension context module): the symbols are generated at build time by
+ * gen_js_obj / es2abc_gen_abc embedding the resources into the object file;
+ * there is no header to include, so they are consolidated in this
+ * declaration header (bare extern references to external variables in source
+ * files are forbidden). The symbol range [_start, _end) is the resource
+ * content. */
 
 #ifndef UKEY_AUTH_EXTENSION_CONTEXT_RESOURCE_H
 #define UKEY_AUTH_EXTENSION_CONTEXT_RESOURCE_H

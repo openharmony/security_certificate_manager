@@ -21,10 +21,12 @@
 #include "cm_open_dialog.h"
 
 namespace OHOS::Security::CertManager::Ani {
-/* SA 会话路径实现（spec v4 D21/D22）：无 context、不直启弹框，结果经 SA 异步
- * 回投。唯一调用方为 openUkeyAuthDialog（带 context 重载委托），D8 修订的
- * -1017/-1018 折叠恒生效。aniRequest 为调用方传入的 UkeyAuthRequest ets 对象
- * （字段解包见 cm_ukey_ani_request.h）。 */
+/* SA session path implementation (spec v4 D21/D22): no context, no direct
+ * dialog launch; the result is asynchronously reported back via the SA. The
+ * sole caller is openUkeyAuthDialog (delegated by the context-carrying
+ * overload), so the D8-revised -1017/-1018 folding always applies.
+ * aniRequest is the caller-provided UkeyAuthRequest ets object (field
+ * unpacking in cm_ukey_ani_request.h). */
 class CmOpenUkeyAuthDialogSaSession : public CertManagerAsyncImpl {
 private:
     /* ani params */

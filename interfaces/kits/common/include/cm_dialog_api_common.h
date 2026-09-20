@@ -68,7 +68,7 @@ static const std::string UKEY_AUTH_REPORT_TIMEOUT_MSG =
     "the ukey driver did not report the auth result within the timeout.";
 static const std::string UKEY_DIALOG_IN_PROGRESS_MSG =
     "another ukey pin auth dialog is already in progress.";
-/* 细化文案（spec v4 D22/D25：-1019 → 29700003，-1020 → 29700005） */
+/* Refined messages (spec v4 D22/D25: -1019 -> 29700003, -1020 -> 29700005) */
 static const std::string UKEY_NOT_REGISTERED_MSG =
     "the authentication operation failed: "
     "no ukey driver pin dialog is registered for the key uri.";
@@ -222,23 +222,30 @@ int32_t GetCallerLabelName(std::shared_ptr<OHOS::AbilityRuntime::AbilityContext>
 
 bool IsEnableCACertDialog();
 
-/* 组装系统默认 UKey Pin 弹框 want（Kit 直启回退路径，spec v4 D22/D25 v2）：
- * com.ohos.certmanager/CertPickerUIExtAbility（sys/commonUI，pageType=7）。
- * customData 不下发（默认弹框无消费方，D18 语义）。 */
+/* Assemble the system default UKey Pin dialog want (kit direct-launch
+ * fallback path, spec v4 D22/D25 v2):
+ * com.ohos.certmanager/CertPickerUIExtAbility (sys/commonUI, pageType=7).
+ * customData is not delivered (the default dialog has no consumer, D18
+ * semantics). */
 int32_t GetDefaultUkeyAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want);
 
-/* 组装 UKey Pin 弹框拉起 want（带 context 直启路径，原有实现恢复）：驱动注册
- * UIAbility 时拉起驱动弹框（action=UkeyPINAuth + appUid + keyUri + customData
- * base64）；查询失败（未注册）或注册为 UIExtension 但 SA 路径被调用方拒绝
- * （非 PC，D25 v2）时回退组装系统默认弹框 want（spec §4.1）。customData 原始
- * 字节 base64 后仅写入自定义弹框 want，默认弹框不携带（spec D18）。 */
+/* Assemble the UKey Pin dialog launch want (context-carrying direct-launch
+ * path, original implementation restored): when the driver registered a
+ * UIAbility, launch the driver dialog (action=UkeyPINAuth + appUid + keyUri +
+ * customData base64); on query failure (not registered) or when the
+ * registration is a UIExtension but the SA path was declined by the caller
+ * (non-PC, D25 v2), fall back to assembling the system default dialog want
+ * (spec §4.1). customData raw bytes are base64-encoded and written only into
+ * the custom dialog want; the default dialog carries none (spec D18). */
 int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, const CmBlob *customData,
     OHOS::AAFwk::Want &want);
 
-/* 查询 UKey 驱动注册的自定义 Pin 弹框 ability 信息（bundle/ability 名 + abilityType）。
- * 返回 CM_SUCCESS 且 type 为 CM_UKEY_ABILITY_TYPE_UIEXTENSION 时，调用方在 PC
- * 设备走 SA 会话新链路；其余情况（UIAbility / 查询失败）由调用方 context 直启
- * （驱动 UIAbility 弹框 / 系统默认弹框，spec v4 §4.1 v4.2）。 */
+/* Query the custom Pin dialog ability info registered by the UKey driver
+ * (bundle/ability name + abilityType). When CM_SUCCESS is returned with type
+ * CM_UKEY_ABILITY_TYPE_UIEXTENSION, the caller takes the new SA-session path
+ * on PC devices; in every other case (UIAbility / query failure) the caller
+ * launches directly with its context (driver UIAbility dialog / system
+ * default dialog, spec v4 §4.1 v4.2). */
 int32_t GetUkeyAbilityInfo(const CmBlob *keyUri, std::string &bundleName,
     std::string &abilityName, uint32_t &abilityType);
 

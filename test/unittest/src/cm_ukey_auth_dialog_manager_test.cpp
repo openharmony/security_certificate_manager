@@ -33,7 +33,7 @@ public:
     int32_t Connect(const sptr<IAbilityConnection> &conn) override
     {
         connectCount_++;
-        conn_ = static_cast<CmSystemDialogConnection *>(conn.GetRefPtr()); /* manager 侧必为该类型 */
+        conn_ = static_cast<CmSystemDialogConnection *>(conn.GetRefPtr()); /* always this type on the manager side */
         return connectRet_;
     }
     void Disconnect(const sptr<IAbilityConnection> &conn) override
@@ -41,7 +41,7 @@ public:
         disconnectCount_++;
     }
     int32_t connectRet_ = 0; int connectCount_ = 0; int disconnectCount_ = 0;
-    sptr<CmSystemDialogConnection> conn_; // 需要访问 paramsJson 验证
+    sptr<CmSystemDialogConnection> conn_; // needed to access paramsJson for verification
 };
 
 /* IRemoteStub requires a broker interface with a valid descriptor; a minimal
@@ -102,7 +102,7 @@ public:
     {
         return manager_->OpenDialog(&keyUri_, 100, timeout, customData, client_);
     }
-    /* convenience wrapper for OpenDriverDialog (spec v4 §4.1 ForDriver 路由) */
+    /* convenience wrapper for OpenDriverDialog (spec v4 §4.1 ForDriver routing) */
     int32_t OpenDriver(uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION, uint32_t timeout = 0,
         const struct CmBlob *customData = nullptr)
     {
@@ -125,8 +125,9 @@ public:
     struct CmBlob keyUri_ = { 8, reinterpret_cast<uint8_t *>(const_cast<char *>("testuri")) };
 };
 
-/* 路由矩阵（spec v4 §4.1/D22）：查询失败=未注册 → 同步拒绝 -1019（29700003），
- * SA 不再拉系统默认弹框 */
+/* Routing matrix (spec v4 §4.1/D22): query failure = not registered ->
+ * sync reject -1019 (29700003); the SA no longer launches the system
+ * default dialog */
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogAbilityQueryFail, testing::ext::TestSize.Level0)
 {
     querierRet_ = -51; // HUKS query error -> treated as not-registered -> sync reject
@@ -136,17 +137,17 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogAbilityQueryFail, testing::ext::
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDialogWrongAbilityType, testing::ext::TestSize.Level0)
 {
-    /* spec v4：UIAbility 弹框不支持——查询到即拒绝 -1021（29700003） */
+    /* spec v4: UIAbility dialogs are unsupported - as soon as the query sees one, reject -1021 (29700003) */
     abilityType_ = CM_UKEY_ABILITY_TYPE_UIABILITY;
     ASSERT_EQ(Open(), CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED);
     ASSERT_EQ(Open(), CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED);
-    EXPECT_EQ(launcher_->connectCount_, 0); /* 未建立任何连接 */
-    EXPECT_EQ(manager_->GetRequestIdForTest(), ""); /* 会话未占用单飞 */
+    EXPECT_EQ(launcher_->connectCount_, 0); /* no connection established */
+    EXPECT_EQ(manager_->GetRequestIdForTest(), ""); /* single-flight not occupied by any session */
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, PcGateBlocksUiExtensionWhenNotPc, testing::ext::TestSize.Level0)
 {
-    /* rule 6（spec D10/D15）：非 PC 且非 PC 模式 → -1020（fail-closed，含 checker 缺省） */
+    /* rule 6 (spec D10/D15): non-PC and non-PC mode -> -1020 (fail-closed, including a default checker) */
     pcMode_ = false;
     ASSERT_EQ(Open(), CMR_DIALOG_ERROR_NOT_PC_DEVICE);
     EXPECT_EQ(launcher_->connectCount_, 0);
@@ -165,7 +166,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, CustomDataValidated, testing::ext::TestSiz
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, ParamsJsonCarriesCustomData, testing::ext::TestSize.Level0)
 {
-    /* UIExtension 路径：customData 以 base64 写入（spec §6.2/D18）；v4 起 JSON 无 scene */
+    /* UIExtension path: customData is written base64-encoded (spec §6.2/D18); since v4 the JSON has no scene */
     uint8_t data[3] = { 'a', 'b', 'c' };
     struct CmBlob customData = { 3, data };
     ASSERT_EQ(Open(0, &customData), CM_SUCCESS);
@@ -173,13 +174,13 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, ParamsJsonCarriesCustomData, testing::ext:
     ASSERT_NE(conn, nullptr);
     const std::string &params = conn->GetParamsJson();
     EXPECT_NE(params.find("\"customData\":\"YWJj\""), std::string::npos); /* base64("abc") */
-    EXPECT_EQ(params.find("\"scene\""), std::string::npos); /* v4 无 scene */
+    EXPECT_EQ(params.find("\"scene\""), std::string::npos); /* no scene in v4 */
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 }
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, Base64Vectors, testing::ext::TestSize.Level0)
 {
-    /* RFC 4648 test vectors + 边界（spec §8.4） */
+    /* RFC 4648 test vectors + boundaries (spec §8.4) */
     struct { const char *in; size_t len; const char *out; } vectors[] = {
         { "", 0, "" },
         { "f", 1, "Zg==" },
@@ -206,12 +207,15 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, SingleFlightRejected, testing::ext::TestSi
 {
     ASSERT_EQ(Open(0), CM_SUCCESS);
     ASSERT_EQ(Open(0), CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS);
-    /* cleanup: 显式收尾挂起会话，避免 50ms 周期保活任务在 fixture 销毁与下一个
-     * 用例 SetUp（SetLauncher 中止会话）之间的窗口内触发悬垂的 renewalCount_++ */
+    /* cleanup: finish the pending session explicitly, so the 50ms periodic
+     * keep-alive task cannot fire a dangling renewalCount_++ in the window
+     * between fixture teardown and the next case's SetUp (SetLauncher aborts
+     * the session) */
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0);
 }
 
-/* requestId 必须来自 CSPRNG：多次会话互不相同（不可预测性的可测代理）+ 32 位 hex 格式 */
+/* requestId must come from the CSPRNG: distinct across sessions (a testable
+ * proxy for unpredictability) + 32-char hex format */
 HWTEST_F(CmUkeyAuthDialogManagerTest, RequestIdUniquePerSession, testing::ext::TestSize.Level0)
 {
     const int sessions = 16;
@@ -232,7 +236,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, RequestIdUniquePerSession, testing::ext::T
 HWTEST_F(CmUkeyAuthDialogManagerTest, NormalReportDeliversCode, testing::ext::TestSize.Level0)
 {
     ASSERT_EQ(Open(0), CM_SUCCESS);
-    // 取回 requestId：manager 需提供测试取回接口 GetRequestIdForTest()
+    // Retrieve the requestId: the manager must expose a test retrieval interface GetRequestIdForTest()
     std::string reqId = manager_->GetRequestIdForTest();
     EXPECT_EQ(reqId.size(), 32u); // 16 bytes hex
     ASSERT_EQ(manager_->OnReport(reqId, "com.example.ukeydrv", 0), CM_SUCCESS);
@@ -259,8 +263,9 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, ReportUnknownCodeFolded, testing::ext::Tes
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, DisconnectThenGraceReport, testing::ext::TestSize.Level0)
 {
-    /* 放宽本用例宽限窗口（500ms）：断言"宽限期内上报成功"，两条相邻 manager 调用
-     * 之间 100ms 默认宽限在重载机器上可能不够 */
+    /* Widen this case's grace window (500ms): we assert "report within the
+     * grace period succeeds", and the default 100ms grace between two
+     * adjacent manager calls may not be enough on a loaded machine */
     manager_->SetTimeoutRangeForTest(2, 3, 5, 500);
     ASSERT_EQ(Open(0), CM_SUCCESS);
     std::string reqId = manager_->GetRequestIdForTest();
@@ -389,7 +394,8 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveFiresPeriodicallyAndCancelsOnFini
 {
     ASSERT_EQ(Open(0), CM_SUCCESS);
     std::string reqId = manager_->GetRequestIdForTest();
-    /* 250ms 容纳 50ms 间隔的 ≥2 次触发（含 runner 线程首次创建的启动抖动） */
+    /* 250ms accommodates >=2 firings at the 50ms interval (including the
+     * startup jitter of the runner thread's first creation) */
     std::this_thread::sleep_for(std::chrono::milliseconds(250));
     EXPECT_GE(renewalCount_, 2); // armed on success + periodic re-arm
     ASSERT_EQ(manager_->OnReport(reqId, driverBundle_, 0), CM_SUCCESS);
@@ -416,8 +422,10 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, KeepAliveCancelledOnAbort, testing::ext::T
 {
     ASSERT_EQ(Open(0), CM_SUCCESS);
     manager_->SetTimeoutRangeForTest(2, 3, 5, 100); // reconfiguration aborts the active session
-    /* 断言"中止后不再触发"而非"首次触发前完成中止"：后者依赖两条相邻语句的
-     * 间隔 < 50ms，重载机器上会 flaky */
+    /* Assert "no further firing after the abort" rather than "the abort
+     * completes before the first firing": the latter depends on the gap
+     * between two adjacent statements being < 50ms, which gets flaky on a
+     * loaded machine */
     int afterAbort = renewalCount_;
     std::this_thread::sleep_for(std::chrono::milliseconds(150)); // > 50ms interval
     EXPECT_EQ(renewalCount_, afterAbort); // no further keep-alive after the abort
@@ -468,10 +476,10 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, TotalTimeoutPostFailRejectsOpen, testing::
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup
 }
 
-/* ---- OpenDriverDialog（spec v4 §4.1 ForDriver 路由，D23）---- */
+/* ---- OpenDriverDialog (spec v4 §4.1 ForDriver routing, D23) ---- */
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogWrongAbilityTypeRejected, testing::ext::TestSize.Level0)
 {
-    /* SA 侧 abilityType 防御：仅 UIExtension 放行，其余 -1014（29700006） */
+    /* SA-side abilityType defense: only UIExtension is admitted, everything else -1014 (29700006) */
     ASSERT_EQ(OpenDriver(CM_UKEY_ABILITY_TYPE_UIABILITY), CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED);
     ASSERT_EQ(OpenDriver(2), CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED);
     EXPECT_EQ(launcher_->connectCount_, 0);
@@ -480,7 +488,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogWrongAbilityTypeRejected, 
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogBmsCheckFails, testing::ext::TestSize.Level0)
 {
-    /* BMS 预校验失败（ability 不存在/非 UKEY_AUTH 扩展）→ -1019（29700003，D23） */
+    /* BMS precheck failure (ability missing / not a UKEY_AUTH extension) -> -1019 (29700003, D23) */
     bmsOk_ = false;
     ASSERT_EQ(OpenDriver(), CMR_DIALOG_ERROR_NOT_REGISTERED);
     EXPECT_EQ(launcher_->connectCount_, 0);
@@ -488,7 +496,8 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogBmsCheckFails, testing::ex
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogAbilityNameBoundary, testing::ext::TestSize.Level0)
 {
-    /* 256 字符合法名（blob 257 含 NUL）通过长度校验并到达 BMS 检查（spec v4.1 D24 边界） */
+    /* A 256-char legal name (blob 257 with NUL) passes the length check and
+     * reaches the BMS check (spec v4.1 D24 boundary) */
     std::string longName(256, 'a');
     UkeyDriverDialogRequest longReq;
     longReq.abilityName = { static_cast<uint32_t>(longName.size() + 1),
@@ -499,7 +508,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogAbilityNameBoundary, testi
     longReq.clientCallback = client_;
     ASSERT_EQ(manager_->OpenDriverDialog(longReq), CM_SUCCESS);
     manager_->OnReport(manager_->GetRequestIdForTest(), callerBundle_, 0); // cleanup
-    /* 仅 NUL 的名字剥离后为空串 → 参数拒绝 */
+    /* A NUL-only name is an empty string after stripping -> rejected as an argument */
     const char *nulName = "";
     UkeyDriverDialogRequest nulReq;
     nulReq.abilityName = { 1, reinterpret_cast<uint8_t *>(const_cast<char *>(nulName)) };
@@ -512,7 +521,7 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogAbilityNameBoundary, testi
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogPcGate, testing::ext::TestSize.Level0)
 {
-    /* ForDriver 无回退：非 PC → -1020（29700005，D25 v2） */
+    /* ForDriver has no fallback: non-PC -> -1020 (29700005, D25 v2) */
     pcMode_ = false;
     ASSERT_EQ(OpenDriver(), CMR_DIALOG_ERROR_NOT_PC_DEVICE);
     EXPECT_EQ(launcher_->connectCount_, 0);
@@ -523,8 +532,9 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogPcGate, testing::ext::Test
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogParamsAndOwner, testing::ext::TestSize.Level0)
 {
-    /* 成功路径：owner = 调用方 bundle（IPC token 来源），params JSON 无 scene、
-     * 目标 = callerBundle/driverAbilityName（spec §6.2/D26） */
+    /* Success path: owner = caller bundle (IPC token source); params JSON
+     * has no scene and the target = callerBundle/driverAbilityName
+     * (spec §6.2/D26) */
     uint8_t data[3] = { 'a', 'b', 'c' };
     struct CmBlob customData = { 3, data };
     ASSERT_EQ(OpenDriver(CM_UKEY_ABILITY_TYPE_UIEXTENSION, 0, &customData), CM_SUCCESS);
@@ -537,8 +547,8 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogParamsAndOwner, testing::e
     EXPECT_NE(params.find("\"action\":\"UkeyPINAuth\""), std::string::npos);
     EXPECT_NE(params.find("\"ability.want.params.uiExtensionType\":\"ukeyAuth\""), std::string::npos);
     EXPECT_NE(params.find("\"customData\":\"YWJj\""), std::string::npos);
-    EXPECT_EQ(params.find("\"scene\""), std::string::npos); /* v4 无 scene */
-    /* 上报责任方 = 调用方 bundle；他人上报被拒 */
+    EXPECT_EQ(params.find("\"scene\""), std::string::npos); /* no scene in v4 */
+    /* The reporting responsible party = caller bundle; reports from others are rejected */
     std::string reqId = manager_->GetRequestIdForTest();
     ASSERT_EQ(manager_->OnReport(reqId, driverBundle_, 0), CMR_DIALOG_ERROR_INTERNAL);
     ASSERT_EQ(manager_->OnReport(reqId, callerBundle_, 0), CM_SUCCESS);
@@ -547,7 +557,8 @@ HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogParamsAndOwner, testing::e
 
 HWTEST_F(CmUkeyAuthDialogManagerTest, OpenDriverDialogSharesSingleFlight, testing::ext::TestSize.Level0)
 {
-    /* 两接口共享单飞（D26）：OpenDialog 占位后 ForDriver 拒 -1018，反之亦然 */
+    /* The two interfaces share single-flight (D26): after OpenDialog takes
+     * the slot, ForDriver is rejected with -1018, and vice versa */
     ASSERT_EQ(Open(), CM_SUCCESS);
     ASSERT_EQ(OpenDriver(), CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS);
     manager_->OnReport(manager_->GetRequestIdForTest(), driverBundle_, 0); // cleanup

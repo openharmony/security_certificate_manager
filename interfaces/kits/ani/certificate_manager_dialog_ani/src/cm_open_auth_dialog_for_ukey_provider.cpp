@@ -57,8 +57,9 @@ CmOpenAuthDialogForUkeyProvider::CmOpenAuthDialogForUkeyProvider(ani_env *env,
     this->aniParams = params;
 }
 
-/* dialogInfo 对象解包与校验（spec v4 D23/D24，自 GetParamsFromEnv 拆出）：
- * abilityName/abilityType 必填（ets 层已 401 校验 undefined，此处防御缺失） */
+/* dialogInfo object unpacking and validation (spec v4 D23/D24, split out of
+ * GetParamsFromEnv): abilityName/abilityType required (undefined already
+ * 401-checked at the ets layer; a missing value is defended against here) */
 int32_t CmOpenAuthDialogForUkeyProvider::ParseDialogInfoFromEnv()
 {
     ani_string aniAbilityName = nullptr;
@@ -129,7 +130,7 @@ int32_t CmOpenAuthDialogForUkeyProvider::GetParamsFromEnv()
     }
     this->timeoutSec = static_cast<uint32_t>(req.timeout);
 
-    /* optional customData; Uint8Array <= 2048 raw bytes (D19)；nullptr = 缺省 */
+    /* optional customData; Uint8Array <= 2048 raw bytes (D19); nullptr = absent */
     if (req.customData != nullptr) {
         ret = AniUtils::ParseUint8Array(env, reinterpret_cast<ani_arraybuffer>(req.customData),
             this->customData);
@@ -153,8 +154,10 @@ int32_t CmOpenAuthDialogForUkeyProvider::GetParamsFromEnv()
     return CM_SUCCESS;
 }
 
-/* 按结果码生成 businessError（自 UkeyAuthDialogResultCallback 拆出）：
- * 成功 → 无错误对象；其余（含 29700009/29700010 直通码，D8 v4 不折叠）→ 常规映射 */
+/* Build the businessError from the result code (split out of
+ * UkeyAuthDialogResultCallback): success -> no error object; anything else
+ * (including the 29700009/29700010 pass-through codes, not folded per D8 v4)
+ * -> regular mapping */
 static bool GenerateProviderResultBusinessError(ani_env *env, int32_t resultCode,
     ani_object &businessError)
 {
@@ -260,8 +263,9 @@ void CmOpenAuthDialogForUkeyProvider::OnFinish()
     CM_FREE_BLOB(this->abilityName);
     CM_FREE_BLOB(this->keyUri);
     if (this->customData.data != nullptr && this->customData.size > 0) {
-        /* customData 为调用方不透明数据，释放前擦除（spec R10）；擦除失败仅告警，
-         * 不阻断释放（dst/size 自恰，失败仅可能来自入参本身） */
+        /* customData is caller-opaque data; scrub before free (spec R10); a
+         * scrub failure only logs and does not block the free (dst/size are
+         * self-consistent, so a failure can only come from the inputs) */
         if (memset_s(this->customData.data, this->customData.size, 0, this->customData.size) != EOK) {
             CM_LOG_E("clear customData before free failed");
         }

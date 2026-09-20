@@ -87,10 +87,13 @@ bool EtsUkeyAuthExtensionBase::BindNativeMethods()
 
 void EtsUkeyAuthExtensionBase::BindContext()
 {
-    /* 模式对齐上游 EtsAutoFillExtension::BindContext：不调基类 BindContext，
-     * 直接以 ukey 上下文对象绑定 context 字段并接管 shellContextRef_（保留
-     * 全局引用，由基类析构释放）——避免产生被替换的基类上下文孤儿对象，且
-     * 配置变更通知（EtsExtensionCommon::ConfigurationUpdated）落在 ukey 上下文上 */
+    /* Pattern aligned with the upstream EtsAutoFillExtension::BindContext: do
+     * not call the base BindContext; bind the context field directly with the
+     * ukey context object and take over shellContextRef_ (keep the global
+     * reference, released by the base destructor) - this avoids an orphaned
+     * replaced base context object and ensures configuration-change
+     * notifications (EtsExtensionCommon::ConfigurationUpdated) land on the
+     * ukey context */
     if (!BindNativeMethods()) {
         CM_LOG_E("BindNativeMethods failed");
     }

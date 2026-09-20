@@ -35,9 +35,11 @@ std::atomic<bool> g_asyncFired(false);
 /* ForDriver probe sentinel: stays 0xDEADBEEF until the callback fires */
 std::atomic<int32_t> g_driverProbeFired(0xDEADBEEF);
 
-/* 无 SA 3512 的宿主机（qemu/本机）上 CmLoadSystemAbility 返回空，同步调用以
- * CMR_ERROR_NULL_POINTER 快速失败——文件头声明的可接受路径；严格断言仅在有
- * SA 应答时生效（spec 探针语义不变，设备上行为不变）。 */
+/* On a host without SA 3512 (qemu/local), CmLoadSystemAbility returns null
+ * and the sync call fails fast with CMR_ERROR_NULL_POINTER - the acceptable
+ * path declared in the file header; strict assertions apply only when the
+ * SA answers (probe semantics per spec unchanged, on-device behavior
+ * unchanged). */
 inline bool SaUnavailableOnHost(int32_t ret)
 {
     return ret == CMR_ERROR_NULL_POINTER;

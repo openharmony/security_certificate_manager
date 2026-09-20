@@ -20,7 +20,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-/* 错误码定义拆至 cm_error_code.h（控制单头行数；此处透出，取值与兼容性不变） */
+/* Error code definitions split into cm_error_code.h (to cap single-header
+ * line count); re-exported here, values and compatibility unchanged */
 #include "cm_error_code.h"
 
 #ifdef __cplusplus
@@ -444,12 +445,14 @@ struct UkeyAuthRequest {
                                   size 0 / NULL data = absent; never persisted or logged */
 };
 
-/* UKey 驱动弹框扩展信息（对齐 d.ts UkeyAuthDialogInfo，spec v4 D24/v4.1：
- * abilityName 上限 256 字节，见 CM_UKEY_ABILITY_NAME_MAX_LEN）：
- * openAuthDialogForUkeyProvider 入参，bundle 由服务端从 IPC token 解出（不可声明） */
+/* UKey driver dialog extension info (aligned with d.ts UkeyAuthDialogInfo,
+ * spec v4 D24/v4.1: abilityName capped at 256 bytes, see
+ * CM_UKEY_ABILITY_NAME_MAX_LEN):
+ * input of openAuthDialogForUkeyProvider; the bundle is resolved server-side
+ * from the IPC token (not declarable) */
 struct UkeyAuthDialogInfo {
-    struct CmBlob abilityName; /* 驱动弹框扩展名，非空，最大 256 字节，NUL 结尾 */
-    uint32_t abilityType;      /* enum 值，仅 CM_UKEY_ABILITY_TYPE_UIEXTENSION */
+    struct CmBlob abilityName; /* driver dialog extension name, non-empty, max 256 bytes, NUL-terminated */
+    uint32_t abilityType;      /* enum value, CM_UKEY_ABILITY_TYPE_UIEXTENSION only */
 };
 
 static inline bool CmIsAdditionOverflow(uint32_t a, uint32_t b)

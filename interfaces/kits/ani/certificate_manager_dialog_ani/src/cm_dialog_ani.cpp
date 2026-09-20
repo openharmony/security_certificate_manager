@@ -183,7 +183,7 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_object
         return InvokeCallbackVoid(env, callback);
     }
     /* The only overload (with context). Branch by the registered ability type:
-     * UIExtension + PC → SA session path; everything else (UIAbility, query
+     * UIExtension + PC -> SA session path; everything else (UIAbility, query
      * failure, UIExtension + non-PC) direct-launches via the caller's context
      * below (driver UIAbility want, or the system default dialog). */
     {
@@ -203,7 +203,8 @@ ani_object openUkeyAuthDialogNative(ani_env *env, ani_object context, ani_object
                     ukeyAuthRequest, callback);
                 return saSessionImpl->Invoke();
             }
-            /* 直启路径（原有实现）：UIAbility / 查询失败 / UIExtension+非PC → 下方 context 实现 */
+            /* Direct-launch path (original implementation): UIAbility / query
+             * failure / UIExtension + non-PC -> context impl below */
         }
     }
     auto openUkeyAuthDialogImpl = std::make_shared<CmOpenUkeyAuthDialog>(env, context,

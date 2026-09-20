@@ -54,8 +54,9 @@ static void StartUkeyPinAbility(std::shared_ptr<CmUIExtensionRequestContext> asy
     }
 }
 
-/* keyUri（必填 string）：blob 含结尾 NUL；超长（> MAX_LEN_URI，NUL 计入）在此
- * 拒绝，调用方报 29700006 而非 SA 侧未映射的泛化错误 */
+/* keyUri (required string): the blob carries the terminating NUL;
+ * over-long (> MAX_LEN_URI, NUL counted) is rejected here so the caller
+ * reports 29700006 instead of an unmapped generic error on the SA side */
 static bool ParseUkeyKeyUri(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
 {
     bool hasProperty = false;
@@ -95,8 +96,9 @@ static bool ParseUkeyKeyUri(std::shared_ptr<CmUIExtensionRequestContext> asyncCo
     return true;
 }
 
-/* 可选 timeoutDuration（秒）：缺省/undefined/null 保持 0（= 服务端默认 300s）；
- * 存在但非 number 或非有限值（NaN 落在区间外）为参数错误 */
+/* Optional timeoutDuration (seconds): absent/undefined/null keeps 0
+ * (= server default 300s); present but not a number or not finite (NaN
+ * falls outside the range) is a parameter error */
 static bool ParseUkeyTimeoutDuration(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
 {
     bool hasTimeout = false;
@@ -130,12 +132,12 @@ static bool ParseUkeyTimeoutDuration(std::shared_ptr<CmUIExtensionRequestContext
     return true;
 }
 
-/* 分配并拷贝 customData blob（ParseUkeyCustomData 的后半段，定义在其后） */
+/* Allocate and copy the customData blob (latter half of ParseUkeyCustomData, defined below) */
 static bool AllocCustomDataBlob(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
     const void *data, size_t length);
 
-/* 可选 customData（D19）：缺省/undefined/null 保持无；必须为 Uint8Array 且
- * 至多 2048 原始字节 */
+/* Optional customData (D19): absent/undefined/null keeps none; must be a
+ * Uint8Array of at most 2048 raw bytes */
 static bool ParseUkeyCustomData(std::shared_ptr<CmUIExtensionRequestContext> asyncContext, napi_value arg)
 {
     bool hasCustomData = false;
@@ -223,7 +225,7 @@ static void UvTsfnFinalize(napi_env env, void *finalizeData, void *finalizeHint)
     delete static_cast<CmUkeyAuthResultContext *>(finalizeData);
 }
 
-// fold -1017/-1018 to 29700002/29700003 (D8 修订, unconditional on the SA path)
+// fold -1017/-1018 to 29700002/29700003 (D8 revision, unconditional on the SA path)
 static napi_value GenerateUkeyResultError(napi_env env, int32_t resultCode,
     OHOS::Security::CertManager::CmMetricsReport *metricsReport);
 
@@ -304,10 +306,14 @@ static void UkeyAuthDialogResultCallback(int32_t resultCode, void *userData)
     }
 }
 
-/* D8 修订：openUkeyAuthDialog 委托 SA 会话后可能产生 -1017/-1018。接口 since-22
- * 已发布，不新增 since-26 错误码至其 throws 面——超时折叠 29700002、单飞折叠
- * 29700003（SA 会话路径唯一可达自该接口，折叠恒生效），错误消息保留具体原因
- * （超时未上报 / 已有挂起会话）。ForProvider 的专属码不经此函数（不折叠）。 */
+/* D8 revision: after openUkeyAuthDialog delegates to the SA session it may
+ * produce -1017/-1018. The interface is published since-22, so no since-26
+ * error codes are added to its throws surface - timeout folds to 29700002
+ * and single-flight folds to 29700003 (the SA session path is reachable
+ * only from this interface, so the folding always applies), with the error
+ * message keeping the specific reason (report timeout / a pending session
+ * already exists). ForProvider's dedicated codes do not go through this
+ * function (not folded). */
 static napi_value GenerateUkeyResultError(napi_env env, int32_t resultCode,
     OHOS::Security::CertManager::CmMetricsReport *metricsReport)
 {
@@ -339,9 +345,10 @@ static napi_value GenerateUkeyResultError(napi_env env, int32_t resultCode,
 static napi_value OpenUkeyAuthDialogViaSa(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
     OHOS::Security::CertManager::CmMetricsReport &&report);
 
-/* SA 会话路由分流（spec v4 §4.1）：注册类型为 UIExtension 且 PC（两级判定，
- * CmUkeyIsPcPlatformOrPcMode）时委托 SA 会话路径；返回 nullptr 表示走 context
- * 直启路径（UIAbility / 查询失败 / UIExtension+非PC） */
+/* SA-session route branching (spec v4 §4.1): when the registered type is
+ * UIExtension and PC (two-level check, CmUkeyIsPcPlatformOrPcMode), delegate
+ * to the SA session path; returning nullptr means take the context
+ * direct-launch path (UIAbility / query failure / UIExtension + non-PC) */
 static napi_value TryOpenUkeyAuthDialogViaSa(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
     OHOS::Security::CertManager::CmMetricsReport &report)
 {
@@ -358,8 +365,9 @@ static napi_value TryOpenUkeyAuthDialogViaSa(std::shared_ptr<CmUIExtensionReques
     return nullptr;
 }
 
-/* 建立 ukey 弹窗结果的 threadsafe function（两个 SA 委托入口共用）：
- * 失败返回 false（context 释放由调用方处理） */
+/* Create the threadsafe function for ukey dialog results (shared by both SA
+ * delegation entries): returns false on failure (context release is handled
+ * by the caller) */
 static bool CreateUkeyResultTsfn(napi_env env, CmUkeyAuthResultContext *resultContext,
     napi_threadsafe_function_call_js callJs)
 {
@@ -378,7 +386,7 @@ static bool CreateUkeyResultTsfn(napi_env env, CmUkeyAuthResultContext *resultCo
     return true;
 }
 
-/* tsfn 建立失败收尾：以泛化错误 reject promise 并释放结果上下文 */
+/* tsfn creation failure cleanup: reject the promise with a generic error and release the result context */
 static void RejectUkeyResultTsfnError(napi_env env, napi_deferred deferred,
     CmUkeyAuthResultContext *resultContext)
 {
@@ -387,9 +395,10 @@ static void RejectUkeyResultTsfnError(napi_env env, napi_deferred deferred,
     if (napi_reject_deferred(env, deferred, error) != napi_ok) {
         CM_LOG_E("reject deferred failed");
     }
-    /* 清理路径无条件执行：tsfn 已建立（创建过程部分失败残留句柄）时必须先
-     * release（随后由 UvTsfnFinalize 释放 context，不得在此 double free）；
-     * 未建立时直接 delete */
+    /* Cleanup runs unconditionally: when the tsfn was created (a leftover
+     * handle from a partial creation failure) it must be released first
+     * (UvTsfnFinalize then frees the context; no double free here); when it
+     * was not created, delete directly */
     if (resultContext->tsfn != nullptr) {
         napi_release_threadsafe_function(resultContext->tsfn, napi_tsfn_release);
         return;
@@ -400,7 +409,7 @@ static void RejectUkeyResultTsfnError(napi_env env, napi_deferred deferred,
 // SA-session delegation: the dialog is driven by the SA-side ukey session and
 // the final result arrives asynchronously on an IPC thread. Only reachable
 // from the published openUkeyAuthDialog (the sole, with-context overload),
-// so the D8 修订 error-code folding applies unconditionally.
+// so the D8-revised error-code folding applies unconditionally.
 static napi_value OpenUkeyAuthDialogViaSa(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
     OHOS::Security::CertManager::CmMetricsReport &&report)
 {
@@ -449,8 +458,9 @@ static napi_value OpenUkeyAuthDialogViaSa(std::shared_ptr<CmUIExtensionRequestCo
     return result;
 }
 
-/* context 直启序列（CMNapiOpenUkeyAuthorizeDialog 尾段，定义在其后）：组 want
- * （驱动 UIAbility / 系统默认弹框，spec v4 §4.2）并拉起 */
+/* Context direct-launch sequence (tail of CMNapiOpenUkeyAuthorizeDialog,
+ * defined below): assemble the want (driver UIAbility / system default
+ * dialog, spec v4 §4.2) and launch it */
 static napi_value DirectLaunchUkeyAuthDialog(std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
     OHOS::Security::CertManager::CmMetricsReport &&report);
 
@@ -496,7 +506,8 @@ napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info)
     if (saResult != nullptr) {
         return saResult;
     }
-    /* 直启路径（原有实现）：UIAbility / 查询失败(默认弹框) / UIExtension+非PC(默认弹框) */
+    /* Direct-launch path (original implementation): UIAbility / query
+     * failure (default dialog) / UIExtension + non-PC (default dialog) */
     CM_LOG_I("cert authorize dialog end");
     return DirectLaunchUkeyAuthDialog(asyncContext, std::move(report));
 }
@@ -521,7 +532,7 @@ static napi_value DirectLaunchUkeyAuthDialog(std::shared_ptr<CmUIExtensionReques
     return result;
 }
 
-/* CRYPTO_EXTENSION_REGISTER 进程内预检（spec v4 D23：失败同步 201） */
+/* In-process precheck for CRYPTO_EXTENSION_REGISTER (spec v4 D23: failure is a sync 201) */
 static bool CheckUkeyProviderPermission(void)
 {
     AccessTokenID tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
@@ -529,7 +540,7 @@ static bool CheckUkeyProviderPermission(void)
         tokenId, "ohos.permission.CRYPTO_EXTENSION_REGISTER") == 0 /* PERMISSION_GRANTED */;
 }
 
-/* ForProvider 的 SA 路径 promise 包装：错误码不折叠（29700009/29700010 直通，D8 v4） */
+/* SA-path promise wrapper for ForProvider: error codes are not folded (29700009/29700010 pass through, D8 v4) */
 static napi_value OpenAuthDialogForUkeyProviderViaSa(
     std::shared_ptr<CmUIExtensionRequestContext> asyncContext,
     OHOS::Security::CertManager::CmMetricsReport &&report, std::string abilityName,
@@ -558,7 +569,7 @@ static napi_value OpenAuthDialogForUkeyProviderViaSa(
     }
 
     struct UkeyAuthDialogInfo dialogInfo = {};
-    dialogInfo.abilityName.size = static_cast<uint32_t>(abilityName.size() + 1); /* 含 NUL */
+    dialogInfo.abilityName.size = static_cast<uint32_t>(abilityName.size() + 1); /* NUL included */
     dialogInfo.abilityName.data = reinterpret_cast<uint8_t *>(const_cast<char *>(abilityName.c_str()));
     dialogInfo.abilityType = abilityType;
     struct UkeyAuthRequest ukeyAuthRequest = {};
@@ -581,8 +592,8 @@ static napi_value OpenAuthDialogForUkeyProviderViaSa(
     return result;
 }
 
-/* abilityType 解析（v4.1 用户裁定）：缺省/非 number → 401；number 但非唯一
- * 合法枚举值 1（UIEXTENSION）→ 29700006 */
+/* abilityType parsing (v4.1 user ruling): absent/non-number -> 401; a number
+ * that is not the enum's sole legal value 1 (UIEXTENSION) -> 29700006 */
 static int32_t ParseUkeyAbilityType(napi_env env, napi_value arg, uint32_t &abilityType)
 {
     napi_value abilityTypeValue = nullptr;
@@ -599,16 +610,17 @@ static int32_t ParseUkeyAbilityType(napi_env env, napi_value arg, uint32_t &abil
     if (napi_get_value_double(env, abilityTypeValue, &abilityTypeDouble) != napi_ok) {
         return PARAM_ERROR;
     }
-    if (abilityTypeDouble != CM_UKEY_ABILITY_TYPE_UIEXTENSION) { /* 枚举唯一合法值 = 1 */
+    if (abilityTypeDouble != CM_UKEY_ABILITY_TYPE_UIEXTENSION) { /* the enum's sole legal value = 1 */
         return DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
     }
     abilityType = CM_UKEY_ABILITY_TYPE_UIEXTENSION;
     return CM_SUCCESS;
 }
 
-/* abilityName 解析（spec v4.1 D24）：非字符串 / 空串 / >256 字节 → 29700006。
- * 两段式读取：先取精确 UTF-8 字节长度（Ark NAPI 的 buf 路径会静默截断且恒
- * 返回 napi_ok，超长必须在拷贝前显式拒绝，spec §5.1） */
+/* abilityName parsing (spec v4.1 D24): non-string / empty / >256 bytes ->
+ * 29700006. Two-stage read: first get the exact UTF-8 byte length (the Ark
+ * NAPI buf path silently truncates and always returns napi_ok, so an
+ * over-long name must be rejected explicitly before copying, spec §5.1) */
 static int32_t ParseUkeyAbilityName(napi_env env, napi_value arg, std::string &abilityName)
 {
     napi_value abilityNameValue = nullptr;
@@ -636,7 +648,7 @@ static int32_t ParseUkeyAbilityName(napi_env env, napi_value arg, std::string &a
     return CM_SUCCESS;
 }
 
-/* UkeyAuthDialogInfo 解析（spec v4 D23/D24）：dialogInfo 非对象 → 401 */
+/* UkeyAuthDialogInfo parsing (spec v4 D23/D24): dialogInfo not an object -> 401 */
 static int32_t GetUkeyDialogInfo(napi_env env, napi_value arg, uint32_t &abilityType,
     std::string &abilityName)
 {

@@ -217,9 +217,11 @@ int32_t CertManagerService::Init()
         }
 
         DelayUnload();
-        /* UKey 弹框会话期间（WAITING_REPORT）没有 IPC 进来，空闲卸载计时不会被
-         * OnRemoteRequest 重置；注入续期钩子，manager 的周期保活任务借此保住
-         * SA（spec §9.4）。弹框静态库不得依赖 cm_sa.h，故由 SA 侧注入。 */
+        /* During a UKey dialog session (WAITING_REPORT) no IPC arrives, so
+         * the idle-unload timer is not reset by OnRemoteRequest; inject a
+         * renewal hook so the manager's periodic keep-alive task keeps the
+         * SA alive (spec §9.4). The dialog static library must not depend on
+         * cm_sa.h, hence the SA side injects it. */
         CmUkeyAuthDialogManager::GetInstance().SetUnloadRenewal(
             []() { CertManagerService::GetInstance().DelayUnload(); });
         if (!Publish(this)) {
@@ -273,10 +275,12 @@ static int32_t GetSrcData(MessageParcel &data, struct CmBlob *srcData)
     return GetSrcDataBody(data, size, srcData);
 }
 
-/* OPEN 请求布局 [uint32 size][remote object][buffer]：客户端回调 stub 位于
- * buffer 之前（WriteBuffer 会补尾 pad 而 ReadBuffer 不跳过，对象须避免写在
- * 非对齐 buffer 之后），因此 OPEN 在通用 GetSrcData 之前自行解析；
- * 应答由处理器经 CmSendResponse(context=reply) 写入。 */
+/* OPEN request layout [uint32 size][remote object][buffer]: the client
+ * callback stub sits before the buffer (WriteBuffer pads the tail while
+ * ReadBuffer does not skip the pad, so an object must not be written after a
+ * non-aligned buffer), hence OPEN parses on its own ahead of the generic
+ * GetSrcData; the response is written by the handler via
+ * CmSendResponse(context=reply). */
 static void HandleOpenUkeyAuthDialogRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
 {
     uint32_t openBlobSize = static_cast<uint32_t>(data.ReadUint32());

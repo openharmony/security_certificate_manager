@@ -31,8 +31,9 @@ namespace OHOS::Security::CertManager {
 using namespace OHOS::Security::AccessToken;
 
 namespace {
-/* ForDriver OPEN 请求 paramSet 解析结果（blob 指向 paramSet 缓冲，paramSet 由
- * 调用方持有并在处理器同步消费后释放） */
+/* Parsed paramSet result of the ForDriver OPEN request (blobs point into
+ * the paramSet buffer; the paramSet is held by the caller and released
+ * after the handler consumes it synchronously) */
 struct DriverDialogIpcParams {
     struct CmBlob abilityName;
     uint32_t abilityType = 0;
@@ -41,7 +42,7 @@ struct DriverDialogIpcParams {
     struct CmBlob customData;
 };
 
-/* 解析成功时 *paramSet 由调用方持有（成功/失败路径内部均不释放） */
+/* On parse success *paramSet is owned by the caller (never freed inside, on either the success or the failure path) */
 int32_t ParseOpenDriverDialogParams(const struct CmBlob *paramSetBlob,
     DriverDialogIpcParams &out, struct CmParamSet **paramSet)
 {
@@ -68,9 +69,10 @@ int32_t ParseOpenDriverDialogParams(const struct CmBlob *paramSetBlob,
 }
 } // namespace
 
-/* 与 cm_ipc_service.c 其他处理器不同，本文件处理器不构造 CmContext：UKey 弹框
- * 会话不触及按用户/uid 隔离的存储数据，调用方身份经 IPCSkeleton（uid/tokenId）
- * 获取并已完成权限与 HAP 身份校验。 */
+/* Unlike the other handlers in cm_ipc_service.c, the handlers in this file
+ * do not build a CmContext: UKey dialog sessions touch no storage data
+ * isolated per user/uid; the caller identity is obtained via IPCSkeleton
+ * (uid/tokenId) and permission + HAP identity validation is already done. */
 
 void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSetBlob,
     const struct CmContext *context, const sptr<IRemoteObject> &clientCallback)
@@ -78,7 +80,8 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
     (void)code;
     struct CmParamSet *paramSet = nullptr;
     struct CmBlob keyUri = { 0, nullptr };
-    uint32_t timeoutSec = 0; /* 0 = 未传（秒），SA 侧取默认 300s，显式值 clamp 到 [3min, 10min] */
+    uint32_t timeoutSec = 0; /* 0 = not passed (seconds); SA side takes the
+                              * default 300s, explicit values clamped to [3min, 10min] */
     struct CmParamOut params[] = {
         { .tag = CM_TAG_PARAM0_BUFFER, .blob = &keyUri },
         { .tag = CM_TAG_PARAM1_UINT32, .uint32Param = &timeoutSec },
@@ -88,7 +91,7 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
     if (ret == CM_SUCCESS) {
         ret = CmParamSetToParams(paramSet, params, CM_ARRAY_SIZE(params));
     }
-    struct CmBlob customData = { 0, nullptr }; /* 可选：仅自定义弹框下发（spec D18/D19） */
+    struct CmBlob customData = { 0, nullptr }; /* optional: delivered to the custom dialog only (spec D18/D19) */
     if (ret == CM_SUCCESS) {
         struct CmParam *customDataParam = nullptr;
         if (CmGetParam(paramSet, CM_TAG_PARAM2_BUFFER, &customDataParam) == CM_SUCCESS) {
@@ -102,7 +105,7 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
         return;
     }
 
-    /* 服务端权限校验（纵深防御；NAPI 侧已有一次） */
+    /* Server-side permission check (defense in depth; already done once on the NAPI side) */
     if (AccessTokenKit::VerifyAccessToken(IPCSkeleton::GetCallingTokenID(),
         "ohos.permission.ACCESS_CERT_MANAGER") != PERMISSION_GRANTED) {
         CM_LOG_E("open ukey dialog permission denied");
@@ -112,7 +115,8 @@ void CmIpcServiceOpenUkeyAuthDialog(uint32_t code, const struct CmBlob *paramSet
     }
 
     CmUkeyAuthDialogManager::GetInstance().InitRealDependencies();
-    /* customData 指向 paramSet 缓冲，OpenDialog 同步消费（写入弹框参数）后即不再引用 */
+    /* customData points into the paramSet buffer; OpenDialog consumes it
+     * synchronously (written into dialog params) and never references it after */
     ret = CmUkeyAuthDialogManager::GetInstance().OpenDialog(&keyUri,
         static_cast<uint32_t>(IPCSkeleton::GetCallingUid()), timeoutSec, &customData,
         clientCallback);
@@ -129,12 +133,12 @@ void CmIpcServiceOpenUkeyAuthDialogForDriver(uint32_t code, const struct CmBlob 
     int32_t ret = ParseOpenDriverDialogParams(paramSetBlob, ipc, &paramSet);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("open driver dialog get params failed, ret = %d", ret);
-        CmFreeParamSet(&paramSet); /* CmGetParamSet 成功而后续解析失败时非空 */
+        CmFreeParamSet(&paramSet); /* non-null when CmGetParamSet succeeded but a later parse step failed */
         CmSendResponse(context, CMR_ERROR_INVALID_ARGUMENT, NULL);
         return;
     }
 
-    /* 服务端权限校验（spec v4 D23：NAPI 预检之外的纵深防御） */
+    /* Server-side permission check (spec v4 D23: defense in depth beyond the NAPI precheck) */
     if (AccessTokenKit::VerifyAccessToken(IPCSkeleton::GetCallingTokenID(),
         "ohos.permission.CRYPTO_EXTENSION_REGISTER") != PERMISSION_GRANTED) {
         CM_LOG_E("open driver dialog permission denied");
@@ -142,7 +146,8 @@ void CmIpcServiceOpenUkeyAuthDialogForDriver(uint32_t code, const struct CmBlob 
         CmSendResponse(context, CMR_DIALOG_ERROR_PERMISSION_DENIED, NULL);
         return;
     }
-    /* 调用方包名：仅 HAP token 放行（bundle 只能来自 IPC token，客户端不可声明，D20/D23） */
+    /* Caller bundle: only HAP tokens pass (the bundle can only come from the
+     * IPC token, not declarable by the client, D20/D23) */
     HapTokenInfo hapInfo;
     if (AccessTokenKit::GetHapTokenInfo(IPCSkeleton::GetCallingTokenID(), hapInfo) != ERR_OK) {
         CM_LOG_E("open driver dialog caller is not hap token, callingUid = %d",
@@ -153,11 +158,13 @@ void CmIpcServiceOpenUkeyAuthDialogForDriver(uint32_t code, const struct CmBlob 
     }
 
     CmUkeyAuthDialogManager::GetInstance().InitRealDependencies();
-    /* BMS 查询用 userId：经 CmGetProcessInfoForIPC 解出（模式同 cm_sa.cpp
-     * OnRemoteRequest；入参 context 实为 reply parcel，不得用于此） */
+    /* userId for the BMS query: resolved via CmGetProcessInfoForIPC (same
+     * pattern as cm_sa.cpp OnRemoteRequest; the incoming context is actually
+     * the reply parcel and must not be used for this) */
     struct CmContext procContext = {0};
     (void)CmGetProcessInfoForIPC(&procContext);
-    /* abilityName/keyUri/customData 指向 paramSet 缓冲，OpenDriverDialog 同步消费后不再引用 */
+    /* abilityName/keyUri/customData point into the paramSet buffer;
+     * OpenDriverDialog consumes them synchronously and never references them after */
     UkeyDriverDialogRequest req;
     req.abilityName = ipc.abilityName;
     req.abilityType = ipc.abilityType;
@@ -196,7 +203,7 @@ void CmIpcServiceReportUkeyAuthResult(uint32_t code, const struct CmBlob *paramS
         return;
     }
 
-    /* 身份校验：仅 HAP token 可上报（bundleName 由 manager 与会话驱动比对） */
+    /* Identity check: only HAP tokens may report (bundleName is matched by the manager against the session driver) */
     HapTokenInfo hapInfo;
     if (AccessTokenKit::GetHapTokenInfo(IPCSkeleton::GetCallingTokenID(), hapInfo) != ERR_OK) {
         CM_LOG_E("report ukey result caller is not hap token, callingUid = %d",

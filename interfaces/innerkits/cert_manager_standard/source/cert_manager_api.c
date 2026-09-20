@@ -683,7 +683,7 @@ CM_API_EXPORT int32_t CmOpenUkeyAuthDialogForDriver(const struct UkeyAuthDialogI
         CM_LOG_E("invalid input arguments");
         return CMR_ERROR_INVALID_ARGUMENT;
     }
-    /* 纵深防御：inner API 直调方绕过 NAPI 校验时在此拦截（spec v4 D23） */
+    /* Defense in depth: intercept inner API callers that bypass NAPI validation (spec v4 D23) */
     if (dialogInfo->abilityType != CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
         CM_LOG_E("invalid driver dialog ability type: %u", dialogInfo->abilityType);
         return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
