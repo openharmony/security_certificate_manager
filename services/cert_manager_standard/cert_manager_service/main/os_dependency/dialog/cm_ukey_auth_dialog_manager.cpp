@@ -313,7 +313,7 @@ bool QueryDriverUkeyExtensionAbility(const std::string &bundleName,
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     int32_t type = EXTENSION_TYPE_UKEY_AUTH;
     bool ok = bundleMgr->QueryExtensionAbilityInfos(want,
-        static_cast<AppExecFwk::ExtensionAbilityType>(type), 0, userId, infos);
+        static_cast<AppExecFwk::ExtensionAbilityType>(type), BMS_QUERY_FLAG_DEFAULT, userId, infos);
     IPCSkeleton::SetCallingIdentity(identity);
     if (!ok) {
         CM_LOG_E("query extension ability infos failed, bundle: %s, ability: %s",

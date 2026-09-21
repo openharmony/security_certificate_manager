@@ -30,7 +30,6 @@ namespace AbilityRuntime {
  * Wire contract (must stay in sync with the SA-side handler
  * CmIpcServiceReportUkeyAuthResult and the canonical client
  * CmClientReportUkeyAuthResult).
- * 
  * - parcel: [interface token][uint32 paramSetSize][paramSet buffer]
  * - paramSet: CM_TAG_PARAM0_BUFFER = requestId, CM_TAG_PARAM1_UINT32 = resultCode
  * - reply: single int32 result code
