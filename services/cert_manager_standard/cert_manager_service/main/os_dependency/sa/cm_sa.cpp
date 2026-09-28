@@ -29,6 +29,8 @@
 #include "cm_log.h"
 #include "cm_mem.h"
 #include "cm_ipc_service.h"
+#include "cm_ukey_auth_dialog_ipc_service.h"
+#include "cm_ukey_auth_dialog_manager.h"
 #include "cert_manager_updateflag.h"
 #include "cm_report_wrapper.h"
 #include "cm_response.h"
@@ -64,6 +66,7 @@ static struct CmParcelIpcPoint g_cmParcelIpcHandler[] = {
     { CM_MSG_GET_UKEY_CERTIFICATE_LIST, CmIpcServiceGetUkeyCertList },
     { CM_MSG_GET_UKEY_CERTIFICATE, CmIpcServiceGetUkeyCert },
     { CM_MSG_IMPORT_UKEY_CERTIFICATE, CmIpcServiceImportUkeyCert },
+    { CM_MSG_REPORT_UKEY_AUTH_RESULT, CmIpcServiceReportUkeyAuthResult },
 };
 
 struct CmIpcPoint {
@@ -173,7 +176,11 @@ static int32_t ProcessMessage(uint32_t code, uint32_t outSize, const struct CmBl
                 CM_LOG_E("Malloc outData failed.");
                 return CMR_ERROR_MALLOC_FAIL;
             }
-            (void)memset_s(outData.data, outData.size, 0, outData.size);
+            if (memset_s(outData.data, outData.size, 0, outData.size) != EOK) {
+                CM_LOG_E("clear outData failed.");
+                CM_FREE_BLOB(outData);
+                return CMR_ERROR_MEM_OPERATION_COPY;
+            }
         }
         g_cmIpcHandler[i].handler(static_cast<const struct CmBlob *>(&srcData), &outData,
             reinterpret_cast<const struct CmContext *>(&reply));
@@ -210,6 +217,13 @@ int32_t CertManagerService::Init()
         }
 
         DelayUnload();
+        /* During a UKey dialog session (WAITING_REPORT) no IPC arrives, so
+         * the idle-unload timer is not reset by OnRemoteRequest; inject a
+         * renewal hook so the manager's periodic keep-alive task keeps the
+         * SA alive (spec §9.4). The dialog static library must not depend on
+         * cm_sa.h, hence the SA side injects it. */
+        CmUkeyAuthDialogManager::GetInstance().SetUnloadRenewal(
+            []() { CertManagerService::GetInstance().DelayUnload(); });
         if (!Publish(this)) {
             CM_LOG_E("CertManagerService::Init Publish Failed");
             return CMR_ERROR_SA_START_PUBLISH_FAILED;
@@ -222,13 +236,9 @@ int32_t CertManagerService::Init()
     return CM_SUCCESS;
 }
 
-static int32_t GetSrcData(MessageParcel &data, struct CmBlob *srcData)
+static int32_t GetSrcDataBody(MessageParcel &data, uint32_t size, struct CmBlob *srcData)
 {
-    srcData->size = static_cast<uint32_t>(data.ReadUint32());
-    if (IsInvalidLength(srcData->size)) {
-        CM_LOG_E("srcData size is invalid, size:%u", srcData->size);
-        return CMR_ERROR_IPC_PARAM_SIZE_INVALID;
-    }
+    srcData->size = size;
     srcData->data = static_cast<uint8_t *>(CmMalloc(srcData->size));
     if (srcData->data == nullptr) {
         CM_LOG_E("Malloc srcData failed.");
@@ -255,6 +265,54 @@ static int32_t GetSrcData(MessageParcel &data, struct CmBlob *srcData)
     return CM_SUCCESS;
 }
 
+static int32_t GetSrcData(MessageParcel &data, struct CmBlob *srcData)
+{
+    uint32_t size = static_cast<uint32_t>(data.ReadUint32());
+    if (IsInvalidLength(size)) {
+        CM_LOG_E("srcData size is invalid, size:%u", size);
+        return CMR_ERROR_IPC_PARAM_SIZE_INVALID;
+    }
+    return GetSrcDataBody(data, size, srcData);
+}
+
+/* OPEN request layout [uint32 size][remote object][buffer]: the client
+ * callback stub sits before the buffer (WriteBuffer pads the tail while
+ * ReadBuffer does not skip the pad, so an object must not be written after a
+ * non-aligned buffer), hence OPEN parses on its own ahead of the generic
+ * GetSrcData; the response is written by the handler via
+ * CmSendResponse(context=reply). */
+static void HandleOpenUkeyAuthDialogRequest(uint32_t code, MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t openBlobSize = static_cast<uint32_t>(data.ReadUint32());
+    if (IsInvalidLength(openBlobSize)) {
+        CM_LOG_E("open dialog srcData size is invalid, size:%u", openBlobSize);
+        CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply),
+            CMR_ERROR_IPC_PARAM_SIZE_INVALID, nullptr);
+        return;
+    }
+    sptr<IRemoteObject> remoteCallback = data.ReadRemoteObject();
+    if (remoteCallback == nullptr) {
+        CM_LOG_E("open ukey dialog read remote callback null");
+        CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply), CMR_ERROR_NULL_POINTER, nullptr);
+        return;
+    }
+    struct CmBlob openSrcData = { 0, nullptr };
+    int32_t openRet = GetSrcDataBody(data, openBlobSize, &openSrcData);
+    if (openRet != CM_SUCCESS) {
+        CM_LOG_E("open dialog GetSrcDataBody failed!");
+        CmSendResponse(reinterpret_cast<const struct CmContext *>(&reply), openRet, nullptr);
+        return;
+    }
+    if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER)) {
+        CmIpcServiceOpenUkeyAuthDialogForDriver(code, &openSrcData,
+            reinterpret_cast<const struct CmContext *>(&reply), remoteCallback);
+    } else {
+        CmIpcServiceOpenUkeyAuthDialog(code, &openSrcData,
+            reinterpret_cast<const struct CmContext *>(&reply), remoteCallback);
+    }
+    CM_FREE_BLOB(openSrcData);
+}
+
 int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     MessageParcel &reply, MessageOption &option)
 {
@@ -276,8 +334,16 @@ int CertManagerService::OnRemoteRequest(uint32_t code, MessageParcel &data,
     DelayUnload();
     uint32_t outSize = 0;
     if (code != static_cast<uint32_t>(CM_MSG_GET_UKEY_CERTIFICATE_LIST) &&
-        code != static_cast<uint32_t>(CM_MSG_GET_UKEY_CERTIFICATE)) {
+        code != static_cast<uint32_t>(CM_MSG_GET_UKEY_CERTIFICATE) &&
+        code != static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG) &&
+        code != static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER) &&
+        code != static_cast<uint32_t>(CM_MSG_REPORT_UKEY_AUTH_RESULT)) {
         outSize = static_cast<uint32_t>(data.ReadUint32());
+    }
+    if (code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG) ||
+        code == static_cast<uint32_t>(CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER)) {
+        HandleOpenUkeyAuthDialogRequest(code, data, reply);
+        return NO_ERROR;
     }
     struct CmBlob srcData = { 0, nullptr };
     int32_t ret = CM_SUCCESS;

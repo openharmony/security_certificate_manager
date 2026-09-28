@@ -19,7 +19,6 @@
 #include <string>
 #include "cm_type.h"
 #include "ability_context.h"
-#include "cm_type.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
@@ -39,6 +38,8 @@ enum ErrorCode {
     DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY = 29700005,
     DIALOG_ERROR_PARAMETER_VALIDATION_FAILED = 29700006,
     DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE = 29700007,
+    DIALOG_ERROR_UKEY_AUTH_REPORT_TIMEOUT = 29700009,
+    DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS = 29700010,
 };
 static const std::string DIALOG_NO_PERMISSION_MSG = "the caller has no permission";
 static const std::string DIALOG_INVALID_PARAMS_MSG = "the input parameters is invalid";
@@ -63,6 +64,20 @@ static const std::string NOT_ENTERPRISE_DEVICE_MSG = "The operation does not com
 static const std::string CAPABILITY_NOT_SUPPORTED_MSG = "the capability not supported.";
 static const std::string NO_AVAILABLE_CERTIFICATE_MSG = "no available certificate for authorization.";
 static const std::string START_UIABILITY_FAILED_MSG = "start uiAbility failed.";
+static const std::string UKEY_AUTH_REPORT_TIMEOUT_MSG =
+    "the ukey driver did not report the auth result within the timeout.";
+static const std::string UKEY_DIALOG_IN_PROGRESS_MSG =
+    "another ukey pin auth dialog is already in progress.";
+/* Refined messages (spec v4 D22/D25: -1019 -> 29700003, -1020 -> 29700005) */
+static const std::string UKEY_NOT_REGISTERED_MSG =
+    "the authentication operation failed: "
+    "no ukey driver pin dialog is registered for the key uri.";
+static const std::string UKEY_UIABILITY_NOT_SUPPORTED_MSG =
+    "the authentication operation failed: "
+    "the ukey driver's pin dialog ability is of UIAbility type, which is not supported.";
+static const std::string UKEY_NOT_PC_DEVICE_MSG =
+    "the operation does not comply with the device security policy: "
+    "the ukey uiextension pin dialog requires a pc device or pc mode.";
 
 static const std::string CERT_MGR_DIALOG_SYSCAP = "SystemCapability.Security.CertificateManagerDialog";
 static const std::string CONST_NAME_DEVICETYPE = "const.product.devicetype";
@@ -159,6 +174,11 @@ static const std::unordered_map<int32_t, int32_t> DIALOG_CODE_TO_JS_CODE_MAP = {
     { CMR_DIALOG_ERROR_NOT_ENTERPRISE_DEVICE, DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY },
     { CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, DIALOG_ERROR_PARAMETER_VALIDATION_FAILED },
     { CMR_DIALOG_ERROR_START_UIABILITY_FAILED, DIALOG_ERROR_INSTALL_FAILED },
+    { CMR_DIALOG_ERROR_NOT_REGISTERED, DIALOG_ERROR_INSTALL_FAILED }, /* 29700003 */
+    { CMR_DIALOG_ERROR_NOT_PC_DEVICE, DIALOG_ERROR_NOT_COMPLY_SECURITY_POLICY },
+    { CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED, DIALOG_ERROR_INSTALL_FAILED }, /* 29700003 */
+    { CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT, DIALOG_ERROR_UKEY_AUTH_REPORT_TIMEOUT },
+    { CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS, DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS },
 
     { DIALOG_ERROR_GENERIC, DIALOG_ERROR_GENERIC },
     { DIALOG_ERROR_OPERATION_CANCELED, DIALOG_ERROR_OPERATION_CANCELED },
@@ -185,6 +205,11 @@ static const std::unordered_map<int32_t, std::string> DIALOG_CODE_TO_MSG_MAP = {
     { CMR_DIALOG_ERROR_NOT_EXIST, DIALOG_OPERATION_FAILED_MSG + NOT_EXIST_MSG },
     { CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED, DIALOG_OPERATION_FAILED_MSG + DIALOG_INVALID_PARAMS_MSG },
     { CMR_DIALOG_ERROR_START_UIABILITY_FAILED, START_UIABILITY_FAILED_MSG },
+    { CMR_DIALOG_ERROR_NOT_REGISTERED, UKEY_NOT_REGISTERED_MSG },
+    { CMR_DIALOG_ERROR_NOT_PC_DEVICE, UKEY_NOT_PC_DEVICE_MSG },
+    { CMR_DIALOG_ERROR_UIABILITY_NOT_SUPPORTED, UKEY_UIABILITY_NOT_SUPPORTED_MSG },
+    { CMR_DIALOG_ERROR_UKEY_REPORT_TIMEOUT, UKEY_AUTH_REPORT_TIMEOUT_MSG },
+    { CMR_DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS, UKEY_DIALOG_IN_PROGRESS_MSG },
 
     { DIALOG_ERROR_GENERIC, DIALOG_GENERIC_MSG },
     { DIALOG_ERROR_OPERATION_CANCELED, DIALOG_OPERATION_CANCELS_MSG },
@@ -197,7 +222,32 @@ int32_t GetCallerLabelName(std::shared_ptr<OHOS::AbilityRuntime::AbilityContext>
 
 bool IsEnableCACertDialog();
 
-int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want);
+/* Assemble the system default UKey Pin dialog want (kit direct-launch
+ * fallback path, spec v4 D22/D25 v2):
+ * com.ohos.certmanager/CertPickerUIExtAbility (sys/commonUI, pageType=7).
+ * customData is not delivered (the default dialog has no consumer, D18
+ * semantics). */
+int32_t GetDefaultUkeyAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want);
+
+/* Assemble the UKey Pin dialog launch want (context-carrying direct-launch
+ * path, original implementation restored): when the driver registered a
+ * UIAbility, launch the driver dialog (action=UkeyPINAuth + appUid + keyUri +
+ * customData base64); on query failure (not registered) or when the
+ * registration is a UIExtension but the SA path was declined by the caller
+ * (non-PC, D25 v2), fall back to assembling the system default dialog want
+ * (spec §4.1). customData raw bytes are base64-encoded and written only into
+ * the custom dialog want; the default dialog carries none (spec D18). */
+int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, const CmBlob *customData,
+    OHOS::AAFwk::Want &want);
+
+/* Query the custom Pin dialog ability info registered by the UKey driver
+ * (bundle/ability name + abilityType). When CM_SUCCESS is returned with type
+ * CM_UKEY_ABILITY_TYPE_UIEXTENSION, the caller takes the new SA-session path
+ * on PC devices; in every other case (UIAbility / query failure) the caller
+ * launches directly with its context (driver UIAbility dialog / system
+ * default dialog, spec v4 §4.1 v4.2). */
+int32_t GetUkeyAbilityInfo(const CmBlob *keyUri, std::string &bundleName,
+    std::string &abilityName, uint32_t &abilityType);
 
 bool IsSupportDialogSyscap();
 }  // namespace

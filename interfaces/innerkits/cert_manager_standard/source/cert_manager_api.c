@@ -22,6 +22,7 @@
 #include "cm_mem.h"
 #include "cm_ipc_client.h"
 #include "cm_type.h"
+#include "cm_ukey_ability_type.h"
 
 const char *HUKS_SYSCAP = "SystemCapability.Security.Huks.CryptoExtension";
 
@@ -649,5 +650,64 @@ CM_API_EXPORT int32_t CmImportUkeyCert(const struct CmBlob *keyUri, const struct
     }
     int32_t ret = CmClientImportUkeyCert(keyUri, cert, ukeyInfo);
     CM_LOG_I("leave import ukey cert, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT int32_t CmOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest,
+    CmUkeyAuthDialogResultCallback callback, void *userData)
+{
+    CM_LOG_I("enter open ukey auth dialog");
+    if (ukeyAuthRequest == NULL || callback == NULL ||
+        ukeyAuthRequest->keyUri.data == NULL || ukeyAuthRequest->keyUri.size == 0) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    if (ukeyAuthRequest->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
+        CM_LOG_E("custom data too large: %u", ukeyAuthRequest->customData.size);
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+
+    int32_t ret = CmClientOpenUkeyAuthDialog(ukeyAuthRequest, callback, userData);
+    CM_LOG_I("leave open ukey auth dialog, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT int32_t CmOpenUkeyAuthDialogForDriver(const struct UkeyAuthDialogInfo *dialogInfo,
+    const struct UkeyAuthRequest *ukeyAuthRequest, CmUkeyAuthDialogResultCallback callback,
+    void *userData)
+{
+    CM_LOG_I("enter open auth dialog for ukey driver");
+    if (dialogInfo == NULL || ukeyAuthRequest == NULL || callback == NULL ||
+        dialogInfo->abilityName.data == NULL || dialogInfo->abilityName.size == 0 ||
+        ukeyAuthRequest->keyUri.data == NULL || ukeyAuthRequest->keyUri.size == 0) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    /* Defense in depth: intercept inner API callers that bypass NAPI validation (spec v4 D23) */
+    if (dialogInfo->abilityType != CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
+        CM_LOG_E("invalid driver dialog ability type: %u", dialogInfo->abilityType);
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+    if (ukeyAuthRequest->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
+        CM_LOG_E("custom data too large: %u", ukeyAuthRequest->customData.size);
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+
+    int32_t ret = CmClientOpenUkeyAuthDialogForDriver(dialogInfo, ukeyAuthRequest, callback,
+        userData);
+    CM_LOG_I("leave open auth dialog for ukey driver, result = %d", ret);
+    return ret;
+}
+
+CM_API_EXPORT int32_t CmReportUkeyAuthResult(const struct CmBlob *requestId, int32_t resultCode)
+{
+    CM_LOG_I("enter report ukey auth result");
+    if (requestId == NULL || requestId->data == NULL || requestId->size == 0) {
+        CM_LOG_E("invalid input arguments");
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+
+    int32_t ret = CmClientReportUkeyAuthResult(requestId, resultCode);
+    CM_LOG_I("leave report ukey auth result, result = %d", ret);
     return ret;
 }

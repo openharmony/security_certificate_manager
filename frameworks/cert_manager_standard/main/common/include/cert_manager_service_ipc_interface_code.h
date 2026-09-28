@@ -52,10 +52,18 @@ enum CertManagerInterfaceCode {
     CM_MSG_GET_UKEY_CERTIFICATE,
     CM_MSG_CHECK_APP_PERMISSION,
     CM_MSG_IMPORT_UKEY_CERTIFICATE,
+    CM_MSG_OPEN_UKEY_AUTH_DIALOG,
+    CM_MSG_REPORT_UKEY_AUTH_RESULT,
+    CM_MSG_OPEN_UKEY_AUTH_DIALOG_FOR_DRIVER,
 
     /* new cmd type must be added before CM_MSG_MAX */
     CM_MSG_MAX,
 };
+
+/* UKey auth dialog: SA -> client result callback stub command code
+ * (payload is a bare int32 result code; shared by the SA-side dialog manager
+ * and the client-side callback stub, do not renumber) */
+#define CM_UKEY_DIALOG_CALLBACK_CMD 1
 
 #ifdef __cplusplus
 }

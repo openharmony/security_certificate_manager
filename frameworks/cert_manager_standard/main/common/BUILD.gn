@@ -16,6 +16,15 @@ import("//build/ohos.gni")
 
 config("cert_manager_config") {
   include_dirs = [ "include" ]
+  if (certificate_manager_feature_ukey_auth_ext_enabled == true) {
+    # PC-platform build (compile-time macro): the first level of
+    # CmUkeyIsPcPlatformOrPcMode passes directly; non-PC builds do not
+    # define this macro and decide at runtime via the PC-mode parameter
+    # (persist.sceneboard.ispcmode).
+    # Propagated via public_configs to every target depending on this
+    # static library (SA/kits/tests).
+    defines = [ "CM_TARGET_PLATFORM_PC" ]
+  }
 }
 
 ohos_static_library("libcert_manager_common_standard_static") {
@@ -38,6 +47,7 @@ ohos_static_library("libcert_manager_common_standard_static") {
   include_dirs = [ "${cert_manager_root_dir}/interfaces/innerkits/cert_manager_standard/main/include" ]
   sources = [
     "src/cm_advsecmode_check.c",
+    "src/cm_ukey_dialog_common.cpp",
     "src/cm_param.c",
     "src/cm_pfx.c",
     "src/cm_util.c",

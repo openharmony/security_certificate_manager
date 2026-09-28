@@ -101,6 +101,31 @@ CM_API_EXPORT int32_t CmGetUkeyCert(const struct CmBlob *keyUri, const struct Uk
 CM_API_EXPORT int32_t CmImportUkeyCert(const struct CmBlob *keyUri, const struct CmBlob *cert,
     const struct UkeyInfo *ukeyInfo);
 
+typedef void (*CmUkeyAuthDialogResultCallback)(int32_t resultCode, void *userData);
+
+/**
+ * Open the ukey pin auth dialog provided by the driver's custom UIExtensionAbility.
+ * timeoutDuration is in seconds (0 = server default 300s, clamped to [3min, 10min]).
+ * Returns sync validation result; final dialog result is delivered via callback exactly once.
+ */
+CM_API_EXPORT int32_t CmOpenUkeyAuthDialog(const struct UkeyAuthRequest *ukeyAuthRequest,
+    CmUkeyAuthDialogResultCallback callback, void *userData);
+
+/**
+ * Open the ukey driver's own pin auth dialog (UIExtensionAbility only). The driver
+ * bundle is resolved from the caller identity on the service side. timeoutDuration
+ * is in seconds (0 = server default 300s, clamped to [3min, 10min]). Returns sync
+ * validation result; final dialog result is delivered via callback exactly once.
+ */
+CM_API_EXPORT int32_t CmOpenUkeyAuthDialogForDriver(const struct UkeyAuthDialogInfo *dialogInfo,
+    const struct UkeyAuthRequest *ukeyAuthRequest, CmUkeyAuthDialogResultCallback callback,
+    void *userData);
+
+/**
+ * Called by the driver's UIExtensionAbility to report the auth result. Returns sync validation result.
+ */
+CM_API_EXPORT int32_t CmReportUkeyAuthResult(const struct CmBlob *requestId, int32_t resultCode);
+
 CM_API_EXPORT int32_t CmCheckAppPermission(const struct CmBlob *keyUri, uint32_t appUid,
     enum CmPermissionState *hasPermission, struct CmBlob *huksAlias);
 

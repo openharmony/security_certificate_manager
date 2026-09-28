@@ -21,6 +21,7 @@
 
 namespace CMNapi {
 napi_value CMNapiOpenUkeyAuthorizeDialog(napi_env env, napi_callback_info info);
+napi_value CMNapiOpenAuthDialogForUkeyProvider(napi_env env, napi_callback_info info);
 }  // namespace CMNapi
 
 #endif  // CM_NAPI_OPEN_UKEY_AUTH_DIALOG_H

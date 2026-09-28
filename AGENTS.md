@@ -61,12 +61,13 @@
 1. 整编或单编部件目标（GN 目标名见下）：
 
 ```bash
-./build.sh --product-name <product>                               # 整编
-./build.sh --product-name <product> --build-target cert_manager_service   # SA 服务 libcert_manager_service.z.so
+./build.sh --product-name <product> --build-target certificate_manager   # 整编
+./build.sh --product-name <product> --build-target cert_manager_service  # SA 服务 libcert_manager_service.z.so
 ./build.sh --product-name <product> --build-target certmanager           # NAPI libcertmanager.z.so
 ./build.sh --product-name <product> --build-target ohcert_manager        # NDK libohcert_manager.z.so
 ./build.sh --product-name <product> --build-target cert_manager_sdk      # innerkit libcert_manager_sdk.z.so
 ```
+首次编译后，如果没有修改编译脚本`BUILD.gn`可添加 `--fast-rebuild` 选项加快编译速度。
 
 2. 产物与部署位置：`libcert_manager_service.z.so` + SA 配置（SA 3512）；NAPI 装至 `/system/lib64/module/security/libcertmanager.z.so`；NDK 导出符号受 `libcmndk.map` 约束；innerkit `libcert_manager_sdk.z.so`（innerapi_tags 含 platformsdk/chipsetsdk/sasdk）；125 个系统 CA 装至 `/etc/security/certificates`（system+updater 镜像）。
 3. 编译装配：根 `BUILD.gn` 分组 `cert_manager_type_base`(`:80`，napi/capi/ani/cjapi+系统证书)/`cert_manager_type_fwk`(`:222`，innerkit)/`cert_manager_typer_services`(`:234`，SA)；内部静态库 `cert_manager_engine_core_standard`、`libcert_manager_common_standard_static`、`libcert_manager_ipc_client_static`、`libcert_manager_log_mem_static`、`libcm_service_idl_standard_static`、`libcert_manager_rdb_static` 等被各目标复用。统一加固选项：`-Wall -Werror`、`branch_protector_ret = "pac_ret"`、sanitize（cfi/cfi_cross_dso/boundary_sanitize/integer_overflow/ubsan）。

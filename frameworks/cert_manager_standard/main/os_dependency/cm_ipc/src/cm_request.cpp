@@ -14,10 +14,9 @@
  */
 
 #include "cm_request.h"
+#include "cm_request_dialog.h"
 
-#include <chrono>
 #include <string>
-#include <thread>
 
 #include "securec.h"
 
@@ -186,4 +185,62 @@ int32_t SendRequestParcel(enum CertManagerInterfaceCode type, const struct CmBlo
     }
     CmDataParcelProcessor parcelProcessor(type);
     return parcelProcessor.ReadFromParcel(reply, data);
+}
+namespace {
+    int32_t SendDialogParcelOnce(enum CertManagerInterfaceCode type, const struct CmBlob *inBlob,
+        const sptr<IRemoteObject> &remoteObject, int32_t *replyCode)
+    {
+        sptr<IRemoteObject> cmProxy = CmLoadSystemAbility();
+        if (cmProxy == nullptr) {
+            cmProxy = CmLoadSystemAbility();
+        }
+        if (cmProxy == nullptr) {
+            CM_LOG_E("Certificate manager Proxy is null.");
+            return CMR_ERROR_NULL_POINTER;
+        }
+
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option = MessageOption::TF_SYNC;
+
+        /* Layout: [token][uint32 size][remote object (optional)][buffer].
+         * The remote object is written BEFORE the buffer: Parcel::WriteBuffer
+         * pads its tail to 4 bytes while Parcel::ReadBuffer advances only
+         * length, so an object written after a non-aligned buffer would sit
+         * at an offset the peer never reads (observed as a null callback on
+         * the SA side). A leading uint32 + binder object are naturally
+         * aligned; the trailing buffer's padding is harmless. */
+        data.WriteInterfaceToken(SA_KEYSTORE_SERVICE_DESCRIPTOR);
+        data.WriteUint32(inBlob->size);
+        if (remoteObject != nullptr && !data.WriteRemoteObject(remoteObject)) {
+            CM_LOG_E("WriteRemoteObject failed");
+            return CMR_ERROR_IPC_WRITE_FAIL;
+        }
+        bool isWriteSuccess = data.WriteBuffer(inBlob->data, static_cast<size_t>(inBlob->size));
+        if (!isWriteSuccess) {
+            isWriteSuccess = data.WriteRawData(inBlob->data, static_cast<size_t>(inBlob->size));
+        }
+        if (!isWriteSuccess) {
+            CM_LOG_E("WriteBuffer and WriteRawData both failed, size: %zu", inBlob->size);
+            return CMR_ERROR_IPC_WRITE_FAIL;
+        }
+
+        int32_t error = cmProxy->SendRequest(static_cast<uint32_t>(type), data, reply, option);
+        if (error != 0) {
+            return error;
+        }
+        *replyCode = reply.ReadInt32();
+        return CM_SUCCESS;
+    }
+}
+
+namespace OHOS {
+int32_t SendRequestWithRemote(enum CertManagerInterfaceCode type, const struct CmBlob *inBlob,
+    const sptr<IRemoteObject> &remoteObject, int32_t *replyCode)
+{
+    if (inBlob == nullptr || replyCode == nullptr) {
+        return CMR_ERROR_NULL_POINTER;
+    }
+    return SendDialogParcelOnce(type, inBlob, remoteObject, replyCode);
+}
 }

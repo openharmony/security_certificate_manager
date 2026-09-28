@@ -16,12 +16,15 @@
 #include "cm_dialog_api_common.h"
 #include "bundle_mgr_proxy.h"
 #include "cm_log.h"
+#include "cm_ukey_ability_type.h"
+#include "cm_ukey_dialog_common.h"
 #include "syspara/parameters.h"
 #include "systemcapability.h"
 #include "hks_api.h"
 #include "cm_mem.h"
 
 namespace OHOS::Security::CertManager::Dialog {
+/* HUKS ability query buffer length */
 constexpr static uint32_t HAP_INFO_MAX_LENGTH = 128;
 
 static OHOS::sptr<OHOS::AppExecFwk::IBundleMgr> GetBundleMgrProxy()
@@ -85,7 +88,12 @@ bool IsEnableCACertDialog()
     return isSupportSyscap && (isPc || isEnableCACertDialog);
 }
 
-static void GetDefaultAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
+/* Assemble the system default UKey Pin dialog want (kit direct-launch
+ * fallback path, spec v4 D22/D25 v2):
+ * com.ohos.certmanager/CertPickerUIExtAbility (sys/commonUI, pageType=7).
+ * customData is not delivered (the default dialog has no consumer, D18
+ * semantics). */
+int32_t GetDefaultUkeyAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
 {
     want.SetElementName(CERT_MANAGER_BUNDLENAME, CERT_MANAGER_ABILITYNAME);
     want.SetParam(CERT_MANAGER_CALLER_UID, static_cast<int32_t>(getuid()));
@@ -93,9 +101,11 @@ static void GetDefaultAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want
     want.SetParam(CERT_MANAGER_PAGE_TYPE, static_cast<int32_t>(CmDialogPageType::PAGE_UKEY_PIN_AUTHORIZE));
     std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
     want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
+    return CM_SUCCESS;
 }
 
-static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName, std::string &bundleName)
+static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName,
+    std::string &bundleName, uint32_t &abilityType)
 {
     struct HksAbilityInfo abilityInfo{};
     abilityInfo.abilityName.data = (uint8_t*)CmMalloc(HAP_INFO_MAX_LENGTH);
@@ -123,21 +133,50 @@ static int32_t QueryAbilityInfo(const CmBlob *keyUri, std::string &abilityName, 
     bundleName.assign(reinterpret_cast<char *>(abilityInfo.bundleName.data), abilityInfo.bundleName.size);
     CM_FREE_PTR(abilityInfo.abilityName.data);
     CM_FREE_PTR(abilityInfo.bundleName.data);
+    /* abilityType pass-through (HksAbilityInfo already has the field; when
+     * the HUKS query implementation does not fill it yet, zero-initialization
+     * keeps 0 = UIAbility, consistent with existing registration behavior) */
+    abilityType = static_cast<uint32_t>(abilityInfo.abilityType);
     return CM_SUCCESS;
 }
 
-int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
+int32_t GetUkeyAbilityInfo(const CmBlob *keyUri, std::string &bundleName,
+    std::string &abilityName, uint32_t &abilityType)
 {
+    if (keyUri == nullptr || keyUri->data == nullptr || keyUri->size == 0) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
+    abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
+    return QueryAbilityInfo(keyUri, abilityName, bundleName, abilityType);
+}
+
+int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, const CmBlob *customData,
+    OHOS::AAFwk::Want &want)
+{
+    if (keyUri == nullptr || keyUri->data == nullptr || keyUri->size == 0) {
+        return CMR_ERROR_INVALID_ARGUMENT;
+    }
     std::string abilityName = "";
     std::string bundleName = "";
-    int32_t ret = QueryAbilityInfo(keyUri, abilityName, bundleName);
+    uint32_t abilityType = CM_UKEY_ABILITY_TYPE_UIABILITY;
+    int32_t ret = QueryAbilityInfo(keyUri, abilityName, bundleName, abilityType);
     /**
      * When the query for the custom dialog's ability information fails,
-     * launch the default dialog of the certificate manager.
+     * launch the default dialog of the certificate manager (spec §4.1).
      */
     if (ret != HKS_SUCCESS) {
         CM_LOG_E("query ability failed, ret = %d.", ret);
-        GetDefaultAuthCertWant(keyUri, want);
+        GetDefaultUkeyAuthCertWant(keyUri, want);
+        return CM_SUCCESS;
+    }
+    /* A UIExtension registration is launched via the SA session only on
+     * PC/PC mode (caller-side precheck); reaching this direct-launch path
+     * means a non-PC scenario, so fall back to the system default dialog per
+     * D25 v2 - StartUIAbility must not be used on a UIExtension-type ability
+     * (AMS type mismatch). */
+    if (abilityType == CM_UKEY_ABILITY_TYPE_UIEXTENSION) {
+        CM_LOG_I("uiextension pin dialog declined by sa path (non-pc), fall back to default");
+        GetDefaultUkeyAuthCertWant(keyUri, want);
         return CM_SUCCESS;
     }
 
@@ -146,6 +185,11 @@ int32_t GetCustomerAuthCertWant(const CmBlob *keyUri, OHOS::AAFwk::Want &want)
     want.SetParam(CERT_MANAGER_CALLER_UID, static_cast<int32_t>(getuid()));
     std::string uriStr(reinterpret_cast<char *>(keyUri->data), keyUri->size);
     want.SetParam(CERT_MANAGER_CERT_KEY_URI, uriStr);
+    if (customData != nullptr && customData->size > 0) {
+        /* Custom dialog passes customData through (base64, spec D18) */
+        want.SetParam(CM_UKEY_DIALOG_PARAM_CUSTOM_DATA,
+            CmBase64Encode(customData->data, customData->size));
+    }
     return CM_SUCCESS;
 }
 
@@ -153,5 +197,4 @@ bool IsSupportDialogSyscap()
 {
     return HasSystemCapability(CERT_MGR_DIALOG_SYSCAP.c_str());
 }
-
 }

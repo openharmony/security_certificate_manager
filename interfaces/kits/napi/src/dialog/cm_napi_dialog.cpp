@@ -17,6 +17,7 @@
 #include "napi/native_node_api.h"
 
 #include "cm_napi_dialog_common.h"
+#include "cm_ukey_ability_type.h"
 
 #include "cm_napi_open_detail_dialog.h"
 #include "cm_napi_open_dialog.h"
@@ -49,6 +50,11 @@ static napi_value CreateCmErrorCode(napi_env env)
         DIALOG_ERROR_PARAMETER_VALIDATION_FAILED);
     AddInt32Property(env, dialogErrorCode, "ERROR_NO_AVAILABLE_CERTIFICATE",
         DIALOG_ERROR_NO_AVAILABLE_CERTIFICATE);
+    /* ukey dialog dedicated codes (spec D8 v4: unfolded on ForProvider) */
+    AddInt32Property(env, dialogErrorCode, "ERROR_UKEY_AUTH_REPORT_TIMEOUT",
+        DIALOG_ERROR_UKEY_AUTH_REPORT_TIMEOUT);
+    AddInt32Property(env, dialogErrorCode, "ERROR_UKEY_DIALOG_IN_PROGRESS",
+        DIALOG_ERROR_UKEY_DIALOG_IN_PROGRESS);
 
     return dialogErrorCode;
 }
@@ -92,6 +98,16 @@ static napi_value CreateCmCertificateScope(napi_env env)
     return certificateScope;
 }
 
+static napi_value CreateCmAbilityType(napi_env env)
+{
+    napi_value abilityType = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &abilityType));
+
+    AddInt32Property(env, abilityType, "UKEY_AUTH_EXTENSION_ABILITY", CM_UKEY_ABILITY_TYPE_UIEXTENSION);
+
+    return abilityType;
+}
+
 }  // namespace CertManagerNapi
 
 using namespace CMNapi;
@@ -104,6 +120,7 @@ static napi_value CMDialogNapiRegister(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("CertificateDialogPageType", CreateCmDialogPageType(env)),
         DECLARE_NAPI_PROPERTY("CertificateType", CreateCmCertificateType(env)),
         DECLARE_NAPI_PROPERTY("CertificateScope", CreateCmCertificateScope(env)),
+        DECLARE_NAPI_PROPERTY("AbilityType", CreateCmAbilityType(env)),
 
         /* dialog */
         DECLARE_NAPI_FUNCTION("openCertificateManagerDialog", CMNapiOpenCertManagerDialog),
@@ -112,6 +129,7 @@ static napi_value CMDialogNapiRegister(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("openCertificateDetailDialog", CMNapiOpenDetailDialog),
         DECLARE_NAPI_FUNCTION("openAuthorizeDialog", CMNapiOpenAuthorizeDialog),
         DECLARE_NAPI_FUNCTION("openUkeyAuthDialog", CMNapiOpenUkeyAuthorizeDialog),
+        DECLARE_NAPI_FUNCTION("openAuthDialogForUkeyProvider", CMNapiOpenAuthDialogForUkeyProvider),
         DECLARE_NAPI_FUNCTION("supportsCACertDialog", CMNapiSupportsCACertDialog),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));

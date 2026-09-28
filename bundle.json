@@ -24,7 +24,8 @@
         "certificate_manager_deps_huks_enabled",
         "certificate_manager_feature_ca_enabled",
         "certificate_manager_feature_credential_enabled",
-        "certificate_manager_feature_dialog_enabled"
+        "certificate_manager_feature_dialog_enabled",
+        "certificate_manager_feature_ukey_auth_ext_enabled"
       ],
       "adapted_system_type": [
         "mini",
@@ -49,6 +50,7 @@
           "common_event_service",
           "c_utils",
           "eventhandler",
+          "ets_frontend",
           "hisysevent",
           "hilog",
           "huks",
@@ -63,7 +65,10 @@
           "selinux_adapter",
           "openssl",
           "runtime_core",
-          "node"
+          "node",
+          "window_manager",
+          "libuv",
+          "hitrace"
         ]
       },
       "build": {
@@ -84,6 +89,7 @@
             "header": {
               "header_files": [
                 "cert_manager_api.h",
+                "cm_error_code.h",
                 "cm_type.h"
               ],
               "header_base": "//base/security/certificate_manager/interfaces/innerkits/cert_manager_standard/main/include"

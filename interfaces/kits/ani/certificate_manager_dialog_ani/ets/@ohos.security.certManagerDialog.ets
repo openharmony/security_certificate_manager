@@ -69,7 +69,13 @@ export interface ReqestAuthDialogParams {
 
 native function openUkeyAuthDialogNative(
   context: common.Context,
-  keyUri: string,
+  ukeyAuthRequest: certificateManagerDialog.UkeyAuthRequest,
+  callback: AsyncCallbackWrapper<void>
+): NativeResult<void>;
+
+native function openAuthDialogForUkeyProviderNative(
+  dialogInfo: certificateManagerDialog.UkeyAuthDialogInfo,
+  ukeyAuthRequest: certificateManagerDialog.UkeyAuthRequest,
   callback: AsyncCallbackWrapper<void>
 ): NativeResult<void>;
 
@@ -101,7 +107,6 @@ class CertReferenceClass implements certificateManagerDialog.CertReference {
 const CRITERIA_MAX_SIZE: int = 20;
 
 export namespace certificateManagerDialog {
-
   static {
     loadLibrary("certmanager_dialog_ani.z");
   }
@@ -120,7 +125,18 @@ export namespace certificateManagerDialog {
   }
 
   export interface UkeyAuthRequest {
-    keyUri: string
+    keyUri: string,
+    timeoutDuration?: number, /* auth timeout in seconds; absent = server default 300s */
+    customData?: Uint8Array /* opaque data (<= 2048 bytes) delivered base64 to custom dialogs only */
+  }
+
+  export enum AbilityType {
+    UKEY_AUTH_EXTENSION_ABILITY = 1
+  }
+
+  export interface UkeyAuthDialogInfo {
+    abilityType: AbilityType;
+    abilityName: string;
   }
 
   export enum CertificateDialogErrorCode {
@@ -131,6 +147,8 @@ export namespace certificateManagerDialog {
     ERROR_NOT_COMPLY_SECURITY_POLICY = 29700005,
     ERROR_PARAMETER_VALIDATION_FAILED = 29700006,
     ERROR_NO_AVAILABLE_CERTIFICATE = 29700007,
+    ERROR_UKEY_AUTH_REPORT_TIMEOUT = 29700009,
+    ERROR_UKEY_DIALOG_IN_PROGRESS = 29700010,
   }
 
   export enum CertificateDialogPageType {
@@ -373,12 +391,50 @@ export namespace certificateManagerDialog {
           error.message = 'the input parameters is invalid.';
           throw error;
         }
-        let result: NativeResult<void> = openUkeyAuthDialogNative(context, keyUri, callback);
+        let result: NativeResult<void> = openUkeyAuthDialogNative(context, ukeyAuthRequest, callback);
         if (result.code !== 0) {
           let err = new BusinessError();
           err.code = result.code;
           err.message = result.message;
           reject(err);
+        }
+    });
+  }
+
+  export function openAuthDialogForUkeyProvider(dialogInfo: UkeyAuthDialogInfo,
+    ukeyAuthRequest: UkeyAuthRequest): Promise<void> {
+    return new Promise<void>((resolve, reject: (error: BusinessError) => void) => {
+        let callback = new AsyncCallbackWrapper<void>((err: BusinessError | null) => {
+            if (err?.code !== 0) {
+                reject(err as BusinessError);
+            } else {
+                resolve(undefined);
+            }
+        });
+
+        let abilityName: string = dialogInfo.abilityName;
+        let abilityType: number = dialogInfo.abilityType;
+        /* empty strings are rejected by the native layer with 29700006 (spec §5.1) */
+        if (abilityName === undefined || abilityType === undefined) {
+            let error = new BusinessError();
+            error.code = 401;
+            error.message = 'the input parameters is invalid.';
+            throw error;
+        }
+        let keyUri: string = ukeyAuthRequest.keyUri;
+        if (keyUri === undefined) {
+          let error = new BusinessError();
+          error.code = 401;
+          error.message = 'the input parameters is invalid.';
+          throw error;
+        }
+        let result: NativeResult<void> = openAuthDialogForUkeyProviderNative(dialogInfo,
+            ukeyAuthRequest, callback);
+        if (result.code !== 0) {
+            let err = new BusinessError();
+            err.code = result.code;
+            err.message = result.message;
+            reject(err);
         }
     });
   }

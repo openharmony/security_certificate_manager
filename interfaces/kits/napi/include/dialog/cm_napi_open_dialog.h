@@ -24,6 +24,8 @@
 #include "napi_base_context.h"
 #include "napi_common_want.h"
 #include "ui_content.h"
+#include "securec.h"
+
 #include "cm_metrics.h"
 #include "cm_type.h"
 #include "cm_mem.h"
@@ -52,12 +54,22 @@ struct CmUIExtensionRequestContext : public CommonAsyncContext {
             CM_FREE_PTR(certUri->data);
             CM_FREE_PTR(certUri);
         }
+        if (authCustomData != nullptr) {
+            /* customData is caller-opaque data; scrub before free (spec R10) */
+            if (authCustomData->data != nullptr && authCustomData->size > 0) {
+                (void)memset_s(authCustomData->data, authCustomData->size, 0, authCustomData->size);
+            }
+            CM_FREE_PTR(authCustomData->data);
+            CM_FREE_PTR(authCustomData);
+        }
     }
 
     std::shared_ptr<OHOS::AbilityRuntime::AbilityContext> context = nullptr;
     uint32_t pageType = 0;
     uint32_t certificateScope = 0;
     int32_t appUid = -1;
+    uint32_t authTimeoutSec = 0; /* optional openUkeyAuthDialog timeout (seconds); 0 = server default */
+    CmBlob *authCustomData = nullptr; /* optional custom data, raw bytes <= 2048 (D19) */
     std::string certStr = "";
     std::string labelName = "";
     CmBlob *certUri = nullptr;

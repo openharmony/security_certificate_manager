@@ -94,12 +94,15 @@ ohos_shared_library("certmanagerdialog") {
     stack_protector_ret = true
   }
 
-  include_dirs = [ 
+  include_dirs = [
     "include/dialog",
     "include/dialog/dialog_callback",
     "../common/include",
     "../common/metrics/include",
+    "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common/include",
   ]
+
+  defines = []
 
   sources = [
     "../common/src/cm_dialog_api_common.cpp",

@@ -37,6 +37,8 @@ ohos_unittest("cm_sdk_test") {
     "unittest/src/cm_set_status_test.cpp",
     "unittest/src/cm_sys_app_cert_test.cpp",
     "unittest/src/cm_test_common.cpp",
+    "unittest/src/cm_ukey_auth_dialog_manager_test.cpp",
+    "unittest/src/cm_ukey_auth_dialog_real_ipc_test.cpp",
     "unittest/src/cm_update_test.cpp",
     "unittest/src/cm_user_cert_test.cpp",
     "unittest/src/cm_pfx_test.cpp",
@@ -72,10 +74,12 @@ ohos_unittest("cm_sdk_test") {
       "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/common:libcert_manager_common_standard_static",
       "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_ipc_client_static",
       "${cert_manager_root_dir}/frameworks/cert_manager_standard/main/os_dependency:libcert_manager_log_mem_static",
+      "${cert_manager_root_dir}/services/cert_manager_standard/cert_manager_service/main/os_dependency/dialog:libcm_ukey_auth_dialog_static",
     ]
   }
 
   external_deps = [
+    "ability_runtime:ability_connect_callback_stub",
     "init:libbegetutil",
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken",
@@ -83,6 +87,7 @@ ohos_unittest("cm_sdk_test") {
     "bounds_checking_function:libsec_static",
     "cJSON:cjson_static",
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "googletest:gtest",
     "openssl:libcrypto_shared",
     "selinux_adapter:librestorecon",

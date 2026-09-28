@@ -21,17 +21,24 @@
 #include "cm_open_dialog.h"
 
 namespace OHOS::Security::CertManager::Ani {
+/* Context-carrying direct-launch implementation (original implementation
+ * restored, spec v4.2): handles direct launch of the driver UIAbility dialog
+ * and of the system default dialog (UIAbility / query failure /
+ * UIExtension + non-PC; PC + UIExtension already delegates to the SA session
+ * in cm_dialog_ani.cpp). aniRequest is the caller-provided UkeyAuthRequest
+ * ets object (field unpacking in cm_ukey_ani_request.h). */
 class CmOpenUkeyAuthDialog : public CertManagerAsyncImpl {
 private:
     /* ani params */
-    ani_string aniKeyUri = nullptr;
+    ani_object aniRequest = nullptr;
     /* parsed params */
     CmBlob keyUri = { 0 };
+    CmBlob customData = { 0 }; /* raw bytes <= 2048; size 0 = absent (D19) */
     int32_t StartUkeyPinAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Want& want,
         std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback);
 
 public:
-    CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_string aniKeyUri,
+    CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_object aniRequest,
         ani_object callback);
     ~CmOpenUkeyAuthDialog() {};
 

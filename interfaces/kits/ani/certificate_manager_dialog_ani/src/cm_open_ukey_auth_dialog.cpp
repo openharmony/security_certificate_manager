@@ -14,18 +14,22 @@
  */
 
 #include "cm_open_ukey_auth_dialog.h"
+#include "securec.h"
+
 #include "cm_mem.h"
 #include "cm_ani_utils.h"
 #include "cm_ani_common.h"
 #include "cm_log.h"
 #include "cm_dialog_api_common.h"
+#include "cm_ukey_ani_request.h"
 
 namespace OHOS::Security::CertManager::Ani {
 using namespace Dialog;
-CmOpenUkeyAuthDialog::CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_string aniKeyUri,
-    ani_object callback) : CertManagerAsyncImpl(env, aniContext, callback, "openUkeyAuthDialog")
+CmOpenUkeyAuthDialog::CmOpenUkeyAuthDialog(ani_env *env, ani_object aniContext, ani_object aniRequest,
+    ani_object callback)
+    : CertManagerAsyncImpl(env, aniContext, callback, "openUkeyAuthDialog")
 {
-    this->aniKeyUri = aniKeyUri;
+    this->aniRequest = aniRequest;
 }
 
 int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
@@ -36,16 +40,49 @@ int32_t CmOpenUkeyAuthDialog::GetParamsFromEnv()
         return ret;
     }
 
-    ret = AniUtils::ParseString(env, this->aniKeyUri, this->keyUri);
+    CmUkeyAniRequest req;
+    ret = ParseUkeyAniRequest(env, this->aniRequest, req);
+    if (ret != CM_SUCCESS) {
+        CM_LOG_E("parse ukey auth request object failed, ret = %d", ret);
+        return ret;
+    }
+
+    ret = AniUtils::ParseString(env, req.keyUri, this->keyUri);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("parse keyUri failed, ret = %d", ret);
         return ret;
     }
+    if (this->keyUri.size <= 1) {
+        /* blob carries the terminating zero, size 1 means an empty keyUri;
+         * align with the SA session path (empty keyUri is a param error) */
+        CM_LOG_E("keyUri is empty");
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+    if (this->keyUri.size > MAX_LEN_URI) {
+        /* blob carries the terminating zero; over-length keyUri maps to 29700006 */
+        CM_LOG_E("keyUri is too long, max length: %d", MAX_LEN_URI);
+        return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+    }
+
+    /* optional customData; Uint8Array <= 2048 raw bytes (D19); nullptr = absent */
+    if (req.customData != nullptr) {
+        ret = AniUtils::ParseUint8Array(env, reinterpret_cast<ani_arraybuffer>(req.customData),
+            this->customData);
+        if (ret != CM_SUCCESS) {
+            CM_LOG_E("parse customData failed. ret = %d", ret);
+            return ret;
+        }
+        if (this->customData.size > CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE) {
+            CM_LOG_E("customData is too long, max: %d", CM_UKEY_AUTH_CUSTOM_DATA_MAX_SIZE);
+            CM_FREE_BLOB(this->customData);
+            return CMR_DIALOG_ERROR_PARAMETER_VALIDATION_FAILED;
+        }
+    }
     return CM_SUCCESS;
 }
 
-int32_t CmOpenUkeyAuthDialog::StartUkeyPinAbility(std::shared_ptr<AbilityContext> context, OHOS::AAFwk::Want& want,
-    std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback)
+int32_t CmOpenUkeyAuthDialog::StartUkeyPinAbility(std::shared_ptr<AbilityContext> context,
+    OHOS::AAFwk::Want& want, std::shared_ptr<CmAniUIExtensionCallback> uiExtCallback)
 {
     std::string action = want.GetAction();
     if (action.empty() || action != ACTION_UKEY_PIN_AUTH) {
@@ -58,8 +95,15 @@ int32_t CmOpenUkeyAuthDialog::StartUkeyPinAbility(std::shared_ptr<AbilityContext
 int32_t CmOpenUkeyAuthDialog::InvokeAsyncWork()
 {
     CM_LOG_D("InvokeAsyncWork start");
+    /* Direct-launch path (original implementation restored): UIAbility
+     * (driver dialog) / query failure (default dialog) / UIExtension +
+     * non-PC (default dialog). PC + UIExtension was branched off to the SA
+     * session earlier in cm_dialog_ani.cpp, so this is always a direct
+     * launch. */
     OHOS::AAFwk::Want want{};
-    int32_t ret = GetCustomerAuthCertWant(&this->keyUri, want);
+    int32_t ret = GetCustomerAuthCertWant(&this->keyUri,
+        (this->customData.data != nullptr && this->customData.size > 0) ? &this->customData : nullptr,
+        want);
     if (ret != CM_SUCCESS) {
         CM_LOG_E("get customer auth cert want failed. ret = %d", ret);
         return ret;
@@ -79,6 +123,15 @@ int32_t CmOpenUkeyAuthDialog::UnpackResult()
 void CmOpenUkeyAuthDialog::OnFinish()
 {
     CM_FREE_BLOB(this->keyUri);
+    if (this->customData.data != nullptr && this->customData.size > 0) {
+        /* customData is caller-opaque data; scrub before free (spec R10); a
+         * scrub failure only logs and does not block the free (dst/size are
+         * self-consistent, so a failure can only come from the inputs) */
+        if (memset_s(this->customData.data, this->customData.size, 0, this->customData.size) != EOK) {
+            CM_LOG_E("clear customData before free failed");
+        }
+    }
+    CM_FREE_BLOB(this->customData);
     return;
 }
 }
